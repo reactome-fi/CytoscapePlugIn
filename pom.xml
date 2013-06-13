@@ -44,8 +44,8 @@
 					</execution>
 				</executions>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.6</source>
+					<target>1.6</target>
 					<optimize>true</optimize>
 					<showWarnings>true</showWarnings>
 					<showDeprecation>true</showDeprecation>
@@ -132,6 +132,11 @@
 			<version>RELEASE</version>
 		</dependency>
 		<dependency>
+    		<groupId>org.cytoscape</groupId>
+    		<artifactId>io-api</artifactId>
+    		<version>RELEASE</version>
+		</dependency>
+		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>swing-application-api</artifactId>
 			<version>RELEASE</version>
@@ -198,6 +203,11 @@
 		<dependency>
 			<groupId>org.reactome</groupId>
 			<artifactId>caBIGR3</artifactId>
+			<version>1.0</version>
+		</dependency>
+				<dependency>
+			<groupId>org.reactome</groupId>
+			<artifactId>reactomeJAR</artifactId>
 			<version>1.0</version>
 		</dependency>
 		<dependency>
