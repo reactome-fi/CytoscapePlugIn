@@ -1,11 +1,13 @@
 package org.reactome.CS.x.internal;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 import org.cytoscape.work.Tunable;
+import org.cytoscape.work.util.ListSingleSelection;
 
 
 public class GSMATask extends AbstractTask
@@ -14,18 +16,21 @@ public class GSMATask extends AbstractTask
     public int FI_NETWORK_VERSION = 2012;
     
     @Tunable(description="File Format")
-    public List<String> FILE_FORMAT = Arrays.asList("Gene_Set", "Gene_Sample_Number_Pair", "NCI_MAF");
+    public ListSingleSelection<String> FILE_FORMAT = new ListSingleSelection<String>("Gene Set", "Gene/Sample Number Pair", "NCI MAF (Mutation Annotation File");
+    
+    @Tunable(description="File to analyze")
+    public File dataFile;
     
     @Tunable(description="Sample Cutoff")
     public int SAMPLE_CUTOFF = 2;
     
-    @Tunable(description="Fetch FI Annotations")
+    @Tunable(description="Fetch FI Annotations", groups="FI Network Construction Parameters")
     public boolean FETCH_FI_ANNOTATIONS = false;
     
-    @Tunable(description="Use Linker Genes")
+    @Tunable(description="Use Linker Genes", groups="FI Network Construction Parameters")
     public boolean USE_LINKERS = false;
     
-    @Tunable(description="Show genes not linked to others")
+    @Tunable(description="Show genes not linked to others", groups="FI Network Construction Parameters")
     public boolean SHOW_UNLINKED_GENES = false;
     
     public GSMATask()
