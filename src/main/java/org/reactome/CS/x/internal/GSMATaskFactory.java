@@ -7,6 +7,7 @@ import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.AbstractNetworkTaskFactory;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
+import org.cytoscape.task.write.SaveSessionTaskFactory;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.work.AbstractTaskFactory;
 import org.cytoscape.work.TaskIterator;
@@ -18,16 +19,18 @@ public class GSMATaskFactory extends AbstractTaskFactory
 {
     private final CyNetworkManager netManager;
     private final TaskManager tm;
-    private final SaveSessionAsTaskFactory saveAsFactory;
     private FileUtil fileUtil;
     private CySwingApplication desktopApp;
+    private SaveSessionAsTaskFactory saveSession;
     public GSMATaskFactory( TaskManager tm ,CyNetworkManager netManager,
-	    SaveSessionAsTaskFactory saveAsFactory, FileUtil fileUtil,
+	    SaveSessionAsTaskFactory saveSession,
+	    FileUtil fileUtil,
 	    CySwingApplication desktopApp)
     {
 	this.netManager = netManager;
 	this.tm = tm;
-	this.saveAsFactory=saveAsFactory;
+
+	this.saveSession = saveSession;
 	this.fileUtil = fileUtil;
 	this.desktopApp = desktopApp;
     }
@@ -36,7 +39,8 @@ public class GSMATaskFactory extends AbstractTaskFactory
     public TaskIterator createTaskIterator()
     {
 	// TODO Auto-generated method stub
-	return new TaskIterator(new GSMATask(tm, netManager, saveAsFactory, fileUtil, desktopApp));
+	return new TaskIterator(new GSMATask(tm, netManager,
+		saveSession, fileUtil, desktopApp));
     }
 
 }

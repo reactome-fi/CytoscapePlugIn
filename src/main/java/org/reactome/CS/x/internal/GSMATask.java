@@ -10,6 +10,7 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
+import org.cytoscape.task.write.SaveSessionTaskFactory;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.work.AbstractTask;
@@ -24,11 +25,8 @@ public class GSMATask extends AbstractTask
     
     @Tunable (description="Reactome FI needs a fresh session to build the FI network.\n\n"
     		+ " Would you like to save your current session?", groups="Session")
-    public boolean isNewSession = false;
+    public boolean saveNewSession = true;
     
-    @Tunable (description="Save session as:", params="input=false;fileCategory=session",
-	    dependsOn="isNewSession=true", groups="Session")
-    public File sessionSaveFile;
     
     @Tunable(description="FI Network Version", groups="FI Network Construction")
     public ListSingleSelection<Integer> FI_NETWORK_VERSION = new ListSingleSelection<Integer> (2012, 2009);
@@ -52,22 +50,25 @@ public class GSMATask extends AbstractTask
     public boolean SHOW_UNLINKED_GENES = false;
 
     private CyNetworkManager netManager;
-    private SaveSessionAsTaskFactory saveSessionAsTaskFactory;
+
     private TaskManager tm;
     private CySwingApplication desktopApp;
 
     private FileUtil fileUtil;
 
-
+    private SaveSessionAsTaskFactory saveSession;
     
     public GSMATask(TaskManager tm, CyNetworkManager netManager,
-	    SaveSessionAsTaskFactory saveSessionAsTaskFactory, FileUtil fileUtil,
+
+	    SaveSessionAsTaskFactory saveSession,
+	    FileUtil fileUtil,
 	    CySwingApplication desktopApp)
     {
 	super();
 	this.tm = tm;
 	this.netManager = netManager;
-	this.saveSessionAsTaskFactory = saveSessionAsTaskFactory;
+
+	this.saveSession = saveSession;
 	this.fileUtil = fileUtil;
 	this.desktopApp = desktopApp;
     }
@@ -76,6 +77,11 @@ public class GSMATask extends AbstractTask
     public void run(TaskMonitor taskMonitor) throws Exception
     {
 	System.out.println(System.currentTimeMillis());
+	if (saveNewSession)
+	{
+	    tm.execute(saveSession.createTaskIterator());
+	}
+	
 //	Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
 //	FileChooserFilter mafFilter = new FileChooserFilter("NCI MAF Files", "maf");
 //	filters.add(mafFilter);
