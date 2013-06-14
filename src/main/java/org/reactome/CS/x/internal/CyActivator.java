@@ -10,6 +10,7 @@ import org.cytoscape.task.AbstractNetworkTaskFactory;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.task.write.SaveSessionTaskFactory;
 import org.cytoscape.util.swing.FileUtil;
+import org.cytoscape.util.swing.OpenBrowser;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 
@@ -26,18 +27,25 @@ public class CyActivator extends AbstractCyActivator {
 		TaskManager taskManager = getService(context, TaskManager.class);
 		CyNetworkManager networkManager = getService(context, CyNetworkManager.class);
 		SaveSessionAsTaskFactory saveSessionAsTaskFactory = getService(context, SaveSessionAsTaskFactory.class);
-		//FileLoaderTaskFactory fileLoader = getService(context, FileLoaderTaskFactory.class);
 		FileUtil fileUtil = getService(context, FileUtil.class);
+		OpenBrowser browser = getService(context, OpenBrowser.class);
 		
 		GSMATaskFactory gsmaTaskFactory = new GSMATaskFactory(taskManager, networkManager,
 			saveSessionAsTaskFactory, fileUtil, desktopApp);
 		Properties gsmaProps = new Properties();
-		gsmaProps.setProperty("preferredMenu", "Apps.ReactomeFIS");
+		gsmaProps.setProperty("preferredMenu", "Apps.ReactomeFI");
 		gsmaProps.setProperty("menuGravity", "1.0");
 		gsmaProps.setProperty("title", "Gene Set/Mutation Analysis");
-		Properties properties = new Properties();
 		
+		UserGuideTaskFactory userGuide = new UserGuideTaskFactory(desktopApp, browser);
+		Properties userGuideProps = new Properties();
+		userGuideProps.setProperty("title", "User Guide");
+		userGuideProps.setProperty("menuGravity", "3.0");
+		userGuideProps.setProperty("preferredMenu", "Apps.ReactomeFI");
+		Properties properties = new Properties();
+
 		registerAllServices(context, gsmaTaskFactory, gsmaProps);
+		registerAllServices(context, userGuide, userGuideProps);
 	}
 
 }

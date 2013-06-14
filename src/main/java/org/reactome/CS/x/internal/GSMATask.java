@@ -22,12 +22,12 @@ import org.cytoscape.work.util.ListSingleSelection;
 public class GSMATask extends AbstractTask
 {
     @Tunable(description="FI Network Version")
-    public int FI_NETWORK_VERSION = 2012;
+    public ListSingleSelection<Integer> FI_NETWORK_VERSION = new ListSingleSelection<Integer> (2012, 2009);
     
     @Tunable(description="File Format")
     public ListSingleSelection<String> FILE_FORMAT = new ListSingleSelection<String>("Gene Set", "Gene/Sample Number Pair", "NCI MAF");
     
-    @Tunable(description="File to analyze")
+    @Tunable(description="File to analyze", params="fileCategory=network;input=true")
     public File dataFile;
     
     @Tunable(description="Sample Cutoff")
