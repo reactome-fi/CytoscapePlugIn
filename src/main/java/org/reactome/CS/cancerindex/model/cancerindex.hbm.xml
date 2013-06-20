@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="org.reactome.cancerindex.model">
+    <class name="GeneEntry" table="GENE_ENTRY">
+        <id name="id" column="ID">
+            <generator class="native"></generator>
+        </id>
+        <property name="hugoGeneSymbol" column="HUGO_GENE_SYMBOL"></property>
+        <list name="geneAliasCollection" table="GENE_ALIAS_COLLECTION" cascade="persist">
+            <key column="GENE_ENTRY_ID"/>
+            <list-index column="LIST_INDEX" />
+            <element column="ALIAS" type="string"/>
+        </list>
+        <property name="geneStatusFlag" column="GENE_STATUS_FLAG"></property>
+        <many-to-one name="sequenceIdentificationCollection" column="SEQUENCE_IDENTIFICATION_COLLECTION" 
+                     cascade="persist"/>
+        <list name="sentence" table="SENTENCE" cascade="persist">
+            <key column="GENE_ENTRY_ID" />
+            <list-index column="LIST_INDEX" />
+            <one-to-many class="Sentence" />
+        </list>
+    </class>
+    <class name="SequenceIdentificationCollection" table="SEQUENCE_IDENTIFICATION_COLLECTION">
+        <id name="id" column="ID">
+            <generator class="native"></generator>
+        </id>
+        <property name="hgncID" column="HGNC_ID" />
+        <property name="locusLinkID" column="LOCUS_LINK_ID" />
+        <property name="genbankAccession" column="GENBANK_ACCESSION" />
+        <property name="refSeqID" column="REFSEQ_ID" />
+        <property name="uniProtID" column="UNIPROT_ID" />
+    </class>
+    <!-- Make sure the table name is in the same case as in database. -->
+    <class name="Sentence" table="Sentence">
+        <id name="id" column="ID">
+            <generator class="native"></generator>
+        </id>
+        <many-to-one name="geneData" column="GENE_DATA" cascade="persist"></many-to-one>
+        <many-to-one name="diseaseData" column="DISEASE_DATA" cascade="persist"></many-to-one>
+        <property name="statement" column="STATEMENT" type="text"/>
+        <property name="pubMedID" column="PUBMEDID" />
+        <property name="organism" column="ORGANISM" />
+        <property name="negationIndicator" column="NEGATION_INDICATOR" />
+        <property name="cellineIndicator" column="CELLINE_INDICATOR" />
+        <property name="comments" column="COMMENTS" type="text" />
+        <list name="evidenceCode" table="EVIDENCE_CODE" cascade="persist">
+            <key column="SENTENCE_ID"/>
+            <list-index column="LIST_INDEX" />
+            <element column="EVIDENCE_CODE" type="string"/>
+        </list>
+        <list name="roles" table="ROLES" cascade="persist">
+            <key column="SENTENCE_ID" />
+            <list-index column="LIST_INDEX" />
+            <one-to-many class="Roles" />
+        </list>
+        <property name="sentenceStatusFlag" column="SENTENCE_STATUS_FLAG" />
+    </class>
+    <class name="GeneData" table="GENE_DATA">
+        <id name="id" column="ID">
+            <generator class="native"></generator>
+        </id>
+        <property name="matchedGeneTerm" column="MATCHED_GENE_TERM" />
+        <property name="nciGeneConceptCode" column="NCI_GENE_CONCEPT_CODE" />
+    </class>
+    <class name="DiseaseData" table="DISEASE_DATA">
+        <id name="id" column="ID">
+            <generator class="native"></generator>
+        </id>
+        <property name="matchedDiseaseTerm" column="MATCHED_DISEASE_TERM" />
+        <property name="nciDiseaseConceptCode" column="NCI_DISEASE_CONCEPT_CODE" />
+    </class>
+    <class name="Roles" table="ROLES">
+        <id name="id" column="ID">
+            <generator class="native"></generator>
+        </id>
+        <list name="primaryNCIRoleCode" table="PRIMARY_NCI_ROLE_CODE" cascade="persist">
+            <key column="ROLES_ID"/>
+            <list-index column="LIST_INDEX" />
+            <element column="PRIMARY_NCI_ROLE_CODE" type="string"/>
+        </list>
+        <list name="otherRole" table="OTHER_ROLE" cascade="persist">
+            <key column="ROLES_ID"/>
+            <list-index column="LIST_INDEX" />
+            <element column="OTHER_ROLE" type="string"/>
+        </list>
+    </class>
+</hibernate-mapping>

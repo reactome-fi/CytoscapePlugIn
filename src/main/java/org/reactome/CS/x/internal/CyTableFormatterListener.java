@@ -8,7 +8,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.events.NetworkViewAddedEvent;
 import org.cytoscape.view.model.events.NetworkViewAddedListener;
 
-public class CyTableFormatterListener  implements NetworkViewAddedListener, NetworkAddedListener
+public class CyTableFormatterListener  implements NetworkAddedListener
 {
 
     // Key for storing FI network version
@@ -23,19 +23,24 @@ public class CyTableFormatterListener  implements NetworkViewAddedListener, Netw
     public CyTableFormatterListener()
     {
     }
-    public void makeTable(CyNetwork network)
+    public void makeTableGSMA(CyNetwork network)
     {
 	
 	CyTable netTable = network.getDefaultNetworkTable();
 	CyTable nodeTable = network.getDefaultNodeTable();
 	CyTable edgeTable = network.getDefaultEdgeTable();
 	
-//	if (netTable.getColumn("Name") == null)
-//	{
-//		netTable.createColumn("Name", String.class, false);
-//		nodeTable.addVirtualColumn("Name", "Name", netTable, "Name", Boolean.FALSE);
-//	}
-	
+
+	//From Jason's email. Make sure that the network SUID ends up in the properly linked table
+	//in the edge/node table to ensure that network properties are distributed to nodes and edges.
+	if (nodeTable.getColumn("network") == null)
+	{
+	    nodeTable.createColumn("network", Long.class, true);
+	    edgeTable.createColumn("network", Long.class, true);
+	    nodeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
+	    edgeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
+	    
+	}
 	//Creates a set of columns in the default network table and creates matching virtual columns
 	//within the default edge and node tables upon network creation or network view creation.
 	if (netTable.getColumn("isReactomeFINetwork") == null)
@@ -89,29 +94,17 @@ public class CyTableFormatterListener  implements NetworkViewAddedListener, Netw
 		nodeTable.addVirtualColumn("IsLinker", "IsLinker", netTable, "IsLinker", Boolean.FALSE);
 		edgeTable.addVirtualColumn("IsLinker", "IsLinker", netTable, "IsLinker", Boolean.FALSE);
 	}
-	//From Jason's email. Make sure that the network SUID ends up in the properly linked table
-	//in the edge/node table to ensure that network properties are distributed to nodes and edges.
-	if (nodeTable.getColumn("network") == null)
-	{
-	    nodeTable.createColumn("network", Long.class, true);
-	    edgeTable.createColumn("network", Long.class, true);
-	    nodeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
-	    edgeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
-	    
-	}
+
+
 	
     }
 
     public void handleEvent(NetworkAddedEvent e)
     {
-	makeTable(e.getNetwork());
+	//Check is GSMA or Microarray and make table accordingly
+	makeTableGSMA(e.getNetwork());
 	
     }
 
-    public void handleEvent(NetworkViewAddedEvent e)
-    {
-	makeTable(e.getNetworkView().getModel());
-	
-    }
 
 }

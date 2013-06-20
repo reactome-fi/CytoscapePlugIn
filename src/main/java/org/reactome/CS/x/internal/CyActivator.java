@@ -4,14 +4,15 @@ import java.util.Properties;
 
 
 
-import org.cytoscape.application.CyApplicationManager;
+
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.events.NetworkAddedListener;
 import org.cytoscape.service.util.AbstractCyActivator;
+import org.cytoscape.session.CySessionManager;
 
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
-import org.cytoscape.task.write.SaveSessionTaskFactory;
+
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.util.swing.OpenBrowser;
 import org.cytoscape.view.model.events.NetworkViewAddedListener;
@@ -28,9 +29,10 @@ public class CyActivator extends AbstractCyActivator {
 	public void start(BundleContext context) throws Exception {
 	    
 	    	CySwingApplication desktopApp = getService(context, CySwingApplication.class);
-		CyApplicationManager cyApplicationManager = getService(context, CyApplicationManager.class);
+		//CyApplicationManager cyApplicationManager = getService(context, CyApplicationManager.class);
 		TaskManager taskManager = getService(context, TaskManager.class);
 		CyNetworkManager networkManager = getService(context, CyNetworkManager.class);
+		CySessionManager sessionManager = getService(context, CySessionManager.class);
 		
 		SaveSessionAsTaskFactory saveSessionAsTaskFactory = getService(context, SaveSessionAsTaskFactory.class);
 
@@ -39,13 +41,12 @@ public class CyActivator extends AbstractCyActivator {
 		OpenBrowser browser = getService(context, OpenBrowser.class);
 //		HttpClient httpClient = getService(context, HttpClient.class);
 		
-		HttpTaskFactory httpFac = new HttpTaskFactory();
-		Properties httpProps = new Properties();
-		httpProps.setProperty("title", "http test");
-		httpProps.setProperty("preferredMenu", "Apps.ReactomeFI");
+
+
 		
 		GSMATaskFactory gsmaTaskFactory = new GSMATaskFactory(taskManager, networkManager,
-			saveSessionAsTaskFactory, fileUtil, desktopApp);
+			saveSessionAsTaskFactory, fileUtil, desktopApp, sessionManager);
+		Properties properties = new Properties();
 		Properties gsmaProps = new Properties();
 		gsmaProps.setProperty("preferredMenu", "Apps.ReactomeFI");
 		gsmaProps.setProperty("menuGravity", "1.0");
@@ -59,13 +60,10 @@ public class CyActivator extends AbstractCyActivator {
 		
 		CyTableFormatterListener cyTableFormatter = new CyTableFormatterListener();
 		
-		
-		Properties properties = new Properties();
 
-		registerAllServices(context, httpFac, httpProps);
+
 		registerAllServices(context, gsmaTaskFactory, gsmaProps);
 		registerAllServices(context, userGuide, userGuideProps);
-		registerService(context, cyTableFormatter, NetworkViewAddedListener.class, new Properties());
 		registerService(context, cyTableFormatter, NetworkAddedListener.class, new Properties());
 	}
 

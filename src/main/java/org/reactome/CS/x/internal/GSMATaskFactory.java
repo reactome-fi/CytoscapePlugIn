@@ -22,10 +22,12 @@ public class GSMATaskFactory extends AbstractTaskFactory
     private FileUtil fileUtil;
     private CySwingApplication desktopApp;
     private SaveSessionAsTaskFactory saveSession;
+    private CySessionManager sessionManager;
     public GSMATaskFactory( TaskManager tm ,CyNetworkManager netManager,
 	    SaveSessionAsTaskFactory saveSession,
 	    FileUtil fileUtil,
-	    CySwingApplication desktopApp)
+	    CySwingApplication desktopApp,
+	    CySessionManager sessionManager)
     {
 	this.netManager = netManager;
 	this.tm = tm;
@@ -33,6 +35,7 @@ public class GSMATaskFactory extends AbstractTaskFactory
 	this.saveSession = saveSession;
 	this.fileUtil = fileUtil;
 	this.desktopApp = desktopApp;
+	this.sessionManager = sessionManager;
     }
 
     @Override
@@ -40,7 +43,7 @@ public class GSMATaskFactory extends AbstractTaskFactory
     {
 	// TODO Auto-generated method stub
 	return new TaskIterator(new GSMATask(tm, netManager,
-		saveSession, fileUtil, desktopApp));
+		saveSession, fileUtil, desktopApp, sessionManager));
     }
 
 }
