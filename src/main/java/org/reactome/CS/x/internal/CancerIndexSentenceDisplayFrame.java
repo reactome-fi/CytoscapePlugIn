@@ -17,7 +17,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -26,14 +25,24 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
-
-
 
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
@@ -688,18 +697,18 @@ public class CancerIndexSentenceDisplayFrame extends JFrame {
     }
     
     public static void main(String[] agrs) throws Exception {
-        CancerIndexSentenceDisplayFrame display = new CancerIndexSentenceDisplayFrame();
-        display.setTitle("Cancer Index Frame");
-        display.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        display.setSize(800, 600);
-        GKApplicationUtilities.center(display);
-        display.setVisible(true);
-        long time1 = System.currentTimeMillis();
-        RESTFulFIService service = new RESTFulFIService();
-        String gene = "TP53";
-        List<Sentence> sentences = service.queryCGIAnnotations(gene);
-        long time2 = System.currentTimeMillis();
-        System.out.println("Time for querying: " + (time2 - time1));
-        display.display(sentences, gene);
+//        CancerIndexSentenceDisplayFrame display = new CancerIndexSentenceDisplayFrame();
+//        display.setTitle("Cancer Index Frame");
+//        display.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        display.setSize(800, 600);
+//        GKApplicationUtilities.center(display);
+//        display.setVisible(true);
+//        long time1 = System.currentTimeMillis();
+//        RESTFulFIService service = new RESTFulFIService();
+//        String gene = "TP53";
+//        List<Sentence> sentences = service.queryCGIAnnotations(gene);
+//        long time2 = System.currentTimeMillis();
+//        System.out.println("Time for querying: " + (time2 - time1));
+//        display.display(sentences, gene);
     }
 }

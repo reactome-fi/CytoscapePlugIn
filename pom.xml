@@ -184,16 +184,12 @@
 		</dependency>
 		<!-- Logging -->
 
-		<dependency>
-			<groupId>org.jdom</groupId>
-			<artifactId>jdom</artifactId>
-			<version>1.1.3</version>
-		</dependency>
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-osgi</artifactId>
-			<version>4.2.1.Final</version>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.jdom</groupId> -->
+<!-- 			<artifactId>jdom</artifactId> -->
+<!-- 			<version>1.1.3</version> -->
+<!-- 		</dependency> -->
+
             <dependency>
 				<groupId>org.cytoscape</groupId>
 				<artifactId>event-api</artifactId>
@@ -222,14 +218,13 @@
 				
 		<dependency>
 			<groupId>org.reactome</groupId>
-			<artifactId>caBIGR3</artifactId>
+			<artifactId>caSmallR3</artifactId>
 			<version>1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reactome</groupId>
-			<artifactId>reactome</artifactId>
-			<version>1.1</version>
-			<scope>compile</scope>
+			<artifactId>reactome-minimal</artifactId>
+			<version>1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reactome</groupId>
@@ -237,36 +232,25 @@
 			<version>1.0</version>
 		</dependency>
 		<dependency>
-			<groupId>org.kegg</groupId>
-			<artifactId>kegg-api</artifactId>
-			<version>1.0.0</version>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>com.springsource.org.apache.commons.httpclient</artifactId>
 			<version>3.1.0</version>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-	<groupId>colt</groupId>
-	<artifactId>colt</artifactId>
-	<version>1.2.0</version>
+<!-- <dependency> -->
+<!-- 	<groupId>maven</groupId> -->
+<!-- 	<artifactId>maven-jnlp-plugin</artifactId> -->
+<!-- 	<version>1.4.1</version> -->
+<!-- </dependency> -->
+
+	<dependency>
+	<groupId>org.apache.commons</groupId>
+	<artifactId>commons-math</artifactId>
+	<version>2.2</version>
 </dependency>
-            <dependency>
-	<groupId>concurrent</groupId>
-	<artifactId>concurrent</artifactId>
-	<version>1.3.4</version>
-</dependency>
-<dependency>
-	<groupId>org.reactome</groupId>
-	<artifactId>swing-layout</artifactId>
-	<version>1.0.0</version>
-</dependency>
-<dependency>
-	<groupId>org.reactome</groupId>
-	<artifactId>swingx</artifactId>
-	<version>1.0.0</version>
-</dependency>
+            
+            
+
             
 
    </dependencies>
