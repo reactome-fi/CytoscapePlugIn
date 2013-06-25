@@ -6,7 +6,7 @@
 //
 
 
-package org.reactome.CS.cancerindex.model;
+package org.reactome.CS.x.internal;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;

@@ -1,29 +1,32 @@
 package org.reactome.CS.x.internal;
 
+import java.util.ArrayList;
+
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.model.events.AddedNodesEvent;
+import org.cytoscape.model.events.AddedNodesListener;
 import org.cytoscape.model.events.NetworkAddedEvent;
 import org.cytoscape.model.events.NetworkAddedListener;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.events.NetworkViewAddedEvent;
 import org.cytoscape.view.model.events.NetworkViewAddedListener;
 
-public class CyTableFormatterListener  implements NetworkAddedListener
+
+public class CyTableFormatterListener  implements NetworkAddedListener, AddedNodesListener
 {
 
     // Key for storing FI network version
     private final String FI_NETWORK_VERSION = "Reactome_FI_Network_Version";
-    
-    
-    
-    //fix it. It may be necessary to make an identical view table to the network table.
-    
-    
+//    private final String [] COLUMNS = new String [7];
+//    COLUMNS = ["network", "isReactomeFINetwork", FI_NETWORK_VERSION, "DataSetType", "moduleToSampleValue", "Clustering_Type", "isLinker"];
     
     public CyTableFormatterListener()
     {
     }
-    public void makeTableGSMA(CyNetwork network)
+    public void makeAllTablesGSMA(CyNetwork network)
     {
 	
 	CyTable netTable = network.getDefaultNetworkTable();
@@ -33,14 +36,14 @@ public class CyTableFormatterListener  implements NetworkAddedListener
 
 	//From Jason's email. Make sure that the network SUID ends up in the properly linked table
 	//in the edge/node table to ensure that network properties are distributed to nodes and edges.
-	if (nodeTable.getColumn("network") == null)
-	{
-	    nodeTable.createColumn("network", Long.class, true);
-	    edgeTable.createColumn("network", Long.class, true);
-	    nodeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
-	    edgeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
-	    
-	}
+//	if (nodeTable.getColumn("network") == null)
+//	{
+//	    nodeTable.createColumn("network", Long.class, true);
+//	    edgeTable.createColumn("network", Long.class, true);
+//	    nodeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
+//	    edgeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
+//	    
+//	}
 	//Creates a set of columns in the default network table and creates matching virtual columns
 	//within the default edge and node tables upon network creation or network view creation.
 	if (netTable.getColumn("isReactomeFINetwork") == null)
@@ -98,12 +101,20 @@ public class CyTableFormatterListener  implements NetworkAddedListener
 
 	
     }
-
+    private void makeNodeTable(CyNetwork network)
+    {
+	System.out.println("Row created");
+    }
     public void handleEvent(NetworkAddedEvent e)
     {
 	//Check is GSMA or Microarray and make table accordingly
-	makeTableGSMA(e.getNetwork());
+	//makeAllTablesGSMA(e.getNetwork());
 	
+    }
+    @Override
+    public void handleEvent(AddedNodesEvent e)
+    {
+	//makeNodeTable(e.getSource());
     }
 
 

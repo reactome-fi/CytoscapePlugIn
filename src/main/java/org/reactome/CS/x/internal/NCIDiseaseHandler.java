@@ -2,7 +2,7 @@
  * Created on Jul 15, 2010
  *
  */
-package org.reactome.CS.cancerindex.data;
+package org.reactome.CS.x.internal;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.Test;
-import org.reactome.CS.cancerindex.model.DiseaseData;
 import org.reactome.r3.util.FileUtility;
 
 /**

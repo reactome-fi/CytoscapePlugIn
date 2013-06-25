@@ -41,7 +41,6 @@ import org.gk.render.RenderablePathway;
 //import org.jdom.output.DOMOutputter;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
-import org.reactome.CS.cancerindex.model.Sentence;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.r3.graph.NetworkClusterResult;
@@ -50,24 +49,24 @@ import org.w3c.dom.NodeList;
 
 
 
-public class RESTFulFIService //implements FINetworkService
+public class RESTFulFIService// implements FINetworkService
 {
-//    private final static String HTTP_GET = "Get";
-//    private final static String HTTP_POST = "Post";
-//    private String restfulURL;
-//
-//    public RESTFulFIService()
-//    {
-//	
-//	init();
-//    }
-//    private void init()
-//    {
-//      Properties prop = PlugInScopeObjectManager.getManager().getProperties();
-//      restfulURL = prop.getProperty("restfulURL");
-//      restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL();
-//    }
-//
+    private final static String HTTP_GET = "Get";
+    private final static String HTTP_POST = "Post";
+    private String restfulURL;
+
+    public RESTFulFIService()
+    {
+	
+	init();
+    }
+    private void init()
+    {
+      Properties prop = PlugInScopeObjectManager.getManager().getProperties();
+      restfulURL = prop.getProperty("restfulURL");
+      restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL();
+    }
+
 //    @Override
 //    public Integer getNetworkBuildSizeCutoff() throws Exception
 //    {
@@ -239,53 +238,53 @@ public class RESTFulFIService //implements FINetworkService
 //	   throw new IllegalStateException(post.getResponseBodyAsString());
 //   }
 //
-//private String callHttp(String url,
-//         String type,
-//         String query) throws IOException 
-//    {
-//    	HttpMethod method = null;
-//    	HttpClient client = null;
-//    	if (type.equals(HTTP_POST)) 
-//    	{
-//    	    method = new PostMethod(url);
-//    	    client = initializeHTTPClient((PostMethod)method, query);
-//    	}
-//    	else {
-//    	    method = new GetMethod(url); // Default
-//    	    method.setRequestHeader("Accept", "text/plain");
-//    	    client = new HttpClient();
-//    	}
-//    	int responseCode = client.executeMethod(method);
-//    	if (responseCode == HttpStatus.SC_OK) {
-//    	    InputStream is = method.getResponseBodyAsStream();
-//    	    InputStreamReader isr = new InputStreamReader(is);
-//    	    BufferedReader reader = new BufferedReader(isr);
-//    	    StringBuilder builder = new StringBuilder();
-//    	    String line = null;
-//    	    while ((line = reader.readLine()) != null)
-//    		builder.append(line).append("\n");
-//    	    	reader.close();
-//    	    	isr.close();
-//    	    	is.close();
-//    	    	// Remove the last new line
-//    	    	String rtn = builder.toString();
-//    	    	// Just in case an empty string is returned
-//    	    	if (rtn.length() == 0)
-//    	    	    return rtn;
-//    	    	return rtn.substring(0, rtn.length() - 1);
-//    	}
-//    	else
-//    	    throw new IllegalStateException(method.getResponseBodyAsString());
-//    
-//    }
-//	private HttpClient initializeHTTPClient(PostMethod post, String query) 
-//        throws UnsupportedEncodingException {
-//	    RequestEntity entity = new StringRequestEntity(query, "text/plain", "UTF-8");
-//	    post.setRequestEntity(entity);
-//	    post.setRequestHeader("Accept", "application/xml, text/plain");
-//	    HttpClient client = new HttpClient();
-//	    return client;
-//	}
+private String callHttp(String url,
+         String type,
+         String query) throws IOException 
+    {
+    	HttpMethod method = null;
+    	HttpClient client = null;
+    	if (type.equals(HTTP_POST)) 
+    	{
+    	    method = new PostMethod(url);
+    	    client = initializeHTTPClient((PostMethod)method, query);
+    	}
+    	else {
+    	    method = new GetMethod(url); // Default
+    	    method.setRequestHeader("Accept", "text/plain");
+    	    client = new HttpClient();
+    	}
+    	int responseCode = client.executeMethod(method);
+    	if (responseCode == HttpStatus.SC_OK) {
+    	    InputStream is = method.getResponseBodyAsStream();
+    	    InputStreamReader isr = new InputStreamReader(is);
+    	    BufferedReader reader = new BufferedReader(isr);
+    	    StringBuilder builder = new StringBuilder();
+    	    String line = null;
+    	    while ((line = reader.readLine()) != null)
+    		builder.append(line).append("\n");
+    	    	reader.close();
+    	    	isr.close();
+    	    	is.close();
+    	    	// Remove the last new line
+    	    	String rtn = builder.toString();
+    	    	// Just in case an empty string is returned
+    	    	if (rtn.length() == 0)
+    	    	    return rtn;
+    	    	return rtn.substring(0, rtn.length() - 1);
+    	}
+    	else
+    	    throw new IllegalStateException(method.getResponseBodyAsString());
+    
+    }
+	private HttpClient initializeHTTPClient(PostMethod post, String query) 
+        throws UnsupportedEncodingException {
+	    RequestEntity entity = new StringRequestEntity(query, "text/plain", "UTF-8");
+	    post.setRequestEntity(entity);
+	    post.setRequestHeader("Accept", "application/xml, text/plain");
+	    HttpClient client = new HttpClient();
+	    return client;
+	}
 //	public List<ModuleGeneSetAnnotation> annotateGeneSet(Set<String> genes,
 //                String type) throws Exception 
 //        {
@@ -506,16 +505,16 @@ public class RESTFulFIService //implements FINetworkService
 //	        }
 //	        return rtn;
 //	    }
-//	private Method getMethod(Class<?> cls, String methodName)
-//	{
-//	    for (Method method : cls.getMethods())
-//	    {
-//	        if (method.getName().equals(methodName))
-//	        {
-//	            return method;
-//	        }
-//	    }
-//	    return null;
-//	}
+	private Method getMethod(Class<?> cls, String methodName)
+	{
+	    for (Method method : cls.getMethods())
+	    {
+	        if (method.getName().equals(methodName))
+	        {
+	            return method;
+	        }
+	    }
+	    return null;
+	}
 //	
 }

@@ -80,7 +80,7 @@
 						<Private-Package>${bundle.namespace}.internal.*</Private-Package>
 						<Bundle-Activator>${bundle.namespace}.internal.CyActivator</Bundle-Activator>
 						<Embed-Dependency>
-							type=!pom;inline=false;
+							*;groupId=!org.osgi|org.cytoscape;
 						</Embed-Dependency>
 						</instructions>
 				</configuration>
@@ -150,6 +150,11 @@
 	<artifactId>slf4j-api</artifactId>
 	<version>1.7.5</version>
 </dependency>
+<dependency>
+	<groupId>org.slf4j</groupId>
+	<artifactId>slf4j-jdk14</artifactId>
+	<version>1.7.5</version>
+</dependency>
             
 		<dependency>
 			<groupId>org.cytoscape</groupId>
@@ -205,31 +210,22 @@
 				<artifactId>property-api</artifactId>
 				<version>RELEASE</version> 
 		</dependency>
-		<dependency>
-				<groupId>org.cytoscape</groupId>
-				<artifactId>service-api</artifactId>
-				<version>RELEASE</version> 
-		</dependency>
-		<dependency>
-				<groupId>org.cytoscape</groupId>
-				<artifactId>session-api</artifactId>
-				<version>RELEASE</version> 
-			</dependency>
+
 				
 		<dependency>
 			<groupId>org.reactome</groupId>
-			<artifactId>caSmallR3</artifactId>
-			<version>1.0</version>
+			<artifactId>caBIGR3-minimal</artifactId>
+			<version>1.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reactome</groupId>
 			<artifactId>reactome-minimal</artifactId>
-			<version>1.0</version>
+			<version>1.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reactome</groupId>
-			<artifactId>FINetworkBuild</artifactId>
-			<version>1.0</version>
+			<artifactId>FINetworkBuild-minimal</artifactId>
+			<version>1.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -242,14 +238,24 @@
 <!-- 	<artifactId>maven-jnlp-plugin</artifactId> -->
 <!-- 	<version>1.4.1</version> -->
 <!-- </dependency> -->
+<dependency> <groupId>org.hamcrest</groupId> <artifactId>com.springsource.org.hamcrest.core</artifactId> <version>1.1.0</version> </dependency>
 
 	<dependency>
 	<groupId>org.apache.commons</groupId>
 	<artifactId>commons-math</artifactId>
 	<version>2.2</version>
 </dependency>
-            
-            
+
+
+
+
+
+
+<!-- These are all relevant to JDOM,
+	 and I hope they work or so help me
+	 I will write all of the developers nasty letters. 
+	 
+	 I'm writing the letters.-->
 
             
 

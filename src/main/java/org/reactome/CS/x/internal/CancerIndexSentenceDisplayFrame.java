@@ -46,9 +46,7 @@ import javax.swing.event.HyperlinkListener;
 
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
-import org.reactome.CS.cancerindex.model.DiseaseData;
-import org.reactome.CS.cancerindex.model.Roles;
-import org.reactome.CS.cancerindex.model.Sentence;
+
 
 /**
  * This customized JPanel is used to display a list of Sentence objects.
