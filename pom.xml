@@ -256,7 +256,16 @@
 	 I will write all of the developers nasty letters. 
 	 
 	 I'm writing the letters.-->
-
+<dependency>
+	<groupId>org.apache.servicemix.bundles</groupId>
+	<artifactId>org.apache.servicemix.bundles.jdom</artifactId>
+	<version>1.1_3</version>
+</dependency>
+            
+            
+            
+            
+            
             
 
    </dependencies>

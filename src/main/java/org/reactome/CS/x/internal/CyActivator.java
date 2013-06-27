@@ -41,17 +41,14 @@ public class CyActivator extends AbstractCyActivator {
 
 		GSMAAction gsma = new GSMAAction(taskManager, networkManager,
 			saveSessionAsTaskFactory, fileUtil, desktopApp, sessionManager);
-		UserGuideTaskFactory userGuide = new UserGuideTaskFactory(desktopApp, browser);
-		Properties userGuideProps = new Properties();
-		userGuideProps.setProperty("title", "User Guide");
-		userGuideProps.setProperty("menuGravity", "3.0");
-		userGuideProps.setProperty("preferredMenu", "Apps.ReactomeFI");
+		UserGuideAction uga = new UserGuideAction(desktopApp, browser);
 		
 		//CyTableFormatterListener cyTableFormatter = new CyTableFormatterListener();
-		
+
+
 
 		registerAllServices(context, gsma, new Properties());
-		registerAllServices(context, userGuide, userGuideProps);
+		registerAllServices(context, uga, new Properties());
 		//registerService(context, cyTableFormatter, NetworkAddedListener.class, new Properties());
 	}
 
