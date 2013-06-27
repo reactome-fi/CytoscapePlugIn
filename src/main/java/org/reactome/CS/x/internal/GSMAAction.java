@@ -20,6 +20,7 @@ import org.cytoscape.work.TaskManager;
 
 
 
+
 public class GSMAAction extends FICytoscapeAction
 {
 
@@ -53,13 +54,20 @@ public class GSMAAction extends FICytoscapeAction
 	if (createNewSession(netManager, sessionManager)){
 	    System.out.println("Session save/no previous session");
 	}
-	GUIBuilder gui = new GUIBuilder("GSMA", fileUtil);
+	GUIBuilder gui = new GUIBuilder("GSMA", desktopApp, fileUtil);
 	gui.setLocationRelativeTo(desktopApp.getJFrame());
 	gui.setModal(true);
 	gui.setVisible(true);
 	if (!gui.isOkClicked())
 	    return;
 	final File file = gui.getSelectedFile();
+	if (file == null || !file.exists()) {
+            JOptionPane.showMessageDialog(desktopApp.getJFrame(), 
+                                          "No file is chosen or the selected file doesn't exit!", 
+                                          "Error in File", 
+                                          JOptionPane.ERROR_MESSAGE);
+            return;
+	}
     }
     
    

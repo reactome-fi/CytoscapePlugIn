@@ -41,7 +41,8 @@ public class FIVersionSelectionPanel extends JPanel {
         constraints.insets = new Insets(4, 4, 4, 4);
         add(choicePane, BorderLayout.CENTER);
         
-        String versions = PlugInScopeObjectManager.getManager().getProperties().getProperty("FINetworkVersions");
+        //String versions = PlugInScopeObjectManager.getManager().getProperties().getProperty("FINetworkVersions");
+        String versions = "2009 (Default),2012 (Latest)";
         String[] tokens = versions.split(",");
         // Create JRadioButtons based on tokens
         ButtonGroup group = new ButtonGroup();
@@ -91,7 +92,7 @@ public class FIVersionSelectionPanel extends JPanel {
      * @return
      */
     public String getTitle() {
-        return "Selecting FI Network Version";
+        return "Reactome FI Network Version";
     }
     
 }

@@ -75,7 +75,8 @@
 					<instructions>
 						<Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName>
 						<Bundle-Version>${project.version}</Bundle-Version>
-						<Import-Package>*</Import-Package>
+						<DynamicImport-Package>*</DynamicImport-Package>
+ 						<Import-Package>!*</Import-Package>
 						<Export-Package>${bundle.namespace}</Export-Package>
 						<Private-Package>${bundle.namespace}.internal.*</Private-Package>
 						<Bundle-Activator>${bundle.namespace}.internal.CyActivator</Bundle-Activator>
@@ -257,17 +258,12 @@
 	 
 	 I'm writing the letters.-->
 <dependency>
-	<groupId>org.apache.servicemix.bundles</groupId>
-	<artifactId>org.apache.servicemix.bundles.jdom</artifactId>
-	<version>1.1_3</version>
-</dependency>
-            
-            
-            
-            
-            
-            
-
-   </dependencies>
-
+			<groupId>org.jdom</groupId>
+			<artifactId>com.springsource.org.jdom</artifactId>
+			<version>1.0.0</version>
+			<scope>provided</scope>
+		</dependency>
+		
+		
+          </dependencies>     
 </project>

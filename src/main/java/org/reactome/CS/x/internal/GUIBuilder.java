@@ -27,7 +27,10 @@ import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
+import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.io.BasicCyFileFilter;
 import org.cytoscape.io.DataCategory;
 import org.cytoscape.util.swing.FileChooserFilter;
@@ -56,11 +59,14 @@ public class GUIBuilder extends JDialog
 
     private FileUtil fileUtil;
 
+    private CySwingApplication desktopApp;
+
 
 
     
-    public GUIBuilder(String context, FileUtil fileUtil)
+    public GUIBuilder(String context,CySwingApplication desktopApp, FileUtil fileUtil)
     {
+	this.desktopApp = desktopApp;
 	this.fileUtil = fileUtil;
 
 	if (context.equals("GSMA") || context.equals("UGA") || context.equals("MAA"))
@@ -72,30 +78,60 @@ public class GUIBuilder extends JDialog
         String text = fileTF.getText().trim();
         return new File(text);
     }
-    protected void getFile(String format, Component filePanel){
+    protected File getFile(){
 	Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
-	if (format.equals("MAF"))
-	{
-	    String [] mafExts = new String [3];
-	    mafExts[0] = "txt"; mafExts[1] = "protected.maf"; mafExts[2] = "maf";
-	    FileChooserFilter mafFilter = new FileChooserFilter("NCI MAF Files", mafExts);
-	    filters.add(mafFilter);
-	}
-	else if (format.equals("GeneSet"))
-	{
-	    String [] gsExts = new String [3];
-	    gsExts[0] = "txt"; gsExts[1] = "protected.maf"; gsExts[2] = "maf";
-	    FileChooserFilter mafFilter = new FileChooserFilter("Gene Set Files", gsExts);
-	    filters.add(mafFilter);
-	}
-	else
-	{
-	    String [] mafExts = new String [3];
-	    mafExts[0] = "txt"; mafExts[1] = "protected.maf"; mafExts[2] = "maf";
-	    FileChooserFilter mafFilter = new FileChooserFilter("NCI MAF Files", mafExts);
-	    filters.add(mafFilter);
-	}
-	File dataFile = fileUtil.getFile(filePanel, "Please select your file for analysis", FileUtil.LOAD, filters);
+
+	String [] mafExts = new String [2];
+	mafExts[0] = "txt"; mafExts[1] = "maf";
+	FileChooserFilter mafFilter = new FileChooserFilter("NCI MAF Files", mafExts);
+	filters.add(mafFilter);
+	
+	File dataFile = fileUtil.getFile(desktopApp.getJFrame(), "Please select your file for analysis", FileUtil.LOAD, filters);
+	return dataFile;
+    }
+    protected void createFileChooserGui(final JLabel fileChooseLabel,
+	    				final JTextField tf,
+	    				final JButton okBtn,
+	    				final JButton browseButton,
+	    				JPanel loadPanel,
+	    				GridBagConstraints constraints)
+    {
+	
+	loadPanel.add(fileChooseLabel, constraints);
+        fileTF.getDocument().addDocumentListener(new DocumentListener() {
+            
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                if (tf.getText().trim().length() > 0)
+                    okBtn.setEnabled(true);
+                else
+                    okBtn.setEnabled(false);
+            }
+            
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                if (fileTF.getText().trim().length() > 0)
+                    okBtn.setEnabled(true);
+                else
+                    okBtn.setEnabled(false);
+            }
+            
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+            }
+        });
+        tf.setColumns(20);
+        constraints.gridx=1;
+        constraints.weightx=0.80;
+        loadPanel.add(tf, constraints);
+        browseButton.addActionListener(new ActionListener() {
+        	@Override
+        	public void actionPerformed(ActionEvent e){
+        	    getFile();
+        	}
+            });
+            
+            loadPanel.add(browseButton);
     }
     public void init(String context)
     {
@@ -104,11 +140,11 @@ public class GUIBuilder extends JDialog
 	setSize(540, 535);
 	
 	//Pane for FI Network version selection.
-//    	FIVersionSelectionPanel versionPane = new FIVersionSelectionPanel();
-//            Border etchedBorder2 = BorderFactory.createEtchedBorder();
-//            Border titleBorder = BorderFactory.createTitledBorder(etchedBorder2,
-//                                                                  versionPane.getTitle());
-//            versionPane.setBorder(titleBorder);
+    	FIVersionSelectionPanel versionPane = new FIVersionSelectionPanel();
+            Border etchedBorder2 = BorderFactory.createEtchedBorder();
+            Border versionBorder = BorderFactory.createTitledBorder(etchedBorder2,
+                                                                  versionPane.getTitle());
+            versionPane.setBorder(versionBorder);
 
         if (context.equals("GSMA")){
             JPanel gsmaPanel = new JPanel();
@@ -116,10 +152,7 @@ public class GUIBuilder extends JDialog
     	gsmaPanel.setLayout(new BoxLayout(gsmaPanel, BoxLayout.Y_AXIS));
     	
     	
-    	
-//            gsmaPanel.add(versionPane);
-    	//Add the Cytoscape-rolled FileUtil file chooser
-    	
+            gsmaPanel.add(versionPane);
     	//Pane for file parameters
     	JPanel loadPanel = new JPanel();
             etchedBorder = BorderFactory.createEtchedBorder();
@@ -130,8 +163,15 @@ public class GUIBuilder extends JDialog
             constraints.insets = new Insets(0, 4, 0, 0);
             constraints.anchor = GridBagConstraints.WEST;
             constraints.fill = GridBagConstraints.HORIZONTAL;
-           // JLabel fileChooseLabel = new JLabel("Choose gene set/mutation file:");
-            //fileTF = new JTextField();
+            
+            DialogControlPane controlPane = new DialogControlPane();
+            JButton okBtn = controlPane.getOKBtn();
+            JLabel fileChooseLabel = new JLabel("Choose gene set/mutation file:");
+            fileTF = new JTextField();
+            
+            JButton browseButton = new JButton("Browse");
+            
+            createFileChooserGui(fileChooseLabel, fileTF, okBtn, browseButton, loadPanel, constraints);
             
             JLabel fileFormatLabel = new JLabel("Specify file format:");
             geneSetBtn = new JRadioButton("Gene set");
@@ -249,8 +289,7 @@ public class GUIBuilder extends JDialog
             gsmaPanel.add(constructPanel);
             getContentPane().add(gsmaPanel, BorderLayout.CENTER);
 
-            DialogControlPane controlPane = new DialogControlPane();
-            JButton okBtn = controlPane.getOKBtn();
+            
             okBtn.addActionListener(new ActionListener() {
                 
                 @Override
