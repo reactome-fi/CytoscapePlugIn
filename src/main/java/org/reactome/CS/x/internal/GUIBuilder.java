@@ -25,6 +25,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
@@ -78,7 +79,7 @@ public class GUIBuilder extends JDialog
         String text = fileTF.getText().trim();
         return new File(text);
     }
-    protected File getFile(){
+    private void getFile(JTextField tf){
 	Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
 
 	String [] mafExts = new String [2];
@@ -87,7 +88,10 @@ public class GUIBuilder extends JDialog
 	filters.add(mafFilter);
 	
 	File dataFile = fileUtil.getFile(desktopApp.getJFrame(), "Please select your file for analysis", FileUtil.LOAD, filters);
-	return dataFile;
+	if (dataFile == null)
+	    return;
+	tf.setText(dataFile.getAbsolutePath());
+
     }
     protected void createFileChooserGui(final JLabel fileChooseLabel,
 	    				final JTextField tf,
@@ -127,36 +131,44 @@ public class GUIBuilder extends JDialog
         browseButton.addActionListener(new ActionListener() {
         	@Override
         	public void actionPerformed(ActionEvent e){
-        	    getFile();
+        	    getFile(tf);
         	}
             });
             
             loadPanel.add(browseButton);
+         // Disable okBtn as default
+            okBtn.setEnabled(false);
     }
     public void init(String context)
     {
 	setTitle("Reactome FI");
 	JTabbedPane mainPane = new JTabbedPane();
-	setSize(540, 535);
+	setSize(475, 535);
+	Font fonta = new Font("Verdana", Font.BOLD, 13);
 	
 	//Pane for FI Network version selection.
     	FIVersionSelectionPanel versionPane = new FIVersionSelectionPanel();
-            Border etchedBorder2 = BorderFactory.createEtchedBorder();
-            Border versionBorder = BorderFactory.createTitledBorder(etchedBorder2,
-                                                                  versionPane.getTitle());
+            Border etchedBorder = BorderFactory.createEtchedBorder();
+            Border versionBorder = BorderFactory.createTitledBorder(etchedBorder,
+                                                                  versionPane.getTitle(),
+                                                                  TitledBorder.LEFT, TitledBorder.CENTER,
+                                                                  fonta);
             versionPane.setBorder(versionBorder);
 
         if (context.equals("GSMA")){
             JPanel gsmaPanel = new JPanel();
-    	Border etchedBorder = BorderFactory.createEtchedBorder();
+    	//Border etchedBorder = BorderFactory.createEtchedBorder();
     	gsmaPanel.setLayout(new BoxLayout(gsmaPanel, BoxLayout.Y_AXIS));
     	
     	
             gsmaPanel.add(versionPane);
     	//Pane for file parameters
     	JPanel loadPanel = new JPanel();
-            etchedBorder = BorderFactory.createEtchedBorder();
-            Border titleBorder = BorderFactory.createTitledBorder(etchedBorder, "File Parameters");
+            //etchedBorder = BorderFactory.createEtchedBorder();
+            Border titleBorder = BorderFactory.createTitledBorder(etchedBorder,
+                    "File Parameters",
+                    TitledBorder.LEFT, TitledBorder.CENTER,
+                    fonta);
             loadPanel.setBorder(titleBorder);
             loadPanel.setLayout(new GridBagLayout());
             GridBagConstraints constraints = new GridBagConstraints();
@@ -166,7 +178,7 @@ public class GUIBuilder extends JDialog
             
             DialogControlPane controlPane = new DialogControlPane();
             JButton okBtn = controlPane.getOKBtn();
-            JLabel fileChooseLabel = new JLabel("Choose gene set/mutation file:");
+            JLabel fileChooseLabel = new JLabel("Choose data file:");
             fileTF = new JTextField();
             
             JButton browseButton = new JButton("Browse");
@@ -234,7 +246,7 @@ public class GUIBuilder extends JDialog
             loadPanel.add(sampleCutoffField, constraints);
             // Add a text annotation
             sampleCommentLabel = new JLabel();
-            sampleCommentLabel.setText("* Genes altered in 2 or more samples will be chosen if enter 2.");
+            sampleCommentLabel.setText("* Genes altered in 2 or more samples will be chosen if '2' is entered.");
             Font font = sampleCutoffLabel.getFont();
             Font commentFont = font.deriveFont(Font.ITALIC, font.getSize() - 1);
             sampleCommentLabel.setFont(commentFont);
@@ -254,7 +266,10 @@ public class GUIBuilder extends JDialog
             
             //FI Network Construction Parameter Panel
             JPanel constructPanel = new JPanel();
-            constructPanel.setBorder(BorderFactory.createTitledBorder(etchedBorder, "FI Network Construction Parameters"));
+            constructPanel.setBorder(BorderFactory.createTitledBorder(etchedBorder,
+                    "FI Network Construction Parameters",
+                    TitledBorder.LEFT, TitledBorder.CENTER,
+                    fonta));
             constructPanel.setLayout(new GridBagLayout());
             constraints.gridheight = 1;
             constraints.gridwidth = 1;
@@ -262,7 +277,7 @@ public class GUIBuilder extends JDialog
             constraints.gridy = 0;
             constraints.anchor = GridBagConstraints.CENTER;
             constraints.weightx = 0.0d;
-            fetchFIAnnotations = new JCheckBox("Fetch FI annotations (Slow step!)");
+            fetchFIAnnotations = new JCheckBox("Fetch FI annotations (WARNING: Slow!)");
             JLabel label = new JLabel("* Annotations may be fetched later.");
             label.setFont(font);
             constructPanel.add(fetchFIAnnotations, constraints);
@@ -314,9 +329,10 @@ public class GUIBuilder extends JDialog
             sampleCutoffField.setEnabled(false);
             chooseHomoBox.setEnabled(false);
             sampleCommentLabel.setEnabled(false);
-            mainPane.addTab("Gene Set / Mutant Analysis", gsmaPanel);
+            mainPane.addTab("Gene Set / Mutation Analysis", gsmaPanel);
             mainPane.setSelectedComponent(gsmaPanel);
         }
+        
         if (context.equals("UGA")){
             mainPane.setSize(500, 500);
           //Create a scrollable editor pane for the online user guide

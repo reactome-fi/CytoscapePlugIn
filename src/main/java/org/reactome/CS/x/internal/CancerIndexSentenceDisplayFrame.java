@@ -46,6 +46,9 @@ import javax.swing.event.HyperlinkListener;
 
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
+import org.reactome.CS.x.helper.DiseaseData;
+import org.reactome.CS.x.helper.Roles;
+import org.reactome.CS.x.helper.Sentence;
 
 
 /**

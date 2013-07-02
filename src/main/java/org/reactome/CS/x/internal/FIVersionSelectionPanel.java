@@ -58,7 +58,7 @@ public class FIVersionSelectionPanel extends JPanel {
         }
         
         // Add a note at the bottom
-        JLabel noteLabel = new JLabel("* You may get different results by using different version of the FI network.");
+        JLabel noteLabel = new JLabel("* Different versions of the FI network may produce different results.");
         Font font = noteLabel.getFont();
         noteLabel.setFont(font.deriveFont(Font.ITALIC));
         add(noteLabel, BorderLayout.SOUTH);

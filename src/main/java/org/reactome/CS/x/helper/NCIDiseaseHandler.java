@@ -2,7 +2,7 @@
  * Created on Jul 15, 2010
  *
  */
-package org.reactome.CS.x.internal;
+package org.reactome.CS.x.helper;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

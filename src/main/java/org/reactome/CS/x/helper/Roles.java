@@ -6,7 +6,7 @@
 //
 
 
-package org.reactome.CS.x.internal;
+package org.reactome.CS.x.helper;
 
 import java.util.ArrayList;
 import java.util.List;

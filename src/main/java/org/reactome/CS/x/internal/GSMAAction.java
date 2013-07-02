@@ -14,6 +14,7 @@ import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.work.TaskManager;
+import org.gk.util.ProgressPane;
 
 
 
@@ -61,13 +62,15 @@ public class GSMAAction extends FICytoscapeAction
 	if (!gui.isOkClicked())
 	    return;
 	final File file = gui.getSelectedFile();
-	if (file == null || !file.exists()) {
+	if (file == null || !file.exists())
+	{
             JOptionPane.showMessageDialog(desktopApp.getJFrame(), 
                                           "No file is chosen or the selected file doesn't exit!", 
                                           "Error in File", 
                                           JOptionPane.ERROR_MESSAGE);
             return;
 	}
+	
     }
     
    
