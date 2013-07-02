@@ -1,21 +1,12 @@
 package org.reactome.CS.x.internal;
 
-import java.util.ArrayList;
-
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNode;
-import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.events.AddedNodesEvent;
 import org.cytoscape.model.events.AddedNodesListener;
-import org.cytoscape.model.events.NetworkAddedEvent;
-import org.cytoscape.model.events.NetworkAddedListener;
-import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.events.NetworkViewAddedEvent;
-import org.cytoscape.view.model.events.NetworkViewAddedListener;
 
 
-public class CyTableFormatterListener  implements NetworkAddedListener, AddedNodesListener
+public class CyTableFormatterListener  implements AddedNodesListener // NetworkAddedListener
 {
 
     // Key for storing FI network version
@@ -36,14 +27,14 @@ public class CyTableFormatterListener  implements NetworkAddedListener, AddedNod
 
 	//From Jason's email. Make sure that the network SUID ends up in the properly linked table
 	//in the edge/node table to ensure that network properties are distributed to nodes and edges.
-//	if (nodeTable.getColumn("network") == null)
-//	{
-//	    nodeTable.createColumn("network", Long.class, true);
-//	    edgeTable.createColumn("network", Long.class, true);
-//	    nodeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
-//	    edgeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
-//	    
-//	}
+	if (nodeTable.getColumn("network") == null)
+	{
+	    nodeTable.createColumn("network", Long.class, true);
+	    edgeTable.createColumn("network", Long.class, true);
+	    nodeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
+	    edgeTable.addVirtualColumn("network.SUID", "SUID", netTable, "network.SUID", true);
+	    makeAllTablesGSMA(network);
+	}
 	//Creates a set of columns in the default network table and creates matching virtual columns
 	//within the default edge and node tables upon network creation or network view creation.
 	if (netTable.getColumn("isReactomeFINetwork") == null)
@@ -51,9 +42,10 @@ public class CyTableFormatterListener  implements NetworkAddedListener, AddedNod
 	    netTable.createColumn("isReactomeFINetwork", Boolean.class, Boolean.FALSE);
 	    nodeTable.createColumn("isReactomeFINetwork", Boolean.class, Boolean.FALSE);
 	    edgeTable.createColumn("isReactomeFINetwork", Boolean.class, Boolean.FALSE);
-	    //May need to iterate over rows to fill columns. fixt it.
+	    //May need to iterate over rows to fill columns. fix it.
 	    nodeTable.addVirtualColumn("isReactomeFINetwork", "isReactomeFINEtwork", netTable, "isReactomeFINetwork", Boolean.FALSE);
 	    edgeTable.addVirtualColumn("isReactomeFINetwork", "isReactomeFINEtwork", netTable, "isReactomeFINetwork", Boolean.FALSE);
+	    makeAllTablesGSMA(network);
 	}
 	if (netTable.getColumn(FI_NETWORK_VERSION) == null)
 	{
@@ -62,7 +54,7 @@ public class CyTableFormatterListener  implements NetworkAddedListener, AddedNod
 		edgeTable.createColumn(FI_NETWORK_VERSION, Boolean.class, Boolean.FALSE);
 		nodeTable.addVirtualColumn(FI_NETWORK_VERSION, FI_NETWORK_VERSION, netTable, FI_NETWORK_VERSION, Boolean.FALSE);
 		edgeTable.addVirtualColumn(FI_NETWORK_VERSION, FI_NETWORK_VERSION, netTable, FI_NETWORK_VERSION, Boolean.FALSE);
-		
+		makeAllTablesGSMA(network);
 	}
 	if (netTable.getColumn("DataSetType") == null)
 	{
@@ -71,6 +63,7 @@ public class CyTableFormatterListener  implements NetworkAddedListener, AddedNod
 		edgeTable.createColumn("DataSetType", String.class, Boolean.FALSE);
 		nodeTable.addVirtualColumn("DataSetType", "DataSetType", netTable, "DataSetType", Boolean.FALSE);
 		edgeTable.addVirtualColumn("DataSetType", "DataSetType", netTable, "DataSetType", Boolean.FALSE);
+		makeAllTablesGSMA(network);
 	}
 	//Check the following with Guanming. fix it.
 	if (netTable.getColumn("moduleToSampleValue") == null);
@@ -80,6 +73,7 @@ public class CyTableFormatterListener  implements NetworkAddedListener, AddedNod
 		edgeTable.createColumn("moduleToSampleValue", Double.class, Boolean.FALSE);
 		nodeTable.addVirtualColumn("moduleToSampleValue", "moduleToSampleValue", netTable, "moduleToSampleValue", Boolean.FALSE);
 		edgeTable.addVirtualColumn("moduleToSampleValue", "moduleToSampleValue", netTable, "moduleToSampleValue", Boolean.FALSE);
+		makeAllTablesGSMA(network);
 	}
 	if (netTable.getColumn("Clustering_Type") == null)
 	{
@@ -88,6 +82,7 @@ public class CyTableFormatterListener  implements NetworkAddedListener, AddedNod
 		edgeTable.createColumn("Clustering_Type", String.class, Boolean.FALSE);
 		nodeTable.addVirtualColumn("Clustering_Type", "Clustering_Type", netTable, "Clustering_Type", Boolean.FALSE);
 		edgeTable.addVirtualColumn("Clustering_Type", "Clustering_Type", netTable, "Clustering_Type", Boolean.FALSE);
+		makeAllTablesGSMA(network);
 	}
 	if (netTable.getColumn("IsLinker") == null)
 	{
@@ -96,25 +91,27 @@ public class CyTableFormatterListener  implements NetworkAddedListener, AddedNod
 		edgeTable.createColumn("IsLinker", Boolean.class, Boolean.FALSE);
 		nodeTable.addVirtualColumn("IsLinker", "IsLinker", netTable, "IsLinker", Boolean.FALSE);
 		edgeTable.addVirtualColumn("IsLinker", "IsLinker", netTable, "IsLinker", Boolean.FALSE);
+		makeAllTablesGSMA(network);
 	}
-
+	
 
 	
     }
     private void makeNodeTable(CyNetwork network)
     {
 	System.out.println("Row created");
+	makeAllTablesGSMA(network);
     }
-    public void handleEvent(NetworkAddedEvent e)
-    {
-	//Check is GSMA or Microarray and make table accordingly
-	//makeAllTablesGSMA(e.getNetwork());
-	
-    }
+//    public void handleEvent(NetworkAddedEvent e)
+//    {
+//	//Check is GSMA or Microarray and make table accordingly
+//	//makeAllTablesGSMA(e.getNetwork());
+//	
+//    }
     @Override
     public void handleEvent(AddedNodesEvent e)
     {
-	//makeNodeTable(e.getSource());
+	makeNodeTable(e.getSource());
     }
 
 

@@ -8,6 +8,7 @@ import java.util.Properties;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.events.AddedNodesListener;
 import org.cytoscape.model.events.NetworkAddedListener;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CySessionManager;
@@ -28,7 +29,7 @@ public class CyActivator extends AbstractCyActivator {
 	public void start(BundleContext context) throws Exception {
 	    
 	    	CySwingApplication desktopApp = getService(context, CySwingApplication.class);
-		CyApplicationManager cyApplicationManager = getService(context, CyApplicationManager.class);
+		//CyApplicationManager cyApplicationManager = getService(context, CyApplicationManager.class);
 		TaskManager taskManager = getService(context, TaskManager.class);
 		CyNetworkManager networkManager = getService(context, CyNetworkManager.class);
 		CySessionManager sessionManager = getService(context, CySessionManager.class);
@@ -43,13 +44,13 @@ public class CyActivator extends AbstractCyActivator {
 			saveSessionAsTaskFactory, fileUtil, desktopApp, sessionManager);
 		UserGuideAction uga = new UserGuideAction(desktopApp, browser);
 		
-		//CyTableFormatterListener cyTableFormatter = new CyTableFormatterListener();
+		CyTableFormatterListener cyTableFormatter = new CyTableFormatterListener();
 
 
 
 		registerAllServices(context, gsma, new Properties());
 		registerAllServices(context, uga, new Properties());
-		//registerService(context, cyTableFormatter, NetworkAddedListener.class, new Properties());
+		registerService(context, cyTableFormatter, AddedNodesListener.class, new Properties());
 	}
 
 }

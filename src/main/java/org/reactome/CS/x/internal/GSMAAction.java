@@ -70,7 +70,10 @@ public class GSMAAction extends FICytoscapeAction
                                           JOptionPane.ERROR_MESSAGE);
             return;
 	}
-	
+	else
+	{
+	    
+	}
     }
     
    
