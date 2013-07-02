@@ -1,8 +1,10 @@
 package org.reactome.CS.x.internal;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Scanner;
 
 import javax.swing.JOptionPane;
 import org.cytoscape.application.swing.AbstractCyAction;
@@ -92,6 +94,7 @@ public class GSMAAction extends FICytoscapeAction
 		gui.getUnlinkedGeneBox().isEnabled(), gui.showFIAnnotationsBeFetched(),
 		gui.getSampleCutoffValue(), networkFactory, viewFactory, viewManager);
 	tm.execute(gsmaFactory.createTaskIterator());
+	
     }
     
    
