@@ -7,13 +7,17 @@ import java.util.HashSet;
 import javax.swing.JOptionPane;
 import org.cytoscape.application.swing.AbstractCyAction;
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.session.CySession;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
+import org.cytoscape.view.model.CyNetworkViewFactory;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.TaskManager;
+import org.cytoscape.work.TaskMonitor;
 import org.gk.util.ProgressPane;
 
 
@@ -31,12 +35,20 @@ public class GSMAAction extends FICytoscapeAction
     private SaveSessionAsTaskFactory saveSession;
     private FileUtil fileUtil;
     private CySessionManager sessionManager;
+    private CyNetworkFactory networkFactory;
+    private CyNetworkViewFactory viewFactory;
+    private CyNetworkViewManager viewManager;
+   // private TaskMonitor taskMonitor;
     public GSMAAction(TaskManager tm, CyNetworkManager netManager,
 
 	    SaveSessionAsTaskFactory saveSession,
 	    FileUtil fileUtil,
 	    CySwingApplication desktopApp,
-	    CySessionManager sessionManager)
+	    CySessionManager sessionManager,
+	    CyNetworkFactory networkFactory,
+	    CyNetworkViewFactory viewFactory,
+	    CyNetworkViewManager viewManager/*,
+	    TaskMonitor taskMonitor*/)
     {
 	super(desktopApp, netManager, fileUtil, saveSession, tm, sessionManager, "Gene Set / Mutant Analysis");
 	this.desktopApp = desktopApp;
@@ -45,6 +57,10 @@ public class GSMAAction extends FICytoscapeAction
 	this.saveSession = saveSession;
 	this.fileUtil = fileUtil;
 	this.sessionManager = sessionManager;
+	this.networkFactory = networkFactory;
+	this.viewFactory = viewFactory;
+	this.viewManager = viewManager;
+	/*this.taskMonitor = taskMonitor;*/
 	setPreferredMenu("Apps.ReactomeFI");
 	
     }
@@ -65,15 +81,17 @@ public class GSMAAction extends FICytoscapeAction
 	if (file == null || !file.exists())
 	{
             JOptionPane.showMessageDialog(desktopApp.getJFrame(), 
-                                          "No file is chosen or the selected file doesn't exit!", 
+                                          "No file is chosen or the selected file doesn't exist!", 
                                           "Error in File", 
                                           JOptionPane.ERROR_MESSAGE);
             return;
 	}
-	else
-	{
-	    
-	}
+	GSMATaskFactory gsmaFactory = new GSMATaskFactory(desktopApp,
+		gui.getFileFormat(), file, gui.chooseHomoGenes(),
+		gui.useLinkers(), gui.getUnlinkedGeneBox().isSelected(),
+		gui.getUnlinkedGeneBox().isEnabled(), gui.showFIAnnotationsBeFetched(),
+		gui.getSampleCutoffValue(), networkFactory, viewFactory, viewManager);
+	tm.execute(gsmaFactory.createTaskIterator());
     }
     
    

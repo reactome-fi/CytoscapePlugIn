@@ -70,7 +70,7 @@ public class GUIBuilder extends JDialog
 	this.desktopApp = desktopApp;
 	this.fileUtil = fileUtil;
 
-	if (context.equals("GSMA") || context.equals("UGA") || context.equals("MAA"))
+	if (context.equals("GSMA") || context.equals("UGA") || context.equals("MAA") || context.equals("HNA"))
 		init(context);
 	else
 	    System.out.println("There is a bug. Please send word to the developers.");
@@ -351,13 +351,19 @@ public class GUIBuilder extends JDialog
 //    		}
 //            mainPane.setSelectedComponent(scroll));
         }
-        if (context.equals("MAA")){
+        if (context.equals("MAA"))
+        {
             JPanel maaPanel = new JPanel();
             mainPane.addTab("Microarray Analysis", maaPanel);
             mainPane.setSelectedComponent(maaPanel);
         }
 	getContentPane().add(mainPane, BorderLayout.CENTER);
-
+	if (context.equals("HNA"))
+	{
+	    JPanel hnaPanel = new JPanel();
+	    mainPane.addTab("HotNet Mutation Analysis", hnaPanel);
+	    mainPane.setSelectedComponent(hnaPanel);
+	}
     }
     public boolean isOkClicked() {
         return this.isOkClicked;
@@ -370,7 +376,7 @@ public class GUIBuilder extends JDialog
         return Integer.parseInt(text);
     }
     
-    public boolean shouldLinkerGenesUsed() {
+    public boolean useLinkers() {
         return this.useLinkerBox.isSelected();
     }
     

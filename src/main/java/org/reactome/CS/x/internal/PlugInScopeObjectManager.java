@@ -33,7 +33,7 @@ public class PlugInScopeObjectManager {
     // Properties setting for this Cytoscape
     private Properties properties;
     // Don't cache it in case FI network version has been changed
-//    private FINetworkService networkService;
+    private FINetworkService networkService;
     // Try to track CancerIndexSentenceDisplayFrame
     private CancerIndexSentenceDisplayFrame cgiFrame;
     // Currently selected FI network version
@@ -107,9 +107,10 @@ public class PlugInScopeObjectManager {
     
     public FINetworkService getNetworkService() throws Exception {
         Properties prop = getProperties();
-        String clsName = prop.getProperty("networkService",
-                                          "org.reactome.cytoscape.LocalService");
-        FINetworkService networkService = (FINetworkService) Class.forName(clsName).newInstance();
+//        String clsName = prop.getProperty("networkService",
+//                                          "org.reactome.CS.x.LocalService");
+//        FINetworkService networkService = (FINetworkService) Class.forName(clsName).newInstance();
+        FINetworkService networkService = (FINetworkService) new LocalService();
         return networkService;
     }
     

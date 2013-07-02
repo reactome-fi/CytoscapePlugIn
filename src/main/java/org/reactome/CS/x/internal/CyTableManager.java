@@ -1,5 +1,8 @@
 package org.reactome.CS.x.internal;
 
+import java.util.Map;
+
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
 
 public class CyTableManager
@@ -10,7 +13,14 @@ public class CyTableManager
 	// TODO Auto-generated constructor stub
     }
 
-    public void storeDataSetType(CyNetworkView view, String string)
+    public void storeDataSetType(CyNetwork network, String string)
+    {
+	// TODO Auto-generated method stub
+	
+    }
+
+    public void loadNodeAttributes(CyNetworkView view, String string,
+	    Map<String, Integer> geneToSampleNumber)
     {
 	// TODO Auto-generated method stub
 	

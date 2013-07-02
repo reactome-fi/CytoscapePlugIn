@@ -61,7 +61,6 @@ public class CyNetworkGenerator
     
     public CyNetwork constructFINetwork(Set<String> fis, String title)
     {
-	// TODO Auto-generated method stub
-	return null;
+	return constructFINetwork(null, fis, title);
     }
 }
