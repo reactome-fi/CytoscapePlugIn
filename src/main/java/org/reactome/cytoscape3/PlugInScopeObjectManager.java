@@ -3,7 +3,7 @@
  * Created on May 8, 2009
  *
  */
-package org.reactome.CS3.internal;
+package org.reactome.cytoscape3;
 
 import java.awt.event.WindowAdapter;
 
@@ -108,7 +108,7 @@ public class PlugInScopeObjectManager {
     public FINetworkService getNetworkService() throws Exception {
         Properties prop = getProperties();
         String clsName = prop.getProperty("networkService",
-                                          "org.reactome.CS3.internal.LocalService");
+                                          "org.reactome.cytoscape3.LocalService");
         FINetworkService networkService = (FINetworkService) Class.forName(clsName).newInstance();
 //        FINetworkService networkService = (FINetworkService) new LocalService();
         return networkService;

@@ -1,4 +1,4 @@
-package org.reactome.CS3.internal;
+package org.reactome.cytoscape3;
 
 import java.util.HashMap;
 import java.util.Map;

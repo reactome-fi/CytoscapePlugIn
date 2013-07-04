@@ -5,8 +5,8 @@
 
 
 	<properties>
-						<bundle.symbolicName>org.reactome.CS.x</bundle.symbolicName>
-		<bundle.namespace>org.reactome.CS.x</bundle.namespace>
+						<bundle.symbolicName>org.reactome</bundle.symbolicName>
+		<bundle.namespace>org.reactome</bundle.namespace>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -78,8 +78,8 @@
 						<DynamicImport-Package>*</DynamicImport-Package>
  						<Import-Package>!*</Import-Package>
 						<Export-Package>${bundle.namespace}</Export-Package>
-						<Private-Package>${bundle.namespace}.internal.*</Private-Package>
-						<Bundle-Activator>${bundle.namespace}.internal.CyActivator</Bundle-Activator>
+						<Private-Package>${bundle.namespace}.cytoscape3.*</Private-Package>
+						<Bundle-Activator>${bundle.namespace}.cytoscape3.CyActivator</Bundle-Activator>
 						<Embed-Dependency>
 							*;groupId=!org.osgi|org.cytoscape;
 						</Embed-Dependency>
@@ -204,7 +204,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.11</version>
+			<version>4.0</version>
 		</dependency>
 		<dependency>
 				<groupId>org.cytoscape</groupId>
@@ -252,11 +252,9 @@
 
 
 
-<!-- These are all relevant to JDOM,
-	 and I hope they work or so help me
-	 I will write all of the developers nasty letters. 
-	 
-	 I'm writing the letters.-->
+<!-- These are all relevant to JDOM.
+     Currently all JDOM dependencies are
+     resolved by DynamicImport.-->
 <dependency>
 			<groupId>org.jdom</groupId>
 			<artifactId>com.springsource.org.jdom</artifactId>

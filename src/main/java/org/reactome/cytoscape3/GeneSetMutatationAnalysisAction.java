@@ -1,4 +1,4 @@
-package org.reactome.CS3.internal;
+package org.reactome.cytoscape3;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;

@@ -2,7 +2,7 @@
  * Created on Sep 23, 2010
  *
  */
-package org.reactome.CS3.internal;
+package org.reactome.cytoscape3;
 
 import java.awt.BorderLayout;
 import java.awt.Desktop;
@@ -46,9 +46,9 @@ import javax.swing.event.HyperlinkListener;
 
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
-import org.reactome.CS3.cancerindex.model.DiseaseData;
-import org.reactome.CS3.cancerindex.model.Roles;
-import org.reactome.CS3.cancerindex.model.Sentence;
+import org.reactome.cancerindex.model.DiseaseData;
+import org.reactome.cancerindex.model.Roles;
+import org.reactome.cancerindex.model.Sentence;
 
 
 /**
