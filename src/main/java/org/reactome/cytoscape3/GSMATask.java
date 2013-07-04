@@ -86,6 +86,7 @@ public class GSMATask extends AbstractTask
             Set<String> selectedGenes = null;
 
             if (format.equals("MAF")){
+                
         	sampleToGenes = new MATFileLoader().loadSampleToGenes(file.getAbsolutePath(), 
                                                                               chooseHomoGenes);
         	selectedGenes = CancerAnalysisUtilitites.selectGenesInSamples(sampleCutoffValue, 
@@ -122,8 +123,7 @@ public class GSMATask extends AbstractTask
                 }
         	System.out.println("Done.");
             }
-            //Guanming has some error fixes right here.
-             // I'm not so sure they're necessary but if so they'll be implemented
+
              CytoPanel controlPane = desktopApp.getCytoPanel(CytoPanelName.WEST);
              int selectedIndex = controlPane.getSelectedIndex();
              
@@ -252,6 +252,7 @@ private CyNetwork constructFINetwork(Set<String> selectedGenes, String title) th
     System.out.println("fails hereish");
     if (fis != null && fis.size() > 0)
     {
+        
         CyNetworkGenerator generator = new CyNetworkGenerator(networkFactory);
         // Check if any unlinked nodes should be added
         if (showUnlinkedEnabled && showUnlinked)
@@ -259,7 +260,7 @@ private CyNetwork constructFINetwork(Set<String> selectedGenes, String title) th
         else
             network = generator.constructFINetwork(fis, title);
       }
-    //CyNetworkView view = viewFactory.createNetworkView(network);
+    CyNetworkView view = viewFactory.createNetworkView(network);
     System.out.println("Done.");
     CyTableManager manager = new CyTableManager();
     manager.storeDataSetType(network, "Data Set");

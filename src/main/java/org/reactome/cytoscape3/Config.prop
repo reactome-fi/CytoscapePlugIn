@@ -5,7 +5,7 @@ restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2012/FIService/
 #restfulURL=http://brie8.cshl.edu:8080/caBigR3WebApp/FIService/
 #restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 # Control if a local service should be used
-networkService=org.reactome.cytoscape.LocalService
+networkService=org.reactome.cytoscape3.LocalService
 dataSourceURL=http://reactomedev.oicr.on.ca/cgi-bin/eventbrowser?DB=${DB_NAME}&FORMAT=sectioned&ID=
 #dataSourceURL=http://brie8.cshl.edu/cgi-bin/eventbrowser?DB=test_reactome_28_plus_i&FORMAT=sectioned&ID=
 moduleColors=0,0,153;51,153,0;153,0,153;102,102,0;0,102,102;204,153,0;204,0,102;204,204,255,0,102,51;0,204,204;102,0,51;0,51,51;0,102,153;255,102,255;255,255,102

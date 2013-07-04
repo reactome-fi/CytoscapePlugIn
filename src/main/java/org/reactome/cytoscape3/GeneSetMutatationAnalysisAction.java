@@ -23,7 +23,14 @@ import org.cytoscape.work.TaskMonitor;
 import org.gk.util.ProgressPane;
 
 
-
+/**
+ * This class manages analysis of Gene Set,
+ * NCI MAF and Gene Sample / Number Pair data.
+ * GUI creation is encapsulated in ActionDialog
+ * while network creation is abstracted into a task.
+ * @author Eric T. Dawson
+ *
+ */
 
 
 
@@ -49,8 +56,7 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
 	    CySessionManager sessionManager,
 	    CyNetworkFactory networkFactory,
 	    CyNetworkViewFactory viewFactory,
-	    CyNetworkViewManager viewManager/*,
-	    TaskMonitor taskMonitor*/)
+	    CyNetworkViewManager viewManager)
     {
 	super(desktopApp, netManager, fileUtil, saveSession, tm, sessionManager, "Gene Set / Mutant Analysis");
 	this.desktopApp = desktopApp;
@@ -62,7 +68,6 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
 	this.networkFactory = networkFactory;
 	this.viewFactory = viewFactory;
 	this.viewManager = viewManager;
-	/*this.taskMonitor = taskMonitor;*/
 	setPreferredMenu("Apps.ReactomeFI");
 	
     }
@@ -73,6 +78,8 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
 	if (createNewSession(netManager, sessionManager)){
 	    System.out.println("Session save/no previous session");
 	}
+	// Create the GUI. The first argument is the GUI context (the type
+	// of analysis being performed.
 	ActionDialogs gui = new ActionDialogs("GSMA", desktopApp, fileUtil);
 	gui.setLocationRelativeTo(desktopApp.getJFrame());
 	gui.setModal(true);
@@ -88,6 +95,8 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
                                           JOptionPane.ERROR_MESSAGE);
             return;
 	}
+	// Create and display a network based on the user's input and the
+	// data in the FI database.
 	GSMATaskFactory gsmaFactory = new GSMATaskFactory(desktopApp,
 		gui.getFileFormat(), file, gui.chooseHomoGenes(),
 		gui.useLinkers(), gui.getUnlinkedGeneBox().isSelected(),
@@ -102,6 +111,10 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
     
     protected boolean createNewSession(CyNetworkManager networkManager, CySessionManager sessionManager)
     {
+        /* Checks if a session currently exists and if so whether the
+         * user would like to save that session. A new session is then
+         * created.
+         */
 	int networkCount = networkManager.getNetworkSet().size();
 		if (networkCount == 0)
 		    return true;

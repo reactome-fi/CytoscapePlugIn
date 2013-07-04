@@ -38,7 +38,11 @@ import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.gk.util.DialogControlPane;
 
-
+/**This class sets up the GUIs for the various actions.
+ * 
+ * @author Eric T. Dawson
+ *
+ */
 public class ActionDialogs extends JDialog
 {
     //
@@ -183,7 +187,7 @@ public class ActionDialogs extends JDialog
             
             createFileChooserGui(fileChooseLabel, fileTF, okBtn, browseButton, loadPanel, constraints);
             
-            JLabel fileFormatLabel = new JLabel("Specify file format:");
+            JLabel fileFormatLabel = new JLabel("Specify file format: ");
             geneSetBtn = new JRadioButton("Gene set");
             geneSetBtn.setSelected(true);
             geneSampleBtn = new JRadioButton("Gene/sample number pair");
