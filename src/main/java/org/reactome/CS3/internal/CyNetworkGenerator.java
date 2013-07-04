@@ -1,4 +1,4 @@
-package org.reactome.CS.x.internal;
+package org.reactome.CS3.internal;
 
 import java.util.HashMap;
 import java.util.Map;

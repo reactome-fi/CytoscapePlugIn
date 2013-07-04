@@ -2,7 +2,7 @@
  * Created on Jul 12, 2012
  *
  */
-package org.reactome.CS.x.internal;
+package org.reactome.CS3.internal;
 
 import java.awt.BorderLayout;
 import java.awt.Font;

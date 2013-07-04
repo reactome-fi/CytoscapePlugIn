@@ -1,4 +1,4 @@
-package org.reactome.CS.x.internal;
+package org.reactome.CS3.internal;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,7 +28,7 @@ import org.gk.util.ProgressPane;
 
 
 
-public class GSMAAction extends FICytoscapeAction
+public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
 {
 
     private CySwingApplication desktopApp;
@@ -41,7 +41,7 @@ public class GSMAAction extends FICytoscapeAction
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
    // private TaskMonitor taskMonitor;
-    public GSMAAction(TaskManager tm, CyNetworkManager netManager,
+    public GeneSetMutatationAnalysisAction(TaskManager tm, CyNetworkManager netManager,
 
 	    SaveSessionAsTaskFactory saveSession,
 	    FileUtil fileUtil,
@@ -73,7 +73,7 @@ public class GSMAAction extends FICytoscapeAction
 	if (createNewSession(netManager, sessionManager)){
 	    System.out.println("Session save/no previous session");
 	}
-	GUIBuilder gui = new GUIBuilder("GSMA", desktopApp, fileUtil);
+	ActionDialogs gui = new ActionDialogs("GSMA", desktopApp, fileUtil);
 	gui.setLocationRelativeTo(desktopApp.getJFrame());
 	gui.setModal(true);
 	gui.setVisible(true);

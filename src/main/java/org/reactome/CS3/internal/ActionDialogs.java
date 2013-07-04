@@ -1,4 +1,4 @@
-package org.reactome.CS.x.internal;
+package org.reactome.CS3.internal;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -39,7 +39,7 @@ import org.cytoscape.util.swing.FileUtil;
 import org.gk.util.DialogControlPane;
 
 
-public class GUIBuilder extends JDialog
+public class ActionDialogs extends JDialog
 {
     //
     private boolean isOkClicked;
@@ -65,15 +65,13 @@ public class GUIBuilder extends JDialog
 
 
     
-    public GUIBuilder(String context,CySwingApplication desktopApp, FileUtil fileUtil)
+    public ActionDialogs(String context,CySwingApplication desktopApp, FileUtil fileUtil)
     {
 	this.desktopApp = desktopApp;
 	this.fileUtil = fileUtil;
 
 	if (context.equals("GSMA") || context.equals("UGA") || context.equals("MAA") || context.equals("HNA"))
 		init(context);
-	else
-	    System.out.println("There is a bug. Please send word to the developers.");
     }
     public File getSelectedFile() {
         String text = fileTF.getText().trim();

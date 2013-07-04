@@ -1,4 +1,4 @@
-package org.reactome.CS.x.internal;
+package org.reactome.CS3.internal;
 
 import java.util.Properties;
 
@@ -46,7 +46,7 @@ public class CyActivator extends AbstractCyActivator {
 		
 		OpenBrowser browser = getService(context, OpenBrowser.class);
 
-		GSMAAction gsma = new GSMAAction(taskManager, networkManager,
+		GeneSetMutatationAnalysisAction gsma = new GeneSetMutatationAnalysisAction(taskManager, networkManager,
 			saveSessionAsTaskFactory, fileUtil, desktopApp, sessionManager,
 			networkFactory, viewFactory, viewManager/*, taskMonitor*/);
 		UserGuideAction uga = new UserGuideAction(desktopApp, browser);

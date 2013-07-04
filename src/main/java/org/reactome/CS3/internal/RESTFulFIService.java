@@ -1,4 +1,4 @@
-package org.reactome.CS.x.internal;
+package org.reactome.CS3.internal;
 
 
 
@@ -39,7 +39,7 @@ import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.DOMOutputter;
-import org.reactome.CS.x.helper.Sentence;
+import org.reactome.CS3.cancerindex.model.Sentence;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.funcInt.FIAnnotation;

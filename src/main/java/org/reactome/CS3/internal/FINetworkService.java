@@ -2,7 +2,7 @@
  * Created on Jul 20, 2010
  *
  */
-package org.reactome.CS.x.internal;
+package org.reactome.CS3.internal;
 
 import java.io.IOException;
 import java.util.Set;
