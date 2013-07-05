@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyNetworkFactory;
@@ -28,10 +29,24 @@ public class CyNetworkGenerator
 	    index = fi.indexOf("\t");
 	    String name1 = fi.substring(0, index);
 	    String name2 = fi.substring(index + 1);
-	    
+	    CyNode node1 = getNode(name1, name2Node, network);
+	    CyNode node2 = getNode(name2, name2Node, network);
+	    CyEdge edge = createEdge(network, node1, node2, "FI");
 	}
 	
 	return network;
+    }
+    private CyEdge createEdge(CyNetwork network, CyNode node1, CyNode node2,
+                                String type)
+    {
+        //Add the edge to the network
+        CyEdge edge = network.addEdge(node1, node2, true);
+        //Add the edge attributes to the network CyTables
+        /**
+         * CyTableManager
+         * 
+         */
+        return edge;
     }
     private CyNode getNode(String name,
 	    		Map<String, CyNode>nameToNode,
