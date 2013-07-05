@@ -30,6 +30,7 @@ public class CyNetworkGenerator
 	    String name2 = fi.substring(index + 1);
 	    
 	}
+	
 	return network;
     }
     private CyNode getNode(String name,

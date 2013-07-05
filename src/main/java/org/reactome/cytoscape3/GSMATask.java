@@ -28,6 +28,7 @@ import org.reactome.r3.util.InteractionUtilities;
 
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 
 
@@ -50,6 +51,7 @@ public class GSMATask extends AbstractTask
     private CyNetworkFactory networkFactory;
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
+    private CyNetworkManager netManager;
     public GSMATask(CySwingApplication desktopApp,
 	    	String format, File file, boolean chooseHomoGenes,
 	    	boolean useLinkers, int sampleCutoffValue,
@@ -57,11 +59,13 @@ public class GSMATask extends AbstractTask
 	        boolean showUnlinkedEnabled,
 	        boolean fetchFIAnnotations,
 	    	CyNetworkFactory networkFactory,
+	    	CyNetworkManager netManager,
 	    	CyNetworkViewFactory viewFactory,
 	    	CyNetworkViewManager viewManager)
     {
 	this.desktopApp = desktopApp;
 	this.networkFactory = networkFactory;
+	this.netManager = netManager;
 	this.chooseHomoGenes = chooseHomoGenes;
 	this.useLinkers = useLinkers;
 	this.showUnlinked = showUnlinked;
@@ -260,7 +264,9 @@ private CyNetwork constructFINetwork(Set<String> selectedGenes, String title) th
         else
             network = generator.constructFINetwork(fis, title);
       }
+    netManager.addNetwork(network);
     CyNetworkView view = viewFactory.createNetworkView(network);
+    viewManager.addNetworkView(view);
     System.out.println("Done.");
     CyTableManager manager = new CyTableManager();
     manager.storeDataSetType(network, "Data Set");

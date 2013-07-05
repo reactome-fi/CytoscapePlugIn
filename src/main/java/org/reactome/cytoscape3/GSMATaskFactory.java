@@ -4,6 +4,7 @@ import java.io.File;
 
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.AbstractTaskFactory;
@@ -27,12 +28,15 @@ public class GSMATaskFactory extends AbstractTaskFactory
     private CyNetworkFactory networkFactory;
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
+    private CyNetworkManager netManager;
 
 
     public GSMATaskFactory(CySwingApplication desktopApp,
 	    String format, File file, boolean chooseHomoGenes, boolean useLinkers,
 	    boolean showUnlinked, boolean showUnlinkedEnabled, boolean fetchFIAnnotations,
-	    int sampleCutoffValue, CyNetworkFactory networkFactory, CyNetworkViewFactory viewFactory,
+	    int sampleCutoffValue, CyNetworkFactory networkFactory,
+	    CyNetworkManager netManager,
+	    CyNetworkViewFactory viewFactory,
 	    CyNetworkViewManager viewManager)
     {
 	this.desktopApp = desktopApp;
@@ -46,6 +50,7 @@ public class GSMATaskFactory extends AbstractTaskFactory
 	this.fetchFIAnnotations = fetchFIAnnotations;
 	this.sampleCutoffValue = sampleCutoffValue;
 	this.networkFactory = networkFactory;
+	this.netManager = netManager;
 	this.viewFactory = viewFactory;
 	this.viewManager = viewManager;
     }
@@ -61,6 +66,7 @@ public class GSMATaskFactory extends AbstractTaskFactory
 	        showUnlinkedEnabled,
 	        fetchFIAnnotations,
 	    	networkFactory,
+	    	netManager,
 	    	viewFactory,
 	    	viewManager));
     }}

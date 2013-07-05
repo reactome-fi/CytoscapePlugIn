@@ -101,7 +101,7 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
 		gui.getFileFormat(), file, gui.chooseHomoGenes(),
 		gui.useLinkers(), gui.getUnlinkedGeneBox().isSelected(),
 		gui.getUnlinkedGeneBox().isEnabled(), gui.showFIAnnotationsBeFetched(),
-		gui.getSampleCutoffValue(), networkFactory, viewFactory, viewManager);
+		gui.getSampleCutoffValue(), networkFactory, netManager, viewFactory, viewManager);
 	tm.execute(gsmaFactory.createTaskIterator());
 	
     }

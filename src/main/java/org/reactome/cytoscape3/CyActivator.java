@@ -48,7 +48,7 @@ public class CyActivator extends AbstractCyActivator {
 
 		GeneSetMutatationAnalysisAction gsma = new GeneSetMutatationAnalysisAction(taskManager, networkManager,
 			saveSessionAsTaskFactory, fileUtil, desktopApp, sessionManager,
-			networkFactory, viewFactory, viewManager/*, taskMonitor*/);
+			networkFactory, viewFactory, viewManager);
 		UserGuideAction uga = new UserGuideAction(desktopApp, browser);
 		
 		CyTableFormatterListener cyTableFormatter = new CyTableFormatterListener();
