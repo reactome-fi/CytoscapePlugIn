@@ -52,10 +52,11 @@ public class CyActivator extends AbstractCyActivator {
 		OpenBrowser browser = getService(context, OpenBrowser.class);
 
 		//Instantiate Reactome FI App services
-		GeneSetMutatationAnalysisAction gsma = new GeneSetMutatationAnalysisAction(taskManager, networkManager,
+		GeneSetMutationAnalysisAction gsma = new GeneSetMutationAnalysisAction(taskManager, networkManager,
 			saveSessionAsTaskFactory, fileUtil, desktopApp, sessionManager,
 			networkFactory, viewFactory, viewManager);
 		UserGuideAction uga = new UserGuideAction(desktopApp, browser);
+
 		
 
 
@@ -63,6 +64,7 @@ public class CyActivator extends AbstractCyActivator {
 		//Register said Reactome FI Services with the OSGi framework.
 		registerAllServices(context, gsma, new Properties());
 		registerAllServices(context, uga, new Properties());
+
 	}
 
 }

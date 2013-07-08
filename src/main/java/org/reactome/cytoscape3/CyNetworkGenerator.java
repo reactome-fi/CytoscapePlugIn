@@ -29,7 +29,8 @@ public class CyNetworkGenerator
     {
         //Construct an empty network.
         CyNetwork network = networkFactory.createNetwork();
-        
+        CyTableFormatter cyTableFormatter = new CyTableFormatter();
+        cyTableFormatter.makeAllTablesGSMA(network);
         //Generate a source, edge and target for each FI interaction
         //retrieved from the Reactome database.
         int index = 0;
@@ -68,6 +69,9 @@ public class CyNetworkGenerator
             return node;
         node = createNode(network,
                 name, "Gene", name);
+        CyTable nodeTable = network.getDefaultNodeTable();
+        Long nodeSUID = node.getSUID();
+        nodeTable.getRow(nodeSUID).set("name", name);
         nameToNode.put(name, node);
         return node;
     }
@@ -80,9 +84,9 @@ public class CyNetworkGenerator
 	//Add node labels, tooltips, common names, etc.
 	CyTable nodeTable = network.getDefaultNodeTable();
 	//nodeTable.getRow(nodeSUID).set("NodeType", type);
-	//nodeTable.getRow(node).set("NodeLabel", label);
-	//nodeTable.getRow(node).set("CommonName", label);
-	//nodeTable.getRow(node).set("NodeToolTip", tooltip);
+	nodeTable.getRow(nodeSUID).set("nodeLabel", label);
+	nodeTable.getRow(nodeSUID).set("commonName", label);
+	nodeTable.getRow(nodeSUID).set("nodeToolTip", tooltip);
 	return node;
 
     }

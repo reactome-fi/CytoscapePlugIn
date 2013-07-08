@@ -35,7 +35,7 @@ import org.gk.util.ProgressPane;
 
 
 
-public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
+public class GeneSetMutationAnalysisAction extends FICytoscapeAction
 {
 
     private CySwingApplication desktopApp;
@@ -48,7 +48,7 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
    // private TaskMonitor taskMonitor;
-    public GeneSetMutatationAnalysisAction(TaskManager tm, CyNetworkManager netManager,
+    public GeneSetMutationAnalysisAction(TaskManager tm, CyNetworkManager netManager,
 
 	    SaveSessionAsTaskFactory saveSession,
 	    FileUtil fileUtil,
@@ -76,8 +76,8 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
     public void actionPerformed(ActionEvent e)
     {
 	if (createNewSession(netManager, sessionManager)){
-	    System.out.println("Session save/no previous session");
 	}
+	
 	// Create the GUI. The first argument is the GUI context (the type
 	// of analysis being performed.
 	ActionDialogs gui = new ActionDialogs("GeneSetMutationAnalysis", desktopApp, fileUtil);
