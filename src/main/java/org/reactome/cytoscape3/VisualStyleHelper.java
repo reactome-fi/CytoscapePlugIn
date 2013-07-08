@@ -1,5 +1,7 @@
 package org.reactome.cytoscape3;
 
+import org.cytoscape.model.CyNetwork;
+
 /**
  * This class provides layout setup for a given
  * network view. Without it, all a user sees is what
@@ -17,4 +19,15 @@ public class VisualStyleHelper
         
     }
     
+    private void setVisualStyle(CyNetwork network)
+    {
+        //Set the node color
+        
+        //Give the node a label
+        
+        //Set the node size
+        
+        //Set the desired layout (yFiles Organic)
+        
+    }
 }
