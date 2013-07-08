@@ -1,5 +1,12 @@
 package org.reactome.cytoscape3;
-
+/**
+ * This class provides most of the functionality for
+ * interacting with the Reactome FI server and performing
+ * various FI network related functions (such as annotation).
+ * 
+ * @author Eric T Dawson
+ * @date July 2013
+ */
 
 
 import java.io.BufferedReader;

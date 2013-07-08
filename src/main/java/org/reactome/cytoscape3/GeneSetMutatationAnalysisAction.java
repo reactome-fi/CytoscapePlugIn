@@ -80,7 +80,7 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
 	}
 	// Create the GUI. The first argument is the GUI context (the type
 	// of analysis being performed.
-	ActionDialogs gui = new ActionDialogs("GSMA", desktopApp, fileUtil);
+	ActionDialogs gui = new ActionDialogs("GeneSetMutationAnalysis", desktopApp, fileUtil);
 	gui.setLocationRelativeTo(desktopApp.getJFrame());
 	gui.setModal(true);
 	gui.setVisible(true);
@@ -97,7 +97,7 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
 	}
 	// Create and display a network based on the user's input and the
 	// data in the FI database.
-	GSMATaskFactory gsmaFactory = new GSMATaskFactory(desktopApp,
+	GeneSetMutationAnalysisTaskFactory gsmaFactory = new GeneSetMutationAnalysisTaskFactory(desktopApp,
 		gui.getFileFormat(), file, gui.chooseHomoGenes(),
 		gui.useLinkers(), gui.getUnlinkedGeneBox().isSelected(),
 		gui.getUnlinkedGeneBox().isEnabled(), gui.showFIAnnotationsBeFetched(),
@@ -115,30 +115,30 @@ public class GeneSetMutatationAnalysisAction extends FICytoscapeAction
          * user would like to save that session. A new session is then
          * created.
          */
-	int networkCount = networkManager.getNetworkSet().size();
-		if (networkCount == 0)
-		    return true;
-	String msg = new String( "A new session is needed for using Reactome FI plugin.\n"
-		     + "Do you want to save your session?");
-	int reply = JOptionPane.showConfirmDialog(this.desktopApp.getJFrame(),
-		msg, "Save Session?", JOptionPane.YES_NO_CANCEL_OPTION);
-	if (reply == JOptionPane.CANCEL_OPTION)
-	    return false;
-	else if (reply == JOptionPane.NO_OPTION)
-	{
-	    CySession.Builder builder = new CySession.Builder();
-	    sessionManager.setCurrentSession(builder.build(), null);
-	    return false;
-	}
-	else
-	{
-	    tm.execute(saveSession.createTaskIterator());
-	    if (sessionManager.getCurrentSession() == null)
-		return true;
-	    CySession.Builder builder = new CySession.Builder();
-	    sessionManager.setCurrentSession(builder.build(), null);
-	}
-	return true;
+        int networkCount = networkManager.getNetworkSet().size();
+        if (networkCount == 0)
+            return true;
+        String msg = new String( "A new session is needed for using Reactome FI plugin.\n"
+                + "Do you want to save your session?");
+        int reply = JOptionPane.showConfirmDialog(this.desktopApp.getJFrame(),
+                msg, "Save Session?", JOptionPane.YES_NO_CANCEL_OPTION);
+        if (reply == JOptionPane.CANCEL_OPTION)
+            return false;
+        else if (reply == JOptionPane.NO_OPTION)
+        {
+            CySession.Builder builder = new CySession.Builder();
+            sessionManager.setCurrentSession(builder.build(), null);
+            return false;
+        }
+        else
+        {
+            tm.execute(saveSession.createTaskIterator());
+            if (sessionManager.getCurrentSession() == null)
+                return true;
+            CySession.Builder builder = new CySession.Builder();
+            sessionManager.setCurrentSession(builder.build(), null);
+        }
+        return true;
     }
     
 }

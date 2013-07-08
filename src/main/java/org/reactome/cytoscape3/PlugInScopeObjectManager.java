@@ -17,6 +17,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
 import org.cytoscape.application.swing.CySwingApplication;
+import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -25,7 +26,7 @@ import org.slf4j.Logger;
 /**
  * A singleton to manage other singleton objects, and some utility methods.
  * @author wgm
- *
+ * ported July 2013 by Eric T Dawson
  */
 public class PlugInScopeObjectManager {
     private static Logger logger = LoggerFactory.getLogger(PlugInScopeObjectManager.class);

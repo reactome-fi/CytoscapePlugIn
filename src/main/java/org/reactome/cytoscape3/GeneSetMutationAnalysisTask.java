@@ -36,7 +36,7 @@ import org.cytoscape.model.CyNode;
 
 
 
-public class GSMATask extends AbstractTask
+public class GeneSetMutationAnalysisTask extends AbstractTask
 {
     private CySwingApplication desktopApp;
     private TaskMonitor tm;
@@ -52,7 +52,7 @@ public class GSMATask extends AbstractTask
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
     private CyNetworkManager netManager;
-    public GSMATask(CySwingApplication desktopApp,
+    public GeneSetMutationAnalysisTask(CySwingApplication desktopApp,
 	    	String format, File file, boolean chooseHomoGenes,
 	    	boolean useLinkers, int sampleCutoffValue,
 	        boolean showUnlinked,
@@ -79,9 +79,11 @@ public class GSMATask extends AbstractTask
     }
 
     @Override
-    public void run(TaskMonitor arg0) throws Exception
+    public void run(TaskMonitor taskMonitor) throws Exception
     {
 	desktopApp.getJFrame().getGlassPane().setVisible(true);
+	taskMonitor.setTitle("Gene Set / Mutation Analysis");
+	taskMonitor.setStatusMessage("Loading file...");
 	try
 	{
 	    Map<String, Integer> geneToSampleNumber = null;
@@ -112,7 +114,7 @@ public class GSMATask extends AbstractTask
             //given the sample size.
             if (useLinkers)
             {
-        	System.out.println("Checking the size of the FI Network...");
+        	taskMonitor.setStatusMessage("Checking FI Network size...");
         	//FINetworkService fiService = PlugInScopeObjectManager.getManager().getNetworkService();
         	//Integer cutoff = fiService.getNetworkBuildSizeCutoff();
         	Integer cutoff = 1000;
@@ -125,12 +127,11 @@ public class GSMATask extends AbstractTask
                     desktopApp.getJFrame().getGlassPane().setVisible(false);
                     return;
                 }
-        	System.out.println("Done.");
             }
 
              CytoPanel controlPane = desktopApp.getCytoPanel(CytoPanelName.WEST);
              int selectedIndex = controlPane.getSelectedIndex();
-             
+             taskMonitor.setStatusMessage("Constructing FI Network...");
             CyNetwork network = constructFINetwork(selectedGenes,
                     file.getName());
             if (network == null){
@@ -157,6 +158,7 @@ public class GSMATask extends AbstractTask
                     geneToSampleString.put(gene, InteractionUtilities.joinStringElements(";", samples));
                 }
             }
+            taskMonitor.setStatusMessage("Formatting network attributes...");
             CyTableManager tableManager = new CyTableManager();
             //Collection<CyNetworkView> views = viewManager.getNetworkViews(network);
             CyNetworkView view = viewFactory.createNetworkView(network);
@@ -167,18 +169,19 @@ public class GSMATask extends AbstractTask
             //Check if linker genes are to be used.
             if (useLinkers)
             {
-        	Map<Long, Boolean> geneToIsLinker = new HashMap<Long, Boolean>();
-        	for (Iterator<?> it = network.getNodeList().iterator(); it.hasNext();)
-        	{
-        	    CyNode node = (CyNode) it.next();
-        	    Long suid = node.getSUID();
-        	    geneToIsLinker.put(suid, !selectedGenes.contains(suid));
-        	}
-        	tableManager.loadNodeAttributes(view, "isLinker", geneToSampleNumber);
+                taskMonitor.setStatusMessage("Fetching linker genes...");
+                Map<Long, Boolean> geneToIsLinker = new HashMap<Long, Boolean>();
+                for (Iterator<?> it = network.getNodeList().iterator(); it.hasNext();)
+                {
+                    CyNode node = (CyNode) it.next();
+                    Long suid = node.getSUID();
+                    geneToIsLinker.put(suid, !selectedGenes.contains(suid));
+                }
+                tableManager.loadNodeAttributes(view, "isLinker", geneToSampleNumber);
         	
         	if (fetchFIAnnotations)
         	{
-        	    System.out.println("Fetching FI annotations...");
+        	    taskMonitor.setStatusMessage("Fetching FI annotations...");
         	    new FIAnnotationHelper().annotateFIs(view, new RESTFulFIService(),
         		    tableManager);
         	}
@@ -246,14 +249,11 @@ private Set<String> loadGeneSetFile(File file) throws IOException
 	}
 private CyNetwork constructFINetwork(Set<String> selectedGenes, String title) throws Exception
 {
-    System.out.println("Constructing FI Network...");
  // Check if a local service should be used
     FINetworkService fiService = PlugInScopeObjectManager.getManager().getNetworkService();
-    System.out.println("Chokes here, line 248 GSMA task");
     Set<String> fis = fiService.buildFINetwork(selectedGenes, 
             useLinkers);
     CyNetwork network = null;
-    System.out.println("fails hereish");
     if (fis != null && fis.size() > 0)
     {
         
@@ -265,11 +265,12 @@ private CyNetwork constructFINetwork(Set<String> selectedGenes, String title) th
             network = generator.constructFINetwork(fis, title);
       }
     netManager.addNetwork(network);
+    System.out.println(network);
     CyNetworkView view = viewFactory.createNetworkView(network);
     viewManager.addNetworkView(view);
     System.out.println("Done.");
     CyTableManager manager = new CyTableManager();
-    manager.storeDataSetType(network, "Data Set");
+    //manager.storeDataSetType(network, "Data Set");
     return network;
 }
 }

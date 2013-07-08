@@ -1,5 +1,12 @@
 package org.reactome.cytoscape3;
-
+/**
+ * This class provides some basic functions which
+ * most analysis actions require, such as file 
+ * validation and testing whether a new network should
+ * be created. It is meant to be extended.
+ * @author Eric T Dawson
+ * @date July 2013
+ */
 import java.awt.event.ActionEvent;
 import java.util.Collection;
 import java.util.Set.*;
@@ -58,30 +65,34 @@ public abstract class FICytoscapeAction extends AbstractCyAction
     }
     protected boolean createNewSession(CyNetworkManager networkManager, CySessionManager sessionManager)
     {
-	int networkCount = networkManager.getNetworkSet().size();
-		if (networkCount == 0)
-		    return true;
-	String msg = new String( "A new session is needed for using Reactome FI plugin.\n"
-		     + "Do you want to save your session?");
-	int reply = JOptionPane.showConfirmDialog(this.desktopApp.getJFrame(),
-		msg, "Save Session?", JOptionPane.YES_NO_CANCEL_OPTION);
-	if (reply == JOptionPane.CANCEL_OPTION)
-	    return false;
-	else if (reply == JOptionPane.NO_OPTION)
-	{
-	    CySession.Builder builder = new CySession.Builder();
-	    sessionManager.setCurrentSession(builder.build(), null);
-	}
-	else
-	{
-	    tm.execute(saveAsFactory.createTaskIterator());
-	    if (sessionManager.getCurrentSession() == null)
-		return true;
-	    CySession.Builder builder = new CySession.Builder();
-	    sessionManager.setCurrentSession(builder.build(), null);
-	}
-	return true;
-	    
+        /* Checks if a session currently exists and if so whether the
+         * user would like to save that session. A new session is then
+         * created.
+         */
+        int networkCount = networkManager.getNetworkSet().size();
+        if (networkCount == 0)
+            return true;
+        String msg = new String( "A new session is needed for using Reactome FI plugin.\n"
+                + "Do you want to save your session?");
+        int reply = JOptionPane.showConfirmDialog(this.desktopApp.getJFrame(),
+                msg, "Save Session?", JOptionPane.YES_NO_CANCEL_OPTION);
+        if (reply == JOptionPane.CANCEL_OPTION)
+            return false;
+        else if (reply == JOptionPane.NO_OPTION)
+        {
+            CySession.Builder builder = new CySession.Builder();
+            sessionManager.setCurrentSession(builder.build(), null);
+            return false;
+        }
+        else
+        {
+            tm.execute(saveAsFactory.createTaskIterator());
+            if (sessionManager.getCurrentSession() == null)
+                return true;
+            CySession.Builder builder = new CySession.Builder();
+            sessionManager.setCurrentSession(builder.build(), null);
+        }
+        return true;
     }
     protected boolean validateFile(JTextField fileTF,
 	    java.awt.Component parentComp)

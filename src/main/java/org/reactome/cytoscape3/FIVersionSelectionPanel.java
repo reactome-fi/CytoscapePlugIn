@@ -1,7 +1,4 @@
-/*
- * Created on Jul 12, 2012
- *
- */
+
 package org.reactome.cytoscape3;
 
 import java.awt.BorderLayout;
@@ -21,8 +18,10 @@ import javax.swing.event.ChangeListener;
 
 /**
  * This customized JPanel is used to select a FI network version. Several FI network versions
- * may be provided in the plug-in so that results based on old network can be reproduced still.
+ * may be provided in the plug-in so that results based on old network can still be reproduced.
+ * The panel is embedded in the main JPanel of each of the three main action menu classes.
  * @author gwu
+ * Ported by Eric T Dawson (July 2013)
  *
  */
 public class FIVersionSelectionPanel extends JPanel {
@@ -41,8 +40,8 @@ public class FIVersionSelectionPanel extends JPanel {
         constraints.insets = new Insets(4, 4, 4, 4);
         add(choicePane, BorderLayout.CENTER);
         
-        //String versions = PlugInScopeObjectManager.getManager().getProperties().getProperty("FINetworkVersions");
-        String versions = "2009 (Default),2012 (Latest)";
+        //Retrieve the list of FI versions from the Reactome server.
+        String versions = PlugInScopeObjectManager.getManager().getProperties().getProperty("FINetworkVersions");
         String[] tokens = versions.split(",");
         // Create JRadioButtons based on tokens
         ButtonGroup group = new ButtonGroup();
@@ -64,7 +63,8 @@ public class FIVersionSelectionPanel extends JPanel {
         add(noteLabel, BorderLayout.SOUTH);
         
         addChangeListener();
-        // Choose the first version of FI network as the default: it should be 2009
+        // Choose the oldest provided version of the FI network
+        //as the default.
         JRadioButton btn = buttons.get(0);
         btn.setSelected(true);
     }

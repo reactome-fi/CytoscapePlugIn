@@ -11,25 +11,27 @@ import org.reactome.r3.graph.NetworkBuilderForGeneSet;
 import org.reactome.r3.util.InteractionUtilities;
 
 /**
- * This class is to create some local service to reduce the burden in the server side
- * to improve the performance. This is a singleton. The use of this class is bound to
- * PlugInScoreObjectManager, which is used to control a dynamic loading of this class, and
- * make sure it is a singleton.
- * Note: currently only constructing FI network with linker genes using local service since 
- * this step is too slow.
+ * This singleton class is used to create some local services
+ *  which reduce the burden on the server to improve the performance.
+ *  The use of this class is bound to PlugInScoreObjectManager, which is
+ *  used to control dynamic loading of this class and ensure only a single
+ *  instance of LocalService is present.
+ * Note: Construction of an FI network with linker genes only occurs locally
+ * in its current implementation, as doing so using the server takes too long.
  * @author wgm
- *
+ * ported July 2013 by Eric T Dawson
  */
 public class LocalService implements FINetworkService {
-    // Cache some fetched information for performance reason.
-    // Don't cache anything in case the FI network versio has been changed during different running
+    // Cache some fetched information for performance reasons.
+    // Don't cache anything in case the FI network version has
+    // changed during a previous session.
     private Set<String> allFIs;
     
     public LocalService() {
     }
     
     public Integer getNetworkBuildSizeCutoff() throws Exception {
-        // No limit
+        // There is no limit to network size yet.
         return Integer.MAX_VALUE;
     }
 

@@ -13,7 +13,7 @@ import org.cytoscape.work.TaskMonitor;
 
 
 
-public class GSMATaskFactory extends AbstractTaskFactory
+public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
 {
     private TaskMonitor tm;
     private String format;
@@ -31,7 +31,7 @@ public class GSMATaskFactory extends AbstractTaskFactory
     private CyNetworkManager netManager;
 
 
-    public GSMATaskFactory(CySwingApplication desktopApp,
+    public GeneSetMutationAnalysisTaskFactory(CySwingApplication desktopApp,
 	    String format, File file, boolean chooseHomoGenes, boolean useLinkers,
 	    boolean showUnlinked, boolean showUnlinkedEnabled, boolean fetchFIAnnotations,
 	    int sampleCutoffValue, CyNetworkFactory networkFactory,
@@ -59,7 +59,7 @@ public class GSMATaskFactory extends AbstractTaskFactory
     @Override
     public TaskIterator createTaskIterator()
     {
-	return new TaskIterator(new GSMATask(desktopApp,
+	return new TaskIterator(new GeneSetMutationAnalysisTask(desktopApp,
 	    	format, file, chooseHomoGenes,
 	    	useLinkers, sampleCutoffValue,
 	        showUnlinked,
