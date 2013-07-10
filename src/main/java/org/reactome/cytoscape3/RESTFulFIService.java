@@ -48,7 +48,7 @@ import org.jdom.input.SAXBuilder;
 import org.jdom.output.DOMOutputter;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
-import org.reactome.cancerindex.model.Sentence;
+import org.reactome.cytoscape3.cancerindex.model.Sentence;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.r3.graph.NetworkClusterResult;

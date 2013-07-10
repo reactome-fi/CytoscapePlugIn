@@ -17,7 +17,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
+import org.reactome.cytoscape3.cancerindex.model.CancerIndexSentenceDisplayFrame;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 

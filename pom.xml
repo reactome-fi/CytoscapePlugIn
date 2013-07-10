@@ -11,12 +11,11 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome</groupId>
-	<artifactId>FIplugin</artifactId>
-	<version>0.1a</version>
-
-			<name>${bundle.symbolicName}</name>
-	
+	<artifactId>reactomeFI-app</artifactId>
+	<version>1.0.0-alpha</version>
+	<name>${bundle.symbolicName}</name>
 	<packaging>bundle</packaging>
+	
 	<build>
 		<resources>
 			<resource>
@@ -26,6 +25,9 @@
           			<include>Config.prop</include>
         		</includes>
 			</resource>
+<!-- 			<resource> -->
+<!-- 				<directory>${project.basedir}/src/main/java/org/reactome/cancerindex/model</directory> -->
+<!-- 			</resource> -->
 		</resources>
 		<!-- Cytoscape requires Java 1.6 -->
 		<plugins>
