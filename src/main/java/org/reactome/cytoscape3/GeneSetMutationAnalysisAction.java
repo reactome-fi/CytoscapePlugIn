@@ -16,8 +16,12 @@ import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
+import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
+import org.cytoscape.view.vizmap.VisualMappingManager;
+import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
 import org.gk.util.ProgressPane;
@@ -47,6 +51,12 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
     private CyNetworkFactory networkFactory;
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
+    private VisualMappingManager visMapManager;
+    private CyLayoutAlgorithmManager layoutManager;
+    private VisualStyleFactory visStyleFactory;
+    private VisualMappingFunctionFactory visMapFuncFactoryP;
+    private VisualMappingFunctionFactory visMapFuncFactoryC;
+    private VisualMappingFunctionFactory visMapFuncFactoryD;
    // private TaskMonitor taskMonitor;
     public GeneSetMutationAnalysisAction(TaskManager tm, CyNetworkManager netManager,
 
@@ -56,7 +66,14 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
 	    CySessionManager sessionManager,
 	    CyNetworkFactory networkFactory,
 	    CyNetworkViewFactory viewFactory,
-	    CyNetworkViewManager viewManager)
+	    CyNetworkViewManager viewManager,
+	    CyLayoutAlgorithmManager layoutManager,
+	    VisualMappingManager visMapManager,
+	    VisualStyleFactory visStyleFactory,
+        VisualMappingFunctionFactory visMapFuncFactoryC,
+        VisualMappingFunctionFactory visMapFuncFactoryD,
+        VisualMappingFunctionFactory visMapFuncFactoryP
+        )
     {
 	super(desktopApp, netManager, fileUtil, saveSession, tm, sessionManager, "Gene Set / Mutant Analysis");
 	this.desktopApp = desktopApp;
@@ -68,6 +85,12 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
 	this.networkFactory = networkFactory;
 	this.viewFactory = viewFactory;
 	this.viewManager = viewManager;
+	this.visMapManager = visMapManager;
+	this.layoutManager = layoutManager;
+	this.visStyleFactory = visStyleFactory;
+	this.visMapFuncFactoryP = visMapFuncFactoryP;
+	this.visMapFuncFactoryC = visMapFuncFactoryC;
+	this.visMapFuncFactoryD = visMapFuncFactoryD;
 	setPreferredMenu("Apps.ReactomeFI");
 	
     }
@@ -101,7 +124,9 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
 		gui.getFileFormat(), file, gui.chooseHomoGenes(),
 		gui.useLinkers(), gui.getUnlinkedGeneBox().isSelected(),
 		gui.getUnlinkedGeneBox().isEnabled(), gui.showFIAnnotationsBeFetched(),
-		gui.getSampleCutoffValue(), networkFactory, netManager, viewFactory, viewManager);
+		gui.getSampleCutoffValue(), networkFactory, netManager, viewFactory, viewManager,
+		layoutManager, visMapManager, visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD,
+		visMapFuncFactoryP, tm);
 	tm.execute(gsmaFactory.createTaskIterator());
 	
     }

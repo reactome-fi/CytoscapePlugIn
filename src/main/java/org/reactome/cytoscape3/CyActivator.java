@@ -25,6 +25,9 @@ import org.cytoscape.util.swing.OpenBrowser;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
+import org.cytoscape.view.vizmap.VisualMappingManager;
+import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 
@@ -38,7 +41,7 @@ public class CyActivator extends AbstractCyActivator {
 	@Override
     public void start(BundleContext context) throws Exception {
 	    this.context = context;
-	    //Grab essential Cytoscape Service References
+	    /*Grab essential Cytoscape Service References*/
 	    CySwingApplication desktopApp = getService(context, CySwingApplication.class);
 		TaskManager taskManager = getService(context, TaskManager.class);
 		CyNetworkManager networkManager = getService(context, CyNetworkManager.class);
@@ -49,23 +52,29 @@ public class CyActivator extends AbstractCyActivator {
 		SaveSessionAsTaskFactory saveSessionAsTaskFactory = getService(context, SaveSessionAsTaskFactory.class);
 		FileUtil fileUtil = getService(context, FileUtil.class);
 		OpenBrowser browser = getService(context, OpenBrowser.class);
-		//CyLayoutAlgorithmManager layoutManager = getService(context, CyLayoutAlgorithmManager.class);
-		
-		
-		//Instantiate Reactome FI App services
+		CyLayoutAlgorithmManager layoutManager = getService(context, CyLayoutAlgorithmManager.class);
+		VisualMappingManager visMapManager = getService(context, VisualMappingManager.class);
+		VisualStyleFactory visStyleFactory = getService(context, VisualStyleFactory.class);
+		VisualMappingFunctionFactory vmfFactoryC = getService(context,VisualMappingFunctionFactory.class, "(mapping.type=continuous)");
+        VisualMappingFunctionFactory vmfFactoryD = getService(context,VisualMappingFunctionFactory.class, "(mapping.type=discrete)");
+        VisualMappingFunctionFactory vmfFactoryP = getService(context,VisualMappingFunctionFactory.class, "(mapping.type=passthrough)");
+        
+		/*Instantiate Reactome FI App services*/
+        
 		GeneSetMutationAnalysisAction gsma = new GeneSetMutationAnalysisAction(taskManager, networkManager,
 			saveSessionAsTaskFactory, fileUtil, desktopApp, sessionManager,
-			networkFactory, viewFactory, viewManager);
+			networkFactory, viewFactory, viewManager, layoutManager, visMapManager,
+			visStyleFactory, vmfFactoryC, vmfFactoryD, vmfFactoryP);
 		UserGuideAction uga = new UserGuideAction(desktopApp, browser);
 
 		
 
 
 
-		//Register said Reactome FI Services with the OSGi framework.
+		/*Register said Reactome FI Services with the OSGi framework.*/
 		registerAllServices(context, gsma, new Properties());
 		registerAllServices(context, uga, new Properties());
-
+		
 	}
 
 }

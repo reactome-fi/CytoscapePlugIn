@@ -1,9 +1,9 @@
 # Some externalize config information
-#restfulURL=http://reactomedev.oicr.on.ca:8080/caBigR3WebApp/FIService/
-#restfulURL=http://reactomedev.oicr.on.ca:8080/caBigR3WebApp2012/FIService/
-restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2012/FIService/
-#restfulURL=http://brie8.cshl.edu:8080/caBigR3WebApp/FIService/
-#restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+#restfulURL=http://reactomedev.oicr.on.ca:80/caBigR3WebApp/FIService/
+#restfulURL=http://reactomedev.oicr.on.ca:80/caBigR3WebApp2012/FIService/
+restfulURL=http://reactomews.oicr.on.ca:80/caBigR3WebApp2012/FIService/
+#restfulURL=http://brie8.cshl.edu:80/caBigR3WebApp/FIService/
+#restfulURL=http://localhost:80/caBigR3WebApp/FIService/
 # Control if a local service should be used
 networkService=org.reactome.cytoscape3.LocalService
 dataSourceURL=http://reactomedev.oicr.on.ca/cgi-bin/eventbrowser?DB=${DB_NAME}&FORMAT=sectioned&ID=

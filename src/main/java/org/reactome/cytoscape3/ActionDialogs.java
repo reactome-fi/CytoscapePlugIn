@@ -301,7 +301,7 @@ public class ActionDialogs extends JDialog
             constraints.weightx = 0.0d;
             fetchFIAnnotations = new JCheckBox("Fetch FI annotations (WARNING: Slow!)");
             JLabel label = new JLabel("* Annotations may be fetched later.");
-            label.setFont(font);
+            label.setFont(font2);
             constructPanel.add(fetchFIAnnotations, constraints);
             constraints.gridy = 1;
             constraints.insets = new Insets(0, 4, 0, 4);

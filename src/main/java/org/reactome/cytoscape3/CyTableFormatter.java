@@ -55,20 +55,19 @@ public class CyTableFormatter
             //makeAllTablesGSMA(network);
         }
         //Check the following with Guanming. fix it.
-        if (netTable.getColumn("moduleToSampleValue") == null);
+        if (nodeTable.getColumn("module") == null);
         {
-//            netTable.createColumn("moduleToSampleValue", Double.class, Boolean.FALSE);
-//            nodeTable.createColumn("moduleToSampleValue", Double.class, Boolean.FALSE);
-//            edgeTable.createColumn("moduleToSampleValue", Double.class, Boolean.FALSE);
-//            nodeTable.addVirtualColumn("moduleToSampleValue", "moduleToSampleValue", netTable, "moduleToSampleValue", Boolean.FALSE);
-//            edgeTable.addVirtualColumn("moduleToSampleValue", "moduleToSampleValue", netTable, "moduleToSampleValue", Boolean.FALSE);
-            //makeAllTablesGSMA(network);
+            //netTable.createColumn("moduleToSampleValue", Double.class, Boolean.FALSE);
+            nodeTable.createColumn("module", Double.class, Boolean.FALSE);
         }
         if (netTable.getColumn("Clustering_Type") == null)
         {
             netTable.createColumn("Clustering_Type", String.class, Boolean.FALSE);
         }
-
+        if (nodeTable.getColumn("sample") == null)
+        {
+            nodeTable.createColumn("sample", String.class, Boolean.FALSE);
+        }
 
         if (nodeTable.getColumn("IsLinker") == null)
         {
@@ -82,17 +81,14 @@ public class CyTableFormatter
         if (nodeTable.getColumn("sampleNumber") == null)
         {
             nodeTable.createColumn("sampleNumber", String.class, Boolean.FALSE);
-            //makeAllTablesGSMA(network);
         }
         if (nodeTable.getColumn("commonName") == null)
         {
             nodeTable.createColumn("commonName", String.class, Boolean.FALSE);
-            //makeAllTablesGSMA(network);
         }
         if (nodeTable.getColumn("nodeToolTip") == null)
         {
             nodeTable.createColumn("nodeToolTip", String.class, Boolean.FALSE);
-            //makeAllTablesGSMA(network);
         }
 	
     }

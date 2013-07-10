@@ -5,10 +5,15 @@ import java.io.File;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
+import org.cytoscape.view.vizmap.VisualMappingManager;
+import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.AbstractTaskFactory;
 import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
 
 
@@ -29,6 +34,13 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
     private CyNetworkManager netManager;
+    private VisualMappingManager visMapManager;
+    private CyLayoutAlgorithmManager layoutManager;
+    private VisualStyleFactory visStyleFactory;
+    private VisualMappingFunctionFactory visMapFuncFactoryP;
+    private VisualMappingFunctionFactory visMapFuncFactoryC;
+    private VisualMappingFunctionFactory visMapFuncFactoryD;
+    private TaskManager taskManager;
 
 
     public GeneSetMutationAnalysisTaskFactory(CySwingApplication desktopApp,
@@ -37,7 +49,14 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
 	    int sampleCutoffValue, CyNetworkFactory networkFactory,
 	    CyNetworkManager netManager,
 	    CyNetworkViewFactory viewFactory,
-	    CyNetworkViewManager viewManager)
+	    CyNetworkViewManager viewManager,
+	    CyLayoutAlgorithmManager layoutManager,
+        VisualMappingManager visMapManager,
+        VisualStyleFactory visStyleFactory,
+        VisualMappingFunctionFactory visMapFuncFactoryC,
+        VisualMappingFunctionFactory visMapFuncFactoryD,
+        VisualMappingFunctionFactory visMapFuncFactoryP,
+        TaskManager taskManager)
     {
 	this.desktopApp = desktopApp;
 
@@ -53,6 +72,13 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
 	this.netManager = netManager;
 	this.viewFactory = viewFactory;
 	this.viewManager = viewManager;
+	this.visMapManager = visMapManager;
+    this.layoutManager = layoutManager;
+    this.visStyleFactory = visStyleFactory;
+    this.visMapFuncFactoryP = visMapFuncFactoryP;
+    this.visMapFuncFactoryC = visMapFuncFactoryC;
+    this.visMapFuncFactoryD = visMapFuncFactoryD;
+    this.taskManager = taskManager;
     }
 
 
@@ -68,5 +94,6 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
 	    	networkFactory,
 	    	netManager,
 	    	viewFactory,
-	    	viewManager));
+	    	viewManager, layoutManager, visMapManager,
+	    	visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD, visMapFuncFactoryP, taskManager));
     }}

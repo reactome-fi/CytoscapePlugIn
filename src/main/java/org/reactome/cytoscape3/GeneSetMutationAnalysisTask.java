@@ -13,10 +13,15 @@ import javax.swing.JOptionPane;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
+import org.cytoscape.view.vizmap.VisualMappingManager;
+import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
 import org.reactome.cancer.CancerAnalysisUtilitites;
 import org.reactome.cancer.MATFileLoader;
@@ -52,6 +57,14 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
     private CyNetworkManager netManager;
+    private VisualMappingManager visMapManager;
+    private CyLayoutAlgorithmManager layoutManager;
+    private VisualStyleFactory visStyleFactory;
+    private VisualMappingFunctionFactory visMapFuncFactoryP;
+    private VisualMappingFunctionFactory visMapFuncFactoryC;
+    private VisualMappingFunctionFactory visMapFuncFactoryD;
+    private TaskManager taskManager;
+    
     public GeneSetMutationAnalysisTask(CySwingApplication desktopApp,
 	    	String format, File file, boolean chooseHomoGenes,
 	    	boolean useLinkers, int sampleCutoffValue,
@@ -61,7 +74,14 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
 	    	CyNetworkFactory networkFactory,
 	    	CyNetworkManager netManager,
 	    	CyNetworkViewFactory viewFactory,
-	    	CyNetworkViewManager viewManager)
+	    	CyNetworkViewManager viewManager,
+	    	CyLayoutAlgorithmManager layoutManager,
+	        VisualMappingManager visMapManager,
+	        VisualStyleFactory visStyleFactory,
+	        VisualMappingFunctionFactory visMapFuncFactoryC,
+	        VisualMappingFunctionFactory visMapFuncFactoryD,
+	        VisualMappingFunctionFactory visMapFuncFactoryP,
+	        TaskManager taskManager)
     {
 	this.desktopApp = desktopApp;
 	this.networkFactory = networkFactory;
@@ -76,6 +96,13 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
 	this.viewFactory = viewFactory;
 	this.viewManager = viewManager;
 	this.fetchFIAnnotations = fetchFIAnnotations;
+	this.visMapManager = visMapManager;
+    this.layoutManager = layoutManager;
+    this.visStyleFactory = visStyleFactory;
+    this.visMapFuncFactoryP = visMapFuncFactoryP;
+    this.visMapFuncFactoryC = visMapFuncFactoryC;
+    this.visMapFuncFactoryD = visMapFuncFactoryD;
+    this.taskManager = taskManager;
     }
 
     @Override
@@ -84,6 +111,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
 	desktopApp.getJFrame().getGlassPane().setVisible(true);
 	taskMonitor.setTitle("Gene Set / Mutation Analysis");
 	taskMonitor.setStatusMessage("Loading file...");
+	taskMonitor.setProgress(.25d);
 	try
 	{
 	    Map<String, Integer> geneToSampleNumber = null;
@@ -115,9 +143,9 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             if (useLinkers)
             {
         	taskMonitor.setStatusMessage("Checking FI Network size...");
-        	//FINetworkService fiService = PlugInScopeObjectManager.getManager().getNetworkService();
-        	//Integer cutoff = fiService.getNetworkBuildSizeCutoff();
-        	Integer cutoff = 1000;
+        	FINetworkService fiService = PlugInScopeObjectManager.getManager().getNetworkService();
+        	Integer cutoff = fiService.getNetworkBuildSizeCutoff();
+        	//Integer cutoff = 1000;
         	if (cutoff != null && selectedGenes.size() >= cutoff) {
                     JOptionPane.showMessageDialog(desktopApp.getJFrame(), 
                                                   "The size of the gene set is too big. Linker genes should not be used!\n" +
@@ -132,17 +160,19 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
              CytoPanel controlPane = desktopApp.getCytoPanel(CytoPanelName.WEST);
              int selectedIndex = controlPane.getSelectedIndex();
              taskMonitor.setStatusMessage("Constructing FI Network...");
+             taskMonitor.setProgress(.50d);
             CyNetwork network = constructFINetwork(selectedGenes,
                     file.getName());
-            if (network == null){
-        	JOptionPane.showMessageDialog(desktopApp.getJFrame(),
+            if (network == null)
+            {
+                JOptionPane.showMessageDialog(desktopApp.getJFrame(),
                         "Cannot find any functional interaction among provided genes.\n" +
                         "No network can be constructed.\n" +
                         "Note: only human gene names are supported.",
                         "Empty Network",
                         JOptionPane.INFORMATION_MESSAGE);
-        	desktopApp.getJFrame().getGlassPane().setVisible(false);
-        	return;
+                desktopApp.getJFrame().getGlassPane().setVisible(false);
+                return;
             }
             controlPane.setSelectedIndex(selectedIndex);
             if (sampleToGenes != null)
@@ -157,15 +187,16 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
                     geneToSampleNumber.put(gene, samples.size());
                     geneToSampleString.put(gene, InteractionUtilities.joinStringElements(";", samples));
                 }
+                System.out.println(geneToSampleNumber);
             }
             taskMonitor.setStatusMessage("Formatting network attributes...");
+            taskMonitor.setProgress(.65d);
             CyTableManager tableManager = new CyTableManager();
-            //Collection<CyNetworkView> views = viewManager.getNetworkViews(network);
             CyNetworkView view = viewFactory.createNetworkView(network);
             if (geneToSampleNumber != null)
-        	tableManager.loadNodeAttributes(view, "SampleNumber", geneToSampleNumber);
+        	tableManager.loadNodeAttributes(view, "sampleNumber", geneToSampleNumber);
             if (geneToSampleString != null)
-        	tableManager.loadNodeAttributes(view, "Samples", geneToSampleNumber);
+        	tableManager.loadNodeAttributes(view, "sample", geneToSampleNumber);
             //Check if linker genes are to be used.
             if (useLinkers)
             {
@@ -186,6 +217,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
         		    tableManager);
         	}
             }
+            taskMonitor.setProgress(1.0d);
 	}
 	catch (Exception e){
 	    JOptionPane.showMessageDialog(desktopApp.getJFrame(),
@@ -265,12 +297,15 @@ private CyNetwork constructFINetwork(Set<String> selectedGenes, String title) th
             network = generator.constructFINetwork(fis, title);
       }
     netManager.addNetwork(network);
-    System.out.println(network);
     CyNetworkView view = viewFactory.createNetworkView(network);
+    VisualStyleHelper styleHelper = new VisualStyleHelper(visMapManager,
+            visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD,
+            visMapFuncFactoryP, layoutManager, taskManager, desktopApp);
     viewManager.addNetworkView(view);
-    System.out.println("Done.");
+    styleHelper.setVisualStyle(view);
+
     CyTableManager manager = new CyTableManager();
-    //manager.storeDataSetType(network, "Data Set");
+   // manager.storeDataSetType(network, "Data Set");
     return network;
 }
 }
