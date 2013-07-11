@@ -6,6 +6,7 @@ package org.reactome.cytoscape3;
  * @author Eric T Dawson
  */
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -24,8 +25,7 @@ public class CyNetworkGenerator
     }
     
     public CyNetwork constructFINetwork(Set<String> nodes,
-	    				Set<String> fis,
-	    				String title)
+	    				Set<String> fis)
     {
         //Construct an empty network.
         CyNetwork network = networkFactory.createNetwork();
@@ -42,9 +42,19 @@ public class CyNetworkGenerator
             String name2 = fi.substring(index + 1);
             CyNode node1 = getNode(name1, name2Node, network);
             CyNode node2 = getNode(name2, name2Node, network);
-            CyEdge edge = createEdge(network, node1, node2, "FI");
+            //CyEdge edge = 
+            createEdge(network, node1, node2, "FI");
         }
-	
+        //Put nodes that are not linked to other genes in the network.
+        if (nodes != null)
+        {
+            Set<String> copy = new HashSet<String>(nodes);
+            copy.removeAll(name2Node.keySet());
+            for (String name : copy)
+            {
+                CyNode node = getNode(name, name2Node, network);
+            }
+        }
         return network;
     }
     
@@ -91,10 +101,10 @@ public class CyNetworkGenerator
 
     }
     
-    public CyNetwork constructFINetwork(Set<String> fis, String title)
+    public CyNetwork constructFINetwork(Set<String> fis)
     {
         //This method is just a convenience method which
         //overloads constructFINetwork.
-        return constructFINetwork(null, fis, title);
+        return constructFINetwork(null, fis);
     }
 }

@@ -1,4 +1,4 @@
-package org.reactome.cytoscape3.cancerindex.model;
+package org.reactome.cancerindex.model;
 
 public class CancerIndexConstants {
     public static final String CellineIndicator = "CellineIndicator"; 

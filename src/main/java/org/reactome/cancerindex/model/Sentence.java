@@ -6,7 +6,7 @@
 //
 
 
-package org.reactome.cytoscape3.cancerindex.model;
+package org.reactome.cancerindex.model;
 
 import java.util.ArrayList;
 import java.util.List;

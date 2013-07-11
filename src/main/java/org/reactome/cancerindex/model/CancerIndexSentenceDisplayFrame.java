@@ -2,7 +2,7 @@
  * Created on Sep 23, 2010
  *
  */
-package org.reactome.cytoscape3.cancerindex.model;
+package org.reactome.cancerindex.model;
 
 import java.awt.BorderLayout;
 import java.awt.Desktop;

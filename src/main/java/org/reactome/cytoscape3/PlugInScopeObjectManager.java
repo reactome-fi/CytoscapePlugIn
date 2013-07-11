@@ -17,7 +17,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.reactome.cytoscape3.cancerindex.model.CancerIndexSentenceDisplayFrame;
+import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -38,7 +38,7 @@ public class PlugInScopeObjectManager {
     // Try to track CancerIndexSentenceDisplayFrame
     private CancerIndexSentenceDisplayFrame cgiFrame;
     // Currently selected FI network version
-    private String fiNetworkView;
+    private String fiNetworkVersion;
     
     private PlugInScopeObjectManager() {
     }
@@ -50,7 +50,7 @@ public class PlugInScopeObjectManager {
     }
     
     public String getFiNetworkVersion() {
-        return this.fiNetworkView;
+        return this.fiNetworkVersion;
     }
 
     public String getDefaultFINeworkVersion() {
@@ -66,7 +66,7 @@ public class PlugInScopeObjectManager {
     }
     
     public void setFiNetworkVersion(String fiNetworkVersion) {
-        this.fiNetworkView = fiNetworkVersion;
+        this.fiNetworkVersion = fiNetworkVersion;
     }
 
     public CancerIndexSentenceDisplayFrame getCancerIndexFrame( CySwingApplication desktopApp) {
