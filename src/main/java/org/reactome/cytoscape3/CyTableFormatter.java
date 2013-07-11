@@ -59,7 +59,7 @@ public class CyTableFormatter
         }
         if (netTable.getColumn(FI_NETWORK_VERSION) == null)
         {
-            netTable.createColumn(FI_NETWORK_VERSION, Boolean.class, Boolean.FALSE);
+            netTable.createColumn(FI_NETWORK_VERSION, String.class, Boolean.FALSE);
         }
         if (netTable.getColumn("DataSetType") == null)
         {

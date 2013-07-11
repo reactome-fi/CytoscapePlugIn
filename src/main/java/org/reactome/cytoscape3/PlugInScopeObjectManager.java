@@ -39,6 +39,7 @@ public class PlugInScopeObjectManager {
     private CancerIndexSentenceDisplayFrame cgiFrame;
     // Currently selected FI network version
     private String fiNetworkVersion;
+    private static final String userGuideURL = "http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin";
     
     private PlugInScopeObjectManager() {
     }
@@ -154,5 +155,8 @@ public class PlugInScopeObjectManager {
     public String getDataSourceURL() {
         return getDataSourceURL(getFiNetworkVersion());
     }
-    
+    public static String getUserGuideURL()
+    {
+        return userGuideURL;
+    }
 }

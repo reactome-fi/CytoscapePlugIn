@@ -21,7 +21,7 @@ public class UserGuideAction extends AbstractCyAction
 
     private CySwingApplication desktopApp;
     private OpenBrowser browser;
-    private String userGuideURL = "http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin";
+    private String userGuideURL = PlugInScopeObjectManager.getManager().getUserGuideURL();
 
     public UserGuideAction(CySwingApplication desktopApp, OpenBrowser browser)
     {
