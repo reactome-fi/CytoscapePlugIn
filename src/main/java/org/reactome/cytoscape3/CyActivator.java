@@ -10,7 +10,6 @@ package org.reactome.cytoscape3;
  */
 import java.util.Properties;
 
-import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
@@ -18,7 +17,6 @@ import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CySessionManager;
-import org.cytoscape.task.NetworkViewTaskFactory;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.util.swing.OpenBrowser;
@@ -30,8 +28,6 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
-import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;
-import org.reactome.cytoscape3.NetworkActionCollection.NetworkPathwayEnrichmentMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
 
 //import org.cytoscape.application.CyApplicationManager;
@@ -92,14 +88,14 @@ public class CyActivator extends AbstractCyActivator
                 visStyleFactory, vmfFactoryC, vmfFactoryD, vmfFactoryP,
                 tableFactory);
 
-        UserGuideAction uga = new UserGuideAction(desktopApp, browser);
+        UserGuideAction uga = new UserGuideAction();
 
         /* Register said Reactome FI Services with the OSGi framework. */
         registerAllServices(context, gsma, new Properties());
         registerAllServices(context, uga, new Properties());
 
         /* Instantiate and register the context menus for the network view */
-//        NetworkActionCollection networkMenu = new NetworkActionCollection();
+        // NetworkActionCollection networkMenu = new NetworkActionCollection();
 
         /* Instantiate and register the context menus for the node views */
         NodeActionCollection nodeActionCollection = new NodeActionCollection();
@@ -107,8 +103,8 @@ public class CyActivator extends AbstractCyActivator
         Properties geneCardProps = new Properties();
         geneCardProps.setProperty("title", "Gene Card");
         geneCardProps.setProperty("preferredMenu", "Apps.Reactome FI");
-        registerService(context, geneCardMenu, CyNodeViewContextMenuFactory.class, geneCardProps);
-
+        registerService(context, geneCardMenu,
+                CyNodeViewContextMenuFactory.class, geneCardProps);
 
     }
 

@@ -1,9 +1,7 @@
 package org.reactome.cytoscape3;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -333,8 +331,8 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             else
                 network = generator.constructFINetwork(fis);
         }
-        //netManager.addNetwork(network);
-        //CyTableManager manager = new CyTableManager();
+        // netManager.addNetwork(network);
+        // CyTableManager manager = new CyTableManager();
         // manager.storeDataSetType(network, "Data Set");
         return network;
     }
