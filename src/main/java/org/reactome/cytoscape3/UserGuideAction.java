@@ -21,7 +21,7 @@ public class UserGuideAction extends AbstractCyAction {
     public UserGuideAction() {
         //Add the 'User Guide' item to the ReactomeFI menu
         super("User Guide");
-        setPreferredMenu("Apps.ReactomeFI");
+        setPreferredMenu("Apps.Reactome FI");
     }
 
     @Override
