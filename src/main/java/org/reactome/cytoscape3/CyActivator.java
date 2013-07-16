@@ -10,6 +10,8 @@ package org.reactome.cytoscape3;
  */
 import java.util.Properties;
 
+import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
+import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
@@ -28,7 +30,9 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
-import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkContextMenu;
+import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;
+import org.reactome.cytoscape3.NetworkActionCollection.NetworkPathwayEnrichmentMenu;
+import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
 
 //import org.cytoscape.application.CyApplicationManager;
 
@@ -94,33 +98,17 @@ public class CyActivator extends AbstractCyActivator
         registerAllServices(context, gsma, new Properties());
         registerAllServices(context, uga, new Properties());
 
-        /* Instantiate and register the context menus for the FI app */
-        NetworkActionCollection networkMenu = new NetworkActionCollection();
+        /* Instantiate and register the context menus for the network view */
+//        NetworkActionCollection networkMenu = new NetworkActionCollection();
 
-        ClusterFINetworkContextMenu clusterMenu = networkMenu.new ClusterFINetworkContextMenu();
-        Properties clusterMenuProps = new Properties();
-        clusterMenuProps.setProperty("title", "Cluster FI Network");
-        // clusterMenuProps.setProperty("preferredMenu", "Reactome FI");
-        clusterMenuProps.setProperty("preferredAction", "NEW");
-        registerService(context, clusterMenu, NetworkViewTaskFactory.class,
-                clusterMenuProps);
+        /* Instantiate and register the context menus for the node views */
+        NodeActionCollection nodeActionCollection = new NodeActionCollection();
+        GeneCardMenu geneCardMenu = nodeActionCollection.new GeneCardMenu();
+        Properties geneCardProps = new Properties();
+        geneCardProps.setProperty("title", "Gene Card");
+        geneCardProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        registerService(context, geneCardMenu, CyNodeViewContextMenuFactory.class, geneCardProps);
 
-        // FIAnnotationFetcherMenu fiHelper = networkMenu.new
-        // FIAnnotationFetcherMenu();
-        // Properties fiHelperProps = new Properties();
-        // fiHelperProps.setProperty("title", "Fetch FI Annotations");
-        // fiHelperProps.setProperty("preferredMenu", "Apps.Reactome FI");
-        // registerService(context, fiHelper,
-        // CyNetworkViewContextMenuFactory.class, fiHelperProps);
-        //
-        // NetworkPathwayEnrichmentMenu netPathEnrichmentMenu = networkMenu.new
-        // NetworkPathwayEnrichmentMenu();
-        // NetworkGOCellComponentMenu netGOCellMenu = networkMenu.new
-        // NetworkGOCellComponentMenu();
-        // NetworkGOBioProcessMenu netGOBioMenu = networkMenu.new
-        // NetworkGOBioProcessMenu();
-        // NetworkGOMolecularFunctionMenu netMolFuncMenu = networkMenu.new
-        // NetworkGOMolecularFunctionMenu();
 
     }
 

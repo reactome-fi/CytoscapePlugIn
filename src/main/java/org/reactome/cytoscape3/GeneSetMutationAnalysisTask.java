@@ -1,7 +1,9 @@
 package org.reactome.cytoscape3;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -169,6 +171,8 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
                 desktopApp.getJFrame().getGlassPane().setVisible(false);
                 return;
             }
+            netManager.addNetwork(network);
+
             // Fix for missing default value persistence in CyTables
             // Should be remedied in the 3.1 api
             CyTable nodeTable = network.getDefaultNodeTable();
@@ -329,8 +333,8 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             else
                 network = generator.constructFINetwork(fis);
         }
-        netManager.addNetwork(network);
-        CyTableManager manager = new CyTableManager();
+        //netManager.addNetwork(network);
+        //CyTableManager manager = new CyTableManager();
         // manager.storeDataSetType(network, "Data Set");
         return network;
     }

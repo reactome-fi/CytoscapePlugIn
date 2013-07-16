@@ -39,13 +39,6 @@ public class UserGuideAction extends AbstractCyAction
                             "The user guide URL is not available. No user guide can be shown at this time");
         }
         PlugInUtilities.openURL(url);
-
-        // Pop up a JEditorPane which contains the offline
-        // user guide.
-        // ActionDialogs gui = new ActionDialogs("UGA");
-        // gui.setLocationRelativeTo(desktopApp.getJFrame());
-        // gui.setModal(true);
-        // gui.setVisible(true);
     }
 
 }
