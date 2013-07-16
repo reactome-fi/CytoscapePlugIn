@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JMenuItem;
-
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.model.CyEdge;
@@ -43,6 +41,7 @@ class NetworkActionCollection
             return new TaskIterator(new ClusterFINetworkTask(view));
         }
     }
+
     class ClusterFINetworkTask extends AbstractNetworkViewTask
     {
 
@@ -64,40 +63,44 @@ class NetworkActionCollection
                 NetworkClusterResult clusterResult = service.cluster(edges);
                 System.out.println("here");
                 Map<String, Integer> nodeToCluster = new HashMap<String, Integer>();
-                List<GeneClusterPair> geneClusterPairs = clusterResult.getGeneClusterPairs();
+                List<GeneClusterPair> geneClusterPairs = clusterResult
+                        .getGeneClusterPairs();
                 if (geneClusterPairs != null)
                 {
                     for (GeneClusterPair geneCluster : geneClusterPairs)
                         nodeToCluster.put(geneCluster.getGeneId(),
-                                          geneCluster.getCluster());
+                                geneCluster.getCluster());
                 }
-                tableManager.loadNodeAttributesByName(view, "module", nodeToCluster);
+                tableManager.loadNodeAttributesByName(view, "module",
+                        nodeToCluster);
                 System.out.println("here");
-                tableManager.storeClusteringType(view, CyTableFormatter.getSpectralPartitionCluster());
-                Map<String, Object> nodeToSamples = tableManager.getNodeTableValuesByName(view.getModel(), 
-                        "samples", String.class);
+                tableManager.storeClusteringType(view,
+                        CyTableFormatter.getSpectralPartitionCluster());
+                Map<String, Object> nodeToSamples = tableManager
+                        .getNodeTableValuesByName(view.getModel(), "samples",
+                                String.class);
                 System.out.println(nodeToSamples);
             }
-            catch(Exception e){
+            catch (Exception e)
+            {
                 System.out.println(e);
             }
         }
-        
+
     }
 
-//    class FIAnnotationFetcherMenu extends AbstractNetworkViewTaskFactory
-//    {
-//        @Override
-//        public TaskIterator createTaskIterator(CyNetworkView arg0)
-//        {
-//            // TODO Auto-generated method stub
-//            return null;
-//        }
-//
-//    }
+    // class FIAnnotationFetcherMenu extends AbstractNetworkViewTaskFactory
+    // {
+    // @Override
+    // public TaskIterator createTaskIterator(CyNetworkView arg0)
+    // {
+    // // TODO Auto-generated method stub
+    // return null;
+    // }
+    //
+    // }
     /*
      * class FIAnnotationFetcherTask extends AbstractNetworkViewTask
-     * 
      */
 
     class NetworkPathwayEnrichmentMenu implements
@@ -147,7 +150,9 @@ class NetworkActionCollection
         }
 
     }
-    class ModulePathwayEnrichmentMenu implements CyNetworkViewContextMenuFactory
+
+    class ModulePathwayEnrichmentMenu implements
+            CyNetworkViewContextMenuFactory
     {
 
         @Override
@@ -156,8 +161,9 @@ class NetworkActionCollection
             // TODO Auto-generated method stub
             return null;
         }
-        
+
     }
+
     class ModuleGOCellComponentMenu implements CyNetworkViewContextMenuFactory
     {
 
@@ -167,8 +173,9 @@ class NetworkActionCollection
             // TODO Auto-generated method stub
             return null;
         }
-        
+
     }
+
     class ModuleGOBioProcessMenu implements CyNetworkViewContextMenuFactory
     {
 
@@ -178,9 +185,11 @@ class NetworkActionCollection
             // TODO Auto-generated method stub
             return null;
         }
-        
+
     }
-    class ModuleGOMolecularFunctionMenu implements CyNetworkViewContextMenuFactory
+
+    class ModuleGOMolecularFunctionMenu implements
+            CyNetworkViewContextMenuFactory
     {
 
         @Override
@@ -189,9 +198,11 @@ class NetworkActionCollection
             // TODO Auto-generated method stub
             return null;
         }
-        
+
     }
-    class SurvivalAnalysisMenuFactory implements CyNetworkViewContextMenuFactory
+
+    class SurvivalAnalysisMenuFactory implements
+            CyNetworkViewContextMenuFactory
     {
 
         @Override
@@ -200,6 +211,6 @@ class NetworkActionCollection
             // TODO Auto-generated method stub
             return null;
         }
-        
+
     }
 }

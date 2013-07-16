@@ -5,7 +5,6 @@
 // Generated on: 2010.07.13 at 06:14:13 PM PDT 
 //
 
-
 package org.reactome.cancerindex.model;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -13,14 +12,14 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-
 /**
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "SequenceIdentificationCollection")
-public class SequenceIdentificationCollection {
-    @XmlElement(name="id", required = true)
+public class SequenceIdentificationCollection
+{
+    @XmlElement(name = "id", required = true)
     protected Long id;
     @XmlElement(name = "HgncID", required = true)
     protected String hgncID;
@@ -33,23 +32,24 @@ public class SequenceIdentificationCollection {
     @XmlElement(name = "UniProtID", required = true)
     protected String uniProtID;
 
-    public Long getId() {
+    public Long getId()
+    {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Long id)
+    {
         this.id = id;
     }
 
     /**
      * Gets the value of the hgncID property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getHgncID() {
+    public String getHgncID()
+    {
         return hgncID;
     }
 
@@ -57,23 +57,22 @@ public class SequenceIdentificationCollection {
      * Sets the value of the hgncID property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setHgncID(String value) {
+    public void setHgncID(String value)
+    {
         this.hgncID = value;
     }
 
     /**
      * Gets the value of the locusLinkID property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getLocusLinkID() {
+    public String getLocusLinkID()
+    {
         return locusLinkID;
     }
 
@@ -81,23 +80,22 @@ public class SequenceIdentificationCollection {
      * Sets the value of the locusLinkID property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setLocusLinkID(String value) {
+    public void setLocusLinkID(String value)
+    {
         this.locusLinkID = value;
     }
 
     /**
      * Gets the value of the genbankAccession property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getGenbankAccession() {
+    public String getGenbankAccession()
+    {
         return genbankAccession;
     }
 
@@ -105,23 +103,22 @@ public class SequenceIdentificationCollection {
      * Sets the value of the genbankAccession property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setGenbankAccession(String value) {
+    public void setGenbankAccession(String value)
+    {
         this.genbankAccession = value;
     }
 
     /**
      * Gets the value of the refSeqID property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getRefSeqID() {
+    public String getRefSeqID()
+    {
         return refSeqID;
     }
 
@@ -129,23 +126,22 @@ public class SequenceIdentificationCollection {
      * Sets the value of the refSeqID property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setRefSeqID(String value) {
+    public void setRefSeqID(String value)
+    {
         this.refSeqID = value;
     }
 
     /**
      * Gets the value of the uniProtID property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getUniProtID() {
+    public String getUniProtID()
+    {
         return uniProtID;
     }
 
@@ -153,11 +149,11 @@ public class SequenceIdentificationCollection {
      * Sets the value of the uniProtID property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setUniProtID(String value) {
+    public void setUniProtID(String value)
+    {
         this.uniProtID = value;
     }
 

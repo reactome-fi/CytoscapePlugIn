@@ -2,7 +2,6 @@ package org.reactome.cytoscape3;
 
 import java.awt.Color;
 import java.awt.Component;
- 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -70,11 +69,12 @@ public class VisualStyleHelper
 
     public void setVisualStyle(CyNetworkView view)
     {
-        //VisualStyle style = visMapManager.getVisualStyle(view);
+        // VisualStyle style = visMapManager.getVisualStyle(view);
         Iterator it = visMapManager.getAllVisualStyles().iterator();
-        while(it.hasNext()){
+        while (it.hasNext())
+        {
             VisualStyle current = (VisualStyle) it.next();
-            if(current.getTitle().equalsIgnoreCase(FI_VISUAL_STYLE))
+            if (current.getTitle().equalsIgnoreCase(FI_VISUAL_STYLE))
             {
                 visMapManager.removeVisualStyle(current);
                 break;
@@ -99,7 +99,8 @@ public class VisualStyleHelper
                 color);
         fiVisualStyle
                 .setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, color);
-        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_TRANSPARENCY, 100);
+        fiVisualStyle
+                .setDefaultValue(BasicVisualLexicon.NODE_TRANSPARENCY, 100);
         // Give the nodes a label based on their name
         String nodeLabelAttrName = "nodeLabel";
         PassthroughMapping labelFunction = (PassthroughMapping) this.visMapFuncFactoryP
@@ -107,54 +108,63 @@ public class VisualStyleHelper
                         BasicVisualLexicon.NODE_LABEL);
         String toolTipAttrName = "nodeToolTip";
         PassthroughMapping toolTipFunction = (PassthroughMapping) this.visMapFuncFactoryP
-                .createVisualMappingFunction(toolTipAttrName, String.class, BasicVisualLexicon.NODE_TOOLTIP);
+                .createVisualMappingFunction(toolTipAttrName, String.class,
+                        BasicVisualLexicon.NODE_TOOLTIP);
         fiVisualStyle.addVisualMappingFunction(labelFunction);
         fiVisualStyle.addVisualMappingFunction(toolTipFunction);
 
         // Set the node color based on module
-        DiscreteMapping colorToModuleFunction =
-                            (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("module",
-                                                            String.class, BasicVisualLexicon.NODE_FILL_COLOR);
-        String moduleColors = PlugInScopeObjectManager.getManager().getProperties().getProperty("moduleColors");
-        String [] tokens = moduleColors.split(";");
+        DiscreteMapping colorToModuleFunction = (DiscreteMapping) this.visMapFuncFactoryD
+                .createVisualMappingFunction("module", String.class,
+                        BasicVisualLexicon.NODE_FILL_COLOR);
+        String moduleColors = PlugInScopeObjectManager.getManager()
+                .getProperties().getProperty("moduleColors");
+        String[] tokens = moduleColors.split(";");
         for (int i = 0; i < tokens.length; i++)
         {
-            String [] text = tokens[i].split(",");
+            String[] text = tokens[i].split(",");
             Color moduleColor = new Color(Integer.parseInt(text[0]),
-                                          Integer.parseInt(text[1]),
-                                          Integer.parseInt(text[2]));
+                    Integer.parseInt(text[1]), Integer.parseInt(text[2]));
             colorToModuleFunction.putMapValue(i, moduleColor);
         }
         fiVisualStyle.addVisualMappingFunction(colorToModuleFunction);
-        
+
         // Change the node shape from the default (ellipse)
         // to diamond if the gene is a linker.
-        DiscreteMapping linkerGeneShapeFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("isLinker", Boolean.class,
+        DiscreteMapping linkerGeneShapeFunction = (DiscreteMapping) this.visMapFuncFactoryD
+                .createVisualMappingFunction("isLinker", Boolean.class,
                         BasicVisualLexicon.NODE_SHAPE);
         boolean key = true;
         linkerGeneShapeFunction.putMapValue(key,
                 NodeShapeVisualProperty.DIAMOND);
         fiVisualStyle.addVisualMappingFunction(linkerGeneShapeFunction);
         // Set default edge color and width
-        fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_UNSELECTED_PAINT, Color.BLUE);
+        fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_UNSELECTED_PAINT,
+                Color.BLUE);
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_WIDTH, 1.5d);
-        
-        //Set the edge target/source shape based
-        //on the FI direction.
-        
-        //Use dashed lines for predicted interactions.
-        
-        //Set the node size based on sample number
-        int [] sampleNumberRange = getSampleNumberRange(view);
+
+        // Set the edge target/source shape based
+        // on the FI direction.
+
+        // Use dashed lines for predicted interactions.
+
+        // Set the node size based on sample number
+        int[] sampleNumberRange = getSampleNumberRange(view);
         if (sampleNumberRange != null)
         {
-            ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) this.visMapFuncFactoryC.createVisualMappingFunction("sampleNumber", Integer.class, BasicVisualLexicon.NODE_SIZE);
+            ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) this.visMapFuncFactoryC
+                    .createVisualMappingFunction("sampleNumber", Integer.class,
+                            BasicVisualLexicon.NODE_SIZE);
             Integer lowerSampleNumberBound = sampleNumberRange[0];
-            BoundaryRangeValues<Integer> lowerBoundary = new BoundaryRangeValues<Integer>(30,30,30);
+            BoundaryRangeValues<Integer> lowerBoundary = new BoundaryRangeValues<Integer>(
+                    30, 30, 30);
             Integer upperSampleNumberBound = sampleNumberRange[1];
-            BoundaryRangeValues<Integer> upperBoundary = new BoundaryRangeValues<Integer>(100,100,100);
-            sampleNumberToSizeFunction.addPoint(lowerSampleNumberBound, lowerBoundary);
-            sampleNumberToSizeFunction.addPoint(upperSampleNumberBound, upperBoundary);
+            BoundaryRangeValues<Integer> upperBoundary = new BoundaryRangeValues<Integer>(
+                    100, 100, 100);
+            sampleNumberToSizeFunction.addPoint(lowerSampleNumberBound,
+                    lowerBoundary);
+            sampleNumberToSizeFunction.addPoint(upperSampleNumberBound,
+                    upperBoundary);
             fiVisualStyle.addVisualMappingFunction(sampleNumberToSizeFunction);
         }
         // Apply the visual style and update the network view.
@@ -170,7 +180,9 @@ public class VisualStyleHelper
 
     private int[] getSampleNumberRange(CyNetworkView view)
     {
-        Map<Long, Object> idToSampleNumber = new CyTableManager().getNodeTableValuesBySUID(view.getModel(), "sampleNumber", Integer.class);
+        Map<Long, Object> idToSampleNumber = new CyTableManager()
+                .getNodeTableValuesBySUID(view.getModel(), "sampleNumber",
+                        Integer.class);
         if (idToSampleNumber == null || idToSampleNumber.isEmpty())
             return null;
         Set<Object> set = new HashSet<Object>(idToSampleNumber.values());
@@ -178,9 +190,10 @@ public class VisualStyleHelper
         for (Object obj : set)
             list.add((Integer) obj);
         Collections.sort(list);
-        Integer min = (Integer) list.get(0);
-        Integer max = (Integer) list.get(list.size() - 1);
-        return new int []{min, max};
+        Integer min = list.get(0);
+        Integer max = list.get(list.size() - 1);
+        return new int[]
+        { min, max };
     }
 
     private JMenuItem getyFilesOrganic()

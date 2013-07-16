@@ -6,10 +6,10 @@ public class FIAnnotationHelper
 {
 
     public void annotateFIs(CyNetworkView view,
-	    RESTFulFIService restFulFIService, CyTableManager tableManager)
+            RESTFulFIService restFulFIService, CyTableManager tableManager)
     {
-	// TODO Auto-generated method stub
-	
+        // TODO Auto-generated method stub
+
     }
 
 }

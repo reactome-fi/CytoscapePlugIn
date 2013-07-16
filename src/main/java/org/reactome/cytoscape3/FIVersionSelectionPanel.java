@@ -1,4 +1,3 @@
-
 package org.reactome.cytoscape3;
 
 import java.awt.BorderLayout;
@@ -17,21 +16,25 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 /**
- * This customized JPanel is used to select a FI network version. Several FI network versions
- * may be provided in the plug-in so that results based on old network can still be reproduced.
- * The panel is embedded in the main JPanel of each of the three main action menu classes.
- * @author gwu
- * Ported by Eric T Dawson (July 2013)
- *
+ * This customized JPanel is used to select a FI network version. Several FI
+ * network versions may be provided in the plug-in so that results based on old
+ * network can still be reproduced. The panel is embedded in the main JPanel of
+ * each of the three main action menu classes.
+ * 
+ * @author gwu Ported by Eric T Dawson (July 2013)
+ * 
  */
-public class FIVersionSelectionPanel extends JPanel {
+public class FIVersionSelectionPanel extends JPanel
+{
     private List<JRadioButton> buttons;
-    
-    public FIVersionSelectionPanel() {
+
+    public FIVersionSelectionPanel()
+    {
         init();
     }
-    
-    private void init() {
+
+    private void init()
+    {
         // Use two panels
         setLayout(new BorderLayout());
         JPanel choicePane = new JPanel();
@@ -39,15 +42,17 @@ public class FIVersionSelectionPanel extends JPanel {
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(4, 4, 4, 4);
         add(choicePane, BorderLayout.CENTER);
-        
-        //Retrieve the list of FI versions from the Reactome server.
-        String versions = PlugInScopeObjectManager.getManager().getProperties().getProperty("FINetworkVersions");
+
+        // Retrieve the list of FI versions from the Reactome server.
+        String versions = PlugInScopeObjectManager.getManager().getProperties()
+                .getProperty("FINetworkVersions");
         String[] tokens = versions.split(",");
         // Create JRadioButtons based on tokens
         ButtonGroup group = new ButtonGroup();
         int index = 0;
         buttons = new ArrayList<JRadioButton>();
-        for (String token : tokens) {
+        for (String token : tokens)
+        {
             JRadioButton button = new JRadioButton(token);
             buttons.add(button);
             group.add(button);
@@ -55,29 +60,36 @@ public class FIVersionSelectionPanel extends JPanel {
             index++;
             choicePane.add(button, constraints);
         }
-        
+
         // Add a note at the bottom
-        JLabel noteLabel = new JLabel("* Different versions of the FI network may produce different results.");
+        JLabel noteLabel = new JLabel(
+                "* Different versions of the FI network may produce different results.");
         Font font = noteLabel.getFont();
         noteLabel.setFont(font.deriveFont(Font.ITALIC));
         add(noteLabel, BorderLayout.SOUTH);
-        
+
         addChangeListener();
         // Choose the oldest provided version of the FI network
-        //as the default.
+        // as the default.
         JRadioButton btn = buttons.get(0);
         btn.setSelected(true);
     }
-    
-    private void addChangeListener() {
-        ChangeListener listner = new ChangeListener() {
-            
+
+    private void addChangeListener()
+    {
+        ChangeListener listner = new ChangeListener()
+        {
+
             @Override
-            public void stateChanged(ChangeEvent e) {
+            public void stateChanged(ChangeEvent e)
+            {
                 // Get the selected button
-                for (JRadioButton btn : buttons) {
-                    if (btn.isSelected()) {
-                        PlugInScopeObjectManager.getManager().setFiNetworkVersion(btn.getText());
+                for (JRadioButton btn : buttons)
+                {
+                    if (btn.isSelected())
+                    {
+                        PlugInScopeObjectManager.getManager()
+                                .setFiNetworkVersion(btn.getText());
                         break;
                     }
                 }
@@ -86,13 +98,15 @@ public class FIVersionSelectionPanel extends JPanel {
         for (JRadioButton btn : buttons)
             btn.addChangeListener(listner);
     }
-    
+
     /**
      * Get a text lable for this customized JPanel.
+     * 
      * @return
      */
-    public String getTitle() {
+    public String getTitle()
+    {
         return "Reactome FI Network Version";
     }
-    
+
 }

@@ -2,18 +2,24 @@ package org.reactome.cytoscape3;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JOptionPane;
+
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTable;
+import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
@@ -26,24 +32,8 @@ import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
 import org.reactome.cancer.CancerAnalysisUtilitites;
 import org.reactome.cancer.MATFileLoader;
-
-
-
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
-
-import org.cytoscape.model.CyEdge;
-import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNetworkFactory;
-import org.cytoscape.model.CyNetworkManager;
-import org.cytoscape.model.CyNode;
-import org.cytoscape.model.CyTable;
-import org.cytoscape.model.CyTableFactory;
-
-
-
-
-
 
 public class GeneSetMutationAnalysisTask extends AbstractTask
 {
@@ -72,22 +62,17 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
 
     public GeneSetMutationAnalysisTask(CySwingApplication desktopApp,
             String format, File file, boolean chooseHomoGenes,
-            boolean useLinkers, int sampleCutoffValue,
-            boolean showUnlinked,
-            boolean showUnlinkedEnabled,
-            boolean fetchFIAnnotations,
-            CyNetworkFactory networkFactory,
-            CyNetworkManager netManager,
-            CyNetworkViewFactory viewFactory,
-            CyNetworkViewManager viewManager,
+            boolean useLinkers, int sampleCutoffValue, boolean showUnlinked,
+            boolean showUnlinkedEnabled, boolean fetchFIAnnotations,
+            CyNetworkFactory networkFactory, CyNetworkManager netManager,
+            CyNetworkViewFactory viewFactory, CyNetworkViewManager viewManager,
             CyLayoutAlgorithmManager layoutManager,
             VisualMappingManager visMapManager,
             VisualStyleFactory visStyleFactory,
             VisualMappingFunctionFactory visMapFuncFactoryC,
             VisualMappingFunctionFactory visMapFuncFactoryD,
             VisualMappingFunctionFactory visMapFuncFactoryP,
-            CyTableFactory tableFactory,
-            TaskManager taskManager)
+            CyTableFactory tableFactory, TaskManager taskManager)
     {
         this.desktopApp = desktopApp;
         this.networkFactory = networkFactory;
@@ -126,36 +111,41 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             Map<String, Set<String>> sampleToGenes = null;
             Set<String> selectedGenes = null;
 
-            if (format.equals("MAF")){
+            if (format.equals("MAF"))
+            {
 
-                sampleToGenes = new MATFileLoader().loadSampleToGenes(file.getAbsolutePath(), 
-                        chooseHomoGenes);
-                selectedGenes = CancerAnalysisUtilitites.selectGenesInSamples(sampleCutoffValue, 
-                        sampleToGenes);
+                sampleToGenes = new MATFileLoader().loadSampleToGenes(
+                        file.getAbsolutePath(), chooseHomoGenes);
+                selectedGenes = CancerAnalysisUtilitites.selectGenesInSamples(
+                        sampleCutoffValue, sampleToGenes);
             }
-            else if (format.equals("GeneSample")) {
+            else if (format.equals("GeneSample"))
+            {
                 geneToSampleNumber = new HashMap<String, Integer>();
                 geneToSampleString = new HashMap<String, String>();
-                loadGeneSampleFile(file,
-                        geneToSampleNumber,
-                        geneToSampleString);
-                selectedGenes = selectGenesBasedOnSampleCutoff(geneToSampleNumber,
-                        sampleCutoffValue);
+                loadGeneSampleFile(file, geneToSampleNumber, geneToSampleString);
+                selectedGenes = selectGenesBasedOnSampleCutoff(
+                        geneToSampleNumber, sampleCutoffValue);
             }
-            else if (format.equals("GeneSet")) {
+            else if (format.equals("GeneSet"))
+            {
                 selectedGenes = loadGeneSetFile(file);
             }
-            //Check if it is possible to construct the network
-            //given the sample size.
+            // Check if it is possible to construct the network
+            // given the sample size.
             if (useLinkers)
             {
                 taskMonitor.setStatusMessage("Checking FI Network size...");
-                FINetworkService fiService = PlugInScopeObjectManager.getManager().getNetworkService();
+                FINetworkService fiService = PlugInScopeObjectManager
+                        .getManager().getNetworkService();
                 Integer cutoff = fiService.getNetworkBuildSizeCutoff();
-                if (cutoff != null && selectedGenes.size() >= cutoff) {
-                    JOptionPane.showMessageDialog(desktopApp.getJFrame(), 
-                            "The size of the gene set is too big. Linker genes should not be used!\n" +
-                                    "Please try again without using linker genes.",
+                if (cutoff != null && selectedGenes.size() >= cutoff)
+                {
+                    JOptionPane
+                            .showMessageDialog(
+                                    desktopApp.getJFrame(),
+                                    "The size of the gene set is too big. Linker genes should not be used!\n"
+                                            + "Please try again without using linker genes.",
                                     "Error in Building Network",
                                     JOptionPane.ERROR_MESSAGE);
                     desktopApp.getJFrame().getGlassPane().setVisible(false);
@@ -172,18 +162,18 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             if (network == null)
             {
                 JOptionPane.showMessageDialog(desktopApp.getJFrame(),
-                        "Cannot find any functional interaction among provided genes.\n" +
-                                "No network can be constructed.\n" +
-                                "Note: only human gene names are supported.",
-                                "Empty Network",
-                                JOptionPane.INFORMATION_MESSAGE);
+                        "Cannot find any functional interaction among provided genes.\n"
+                                + "No network can be constructed.\n"
+                                + "Note: only human gene names are supported.",
+                        "Empty Network", JOptionPane.INFORMATION_MESSAGE);
                 desktopApp.getJFrame().getGlassPane().setVisible(false);
                 return;
             }
-            //Fix for missing default value persistence in CyTables
-            //Should be remedied in the 3.1 api
+            // Fix for missing default value persistence in CyTables
+            // Should be remedied in the 3.1 api
             CyTable nodeTable = network.getDefaultNodeTable();
-            for (Iterator <?> it = network.getNodeList().iterator(); it.hasNext();)
+            for (Iterator<?> it = network.getNodeList().iterator(); it
+                    .hasNext();)
             {
                 CyNode node = (CyNode) it.next();
                 Long nodeSUID = node.getSUID();
@@ -194,13 +184,15 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             {
                 geneToSampleNumber = new HashMap<String, Integer>();
                 geneToSampleString = new HashMap<String, String>();
-                Map<String, Set<String>> geneToSamples = InteractionUtilities.switchKeyValues(sampleToGenes);
+                Map<String, Set<String>> geneToSamples = InteractionUtilities
+                        .switchKeyValues(sampleToGenes);
                 geneToSamples.keySet().retainAll(selectedGenes);
                 for (String gene : geneToSamples.keySet())
                 {
                     Set<String> samples = geneToSamples.get(gene);
                     geneToSampleNumber.put(gene, samples.size());
-                    geneToSampleString.put(gene, InteractionUtilities.joinStringElements(";", samples));
+                    geneToSampleString.put(gene, InteractionUtilities
+                            .joinStringElements(";", samples));
                 }
             }
             taskMonitor.setStatusMessage("Formatting network attributes...");
@@ -210,45 +202,52 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             tableManager.storeFINetworkVersion(view);
             viewManager.addNetworkView(view);
             if (geneToSampleNumber != null && !geneToSampleNumber.isEmpty())
-                tableManager.loadNodeAttributesByName(view, "sampleNumber", geneToSampleNumber);
+                tableManager.loadNodeAttributesByName(view, "sampleNumber",
+                        geneToSampleNumber);
             if (geneToSampleString != null && !geneToSampleString.isEmpty())
-                tableManager.loadNodeAttributesByName(view, "samples", geneToSampleString);
-            //Check if linker genes are to be used.
+                tableManager.loadNodeAttributesByName(view, "samples",
+                        geneToSampleString);
+            // Check if linker genes are to be used.
             if (useLinkers)
             {
                 taskMonitor.setStatusMessage("Fetching linker genes...");
                 Map<String, Boolean> geneToIsLinker = new HashMap<String, Boolean>();
-                for (Iterator<?> it = network.getNodeList().iterator(); it.hasNext();)
+                for (Iterator<?> it = network.getNodeList().iterator(); it
+                        .hasNext();)
                 {
                     CyNode node = (CyNode) it.next();
                     Long suid = node.getSUID();
-                    String nodeName = network.getDefaultNodeTable().getRow(suid).get("name", String.class);
-                    geneToIsLinker.put(nodeName, !selectedGenes.contains(nodeName));
+                    String nodeName = network.getDefaultNodeTable()
+                            .getRow(suid).get("name", String.class);
+                    geneToIsLinker.put(nodeName,
+                            !selectedGenes.contains(nodeName));
                 }
-                tableManager.loadNodeAttributesByName(view, "isLinker", geneToIsLinker);
+                tableManager.loadNodeAttributesByName(view, "isLinker",
+                        geneToIsLinker);
             }
             if (fetchFIAnnotations)
             {
                 taskMonitor.setStatusMessage("Fetching FI annotations...");
-                new FIAnnotationHelper().annotateFIs(view, new RESTFulFIService(),
-                        tableManager);
+                new FIAnnotationHelper().annotateFIs(view,
+                        new RESTFulFIService(), tableManager);
             }
             if (view.getModel().getEdgeCount() != 0)
                 for (CyEdge edge : view.getModel().getEdgeList())
                 {
                     tableManager.storeEdgeName(edge, view);
                 }
-            VisualStyleHelper styleHelper = new VisualStyleHelper(visMapManager,
-                    visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD,
-                    visMapFuncFactoryP, layoutManager, taskManager, desktopApp);
+            VisualStyleHelper styleHelper = new VisualStyleHelper(
+                    visMapManager, visStyleFactory, visMapFuncFactoryC,
+                    visMapFuncFactoryD, visMapFuncFactoryP, layoutManager,
+                    taskManager, desktopApp);
             styleHelper.setVisualStyle(view);
             taskMonitor.setProgress(1.0d);
         }
-        catch (Exception e){
+        catch (Exception e)
+        {
             JOptionPane.showMessageDialog(desktopApp.getJFrame(),
                     "Error in Loading File: " + e.getMessage(),
-                    "Error in Loading",
-                    JOptionPane.ERROR_MESSAGE);
+                    "Error in Loading", JOptionPane.ERROR_MESSAGE);
             desktopApp.getJFrame().getGlassPane().setVisible(false);
         }
         desktopApp.getJFrame().getGlassPane().setVisible(false);
@@ -256,38 +255,42 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
 
     private void loadGeneSampleFile(File file,
             Map<String, Integer> geneToSampleNumber,
-            Map<String, String> geneToSampleString) throws IOException {
+            Map<String, String> geneToSampleString) throws IOException
+    {
         FileUtility fu = new FileUtility();
         fu.setInput(file.getAbsolutePath());
         // The first line should be a header line
         String line = fu.readLine();
         // Check if the format is correct
         String[] tokens = line.split("\t");
-        if (tokens.length != 2 &&
-                tokens.length != 3) {
-            throw new IllegalArgumentException("Wrong file format. Gene/sample number format should have two or\n" +
-                    "three columns: gene, sample number and an optional sample column.");
+        if (tokens.length != 2 && tokens.length != 3)
+        {
+            throw new IllegalArgumentException(
+                    "Wrong file format. Gene/sample number format should have two or\n"
+                            + "three columns: gene, sample number and an optional sample column.");
         }
-        while ((line = fu.readLine()) != null) {
+        while ((line = fu.readLine()) != null)
+        {
             tokens = line.split("\t");
-            geneToSampleNumber.put(tokens[0],
-                    new Integer(tokens[1]));
+            geneToSampleNumber.put(tokens[0], new Integer(tokens[1]));
             if (tokens.length > 2)
-                geneToSampleString.put(tokens[0],
-                        tokens[2]);
+                geneToSampleString.put(tokens[0], tokens[2]);
         }
         fu.close();
     }
-    private Set<String> selectGenesBasedOnSampleCutoff(Map<String, Integer> geneToSampleNumber,
-            int sampleCutoff) {
+
+    private Set<String> selectGenesBasedOnSampleCutoff(
+            Map<String, Integer> geneToSampleNumber, int sampleCutoff)
+    {
         Set<String> selectedGenes = new HashSet<String>();
-        for (String gene : geneToSampleNumber.keySet()) {
+        for (String gene : geneToSampleNumber.keySet())
+        {
             Integer number = geneToSampleNumber.get(gene);
-            if (number >= sampleCutoff)
-                selectedGenes.add(gene);
+            if (number >= sampleCutoff) selectedGenes.add(gene);
         }
         return selectedGenes;
     }
+
     private Set<String> loadGeneSetFile(File file) throws IOException
     {
         Set<String> genes = new HashSet<String>();
@@ -295,8 +298,10 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
         fu.setInput(file.getAbsolutePath());
         String line = fu.readLine();
         String[] tokens = line.split("\t");
-        if (tokens.length != 1) {
-            throw new IllegalArgumentException("Wrong file format.\nGeneset format should have only one column and have no header.");
+        if (tokens.length != 1)
+        {
+            throw new IllegalArgumentException(
+                    "Wrong file format.\nGeneset format should have only one column and have no header.");
         }
         genes.add(line.trim());
         while ((line = fu.readLine()) != null)
@@ -304,17 +309,20 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
         fu.close();
         return genes;
     }
-    private CyNetwork constructFINetwork(Set<String> selectedGenes, String title) throws Exception
+
+    private CyNetwork constructFINetwork(Set<String> selectedGenes, String title)
+            throws Exception
     {
         // Check if a local service should be used
-        FINetworkService fiService = PlugInScopeObjectManager.getManager().getNetworkService();
-        Set<String> fis = fiService.buildFINetwork(selectedGenes, 
-                useLinkers);
+        FINetworkService fiService = PlugInScopeObjectManager.getManager()
+                .getNetworkService();
+        Set<String> fis = fiService.buildFINetwork(selectedGenes, useLinkers);
         CyNetwork network = null;
         if (fis != null && fis.size() > 0)
         {
 
-            CyNetworkGenerator generator = new CyNetworkGenerator(networkFactory, tableFactory);
+            CyNetworkGenerator generator = new CyNetworkGenerator(
+                    networkFactory, tableFactory);
             // Check if any unlinked nodes should be added
             if (showUnlinkedEnabled && showUnlinked)
                 network = generator.constructFINetwork(selectedGenes, fis);

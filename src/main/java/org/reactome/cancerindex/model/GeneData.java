@@ -5,7 +5,6 @@
 // Generated on: 2010.07.13 at 06:14:13 PM PDT 
 //
 
-
 package org.reactome.cancerindex.model;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -13,13 +12,13 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-
 /**
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "GeneData")
-public class GeneData {
+public class GeneData
+{
 
     @XmlElement(name = "id", required = true)
     protected Long id;
@@ -31,28 +30,31 @@ public class GeneData {
     /**
      * Gets the value of the matchedGeneTerm property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getMatchedGeneTerm() {
+    public String getMatchedGeneTerm()
+    {
         return matchedGeneTerm;
     }
 
-    public Long getId() {
+    public Long getId()
+    {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Long id)
+    {
         this.id = id;
     }
 
-    public String getNciGeneConceptCode() {
+    public String getNciGeneConceptCode()
+    {
         return nciGeneConceptCode;
     }
 
-    public void setNciGeneConceptCode(String nciGeneConceptCode) {
+    public void setNciGeneConceptCode(String nciGeneConceptCode)
+    {
         this.nciGeneConceptCode = nciGeneConceptCode;
     }
 
@@ -60,11 +62,11 @@ public class GeneData {
      * Sets the value of the matchedGeneTerm property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setMatchedGeneTerm(String value) {
+    public void setMatchedGeneTerm(String value)
+    {
         this.matchedGeneTerm = value;
     }
 

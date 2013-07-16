@@ -15,36 +15,37 @@ import org.cytoscape.application.swing.AbstractCyAction;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.util.swing.OpenBrowser;
 
-
 public class UserGuideAction extends AbstractCyAction
 {
 
-    private CySwingApplication desktopApp;
-    private OpenBrowser browser;
-    private String userGuideURL = PlugInScopeObjectManager.getManager().getUserGuideURL();
-
     public UserGuideAction(CySwingApplication desktopApp, OpenBrowser browser)
     {
-        //Add the 'User Guide' item to the ReactomeFI menu
+        // Add the 'User Guide' item to the ReactomeFI menu
         super("User Guide");
-        this.desktopApp = desktopApp;
-        this.browser = browser;
         setPreferredMenu("Apps.Reactome FI");
     }
 
     @Override
     public void actionPerformed(ActionEvent e)
     {
-        //Pop open a browser window pointing to the
-        //online Reactome FI app user guide.
-        browser.openURL(userGuideURL);
-        
-        //Pop up a JEditorPane which contains the offline
-        //user guide.
-        //	ActionDialogs gui = new ActionDialogs("UGA");
-        //	gui.setLocationRelativeTo(desktopApp.getJFrame());
-        //	gui.setModal(true);
-        //	gui.setVisible(true);
+        // Pop open a browser window pointing to the
+        // online Reactome FI app user guide.
+        String url = PlugInScopeObjectManager.getManager().getProperties()
+                .getProperty("userGuideURL");
+        if (url == null)
+        {
+            PlugInUtilities
+                    .showErrorMessage("Error in Opening User Guide",
+                            "The user guide URL is not available. No user guide can be shown at this time");
+        }
+        PlugInUtilities.openURL(url);
+
+        // Pop up a JEditorPane which contains the offline
+        // user guide.
+        // ActionDialogs gui = new ActionDialogs("UGA");
+        // gui.setLocationRelativeTo(desktopApp.getJFrame());
+        // gui.setModal(true);
+        // gui.setVisible(true);
     }
 
 }

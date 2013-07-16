@@ -17,8 +17,6 @@ import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
 
-
-
 public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
 {
     private TaskMonitor tm;
@@ -44,60 +42,54 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
     private TaskManager taskManager;
     private CyTableFactory tableFactory;
 
-
     public GeneSetMutationAnalysisTaskFactory(CySwingApplication desktopApp,
-	    String format, File file, boolean chooseHomoGenes, boolean useLinkers,
-	    boolean showUnlinked, boolean showUnlinkedEnabled, boolean fetchFIAnnotations,
-	    int sampleCutoffValue, CyNetworkFactory networkFactory,
-	    CyNetworkManager netManager,
-	    CyNetworkViewFactory viewFactory,
-	    CyNetworkViewManager viewManager,
-	    CyLayoutAlgorithmManager layoutManager,
-        VisualMappingManager visMapManager,
-        VisualStyleFactory visStyleFactory,
-        VisualMappingFunctionFactory visMapFuncFactoryC,
-        VisualMappingFunctionFactory visMapFuncFactoryD,
-        VisualMappingFunctionFactory visMapFuncFactoryP,
-        CyTableFactory tableFactory,
-        TaskManager taskManager)
+            String format, File file, boolean chooseHomoGenes,
+            boolean useLinkers, boolean showUnlinked,
+            boolean showUnlinkedEnabled, boolean fetchFIAnnotations,
+            int sampleCutoffValue, CyNetworkFactory networkFactory,
+            CyNetworkManager netManager, CyNetworkViewFactory viewFactory,
+            CyNetworkViewManager viewManager,
+            CyLayoutAlgorithmManager layoutManager,
+            VisualMappingManager visMapManager,
+            VisualStyleFactory visStyleFactory,
+            VisualMappingFunctionFactory visMapFuncFactoryC,
+            VisualMappingFunctionFactory visMapFuncFactoryD,
+            VisualMappingFunctionFactory visMapFuncFactoryP,
+            CyTableFactory tableFactory, TaskManager taskManager)
     {
-	this.desktopApp = desktopApp;
+        this.desktopApp = desktopApp;
 
-	this.format = format;
-	this.file = file;
-	this.chooseHomoGenes = chooseHomoGenes;
-	this.useLinkers = useLinkers;
-	this.showUnlinked = showUnlinked;
-	this.showUnlinkedEnabled = showUnlinkedEnabled;
-	this.fetchFIAnnotations = fetchFIAnnotations;
-	this.sampleCutoffValue = sampleCutoffValue;
-	this.networkFactory = networkFactory;
-	this.netManager = netManager;
-	this.viewFactory = viewFactory;
-	this.viewManager = viewManager;
-	this.visMapManager = visMapManager;
-    this.layoutManager = layoutManager;
-    this.visStyleFactory = visStyleFactory;
-    this.visMapFuncFactoryP = visMapFuncFactoryP;
-    this.visMapFuncFactoryC = visMapFuncFactoryC;
-    this.visMapFuncFactoryD = visMapFuncFactoryD;
-    this.taskManager = taskManager;
-    this.tableFactory = tableFactory;
+        this.format = format;
+        this.file = file;
+        this.chooseHomoGenes = chooseHomoGenes;
+        this.useLinkers = useLinkers;
+        this.showUnlinked = showUnlinked;
+        this.showUnlinkedEnabled = showUnlinkedEnabled;
+        this.fetchFIAnnotations = fetchFIAnnotations;
+        this.sampleCutoffValue = sampleCutoffValue;
+        this.networkFactory = networkFactory;
+        this.netManager = netManager;
+        this.viewFactory = viewFactory;
+        this.viewManager = viewManager;
+        this.visMapManager = visMapManager;
+        this.layoutManager = layoutManager;
+        this.visStyleFactory = visStyleFactory;
+        this.visMapFuncFactoryP = visMapFuncFactoryP;
+        this.visMapFuncFactoryC = visMapFuncFactoryC;
+        this.visMapFuncFactoryD = visMapFuncFactoryD;
+        this.taskManager = taskManager;
+        this.tableFactory = tableFactory;
     }
-
 
     @Override
     public TaskIterator createTaskIterator()
     {
-	return new TaskIterator(new GeneSetMutationAnalysisTask(desktopApp,
-	    	format, file, chooseHomoGenes,
-	    	useLinkers, sampleCutoffValue,
-	        showUnlinked,
-	        showUnlinkedEnabled,
-	        fetchFIAnnotations,
-	    	networkFactory,
-	    	netManager,
-	    	viewFactory,
-	    	viewManager, layoutManager, visMapManager,
-	    	visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD, visMapFuncFactoryP, tableFactory, taskManager));
-    }}
+        return new TaskIterator(new GeneSetMutationAnalysisTask(desktopApp,
+                format, file, chooseHomoGenes, useLinkers, sampleCutoffValue,
+                showUnlinked, showUnlinkedEnabled, fetchFIAnnotations,
+                networkFactory, netManager, viewFactory, viewManager,
+                layoutManager, visMapManager, visStyleFactory,
+                visMapFuncFactoryC, visMapFuncFactoryD, visMapFuncFactoryP,
+                tableFactory, taskManager));
+    }
+}

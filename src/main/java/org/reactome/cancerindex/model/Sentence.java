@@ -5,7 +5,6 @@
 // Generated on: 2010.07.13 at 06:14:13 PM PDT 
 //
 
-
 package org.reactome.cancerindex.model;
 
 import java.util.ArrayList;
@@ -16,15 +15,13 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-
-
-
 /**
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "Sentence")
-public class Sentence {
+public class Sentence
+{
 
     @XmlElement(name = "id", required = true)
     protected Long id;
@@ -54,64 +51,66 @@ public class Sentence {
     /**
      * Gets the value of the geneData property.
      * 
-     * @return
-     *     possible object is
-     *     {@link GeneData }
-     *     
+     * @return possible object is {@link GeneData }
+     * 
      */
-    public GeneData getGeneData() {
+    public GeneData getGeneData()
+    {
         return geneData;
     }
 
-    public Long getId() {
+    public Long getId()
+    {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Long id)
+    {
         this.id = id;
     }
 
-    public void setEvidenceCode(List<String> evidenceCode) {
+    public void setEvidenceCode(List<String> evidenceCode)
+    {
         this.evidenceCode = evidenceCode;
     }
-    
-    public void addEvidenceCode(String value) {
-        if (evidenceCode == null)
-            evidenceCode = new ArrayList<String>();
+
+    public void addEvidenceCode(String value)
+    {
+        if (evidenceCode == null) evidenceCode = new ArrayList<String>();
         evidenceCode.add(value);
     }
 
-    public void setRoles(List<Roles> roles) {
+    public void setRoles(List<Roles> roles)
+    {
         this.roles = roles;
     }
-    
-    public void addRoles(Roles value) {
-        if (roles == null)
-            roles = new ArrayList<Roles>();
+
+    public void addRoles(Roles value)
+    {
+        if (roles == null) roles = new ArrayList<Roles>();
         roles.add(value);
     }
-    
+
     /**
      * Sets the value of the geneData property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link GeneData }
-     *     
+     *            allowed object is {@link GeneData }
+     * 
      */
-    public void setGeneData(GeneData value) {
+    public void setGeneData(GeneData value)
+    {
         this.geneData = value;
     }
 
     /**
      * Gets the value of the diseaseData property.
      * 
-     * @return
-     *     possible object is
-     *     {@link DiseaseData }
-     *     
+     * @return possible object is {@link DiseaseData }
+     * 
      */
-    public DiseaseData getDiseaseData() {
+    public DiseaseData getDiseaseData()
+    {
         return diseaseData;
     }
 
@@ -119,23 +118,22 @@ public class Sentence {
      * Sets the value of the diseaseData property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link DiseaseData }
-     *     
+     *            allowed object is {@link DiseaseData }
+     * 
      */
-    public void setDiseaseData(DiseaseData value) {
+    public void setDiseaseData(DiseaseData value)
+    {
         this.diseaseData = value;
     }
 
     /**
      * Gets the value of the statement property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getStatement() {
+    public String getStatement()
+    {
         return statement;
     }
 
@@ -143,23 +141,22 @@ public class Sentence {
      * Sets the value of the statement property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setStatement(String value) {
+    public void setStatement(String value)
+    {
         this.statement = value;
     }
 
     /**
      * Gets the value of the pubMedID property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getPubMedID() {
+    public String getPubMedID()
+    {
         return pubMedID;
     }
 
@@ -167,23 +164,22 @@ public class Sentence {
      * Sets the value of the pubMedID property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setPubMedID(String value) {
+    public void setPubMedID(String value)
+    {
         this.pubMedID = value;
     }
 
     /**
      * Gets the value of the organism property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getOrganism() {
+    public String getOrganism()
+    {
         return organism;
     }
 
@@ -191,23 +187,22 @@ public class Sentence {
      * Sets the value of the organism property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setOrganism(String value) {
+    public void setOrganism(String value)
+    {
         this.organism = value;
     }
 
     /**
      * Gets the value of the negationIndicator property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getNegationIndicator() {
+    public String getNegationIndicator()
+    {
         return negationIndicator;
     }
 
@@ -215,23 +210,22 @@ public class Sentence {
      * Sets the value of the negationIndicator property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setNegationIndicator(String value) {
+    public void setNegationIndicator(String value)
+    {
         this.negationIndicator = value;
     }
 
     /**
      * Gets the value of the cellineIndicator property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getCellineIndicator() {
+    public String getCellineIndicator()
+    {
         return cellineIndicator;
     }
 
@@ -239,23 +233,22 @@ public class Sentence {
      * Sets the value of the cellineIndicator property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setCellineIndicator(String value) {
+    public void setCellineIndicator(String value)
+    {
         this.cellineIndicator = value;
     }
 
     /**
      * Gets the value of the comments property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getComments() {
+    public String getComments()
+    {
         return comments;
     }
 
@@ -263,11 +256,11 @@ public class Sentence {
      * Sets the value of the comments property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setComments(String value) {
+    public void setComments(String value)
+    {
         this.comments = value;
     }
 
@@ -275,15 +268,16 @@ public class Sentence {
      * Gets the value of the evidenceCode property.
      * 
      * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the evidenceCode property.
+     * This accessor method returns a reference to the live list, not a
+     * snapshot. Therefore any modification you make to the returned list will
+     * be present inside the JAXB object. This is why there is not a
+     * <CODE>set</CODE> method for the evidenceCode property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
+     * 
      * <pre>
-     *    getEvidenceCode().add(newItem);
+     * getEvidenceCode().add(newItem);
      * </pre>
      * 
      * 
@@ -293,8 +287,10 @@ public class Sentence {
      * 
      * 
      */
-    public List<String> getEvidenceCode() {
-        if (evidenceCode == null) {
+    public List<String> getEvidenceCode()
+    {
+        if (evidenceCode == null)
+        {
             evidenceCode = new ArrayList<String>();
         }
         return this.evidenceCode;
@@ -304,26 +300,28 @@ public class Sentence {
      * Gets the value of the roles property.
      * 
      * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the roles property.
+     * This accessor method returns a reference to the live list, not a
+     * snapshot. Therefore any modification you make to the returned list will
+     * be present inside the JAXB object. This is why there is not a
+     * <CODE>set</CODE> method for the roles property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
+     * 
      * <pre>
-     *    getRoles().add(newItem);
+     * getRoles().add(newItem);
      * </pre>
      * 
      * 
      * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Roles }
+     * Objects of the following type(s) are allowed in the list {@link Roles }
      * 
      * 
      */
-    public List<Roles> getRoles() {
-        if (roles == null) {
+    public List<Roles> getRoles()
+    {
+        if (roles == null)
+        {
             roles = new ArrayList<Roles>();
         }
         return this.roles;
@@ -332,12 +330,11 @@ public class Sentence {
     /**
      * Gets the value of the sentenceStatusFlag property.
      * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
+     * @return possible object is {@link String }
+     * 
      */
-    public String getSentenceStatusFlag() {
+    public String getSentenceStatusFlag()
+    {
         return sentenceStatusFlag;
     }
 
@@ -345,11 +342,11 @@ public class Sentence {
      * Sets the value of the sentenceStatusFlag property.
      * 
      * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
+     *            allowed object is {@link String }
+     * 
      */
-    public void setSentenceStatusFlag(String value) {
+    public void setSentenceStatusFlag(String value)
+    {
         this.sentenceStatusFlag = value;
     }
 

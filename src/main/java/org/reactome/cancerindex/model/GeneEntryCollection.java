@@ -5,7 +5,6 @@
 // Generated on: 2010.07.13 at 06:14:13 PM PDT 
 //
 
-
 package org.reactome.cancerindex.model;
 
 import java.util.ArrayList;
@@ -16,14 +15,13 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-
-
 /**
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "GeneEntryCollection")
-public class GeneEntryCollection {
+public class GeneEntryCollection
+{
 
     @XmlElement(name = "GeneEntry", required = true)
     protected List<GeneEntry> geneEntry;
@@ -32,15 +30,16 @@ public class GeneEntryCollection {
      * Gets the value of the geneEntry property.
      * 
      * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the geneEntry property.
+     * This accessor method returns a reference to the live list, not a
+     * snapshot. Therefore any modification you make to the returned list will
+     * be present inside the JAXB object. This is why there is not a
+     * <CODE>set</CODE> method for the geneEntry property.
      * 
      * <p>
      * For example, to add a new item, do as follows:
+     * 
      * <pre>
-     *    getGeneEntry().add(newItem);
+     * getGeneEntry().add(newItem);
      * </pre>
      * 
      * 
@@ -50,8 +49,10 @@ public class GeneEntryCollection {
      * 
      * 
      */
-    public List<GeneEntry> getGeneEntry() {
-        if (geneEntry == null) {
+    public List<GeneEntry> getGeneEntry()
+    {
+        if (geneEntry == null)
+        {
             geneEntry = new ArrayList<GeneEntry>();
         }
         return this.geneEntry;
