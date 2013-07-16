@@ -80,7 +80,7 @@ public class CyActivator extends AbstractCyActivator
                 VisualMappingFunctionFactory.class,
                 "(mapping.type=passthrough)");
 
-        /* Instantiate Reactome FI App services */
+        // Instantiate Reactome FI App services 
         GeneSetMutationAnalysisAction gsma = new GeneSetMutationAnalysisAction(
                 taskManager, networkManager, saveSessionAsTaskFactory,
                 fileUtil, desktopApp, sessionManager, networkFactory,
@@ -90,14 +90,14 @@ public class CyActivator extends AbstractCyActivator
 
         UserGuideAction uga = new UserGuideAction();
 
-        /* Register said Reactome FI Services with the OSGi framework. */
+        // Register said Reactome FI Services with the OSGi framework.
         registerAllServices(context, gsma, new Properties());
         registerAllServices(context, uga, new Properties());
 
-        /* Instantiate and register the context menus for the network view */
+        // Instantiate and register the context menus for the network view 
         // NetworkActionCollection networkMenu = new NetworkActionCollection();
 
-        /* Instantiate and register the context menus for the node views */
+        // Instantiate and register the context menus for the node views 
         NodeActionCollection nodeActionCollection = new NodeActionCollection();
         GeneCardMenu geneCardMenu = nodeActionCollection.new GeneCardMenu();
         Properties geneCardProps = new Properties();

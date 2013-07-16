@@ -96,12 +96,11 @@ class NetworkActionCollection
             // {
             // RESTFulFIService service = new RESTFulFIService();
 
-            /*
-             * The below method takes CyEdges as an input type, but with the
-             * reorganization of the API in 3.x it should really take the name
-             * of the nodes (nodes now have an SUID and not a String
-             * Identifier).
-             */
+            //
+             // The below method takes CyEdges as an input type, but with the
+             // reorganization of the API in 3.x it should really take the name
+             // of the nodes (nodes now have an SUID and not a String
+             // Identifier).
             // NetworkClusterResult clusterResult = service.cluster(edgeNames);
             // Map<String, Integer> nodeToCluster = new HashMap<String,
             // Integer>();

@@ -130,10 +130,9 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
     protected boolean createNewSession(CyNetworkManager networkManager,
             CySessionManager sessionManager)
     {
-        /*
-         * Checks if a session currently exists and if so whether the user would
-         * like to save that session. A new session is then created.
-         */
+         //Checks if a session currently exists and if so whether the user would
+         //like to save that session. A new session is then created.
+
         int networkCount = networkManager.getNetworkSet().size();
         if (networkCount == 0)
         {
