@@ -12,40 +12,36 @@ package org.reactome.cytoscape3;
 import java.awt.event.ActionEvent;
 
 import org.cytoscape.application.swing.AbstractCyAction;
-import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.util.swing.OpenBrowser;
 
-public class UserGuideAction extends AbstractCyAction
-{
+public class UserGuideAction extends AbstractCyAction {
 
-    public UserGuideAction(CySwingApplication desktopApp, OpenBrowser browser)
-    {
-        // Add the 'User Guide' item to the ReactomeFI menu
+    // There is no need to cache this URL since it should be managed by PlugInScopeObjectManager
+//    private String userGuideURL = PlugInScopeObjectManager.getManager().getUserGuideURL();
+
+    public UserGuideAction() {
+        //Add the 'User Guide' item to the ReactomeFI menu
         super("User Guide");
-        setPreferredMenu("Apps.Reactome FI");
+        setPreferredMenu("Apps.ReactomeFI");
     }
 
     @Override
-    public void actionPerformed(ActionEvent e)
-    {
-        // Pop open a browser window pointing to the
-        // online Reactome FI app user guide.
-        String url = PlugInScopeObjectManager.getManager().getProperties()
-                .getProperty("userGuideURL");
-        if (url == null)
-        {
-            PlugInUtilities
-                    .showErrorMessage("Error in Opening User Guide",
-                            "The user guide URL is not available. No user guide can be shown at this time");
+    public void actionPerformed(ActionEvent e) {
+        //Pop open a browser window pointing to the
+        //online Reactome FI app user guide.
+        String url = PlugInScopeObjectManager.getManager().getProperties().getProperty("userGuideURL");
+        if (url == null) {
+            PlugInUtilities.showErrorMessage("Error in Showing User Guide",
+                                             "User guide URL has not set up. No user guide can be shown.");
+            return;
         }
         PlugInUtilities.openURL(url);
-
-        // Pop up a JEditorPane which contains the offline
-        // user guide.
-        // ActionDialogs gui = new ActionDialogs("UGA");
-        // gui.setLocationRelativeTo(desktopApp.getJFrame());
-        // gui.setModal(true);
-        // gui.setVisible(true);
+        
+        //Pop up a JEditorPane which contains the offline
+        //user guide.
+        //	ActionDialogs gui = new ActionDialogs("UGA");
+        //	gui.setLocationRelativeTo(desktopApp.getJFrame());
+        //	gui.setModal(true);
+        //	gui.setVisible(true);
     }
 
 }

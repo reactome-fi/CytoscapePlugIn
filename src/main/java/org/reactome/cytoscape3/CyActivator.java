@@ -88,7 +88,8 @@ public class CyActivator extends AbstractCyActivator
                 visStyleFactory, vmfFactoryC, vmfFactoryD, vmfFactoryP,
                 tableFactory);
 
-        UserGuideAction uga = new UserGuideAction(desktopApp, browser);
+        // Add a user guide action
+        UserGuideAction uga = new UserGuideAction();
 
         /* Register said Reactome FI Services with the OSGi framework. */
         registerAllServices(context, gsma, new Properties());
