@@ -11,6 +11,7 @@ import org.cytoscape.application.swing.AbstractCyAction;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.session.CySession;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
@@ -57,6 +58,7 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
     private VisualMappingFunctionFactory visMapFuncFactoryP;
     private VisualMappingFunctionFactory visMapFuncFactoryC;
     private VisualMappingFunctionFactory visMapFuncFactoryD;
+    private CyTableFactory tableFactory;
    // private TaskMonitor taskMonitor;
     public GeneSetMutationAnalysisAction(TaskManager tm, CyNetworkManager netManager,
 
@@ -72,7 +74,8 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
 	    VisualStyleFactory visStyleFactory,
         VisualMappingFunctionFactory visMapFuncFactoryC,
         VisualMappingFunctionFactory visMapFuncFactoryD,
-        VisualMappingFunctionFactory visMapFuncFactoryP
+        VisualMappingFunctionFactory visMapFuncFactoryP,
+        CyTableFactory tableFactory
         )
     {
 	super(desktopApp, netManager, fileUtil, saveSession, tm, sessionManager, "Gene Set / Mutant Analysis");
@@ -91,7 +94,8 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
 	this.visMapFuncFactoryP = visMapFuncFactoryP;
 	this.visMapFuncFactoryC = visMapFuncFactoryC;
 	this.visMapFuncFactoryD = visMapFuncFactoryD;
-	setPreferredMenu("Apps.ReactomeFI");
+	this.tableFactory = tableFactory;
+	setPreferredMenu("Apps.Reactome FI");
 	
     }
 
@@ -126,14 +130,12 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
 		gui.getUnlinkedGeneBox().isEnabled(), gui.showFIAnnotationsBeFetched(),
 		gui.getSampleCutoffValue(), networkFactory, netManager, viewFactory, viewManager,
 		layoutManager, visMapManager, visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD,
-		visMapFuncFactoryP, tm);
+		visMapFuncFactoryP, tableFactory, tm);
 	tm.execute(gsmaFactory.createTaskIterator());
 	
     }
     
-   
-    
-    
+    @Override
     protected boolean createNewSession(CyNetworkManager networkManager, CySessionManager sessionManager)
     {
         /* Checks if a session currently exists and if so whether the
@@ -142,8 +144,11 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
          */
         int networkCount = networkManager.getNetworkSet().size();
         if (networkCount == 0)
+        {
+            networkManager.reset();
             return true;
-        String msg = new String( "A new session is needed for using Reactome FI plugin.\n"
+        }
+        String msg = new String( "A new session is needed to use Reactome FI plugin.\n"
                 + "Do you want to save your session?");
         int reply = JOptionPane.showConfirmDialog(this.desktopApp.getJFrame(),
                 msg, "Save Session?", JOptionPane.YES_NO_CANCEL_OPTION);
@@ -151,6 +156,8 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
             return false;
         else if (reply == JOptionPane.NO_OPTION)
         {
+//            networkManager.reset();
+//            viewManager.reset();
             CySession.Builder builder = new CySession.Builder();
             sessionManager.setCurrentSession(builder.build(), null);
             return false;
@@ -160,6 +167,8 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
             tm.execute(saveSession.createTaskIterator());
             if (sessionManager.getCurrentSession() == null)
                 return true;
+            networkManager.reset();
+            viewManager.reset();
             CySession.Builder builder = new CySession.Builder();
             sessionManager.setCurrentSession(builder.build(), null);
         }

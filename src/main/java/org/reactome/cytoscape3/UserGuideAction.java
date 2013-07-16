@@ -29,7 +29,7 @@ public class UserGuideAction extends AbstractCyAction
         super("User Guide");
         this.desktopApp = desktopApp;
         this.browser = browser;
-        setPreferredMenu("Apps.ReactomeFI");
+        setPreferredMenu("Apps.Reactome FI");
     }
 
     @Override

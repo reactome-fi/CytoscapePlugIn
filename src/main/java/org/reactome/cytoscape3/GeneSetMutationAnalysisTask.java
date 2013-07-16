@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,10 +32,13 @@ import org.reactome.cancer.MATFileLoader;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
 
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTable;
+import org.cytoscape.model.CyTableFactory;
 
 
 
@@ -63,6 +67,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
     private VisualMappingFunctionFactory visMapFuncFactoryP;
     private VisualMappingFunctionFactory visMapFuncFactoryC;
     private VisualMappingFunctionFactory visMapFuncFactoryD;
+    private CyTableFactory tableFactory;
     private TaskManager taskManager;
 
     public GeneSetMutationAnalysisTask(CySwingApplication desktopApp,
@@ -81,6 +86,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             VisualMappingFunctionFactory visMapFuncFactoryC,
             VisualMappingFunctionFactory visMapFuncFactoryD,
             VisualMappingFunctionFactory visMapFuncFactoryP,
+            CyTableFactory tableFactory,
             TaskManager taskManager)
     {
         this.desktopApp = desktopApp;
@@ -102,6 +108,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
         this.visMapFuncFactoryP = visMapFuncFactoryP;
         this.visMapFuncFactoryC = visMapFuncFactoryC;
         this.visMapFuncFactoryD = visMapFuncFactoryD;
+        this.tableFactory = tableFactory;
         this.taskManager = taskManager;
     }
 
@@ -173,6 +180,15 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
                 desktopApp.getJFrame().getGlassPane().setVisible(false);
                 return;
             }
+            //Fix for missing default value persistence in CyTables
+            //Should be remedied in the 3.1 api
+            CyTable nodeTable = network.getDefaultNodeTable();
+            for (Iterator <?> it = network.getNodeList().iterator(); it.hasNext();)
+            {
+                CyNode node = (CyNode) it.next();
+                Long nodeSUID = node.getSUID();
+                nodeTable.getRow(nodeSUID).set("isLinker", false);
+            }
             controlPane.setSelectedIndex(selectedIndex);
             if (sampleToGenes != null)
             {
@@ -193,30 +209,35 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             CyNetworkView view = viewFactory.createNetworkView(network);
             tableManager.storeFINetworkVersion(view);
             viewManager.addNetworkView(view);
-            if (geneToSampleNumber != null)
+            if (geneToSampleNumber != null && !geneToSampleNumber.isEmpty())
                 tableManager.loadNodeAttributesByName(view, "sampleNumber", geneToSampleNumber);
-            if (geneToSampleString != null)
-                tableManager.loadNodeAttributesByName(view, "sample", geneToSampleString);
+            if (geneToSampleString != null && !geneToSampleString.isEmpty())
+                tableManager.loadNodeAttributesByName(view, "samples", geneToSampleString);
             //Check if linker genes are to be used.
             if (useLinkers)
             {
                 taskMonitor.setStatusMessage("Fetching linker genes...");
-                Map<Long, Boolean> geneToIsLinker = new HashMap<Long, Boolean>();
+                Map<String, Boolean> geneToIsLinker = new HashMap<String, Boolean>();
                 for (Iterator<?> it = network.getNodeList().iterator(); it.hasNext();)
                 {
                     CyNode node = (CyNode) it.next();
                     Long suid = node.getSUID();
-                    geneToIsLinker.put(suid, !selectedGenes.contains(suid));
+                    String nodeName = network.getDefaultNodeTable().getRow(suid).get("name", String.class);
+                    geneToIsLinker.put(nodeName, !selectedGenes.contains(nodeName));
                 }
-                tableManager.loadNodeAttributesByName(view, "isLinker", geneToSampleNumber);
-
-                if (fetchFIAnnotations)
-                {
-                    taskMonitor.setStatusMessage("Fetching FI annotations...");
-                    new FIAnnotationHelper().annotateFIs(view, new RESTFulFIService(),
-                            tableManager);
-                }
+                tableManager.loadNodeAttributesByName(view, "isLinker", geneToIsLinker);
             }
+            if (fetchFIAnnotations)
+            {
+                taskMonitor.setStatusMessage("Fetching FI annotations...");
+                new FIAnnotationHelper().annotateFIs(view, new RESTFulFIService(),
+                        tableManager);
+            }
+            if (view.getModel().getEdgeCount() != 0)
+                for (CyEdge edge : view.getModel().getEdgeList())
+                {
+                    tableManager.storeEdgeName(edge, view);
+                }
             VisualStyleHelper styleHelper = new VisualStyleHelper(visMapManager,
                     visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD,
                     visMapFuncFactoryP, layoutManager, taskManager, desktopApp);
@@ -293,7 +314,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
         if (fis != null && fis.size() > 0)
         {
 
-            CyNetworkGenerator generator = new CyNetworkGenerator(networkFactory);
+            CyNetworkGenerator generator = new CyNetworkGenerator(networkFactory, tableFactory);
             // Check if any unlinked nodes should be added
             if (showUnlinkedEnabled && showUnlinked)
                 network = generator.constructFINetwork(selectedGenes, fis);
@@ -301,13 +322,6 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
                 network = generator.constructFINetwork(fis);
         }
         netManager.addNetwork(network);
-        //    CyNetworkView view = viewFactory.createNetworkView(network);
-        //    VisualStyleHelper styleHelper = new VisualStyleHelper(visMapManager,
-        //            visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD,
-        //            visMapFuncFactoryP, layoutManager, taskManager, desktopApp);
-        //    viewManager.addNetworkView(view);
-        //    styleHelper.setVisualStyle(view);
-
         CyTableManager manager = new CyTableManager();
         // manager.storeDataSetType(network, "Data Set");
         return network;

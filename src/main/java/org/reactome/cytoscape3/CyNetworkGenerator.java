@@ -7,6 +7,7 @@ package org.reactome.cytoscape3;
  */
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,13 +16,17 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.model.CyTableFactory;
 
 public class CyNetworkGenerator
 {
     private CyNetworkFactory networkFactory;
-    public CyNetworkGenerator(CyNetworkFactory networkFactory)
+    private CyTableFactory tableFactory;
+    public CyNetworkGenerator(CyNetworkFactory networkFactory,
+            CyTableFactory tableFactory)
     {
 	this.networkFactory = networkFactory;
+	this.tableFactory = tableFactory;
     }
     
     public CyNetwork constructFINetwork(Set<String> nodes,
@@ -29,7 +34,7 @@ public class CyNetworkGenerator
     {
         //Construct an empty network.
         CyNetwork network = networkFactory.createNetwork();
-        CyTableFormatter cyTableFormatter = new CyTableFormatter();
+        CyTableFormatter cyTableFormatter = new CyTableFormatter(tableFactory);
         cyTableFormatter.makeAllTablesGSMA(network);
         //Generate a source, edge and target for each FI interaction
         //retrieved from the Reactome database.
@@ -63,7 +68,7 @@ public class CyNetworkGenerator
     {
         //Add the edge to the network
         CyEdge edge = network.addEdge(node1, node2, true);
-        //Add the edge attributes to the network CyTables
+        
         return edge;
     }
     

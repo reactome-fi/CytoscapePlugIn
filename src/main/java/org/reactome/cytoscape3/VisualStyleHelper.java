@@ -170,7 +170,7 @@ public class VisualStyleHelper
 
     private int[] getSampleNumberRange(CyNetworkView view)
     {
-        Map<Long, Object> idToSampleNumber = new CyTableManager().getNodeTableValues(view.getModel(), "sampleNumber", Integer.class);
+        Map<Long, Object> idToSampleNumber = new CyTableManager().getNodeTableValuesBySUID(view.getModel(), "sampleNumber", Integer.class);
         if (idToSampleNumber == null || idToSampleNumber.isEmpty())
             return null;
         Set<Object> set = new HashSet<Object>(idToSampleNumber.values());

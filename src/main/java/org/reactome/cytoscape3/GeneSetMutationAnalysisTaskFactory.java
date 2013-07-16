@@ -5,6 +5,7 @@ import java.io.File;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
@@ -41,6 +42,7 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
     private VisualMappingFunctionFactory visMapFuncFactoryC;
     private VisualMappingFunctionFactory visMapFuncFactoryD;
     private TaskManager taskManager;
+    private CyTableFactory tableFactory;
 
 
     public GeneSetMutationAnalysisTaskFactory(CySwingApplication desktopApp,
@@ -56,6 +58,7 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
         VisualMappingFunctionFactory visMapFuncFactoryC,
         VisualMappingFunctionFactory visMapFuncFactoryD,
         VisualMappingFunctionFactory visMapFuncFactoryP,
+        CyTableFactory tableFactory,
         TaskManager taskManager)
     {
 	this.desktopApp = desktopApp;
@@ -79,6 +82,7 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
     this.visMapFuncFactoryC = visMapFuncFactoryC;
     this.visMapFuncFactoryD = visMapFuncFactoryD;
     this.taskManager = taskManager;
+    this.tableFactory = tableFactory;
     }
 
 
@@ -95,5 +99,5 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
 	    	netManager,
 	    	viewFactory,
 	    	viewManager, layoutManager, visMapManager,
-	    	visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD, visMapFuncFactoryP, taskManager));
+	    	visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD, visMapFuncFactoryP, tableFactory, taskManager));
     }}

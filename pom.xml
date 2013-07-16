@@ -224,7 +224,7 @@
 		<dependency>
 			<groupId>org.reactome</groupId>
 			<artifactId>caBIGR3-minimal</artifactId>
-			<version>1.3</version>
+			<version>1.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.reactome</groupId>

@@ -469,8 +469,9 @@ private String callHttp(String url,
 	            queryBuilder.append(edge.getSUID()).append("\t");
 	            // Have to make sure the start id is less than end id based on conventions
 	            // we used in the server side
-	            String startId = start.getSUID().toString();
-	            String endId = end.getSUID().toString();
+	            String startId = start.getNetworkPointer().getDefaultNodeTable().getRow(start.getSUID()).get("name", String.class); //start.getSUID().toString();
+	            System.out.println(startId);
+	            String endId = end.getNetworkPointer().getDefaultNodeTable().getRow(end.getSUID()).get("name", String.class);//end.getSUID().toString();
 	            compare = startId.compareTo(endId);
 	            if (compare < 0) {
 	                queryBuilder.append(startId).append("\t");
