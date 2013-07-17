@@ -1,7 +1,6 @@
 package org.reactome.cytoscape3;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.cytoscape.model.CyColumn;
@@ -61,7 +60,8 @@ public class CyTableManager
     public void storeDataSetType(CyNetwork network, String dataSetType)
     {
         CyTable netTable = network.getDefaultNetworkTable();
-        netTable.getRow(network).set("dataSetType", dataSetType);
+        netTable.getRow(network.getSUID()).set("dataSetType", dataSetType);
+        netTable.getRow(network.getSUID()).set("isReactomeFINetwork", true);
     }
 
     private Class<?> guessAttributeType(Map<?, ?> idToValue)
@@ -69,7 +69,10 @@ public class CyTableManager
         for (Object key : idToValue.keySet())
         {
             Object obj = idToValue.get(key);
-            if (obj == null) continue;
+            if (obj == null)
+            {
+                continue;
+            }
             return obj.getClass();
         }
         return null;
@@ -79,7 +82,7 @@ public class CyTableManager
     {
         CyTable netTable = view.getModel().getDefaultNetworkTable();
         Long netSUID = view.getModel().getSUID();
-        netTable.getRow(netSUID).set("clusteringType", clusteringType);
+        netTable.getRow(netSUID).set("clustering_Type", clusteringType);
     }
 
     public String getClusteringType(CyNetwork network)
@@ -96,13 +99,21 @@ public class CyTableManager
     {
         Object value = idToValue.get(cyIdenSUID);
         if (type == Integer.class)
+        {
             cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Integer) value);
+        }
         else if (type == Double.class)
+        {
             cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Double) value);
+        }
         else if (type == String.class)
+        {
             cyIdenTable.getRow(cyIdenSUID).set(attributeName, (String) value);
+        }
         else if (type == Boolean.class)
+        {
             cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Boolean) value);
+        }
     }
 
     public void loadNodeAttributesBySUID(CyNetwork network,
@@ -110,9 +121,9 @@ public class CyTableManager
     {
         CyTable nodeTable = network.getDefaultNodeTable();
         Class<?> type = guessAttributeType(idToValue);
-        for (Iterator<?> it = network.getNodeList().iterator(); it.hasNext();)
+        for (Object name : network.getNodeList())
         {
-            CyNode node = (CyNode) it.next();
+            CyNode node = (CyNode) name;
             Long nodeSUID = node.getSUID();
             setAttributeValueBySUID(attributeName, idToValue, nodeTable,
                     nodeSUID, type);
@@ -125,13 +136,21 @@ public class CyTableManager
     {
         Object value = idToValue.get(nodeName);
         if (type == Integer.class)
+        {
             cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Integer) value);
+        }
         else if (type == Double.class)
+        {
             cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Double) value);
+        }
         else if (type == String.class)
+        {
             cyIdenTable.getRow(cyIdenSUID).set(attributeName, (String) value);
+        }
         else if (type == Boolean.class)
+        {
             cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Boolean) value);
+        }
     }
 
     public void loadNodeAttributesByName(CyNetwork network,
@@ -139,9 +158,9 @@ public class CyTableManager
     {
         CyTable nodeTable = network.getDefaultNodeTable();
         Class<?> type = guessAttributeType(idToValue);
-        for (Iterator<?> it = network.getNodeList().iterator(); it.hasNext();)
+        for (Object name2 : network.getNodeList())
         {
-            CyNode node = (CyNode) it.next();
+            CyNode node = (CyNode) name2;
             Long nodeSUID = node.getSUID();
             String name = nodeTable.getRow(nodeSUID).get("name", String.class);
             setAttributeValueByName(attributeName, idToValue, nodeTable,
@@ -167,9 +186,9 @@ public class CyTableManager
 
         CyTable nodeTable = model.getDefaultNodeTable();
         boolean isFound = false;
-        for (Iterator<?> it = nodeTable.getColumns().iterator(); it.hasNext();)
+        for (Object name : nodeTable.getColumns())
         {
-            CyColumn column = (CyColumn) it.next();
+            CyColumn column = (CyColumn) name;
             if (column.getName().equals(attr))
             {
                 isFound = true;
@@ -178,12 +197,15 @@ public class CyTableManager
         }
         if (!isFound) return null;
         Map<Long, Object> idToValue = new HashMap<Long, Object>();
-        for (Iterator<?> it = model.getNodeList().iterator(); it.hasNext();)
+        for (Object name : model.getNodeList())
         {
-            CyNode node = (CyNode) it.next();
+            CyNode node = (CyNode) name;
             Long nodeSUID = node.getSUID();
             Object value = nodeTable.getRow(nodeSUID).get(attr, type);
-            if (value == null) continue;
+            if (value == null)
+            {
+                continue;
+            }
             idToValue.put(nodeSUID, value);
         }
         return idToValue;
@@ -195,9 +217,9 @@ public class CyTableManager
 
         CyTable nodeTable = model.getDefaultNodeTable();
         boolean isFound = false;
-        for (Iterator<?> it = nodeTable.getColumns().iterator(); it.hasNext();)
+        for (Object name : nodeTable.getColumns())
         {
-            CyColumn column = (CyColumn) it.next();
+            CyColumn column = (CyColumn) name;
             if (column.getName().equals(attr))
             {
                 isFound = true;
@@ -206,13 +228,16 @@ public class CyTableManager
         }
         if (!isFound) return null;
         Map<String, Object> idToValue = new HashMap<String, Object>();
-        for (Iterator<?> it = model.getNodeList().iterator(); it.hasNext();)
+        for (Object name2 : model.getNodeList())
         {
-            CyNode node = (CyNode) it.next();
+            CyNode node = (CyNode) name2;
             Long nodeSUID = node.getSUID();
             String name = nodeTable.getRow(nodeSUID).get("name", String.class);
             Object value = nodeTable.getRow(nodeSUID).get(attr, type);
-            if (value == null) continue;
+            if (value == null)
+            {
+                continue;
+            }
             idToValue.put(name, value);
         }
         return idToValue;

@@ -126,18 +126,26 @@ public abstract class FICytoscapeAction extends AbstractCyAction
             public void removeUpdate(DocumentEvent e)
             {
                 if (fileField.getText().trim().length() > 0)
+                {
                     okBtn.setEnabled(true);
+                }
                 else
+                {
                     okBtn.setEnabled(false);
+                }
             }
 
             @Override
             public void insertUpdate(DocumentEvent e)
             {
                 if (fileField.getText().trim().length() > 0)
+                {
                     okBtn.setEnabled(true);
+                }
                 else
+                {
                     okBtn.setEnabled(false);
+                }
             }
 
             @Override

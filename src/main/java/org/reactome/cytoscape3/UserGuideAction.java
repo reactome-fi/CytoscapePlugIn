@@ -13,21 +13,27 @@ import java.awt.event.ActionEvent;
 
 import org.cytoscape.application.swing.AbstractCyAction;
 
-public class UserGuideAction extends AbstractCyAction {
-    public UserGuideAction() {
-        //Add the 'User Guide' item to the ReactomeFI menu
+public class UserGuideAction extends AbstractCyAction
+{
+    public UserGuideAction()
+    {
+        // Add the 'User Guide' item to the ReactomeFI menu
         super("User Guide");
         setPreferredMenu("Apps.Reactome FI");
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
-        //Pop open a browser window pointing to the
-        //online Reactome FI app user guide.
-        String url = PlugInScopeObjectManager.getManager().getProperties().getProperty("userGuideURL");
-        if (url == null) {
-            PlugInUtilities.showErrorMessage("Error in Showing User Guide",
-                                             "The user guide URL is not available. No user guide can be shown.");
+    public void actionPerformed(ActionEvent e)
+    {
+        // Pop open a browser window pointing to the
+        // online Reactome FI app user guide.
+        String url = PlugInScopeObjectManager.getManager().getProperties()
+                .getProperty("userGuideURL");
+        if (url == null)
+        {
+            PlugInUtilities
+                    .showErrorMessage("Error in Showing User Guide",
+                            "The user guide URL is not available. No user guide can be shown.");
             return;
         }
         PlugInUtilities.openURL(url);

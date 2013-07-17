@@ -115,7 +115,7 @@ public class VisualStyleHelper
 
         // Set the node color based on module
         DiscreteMapping colorToModuleFunction = (DiscreteMapping) this.visMapFuncFactoryD
-                .createVisualMappingFunction("module", String.class,
+                .createVisualMappingFunction("module", Integer.class,
                         BasicVisualLexicon.NODE_FILL_COLOR);
         String moduleColors = PlugInScopeObjectManager.getManager()
                 .getProperties().getProperty("moduleColors");
@@ -123,8 +123,8 @@ public class VisualStyleHelper
         for (int i = 0; i < tokens.length; i++)
         {
             String[] text = tokens[i].split(",");
-            Color moduleColor = new Color(Integer.parseInt(text[0]),
-                    Integer.parseInt(text[1]), Integer.parseInt(text[2]));
+            Color moduleColor = new Color(Integer.parseInt(text[0]), Integer
+                    .parseInt(text[1]), Integer.parseInt(text[2]));
             colorToModuleFunction.putMapValue(i, moduleColor);
         }
         fiVisualStyle.addVisualMappingFunction(colorToModuleFunction);
@@ -188,7 +188,9 @@ public class VisualStyleHelper
         Set<Object> set = new HashSet<Object>(idToSampleNumber.values());
         List<Integer> list = new ArrayList<Integer>();
         for (Object obj : set)
+        {
             list.add((Integer) obj);
+        }
         Collections.sort(list);
         Integer min = list.get(0);
         Integer max = list.get(list.size() - 1);
@@ -200,24 +202,20 @@ public class VisualStyleHelper
     {
         JMenu yFilesMenu = null;
         for (Component item : desktopApp.getJMenu("Layout").getMenuComponents())
-        {
             if (item instanceof JMenu
                     && ((JMenu) item).getText().equals("yFiles Layouts"))
             {
                 yFilesMenu = (JMenu) item;
                 break;
             }
-        }
         JMenuItem organicMenuItem = null;
         for (Component item : yFilesMenu.getMenuComponents())
-        {
             if (item instanceof JMenuItem
                     && ((JMenuItem) item).getText().equals("Organic"))
             {
                 organicMenuItem = (JMenuItem) item;
                 break;
             }
-        }
         return organicMenuItem;
     }
 

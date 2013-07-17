@@ -10,6 +10,7 @@ package org.reactome.cytoscape3;
  */
 import java.util.Properties;
 
+import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
@@ -28,6 +29,7 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
+import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
 
 //import org.cytoscape.application.CyApplicationManager;
@@ -80,7 +82,7 @@ public class CyActivator extends AbstractCyActivator
                 VisualMappingFunctionFactory.class,
                 "(mapping.type=passthrough)");
 
-        // Instantiate Reactome FI App services 
+        // Instantiate Reactome FI App services
         GeneSetMutationAnalysisAction gsma = new GeneSetMutationAnalysisAction(
                 taskManager, networkManager, saveSessionAsTaskFactory,
                 fileUtil, desktopApp, sessionManager, networkFactory,
@@ -94,10 +96,15 @@ public class CyActivator extends AbstractCyActivator
         registerAllServices(context, gsma, new Properties());
         registerAllServices(context, uga, new Properties());
 
-        // Instantiate and register the context menus for the network view 
-        // NetworkActionCollection networkMenu = new NetworkActionCollection();
-
-        // Instantiate and register the context menus for the node views 
+        // Instantiate and register the context menus for the network view
+        NetworkActionCollection networkMenu = new NetworkActionCollection();
+        ClusterFINetworkMenu clusterMenu = networkMenu.new ClusterFINetworkMenu();
+        Properties clusterProps = new Properties();
+        clusterProps.setProperty("title", "Cluster FI Network");
+        clusterProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        registerService(context, clusterMenu,
+                CyNetworkViewContextMenuFactory.class, clusterProps);
+        // Instantiate and register the context menus for the node views
         NodeActionCollection nodeActionCollection = new NodeActionCollection();
         GeneCardMenu geneCardMenu = nodeActionCollection.new GeneCardMenu();
         Properties geneCardProps = new Properties();

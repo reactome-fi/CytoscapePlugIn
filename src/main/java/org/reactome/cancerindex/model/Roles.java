@@ -48,7 +48,9 @@ public class Roles
     public void addPrimaryNCIRoleCode(String value)
     {
         if (primaryNCIRoleCode == null)
+        {
             primaryNCIRoleCode = new ArrayList<String>();
+        }
         primaryNCIRoleCode.add(value);
     }
 
@@ -59,7 +61,10 @@ public class Roles
 
     public void addOtherRole(String value)
     {
-        if (otherRole == null) otherRole = new ArrayList<String>();
+        if (otherRole == null)
+        {
+            otherRole = new ArrayList<String>();
+        }
         otherRole.add(value);
     }
 

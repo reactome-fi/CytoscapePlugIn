@@ -55,7 +55,9 @@ public class DiseaseData
     public void addSubTerm(DiseaseData term)
     {
         if (this.subTerms == null)
+        {
             this.subTerms = new ArrayList<DiseaseData>();
+        }
         this.subTerms.add(term);
     }
 
@@ -71,7 +73,10 @@ public class DiseaseData
 
     public void addSupTerm(DiseaseData term)
     {
-        if (supTerms == null) supTerms = new ArrayList<DiseaseData>();
+        if (supTerms == null)
+        {
+            supTerms = new ArrayList<DiseaseData>();
+        }
         supTerms.add(term);
     }
 

@@ -55,9 +55,13 @@ public class NCIDiseaseHandler
     public void loadData(BufferedReader reader) throws IOException
     {
         if (codeToDiseaseData == null)
+        {
             codeToDiseaseData = new HashMap<String, DiseaseData>();
+        }
         else
+        {
             codeToDiseaseData.clear();
+        }
         String line = null;
         Map<String, DiseaseData> termToDisease = new HashMap<String, DiseaseData>();
         Map<String, String[]> termToSupTerms = new HashMap<String, String[]>();
@@ -80,15 +84,19 @@ public class NCIDiseaseHandler
         {
             DiseaseData disease = termToDisease.get(term);
             String[] supTerms = termToSupTerms.get(term);
-            if (supTerms == null || supTerms.length == 0) continue;
+            if (supTerms == null || supTerms.length == 0)
+            {
+                continue;
+            }
             for (String supTerm : supTerms)
             {
-                if (supTerm.equals("root_node")) continue;
+                if (supTerm.equals("root_node"))
+                {
+                    continue;
+                }
                 DiseaseData supDisease = termToDisease.get(supTerm);
                 if (supDisease == null)
-                {
                     throw new IllegalStateException(supTerm + " has no object!");
-                }
                 disease.addSupTerm(supDisease);
             }
         }
@@ -100,7 +108,7 @@ public class NCIDiseaseHandler
             List<DiseaseData> supTerms = disease.getSupTerms();
             if (supTerms == null || supTerms.size() == 0)
             {
-                // Print out the top-level terms
+                // top-level terms
                 // System.out.println(disease.getNciDiseaseConceptCode() + "\t"
                 // +
                 // disease.getMatchedDiseaseTerm());
@@ -128,11 +136,16 @@ public class NCIDiseaseHandler
         if (data == null)
             throw new IllegalArgumentException(code + " has no disease data!");
         List<DiseaseData> subTerms = data.getSubTerms();
-        if (subTerms != null) rtn.addAll(subTerms);
+        if (subTerms != null)
+        {
+            rtn.addAll(subTerms);
+        }
         if (needRecursive && subTerms != null)
         {
             for (DiseaseData subTerm : subTerms)
+            {
                 getSubDiseases(subTerm, rtn);
+            }
         }
         return rtn;
     }
@@ -167,7 +180,9 @@ public class NCIDiseaseHandler
         Set<DiseaseData> diseases = getSubDiseases(code, needRecursive);
         Set<String> rtn = new HashSet<String>();
         for (DiseaseData disease : diseases)
+        {
             rtn.add(disease.getNciDiseaseConceptCode());
+        }
         return rtn;
     }
 
@@ -184,7 +199,9 @@ public class NCIDiseaseHandler
         if (subTerms == null || subTerms.size() == 0) return;
         rtn.addAll(subTerms);
         for (DiseaseData subDisease : subTerms)
+        {
             getSubDiseases(subDisease, rtn);
+        }
     }
 
     @Test
@@ -198,7 +215,9 @@ public class NCIDiseaseHandler
         diseases.add(root);
         Set<String> diseaseTerms = new HashSet<String>();
         for (DiseaseData disease : diseases)
+        {
             diseaseTerms.add(disease.getNciDiseaseConceptCode());
+        }
         FileUtility fu = new FileUtility();
         fu.setInput(fileName);
         FileUtility outFu = new FileUtility();
@@ -207,7 +226,10 @@ public class NCIDiseaseHandler
         while ((line = fu.readLine()) != null)
         {
             String[] tokens = line.split("\t");
-            if (diseaseTerms.contains(tokens[0])) outFu.printLine(line);
+            if (diseaseTerms.contains(tokens[0]))
+            {
+                outFu.printLine(line);
+            }
         }
         outFu.close();
         fu.close();

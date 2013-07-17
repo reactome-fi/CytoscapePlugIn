@@ -76,7 +76,10 @@ public class ActionDialogs extends JDialog
 
         if (context.equals("GeneSetMutationAnalysis")
                 || context.equals("UserGuide") || context.equals("Microarray")
-                || context.equals("Hotnet")) init(context);
+                || context.equals("Hotnet"))
+        {
+            init(context);
+        }
     }
 
     // Retrieves the file path from the JFileTextfield
@@ -120,18 +123,26 @@ public class ActionDialogs extends JDialog
             public void removeUpdate(DocumentEvent e)
             {
                 if (tf.getText().trim().length() > 0)
+                {
                     okBtn.setEnabled(true);
+                }
                 else
+                {
                     okBtn.setEnabled(false);
+                }
             }
 
             @Override
             public void insertUpdate(DocumentEvent e)
             {
                 if (fileTF.getText().trim().length() > 0)
+                {
                     okBtn.setEnabled(true);
+                }
                 else
+                {
                     okBtn.setEnabled(false);
+                }
             }
 
             @Override
@@ -323,9 +334,13 @@ public class ActionDialogs extends JDialog
                 public void stateChanged(ChangeEvent e)
                 {
                     if (useLinkerBox.isSelected())
+                    {
                         showUnlinkedBox.setEnabled(false);
+                    }
                     else
+                    {
                         showUnlinkedBox.setEnabled(true);
+                    }
                 }
             });
             constraints.gridy = 2;

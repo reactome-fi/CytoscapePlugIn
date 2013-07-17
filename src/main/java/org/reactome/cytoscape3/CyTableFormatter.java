@@ -94,7 +94,9 @@ public class CyTableFormatter
             netTable.createColumn("dataSetType", String.class, Boolean.FALSE);
         }
         if (nodeTable.getColumn("module") == null)
-        ;
+        {
+            ;
+        }
         {
             // netTable.createColumn("moduleToSampleValue", Double.class,
             // Boolean.FALSE);
@@ -113,15 +115,6 @@ public class CyTableFormatter
         if (nodeTable.getColumn("isLinker") == null)
         {
             nodeTable.createColumn("isLinker", Boolean.class, Boolean.FALSE);
-
-            // In the 3.0 API, default CyTable values aren't set due to a bug.
-            // This
-            // will be remedied in 3.1 (Projected Oct. 2013). Until then, one
-            // must
-            // iterate over all the rows in the CyTable and set the default
-            // value
-            // This is done after network creation.
-
         }
         if (nodeTable.getColumn("nodeLabel") == null)
         {
@@ -152,18 +145,26 @@ public class CyTableFormatter
         CyTable netTable = network.getDefaultNetworkTable();
         CyTable nodeTable = network.getDefaultNodeTable();
         if (netTable.getColumn("clusteringType") == null)
+        {
             netTable.createColumn("clusteringType", Integer.class,
                     Boolean.FALSE);
+        }
         if (nodeTable.getColumn("module") == null)
+        {
             nodeTable.createColumn("module", Integer.class, Boolean.FALSE);
+        }
         CyTable moduleTable = tableFactory.createTable("Network Module",
                 "module", Integer.class, Boolean.TRUE, Boolean.FALSE);
         if (moduleTable.getColumn("nodes in module") == null)
+        {
             moduleTable.createColumn("nodes in module", Integer.class,
                     Boolean.FALSE);
+        }
         if (moduleTable.getColumn("node percentage") == null)
+        {
             moduleTable.createColumn("node percentage", Integer.class,
                     Boolean.FALSE);
+        }
 
     }
 }

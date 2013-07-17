@@ -185,9 +185,13 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
     private void doFiltering()
     {
         if (sentences == null)
+        {
             sentences = new ArrayList<Sentence>();
+        }
         else
+        {
             sentences.clear();
+        }
         String filters = filterTF.getText();
         if (filters.length() == 0 || filters.equals("None"))
         {
@@ -204,38 +208,62 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
         {
             String[] nameValue = token.split(": ");
             if (nameValue[0].equals("Cancer type"))
+            {
                 cancer = nameValue[1].toLowerCase();
+            }
             else if (nameValue[0].equals("Status"))
+            {
                 status = nameValue[1];
+            }
             else if (nameValue[0].equals("Negation"))
+            {
                 negation = nameValue[1];
+            }
             else if (nameValue[0].equals("Cellline"))
+            {
                 celline = nameValue[1];
+            }
             else if (nameValue[0].equals("contains"))
+            {
                 contains = nameValue[1].equals("checked");
+            }
         }
         for (Sentence s : originalList)
         {
             // Check simple one first
             if (status != null
                     && (s.getSentenceStatusFlag() == null || !s
-                            .getSentenceStatusFlag().equals(status))) continue;
+                            .getSentenceStatusFlag().equals(status)))
+            {
+                continue;
+            }
             if (negation != null
                     && (s.getNegationIndicator() == null || !s
                             .getNegationIndicator().equals(negation)))
+            {
                 continue;
+            }
             if (celline != null
                     && (s.getCellineIndicator() == null || !s
-                            .getCellineIndicator().equals(celline))) continue;
+                            .getCellineIndicator().equals(celline)))
+            {
+                continue;
+            }
             if (cancer != null)
             {
                 String sCancer = s.getDiseaseData().getMatchedDiseaseTerm()
                         .toLowerCase();
                 if (contains)
                 {
-                    if (!sCancer.contains(cancer)) continue;
+                    if (!sCancer.contains(cancer))
+                    {
+                        continue;
+                    }
                 }
-                else if (!sCancer.equalsIgnoreCase(cancer)) continue;
+                else if (!sCancer.equalsIgnoreCase(cancer))
+                {
+                    continue;
+                }
             }
             sentences.add(s);
         }
@@ -254,9 +282,15 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
                 public int compare(Sentence s1, Sentence s2)
                 {
                     String id1 = s1.getPubMedID();
-                    if (id1 == null) id1 = "0";
+                    if (id1 == null)
+                    {
+                        id1 = "0";
+                    }
                     String id2 = s2.getPubMedID();
-                    if (id2 == null) id2 = "0";
+                    if (id2 == null)
+                    {
+                        id2 = "0";
+                    }
                     Integer i1 = new Integer(id1);
                     Integer i2 = new Integer(id2);
                     return i2.compareTo(i1); // In reverse order so that latest
@@ -272,9 +306,15 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
                 public int compare(Sentence s1, Sentence s2)
                 {
                     String type1 = s1.getDiseaseData().getMatchedDiseaseTerm();
-                    if (type1 == null) type1 = "";
+                    if (type1 == null)
+                    {
+                        type1 = "";
+                    }
                     String type2 = s2.getDiseaseData().getMatchedDiseaseTerm();
-                    if (type2 == null) type2 = "";
+                    if (type2 == null)
+                    {
+                        type2 = "";
+                    }
                     return type1.compareTo(type2);
                 }
             };
@@ -287,14 +327,23 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
                 public int compare(Sentence s1, Sentence s2)
                 {
                     String status1 = s1.getSentenceStatusFlag();
-                    if (status1 == null) status1 = "";
+                    if (status1 == null)
+                    {
+                        status1 = "";
+                    }
                     String status2 = s2.getSentenceStatusFlag();
-                    if (status2 == null) status2 = "";
+                    if (status2 == null)
+                    {
+                        status2 = "";
+                    }
                     return status1.compareTo(status2);
                 }
             };
         }
-        if (sorter != null) Collections.sort(sentences, sorter);
+        if (sorter != null)
+        {
+            Collections.sort(sentences, sorter);
+        }
     }
 
     public void setEntriesPerPage(int entries)
@@ -327,7 +376,10 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
         StringBuilder builder = new StringBuilder();
         builder.append("<html><body>");
         int max = startIndex + entriesPerPage;
-        if (max > sentences.size()) max = sentences.size();
+        if (max > sentences.size())
+        {
+            max = sentences.size();
+        }
         for (int i = startIndex; i < max; i++)
         {
             Sentence sentence = sentences.get(i);
@@ -349,8 +401,8 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
     private void generateSentenceHTML(StringBuilder builder, Sentence sentence)
     {
         DiseaseData disease = sentence.getDiseaseData();
-        builder.append("<b>Cancer type: </b>")
-                .append(disease.getMatchedDiseaseTerm()).append("<br>");
+        builder.append("<b>Cancer type: </b>").append(
+                disease.getMatchedDiseaseTerm()).append("<br>");
         if (sentence.getRoles() != null && sentence.getRoles().size() > 0)
         {
             Set<String> ncrRoles = new HashSet<String>();
@@ -358,9 +410,13 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
             for (Roles role : sentence.getRoles())
             {
                 if (role.getPrimaryNCIRoleCode() != null)
+                {
                     ncrRoles.addAll(role.getPrimaryNCIRoleCode());
+                }
                 if (role.getOtherRole() != null)
+                {
                     otherRoles.addAll(role.getOtherRole());
+                }
             }
             if (ncrRoles.size() > 0)
             {
@@ -370,7 +426,10 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
                 for (Iterator<String> it = ncrRoles.iterator(); it.hasNext();)
                 {
                     builder.append(it.next());
-                    if (it.hasNext()) builder.append(", ");
+                    if (it.hasNext())
+                    {
+                        builder.append(", ");
+                    }
                 }
                 builder.append("<br>");
             }
@@ -382,7 +441,10 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
                 for (Iterator<String> it = otherRoles.iterator(); it.hasNext();)
                 {
                     builder.append(it.next());
-                    if (it.hasNext()) builder.append(", ");
+                    if (it.hasNext())
+                    {
+                        builder.append(", ");
+                    }
                 }
                 builder.append("<br>");
             }
@@ -394,19 +456,28 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
             for (Iterator<?> it = evidences.iterator(); it.hasNext();)
             {
                 builder.append(it.next());
-                if (it.hasNext()) builder.append(", ");
+                if (it.hasNext())
+                {
+                    builder.append(", ");
+                }
             }
             builder.append("<br>");
         }
         if (sentence.getNegationIndicator() != null)
-            builder.append("<b>Negation indicator: </b>")
-                    .append(sentence.getNegationIndicator()).append("<br>");
+        {
+            builder.append("<b>Negation indicator: </b>").append(
+                    sentence.getNegationIndicator()).append("<br>");
+        }
         if (sentence.getCellineIndicator() != null)
-            builder.append("<b>Cellline indicator: </b>")
-                    .append(sentence.getCellineIndicator()).append("<br>");
+        {
+            builder.append("<b>Cellline indicator: </b>").append(
+                    sentence.getCellineIndicator()).append("<br>");
+        }
         if (sentence.getSentenceStatusFlag() != null)
-            builder.append("<b>Status: </b>")
-                    .append(sentence.getSentenceStatusFlag()).append("<br>");
+        {
+            builder.append("<b>Status: </b>").append(
+                    sentence.getSentenceStatusFlag()).append("<br>");
+        }
         if (sentence.getPubMedID() != null)
         {
             String id = sentence.getPubMedID();
@@ -420,8 +491,8 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
         }
         if (sentence.getStatement() != null)
         {
-            builder.append("<br>").append(sentence.getStatement())
-                    .append("<br>");
+            builder.append("<br>").append(sentence.getStatement()).append(
+                    "<br>");
         }
     }
 
@@ -490,7 +561,8 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
                 {
                     Object source = e.getSource();
                     int totalPageMinus1 = (int) Math.floor((double) sentences
-                            .size() / entriesPerPage);
+                            .size()
+                            / entriesPerPage);
                     int currentIndex = 0;
                     if (source == firstBtn)
                     {
@@ -537,11 +609,14 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
             this.startEntry = startEntry;
             // Need to figure out the end page
             int endEntry = startEntry + entriesPerPage;
-            if (endEntry > sentences.size()) endEntry = sentences.size(); // The
-                                                                          // maximum
-                                                                          // has
-                                                                          // been
-                                                                          // reached
+            if (endEntry > sentences.size())
+            {
+                endEntry = sentences.size(); // The
+            }
+            // maximum
+            // has
+            // been
+            // reached
             if (endEntry == 0)
             {
                 resultLabel.setText("Results: No results!");
@@ -550,10 +625,10 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
             {
                 resultLabel.setText("Results: " + (startEntry + 1) + " to "
                         + endEntry + " of " + sentences.size()); // Don't need
-                                                                 // to offset 1
-                                                                 // for the
-                                                                 // endEntry
             }
+            // to offset 1
+            // for the
+            // endEntry
             validateButtons();
         }
     }
@@ -733,15 +808,25 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
             {
                 String[] nameValue = token.split(": ");
                 if (nameValue[0].equals("Cancer type"))
+                {
                     cancerField.setText(nameValue[1]);
+                }
                 else if (nameValue[0].equals("Status"))
+                {
                     statusBox.setSelectedItem(nameValue[1]);
+                }
                 else if (nameValue[0].equals("Negation"))
+                {
                     negationBox.setSelectedItem(nameValue[1]);
+                }
                 else if (nameValue[0].equals("Cellline"))
+                {
                     celllineBox.setSelectedItem(nameValue[1]);
+                }
                 else if (nameValue[0].equals("contains"))
+                {
                     containsBox.setSelected(nameValue[1].equals("checked"));
+                }
             }
         }
 
@@ -761,20 +846,32 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
             }
             if (status != null)
             {
-                if (builder.length() > 0) builder.append("; ");
+                if (builder.length() > 0)
+                {
+                    builder.append("; ");
+                }
                 builder.append("Status: " + status);
             }
             if (negation != null)
             {
-                if (builder.length() > 0) builder.append("; ");
+                if (builder.length() > 0)
+                {
+                    builder.append("; ");
+                }
                 builder.append("Negation: " + negation);
             }
             if (cellline != null)
             {
-                if (builder.length() > 0) builder.append("; ");
+                if (builder.length() > 0)
+                {
+                    builder.append("; ");
+                }
                 builder.append("Cellline: " + cellline);
             }
-            if (builder.length() == 0) builder.append("None");
+            if (builder.length() == 0)
+            {
+                builder.append("None");
+            }
             return builder.toString();
         }
 

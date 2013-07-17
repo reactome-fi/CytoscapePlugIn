@@ -60,7 +60,10 @@ public class GeneEntry
 
     public void addSentence(Sentence sentence)
     {
-        if (this.sentence == null) this.sentence = new ArrayList<Sentence>();
+        if (this.sentence == null)
+        {
+            this.sentence = new ArrayList<Sentence>();
+        }
         this.sentence.add(sentence);
     }
 
@@ -91,7 +94,9 @@ public class GeneEntry
     {
         if (value == null) return;
         if (geneAliasCollection == null)
+        {
             geneAliasCollection = new ArrayList<String>();
+        }
         geneAliasCollection.add(value);
     }
 

@@ -76,7 +76,10 @@ public class Sentence
 
     public void addEvidenceCode(String value)
     {
-        if (evidenceCode == null) evidenceCode = new ArrayList<String>();
+        if (evidenceCode == null)
+        {
+            evidenceCode = new ArrayList<String>();
+        }
         evidenceCode.add(value);
     }
 
@@ -87,7 +90,10 @@ public class Sentence
 
     public void addRoles(Roles value)
     {
-        if (roles == null) roles = new ArrayList<Roles>();
+        if (roles == null)
+        {
+            roles = new ArrayList<Roles>();
+        }
         roles.add(value);
     }
 

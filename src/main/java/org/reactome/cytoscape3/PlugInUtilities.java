@@ -44,7 +44,10 @@ public class PlugInUtilities
         {
             CySwingApplication cytoscape = (CySwingApplication) context
                     .getService(serviceReference);
-            if (cytoscape != null) parent = cytoscape.getJFrame();
+            if (cytoscape != null)
+            {
+                parent = cytoscape.getJFrame();
+            }
         }
         JOptionPane.showMessageDialog(parent, message, title,
                 JOptionPane.ERROR_MESSAGE);

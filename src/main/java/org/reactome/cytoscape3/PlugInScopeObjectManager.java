@@ -49,7 +49,10 @@ public class PlugInScopeObjectManager
 
     public static PlugInScopeObjectManager getManager()
     {
-        if (manager == null) manager = new PlugInScopeObjectManager();
+        if (manager == null)
+        {
+            manager = new PlugInScopeObjectManager();
+        }
         return manager;
     }
 
@@ -130,9 +133,8 @@ public class PlugInScopeObjectManager
                 System.err.println("PlugInScopeObjectManager.getProperties(): "
                         + e);
                 e.printStackTrace();
-                logger.error(
-                        "Cannot initialize RESTFulFIService: " + e.getMessage(),
-                        e);
+                logger.error("Cannot initialize RESTFulFIService: "
+                        + e.getMessage(), e);
             }
         }
         return this.properties;
@@ -156,9 +158,13 @@ public class PlugInScopeObjectManager
         URL url = getClass().getClassLoader().getResource(urlName);
         ImageIcon icon = null;
         if (url == null)
+        {
             icon = new ImageIcon(imgFileName);
+        }
         else
+        {
             icon = new ImageIcon(url);
+        }
         return icon;
     }
 
@@ -181,11 +187,11 @@ public class PlugInScopeObjectManager
         return getRestfulURL(getFiNetworkVersion());
     }
 
-    public String getDataSourceURL(String fiVerion)
+    public String getDataSourceURL(String fiVersion)
     {
         String dataSourceURL = getProperties().getProperty("dataSourceURL");
-        fiVerion = fiVerion.replaceAll(" ", "_");
-        String dbName = getProperties().getProperty(fiVerion + "_sourceDb");
+        fiVersion = fiVersion.replaceAll(" ", "_");
+        String dbName = getProperties().getProperty(fiVersion + "_sourceDb");
         String rtn = dataSourceURL.replace("${DB_NAME}", dbName);
         return rtn;
     }

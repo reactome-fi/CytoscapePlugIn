@@ -85,18 +85,18 @@ public class FIVersionSelectionPanel extends JPanel
             {
                 // Get the selected button
                 for (JRadioButton btn : buttons)
-                {
                     if (btn.isSelected())
                     {
                         PlugInScopeObjectManager.getManager()
                                 .setFiNetworkVersion(btn.getText());
                         break;
                     }
-                }
             }
         };
         for (JRadioButton btn : buttons)
+        {
             btn.addChangeListener(listner);
+        }
     }
 
     /**

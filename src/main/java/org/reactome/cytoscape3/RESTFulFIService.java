@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import javax.xml.bind.JAXBContext;
@@ -40,6 +39,8 @@ import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTable;
+import org.cytoscape.view.model.CyNetworkView;
 import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.RenderablePathway;
 import org.jdom.Document;
@@ -67,10 +68,24 @@ public class RESTFulFIService implements FINetworkService
         init();
     }
 
+    public RESTFulFIService(CyNetworkView view)
+    {
+        init(view);
+    }
+
+    private void init(CyNetworkView view)
+    {
+        CyTableManager tableManager = new CyTableManager();
+        String fiVersion = tableManager.getStoredFINetworkVersion(view);
+        restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL(
+                fiVersion);
+    }
+
     private void init()
     {
-        Properties prop = PlugInScopeObjectManager.getManager().getProperties();
-        restfulURL = prop.getProperty("restfulURL");
+        // Properties prop =
+        // PlugInScopeObjectManager.getManager().getProperties();
+        // restfulURL = prop.getProperty("restfulURL");
         restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL();
     }
 
@@ -90,17 +105,21 @@ public class RESTFulFIService implements FINetworkService
         // Query URL: A restful service
         String url = null;
         if (useLinkers)
+        {
             url = restfulURL + "network/buildNetwork";
+        }
         else
+        {
             url = restfulURL + "network/queryFIs";
+        }
         String query = InteractionUtilities.joinStringElements("\t", genes);
         Element root = callInXML(url, query);
         List<?> interactions = root.getChildren();
         Set<String> fis = new HashSet<String>(); // To be returned
         // Get the interactions
-        for (Iterator<?> it = interactions.iterator(); it.hasNext();)
+        for (Object name : interactions)
         {
-            Element elm = (Element) it.next();
+            Element elm = (Element) name;
             String firstProtein = elm.getChild("firstProtein").getChildText(
                     "name");
             String secondProtein = elm.getChild("secondProtein").getChildText(
@@ -123,7 +142,9 @@ public class RESTFulFIService implements FINetworkService
         String[] tokens = rtn.split(",");
         List<Long> hitIds = new ArrayList<Long>(tokens.length);
         for (String token : tokens)
+        {
             hitIds.add(new Long(token));
+        }
         return hitIds;
     }
 
@@ -136,7 +157,9 @@ public class RESTFulFIService implements FINetworkService
         String[] tokens = text.split("\n");
         Set<String> fis = new HashSet<String>();
         for (String token : tokens)
+        {
             fis.add(token);
+        }
         return fis;
     }
 
@@ -152,9 +175,9 @@ public class RESTFulFIService implements FINetworkService
         List<?> interactions = root.getChildren();
         Set<String> rtn = new HashSet<String>();
         // Get the interactions
-        for (Iterator<?> it = interactions.iterator(); it.hasNext();)
+        for (Object name : interactions)
         {
-            Element elm = (Element) it.next();
+            Element elm = (Element) name;
             String firstProtein = elm.getChild("firstProtein").getChildText(
                     "name");
             String secondProtein = elm.getChild("secondProtein").getChildText(
@@ -171,17 +194,21 @@ public class RESTFulFIService implements FINetworkService
         List<?> interactions = root.getChildren();
         Set<String> rtn = new HashSet<String>();
         // Get the interactions
-        for (Iterator<?> it = interactions.iterator(); it.hasNext();)
+        for (Object name : interactions)
         {
-            Element elm = (Element) it.next();
+            Element elm = (Element) name;
             String firstProtein = elm.getChild("firstProtein").getChildText(
                     "name");
             String secondProtein = elm.getChild("secondProtein").getChildText(
                     "name");
             if (firstProtein.equals(nodeName))
+            {
                 rtn.add(secondProtein);
+            }
             else
+            {
                 rtn.add(firstProtein);
+            }
         }
         return rtn;
     }
@@ -238,10 +265,11 @@ public class RESTFulFIService implements FINetworkService
         return interactions;
     }
 
-    public NetworkClusterResult cluster(List<CyEdge> edges) throws Exception
+    public NetworkClusterResult cluster(List<CyEdge> edges, CyNetworkView view)
+            throws Exception
     {
         String url = restfulURL + "network/cluster";
-        String query = convertEdgesToString(edges);
+        String query = convertEdgesToString(edges, view);
         Element root = callInXML(url, query);
         org.w3c.dom.Document document = new DOMOutputter().output(root
                 .getDocument());
@@ -296,7 +324,9 @@ public class RESTFulFIService implements FINetworkService
             StringBuilder builder = new StringBuilder();
             String line = null;
             while ((line = reader.readLine()) != null)
+            {
                 builder.append(line).append("\n");
+            }
             reader.close();
             isr.close();
             is.close();
@@ -343,7 +373,9 @@ public class RESTFulFIService implements FINetworkService
         // Create query
         StringBuilder builder = new StringBuilder();
         for (String gene : genes)
+        {
             builder.append(gene).append("\n");
+        }
         String result = callHttp(url, HTTP_POST, builder.toString());
         Map<String, String> geneToDiseases = new HashMap<String, String>();
         String[] lines = result.split("\n");
@@ -383,9 +415,9 @@ public class RESTFulFIService implements FINetworkService
         List<?> children = root.getChildren();
         // Need to create ModuleGeneSetAnnotation from XML
         List<ModuleGeneSetAnnotation> rtn = new ArrayList<ModuleGeneSetAnnotation>();
-        for (Iterator<?> it = children.iterator(); it.hasNext();)
+        for (Object name2 : children)
         {
-            Element elm = (Element) it.next();
+            Element elm = (Element) name2;
             ModuleGeneSetAnnotation moduleAnnotation = new ModuleGeneSetAnnotation();
             List<GeneSetAnnotation> annotations = new ArrayList<GeneSetAnnotation>();
             moduleAnnotation.setAnnotations(annotations);
@@ -402,9 +434,13 @@ public class RESTFulFIService implements FINetworkService
                     annotations.add(annotation);
                 }
                 else if (name.equals("ids"))
+                {
                     ids.add(childElm.getText());
+                }
                 else if (name.equals("module"))
+                {
                     moduleAnnotation.setModule(new Integer(childElm.getText()));
+                }
             }
             rtn.add(moduleAnnotation);
         }
@@ -463,7 +499,9 @@ public class RESTFulFIService implements FINetworkService
         // Create a query
         StringBuilder builder = new StringBuilder();
         for (String fiWithCorr : fisWithCorrs)
+        {
             builder.append(fiWithCorr).append("\n");
+        }
         builder.append("Inflation: " + inflation);
         Element resultElm = callInXML(url, builder.toString());
         return resultElm;
@@ -488,18 +526,18 @@ public class RESTFulFIService implements FINetworkService
         return resultElm;
     }
 
-    public Map<String, FIAnnotation> annotate(List<CyEdge> edges)
-            throws Exception
+    public Map<String, FIAnnotation> annotate(List<CyEdge> edges,
+            CyNetworkView view) throws Exception
     {
         String url = restfulURL + "network/annotate";
         // Create a query
-        String query = convertEdgesToString(edges);
+        String query = convertEdgesToString(edges, view);
         Element root = callInXML(url, query);
         List<?> annotations = root.getChildren();
         Map<String, FIAnnotation> edgeIdToAnnotation = new HashMap<String, FIAnnotation>();
-        for (Iterator<?> it = annotations.iterator(); it.hasNext();)
+        for (Object name : annotations)
         {
-            Element element = (Element) it.next();
+            Element element = (Element) name;
             FIAnnotation annotation = generateSimpleObjectFromElement(element,
                     FIAnnotation.class);
             edgeIdToAnnotation.put(annotation.getInteractionId(), annotation);
@@ -507,7 +545,7 @@ public class RESTFulFIService implements FINetworkService
         return edgeIdToAnnotation;
     }
 
-    private String convertEdgesToString(List<CyEdge> edges)
+    private String convertEdgesToString(List<CyEdge> edges, CyNetworkView view)
     {
         StringBuilder queryBuilder = new StringBuilder();
         int compare = 0;
@@ -515,15 +553,22 @@ public class RESTFulFIService implements FINetworkService
         {
             CyNode start = edge.getSource();
             CyNode end = edge.getTarget();
-            queryBuilder.append(edge.getSUID()).append("\t");
+            // The view must be passed in because a call to getNetworkPointer()
+            // returns
+            // null. This must be a bug in the API.
+            CyTable edgeTable = view.getModel().getDefaultEdgeTable();
+            // edge.getSource().getNetworkPointer().getDefaultEdgeTable();
+            String edgeName = edgeTable.getRow(edge.getSUID()).get("name",
+                    String.class);
+            queryBuilder.append(edgeName).append("\t");
+
             // Have to make sure the start id is less than end id based on
-            // conventions
-            // we used in the server side
-            String startId = start.getNetworkPointer().getDefaultNodeTable()
-                    .getRow(start.getSUID()).get("name", String.class); // start.getSUID().toString();
-            System.out.println(startId);
-            String endId = end.getNetworkPointer().getDefaultNodeTable()
-                    .getRow(end.getSUID()).get("name", String.class);// end.getSUID().toString();
+            // conventions we used in the server side
+            CyTable nodeTable = view.getModel().getDefaultNodeTable();
+            String startId = nodeTable.getRow(start.getSUID()).get("name",
+                    String.class); // start.getSUID().toString();
+            String endId = nodeTable.getRow(end.getSUID()).get("name",
+                    String.class);
             compare = startId.compareTo(endId);
             if (compare < 0)
             {
@@ -545,9 +590,9 @@ public class RESTFulFIService implements FINetworkService
     {
         T rtn = cls.newInstance();
         List<?> children = elm.getChildren();
-        for (Iterator<?> it = children.iterator(); it.hasNext();)
+        for (Object name2 : children)
         {
-            Element child = (Element) it.next();
+            Element child = (Element) name2;
             String name = child.getName();
             String fieldName = name.substring(0, 1).toLowerCase()
                     + name.substring(1);
@@ -560,8 +605,10 @@ public class RESTFulFIService implements FINetworkService
                         + name.substring(1);
                 Method method = getMethod(cls, methodName);
                 if (method != null)
+                {
                     valueConstructor = method.getParameterTypes()[0]
                             .getConstructor(String.class);
+                }
             }
             else
             {
@@ -572,8 +619,10 @@ public class RESTFulFIService implements FINetworkService
             }
             Method method = getMethod(cls, methodName);
             if (valueConstructor != null && method != null)
-                method.invoke(rtn,
-                        valueConstructor.newInstance(child.getText()));
+            {
+                method.invoke(rtn, valueConstructor
+                        .newInstance(child.getText()));
+            }
         }
         return rtn;
     }
@@ -581,12 +630,7 @@ public class RESTFulFIService implements FINetworkService
     private Method getMethod(Class<?> cls, String methodName)
     {
         for (Method method : cls.getMethods())
-        {
-            if (method.getName().equals(methodName))
-            {
-                return method;
-            }
-        }
+            if (method.getName().equals(methodName)) return method;
         return null;
     }
     //

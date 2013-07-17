@@ -116,12 +116,12 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         GeneSetMutationAnalysisTaskFactory gsmaFactory = new GeneSetMutationAnalysisTaskFactory(
                 desktopApp, gui.getFileFormat(), file, gui.chooseHomoGenes(),
                 gui.useLinkers(), gui.getUnlinkedGeneBox().isSelected(), gui
-                        .getUnlinkedGeneBox().isEnabled(),
-                gui.showFIAnnotationsBeFetched(), gui.getSampleCutoffValue(),
-                networkFactory, netManager, viewFactory, viewManager,
-                layoutManager, visMapManager, visStyleFactory,
-                visMapFuncFactoryC, visMapFuncFactoryD, visMapFuncFactoryP,
-                tableFactory, tm);
+                        .getUnlinkedGeneBox().isEnabled(), gui
+                        .showFIAnnotationsBeFetched(), gui
+                        .getSampleCutoffValue(), networkFactory, netManager,
+                viewFactory, viewManager, layoutManager, visMapManager,
+                visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD,
+                visMapFuncFactoryP, tableFactory, tm);
         tm.execute(gsmaFactory.createTaskIterator());
 
     }
@@ -130,8 +130,8 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
     protected boolean createNewSession(CyNetworkManager networkManager,
             CySessionManager sessionManager)
     {
-         //Checks if a session currently exists and if so whether the user would
-         //like to save that session. A new session is then created.
+        // Checks if a session currently exists and if so whether the user would
+        // like to save that session. A new session is then created.
 
         int networkCount = networkManager.getNetworkSet().size();
         if (networkCount == 0)
