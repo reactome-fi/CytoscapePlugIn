@@ -135,7 +135,7 @@ class NetworkActionCollection
                 // Identifier).
                 NetworkClusterResult clusterResult = service.cluster(edgeList,
                         view);
-                Map<String, Integer> nodeToCluster = new HashMap<String, Integer>();
+                Map<String, Double> nodeToCluster = new HashMap<String, Double>();
                 List<GeneClusterPair> geneClusterPairs = clusterResult
                         .getGeneClusterPairs();
                 if (geneClusterPairs != null)
@@ -143,10 +143,9 @@ class NetworkActionCollection
                     for (GeneClusterPair geneCluster : geneClusterPairs)
                     {
                         nodeToCluster.put(geneCluster.getGeneId(), geneCluster
-                                .getCluster());
+                                .getCluster().doubleValue());
                     }
                 }
-                System.out.println(nodeToCluster);
                 tableManager.loadNodeAttributesByName(view, "module",
                         nodeToCluster);
                 tableManager.storeClusteringType(view, CyTableFormatter
@@ -154,7 +153,8 @@ class NetworkActionCollection
                 Map<String, Object> nodeToSamples = tableManager
                         .getNodeTableValuesByName(view.getModel(), "samples",
                                 String.class);
-                System.out.println(nodeToSamples);
+    //            VisualStyleHelper visHelper = ;
+                
             }
             catch (Exception e)
             {

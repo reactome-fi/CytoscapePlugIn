@@ -28,6 +28,8 @@ import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.view.vizmap.mappings.PassthroughMapping;
 import org.cytoscape.work.TaskManager;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 
 /**
  * This class provides layout/VisMap setup for a given network view. Without it,
@@ -39,6 +41,7 @@ import org.cytoscape.work.TaskManager;
  */
 public class VisualStyleHelper
 {
+    private static VisualStyleHelper instance;
     private final String FI_VISUAL_STYLE = "FI Network";
     private VisualMappingManager visMapManager;
     private VisualStyleFactory visStyleFactory;
@@ -66,7 +69,22 @@ public class VisualStyleHelper
         this.taskManager = taskManager;
         this.desktopApp = desktopApp;
     }
-
+    
+//    public static VisualStyleHelper getInstance()
+//    {
+//        if (instance == null)
+//        {
+//            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+//            ServiceReference visMapRef = context.getServiceReference(VisualMappingManager.class.getName());
+//            ServiceReference visStyleFacRef = context.getServiceReference(VisualStyleFactory.class.getName());
+//            instance = new VisualStyleHelper(
+//                    visMapManager, visStyleFactory, visMapFuncFactoryC,
+//                    visMapFuncFactoryD, visMapFuncFactoryP, layoutManager,
+//                    taskManager, desktopApp);
+//        }
+//        return instance;
+//        
+//    }
     public void setVisualStyle(CyNetworkView view)
     {
         // VisualStyle style = visMapManager.getVisualStyle(view);
@@ -115,7 +133,7 @@ public class VisualStyleHelper
 
         // Set the node color based on module
         DiscreteMapping colorToModuleFunction = (DiscreteMapping) this.visMapFuncFactoryD
-                .createVisualMappingFunction("module", Integer.class,
+                .createVisualMappingFunction("module", Double.class,
                         BasicVisualLexicon.NODE_FILL_COLOR);
         String moduleColors = PlugInScopeObjectManager.getManager()
                 .getProperties().getProperty("moduleColors");
