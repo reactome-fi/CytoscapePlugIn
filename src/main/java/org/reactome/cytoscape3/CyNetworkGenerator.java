@@ -35,7 +35,7 @@ public class CyNetworkGenerator
         // Construct an empty network.
         CyNetwork network = networkFactory.createNetwork();
         CyTableFormatter cyTableFormatter = new CyTableFormatter(tableFactory);
-        cyTableFormatter.makeAllTablesGSMA(network);
+        cyTableFormatter.makeGeneSetMutationAnalysisTables(network);
         // Generate a source, edge and target for each FI interaction
         // retrieved from the Reactome database.
         int index = 0;

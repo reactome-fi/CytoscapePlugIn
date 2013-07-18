@@ -29,63 +29,81 @@ import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.session.CySession;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
+import org.cytoscape.task.write.SaveSessionTaskFactory;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.work.TaskManager;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 
 public abstract class FICytoscapeAction extends AbstractCyAction
 {
-    protected CyNetworkManager cyNetManager;
-    protected CySwingApplication desktopApp;
-    protected CyFileFilter fileFilter;
-    protected FileUtil fileUtil;
-    protected TaskManager tm;
-    protected SaveSessionAsTaskFactory saveAsFactory;
-    protected CySessionManager sessionManager;
-
-    public FICytoscapeAction(CySwingApplication desktopApp,
-            CyNetworkManager cyNetManager, FileUtil fileUtil,
-            SaveSessionAsTaskFactory saveAsFactory, TaskManager tm,
-            CySessionManager sessionManager, String title)
+    public FICytoscapeAction(String title)
     {
         super(title);
-        this.desktopApp = desktopApp;
-        this.cyNetManager = cyNetManager;
-        this.fileUtil = fileUtil;
-        this.saveAsFactory = saveAsFactory;
-        this.tm = tm;
+
     }
 
-    protected boolean createNewSession(CyNetworkManager networkManager,
-            CySessionManager sessionManager)
+    protected boolean createNewSession()
     {
-        /*
-         * Checks if a session currently exists and if so whether the user would
-         * like to save that session. A new session is then created.
-         */
-        int networkCount = networkManager.getNetworkSet().size();
-        if (networkCount == 0) return true;
-        String msg = new String(
-                "A new session is needed for using Reactome FI plugin.\n"
-                        + "Do you want to save your session?");
-        int reply = JOptionPane.showConfirmDialog(this.desktopApp.getJFrame(),
-                msg, "Save Session?", JOptionPane.YES_NO_CANCEL_OPTION);
-        if (reply == JOptionPane.CANCEL_OPTION)
-            return false;
-        else if (reply == JOptionPane.NO_OPTION)
+        //Checks if a session currently exists and if so whether the user would
+        //like to save that session. A new session is then created.
+        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        ServiceReference desktopAppRef = context.getServiceReference(CySwingApplication.class.getName());
+        ServiceReference netManagerRef = context.getServiceReference(CyNetworkManager.class.getName());
+        ServiceReference taskManagerRef = context.getServiceReference(TaskManager.class.getName());
+        ServiceReference saveAsFactoryRef = context.getServiceReference(SaveSessionAsTaskFactory.class.getName());
+        ServiceReference sessionManagerRef = context.getServiceReference(CySessionManager.class.getName());
+        if (desktopAppRef != null && netManagerRef != null && taskManagerRef != null && saveAsFactoryRef != null && sessionManagerRef != null)
         {
-            CySession.Builder builder = new CySession.Builder();
-            sessionManager.setCurrentSession(builder.build(), null);
-            return false;
+            CySwingApplication desktopApp = (CySwingApplication) context.getService(desktopAppRef);
+            CyNetworkManager networkManager = (CyNetworkManager) context.getService(netManagerRef);
+            TaskManager tm = (TaskManager) context.getService(taskManagerRef);
+            SaveSessionAsTaskFactory saveAsFactory = (SaveSessionAsTaskFactory) context.getService(saveAsFactoryRef);
+            CySessionManager sessionManager = (CySessionManager) context.getService(sessionManagerRef);
+            
+            int networkCount = networkManager.getNetworkSet().size();
+            if (networkCount == 0) return true;
+            String msg = new String(
+                    "A new session is needed for using Reactome FI plugin.\n"
+                            + "Do you want to save your session?");
+            int reply = JOptionPane.showConfirmDialog(desktopApp.getJFrame(),
+                    msg, "Save Session?", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (reply == JOptionPane.CANCEL_OPTION)
+            {
+                context.ungetService(desktopAppRef);
+                context.ungetService(netManagerRef);
+                context.ungetService(saveAsFactoryRef);
+                context.ungetService(sessionManagerRef);
+                context.ungetService(taskManagerRef);
+                return false;
+            }
+            else if (reply == JOptionPane.NO_OPTION)
+            {
+                CySession.Builder builder = new CySession.Builder();
+                sessionManager.setCurrentSession(builder.build(), null);
+                context.ungetService(desktopAppRef);
+                context.ungetService(netManagerRef);
+                context.ungetService(saveAsFactoryRef);
+                context.ungetService(sessionManagerRef);
+                context.ungetService(taskManagerRef);
+                return true;
+            }
+            else
+            {
+                tm.execute(saveAsFactory.createTaskIterator());
+                if (sessionManager.getCurrentSession() == null) return true;
+                CySession.Builder builder = new CySession.Builder();
+                sessionManager.setCurrentSession(builder.build(), null);
+            }
+            context.ungetService(desktopAppRef);
+            context.ungetService(netManagerRef);
+            context.ungetService(saveAsFactoryRef);
+            context.ungetService(sessionManagerRef);
+            context.ungetService(taskManagerRef);
+            return true;
         }
-        else
-        {
-            tm.execute(saveAsFactory.createTaskIterator());
-            if (sessionManager.getCurrentSession() == null) return true;
-            CySession.Builder builder = new CySession.Builder();
-            sessionManager.setCurrentSession(builder.build(), null);
-        }
-        return true;
+        return false;
     }
 
     protected boolean validateFile(JTextField fileTF,
@@ -178,15 +196,24 @@ public abstract class FICytoscapeAction extends AbstractCyAction
     private void browseDataFile(JTextField tf, String title,
             Collection<FileChooserFilter> fileFilters)
     {
-        // FileChooserFilter fileChooserFilter = new
-        // FileChooserFilter("Mutation Annotation Format", "maf");
+        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        ServiceReference desktopAppRef = context.getServiceReference(CySwingApplication.class.getName());
+        ServiceReference fileUtilRef = context.getServiceReference(FileUtil.class.getName());
+        if (desktopAppRef != null && fileUtilRef != null)
+        {
+            CySwingApplication desktopApp = (CySwingApplication) context.getService(desktopAppRef);
+            FileUtil fileUtil = (FileUtil) context.getService(fileUtilRef);
 
         // Provide a way to load a MAF file
-        File[] files = fileUtil.getFiles(this.desktopApp.getJFrame(), title,
+        File[] files = fileUtil.getFiles(desktopApp.getJFrame(), title,
                 FileUtil.LOAD, fileFilters);
         if (files == null || files.length == 0) return;
         File file = files[0];
         tf.setText(file.getAbsolutePath());
+        
+        context.ungetService(fileUtilRef);
+        context.ungetService(desktopAppRef);
+        }
     }
 
 }

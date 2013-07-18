@@ -16,7 +16,7 @@ import org.cytoscape.model.CyTableFactory;
 public class CyTableFormatter
 {
 
-    //
+    //Strings important to multiple classes in the package are cached here.
     private static final String FI_NETWORK_VERSION = "Reactome_FI_Network_Version";
     private static final String SAMPLE_MUTATION_DATA = "SAMPLE_MUTATION_DATA";
     private static final String MCL_ARRAY_DATA = "MCL_ARRAY_DATA";
@@ -54,27 +54,13 @@ public class CyTableFormatter
         return SPECTRAL_PARTITION_CLUSTER;
     }
 
-    public void makeAllTablesGSMA(CyNetwork network)
+    public void makeGeneSetMutationAnalysisTables(CyNetwork network)
     {
-
+        //Grab default tables from the network.
         CyTable netTable = network.getDefaultNetworkTable();
         CyTable nodeTable = network.getDefaultNodeTable();
         CyTable edgeTable = network.getDefaultEdgeTable();
 
-        // From Jason's email. Make sure that the network SUID ends up in the
-        // properly linked table
-        // in the edge/node table to ensure that network properties are
-        // distributed to nodes and edges.
-        // if (nodeTable.getColumn("network") == null)
-        // {
-        // //nodeTable.createColumn("network", Long.class, true);
-        // //edgeTable.createColumn("network", Long.class, true);
-        // //nodeTable.addVirtualColumn("network.SUID", "SUID", netTable,
-        // "network.SUID", true);
-        // //edgeTable.addVirtualColumn("network.SUID", "SUID", netTable,
-        // "network.SUID", true);
-        // //makeAllTablesGSMA(network);
-        // }
         // Creates a set of columns in the default network table and creates
         // matching virtual columns
         // within the default edge and node tables upon network creation or
@@ -95,8 +81,6 @@ public class CyTableFormatter
         }
         if (nodeTable.getColumn("module") == null)
         {
-            // netTable.createColumn("moduleToSampleValue", Double.class,
-            // Boolean.FALSE);
             nodeTable.createColumn("module", Integer.class, Boolean.FALSE);
         }
         if (netTable.getColumn("clustering_Type") == null)
@@ -137,13 +121,14 @@ public class CyTableFormatter
 
     }
 
-    public void makeModuleAnalysisColumns(CyNetwork network)
+    public void makeModuleAnalysisTables(CyNetwork network)
     {
+        //Creates the attributes tables for Module Analysis (view context menu)
         CyTable netTable = network.getDefaultNetworkTable();
         CyTable nodeTable = network.getDefaultNodeTable();
-        if (netTable.getColumn("clusteringType") == null)
+        if (netTable.getColumn("clustering_Type") == null)
         {
-            netTable.createColumn("clusteringType", Integer.class,
+            netTable.createColumn("clustering_Type", Integer.class,
                     Boolean.FALSE);
         }
         if (nodeTable.getColumn("module") == null)
@@ -152,16 +137,70 @@ public class CyTableFormatter
         }
         CyTable moduleTable = tableFactory.createTable("Network Module",
                 "module", Integer.class, Boolean.TRUE, Boolean.FALSE);
-        if (moduleTable.getColumn("nodes in module") == null)
+        if (moduleTable.getColumn("Nodes in Module") == null)
         {
-            moduleTable.createColumn("nodes in module", Integer.class,
+            moduleTable.createColumn("Nodes in Module", Integer.class,
                     Boolean.FALSE);
         }
-        if (moduleTable.getColumn("node percentage") == null)
+        if (moduleTable.getColumn("Node Percentage") == null)
         {
-            moduleTable.createColumn("node percentage", Integer.class,
+            moduleTable.createColumn("Node Percentage", Integer.class,
                     Boolean.FALSE);
         }
-
+        if (moduleTable.getColumn("Samples in Module") == null)
+        {
+            moduleTable.createColumn("Samples in Module", Integer.class, Boolean.FALSE);
+        }
+        if (moduleTable.getColumn("Sample Percentage") == null)
+        {
+            moduleTable.createColumn("Sample Percentage", Double.class, Boolean.FALSE);
+        }
+        if (moduleTable.getColumn("Node List") == null)
+        {
+            moduleTable.createColumn("Node List", String.class, Boolean.FALSE);
+        }
+    }
+    public void makeHotNetAnalysisTables(CyNetwork network)
+    {
+        //Creates the attribute tables for HotNet Analysis
+        CyTable nodeTable = network.getDefaultNodeTable();
+        CyTable hotNetTable = tableFactory.createTable("HotNet Module", "module", Integer.class, Boolean.TRUE, Boolean.FALSE);
+        if (nodeTable.getColumn("module") == null)
+        {
+            nodeTable.createColumn("module", Integer.class, Boolean.FALSE);
+        }
+        if (hotNetTable.getColumn("module") == null)
+        {
+            hotNetTable.createColumn("module", Integer.class, Boolean.FALSE);
+        }
+        if (hotNetTable.getColumn("Nodes in Module") == null)
+        {
+            hotNetTable.createColumn("Nodes in Module", Integer.class, Boolean.FALSE);
+        }
+        if (hotNetTable.getColumn("Node Percentage") == null)
+        {
+            hotNetTable.createColumn("Node Percentage", Integer.class,
+                    Boolean.FALSE);
+        }
+        if (hotNetTable.getColumn("Samples in Module") == null)
+        {
+            hotNetTable.createColumn("Samples in Module", Integer.class, Boolean.FALSE);
+        }
+        if (hotNetTable.getColumn("Sample Percentage") == null)
+        {
+            hotNetTable.createColumn("Sample Percentage", Double.class, Boolean.FALSE);
+        }
+        if (hotNetTable.getColumn("pvalue") == null)
+        {
+            hotNetTable.createColumn("pvalue", Double.class, Boolean.FALSE);
+        }
+        if (hotNetTable.getColumn("FDR") == null)
+        {
+            hotNetTable.createColumn("FDR", Double.class, Boolean.FALSE);
+        }
+        if (hotNetTable.getColumn("Node List") == null)
+        {
+            hotNetTable.createColumn("Node List", String.class, Boolean.FALSE);
+        }
     }
 }

@@ -70,18 +70,8 @@ public class ActionDialogs extends JDialog
 
     private CySwingApplication desktopApp;
 
-    public ActionDialogs(String actionType,
-            FileUtil fileUtil)
+    public ActionDialogs(String actionType)
     {
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-        ServiceReference cyAppRef = context.getServiceReference(CySwingApplication.class.getName());
-        if (cyAppRef != null)
-        {
-            CySwingApplication desktopApp = (CySwingApplication) context.getService(cyAppRef);
-            this.desktopApp = desktopApp;
-        }
-        this.fileUtil = fileUtil;
-
         if (actionType.equals("GeneSetMutationAnalysis")
                 || actionType.equals("UserGuide") || actionType.equals("Microarray")
                 || actionType.equals("Hotnet"))
@@ -89,7 +79,6 @@ public class ActionDialogs extends JDialog
             init(actionType);
         }
     }
-
     // Retrieves the file path from the JFileTextfield
     public File getSelectedFile()
     {
@@ -176,8 +165,18 @@ public class ActionDialogs extends JDialog
         okBtn.setEnabled(false);
     }
 
-    public void init(String context)
+    public void init(String actionType)
     {
+        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        ServiceReference cyAppRef = context.getServiceReference(CySwingApplication.class.getName());
+        ServiceReference fileUtilRef = context.getServiceReference(FileUtil.class.getName());
+        if (cyAppRef != null && fileUtilRef != null)
+        {
+            CySwingApplication desktopApp = (CySwingApplication) context.getService(cyAppRef);
+            this.desktopApp = desktopApp;
+            FileUtil fileUtil = (FileUtil) context.getService(fileUtilRef);
+            this.fileUtil = fileUtil;
+        }
         // Main dialog pane. A tabbed pane is used
         // to mimic the Cytoscape GUI and provide room
         // for future tabbed user interfaces.
@@ -194,7 +193,7 @@ public class ActionDialogs extends JDialog
                 font);
         versionPane.setBorder(versionBorder);
 
-        if (context.equals("GeneSetMutationAnalysis"))
+        if (actionType.equals("GeneSetMutationAnalysis"))
         {
             JPanel gsmaPanel = new JPanel();
             gsmaPanel.setLayout(new BoxLayout(gsmaPanel, BoxLayout.Y_AXIS));
@@ -391,9 +390,11 @@ public class ActionDialogs extends JDialog
             sampleCommentLabel.setEnabled(false);
             mainPane.addTab("Gene Set / Mutation Analysis", gsmaPanel);
             mainPane.setSelectedComponent(gsmaPanel);
+            context.ungetService(fileUtilRef);
+            context.ungetService(cyAppRef);
         }
 
-        if (context.equals("UserGuide"))
+        if (actionType.equals("UserGuide"))
         {
             mainPane.setSize(500, 500);
             // Create a scrollable editor pane for the online user guide
@@ -416,7 +417,7 @@ public class ActionDialogs extends JDialog
             }
 
         }
-        if (context.equals("Microarray"))
+        if (actionType.equals("Microarray"))
         {
             JPanel maaPanel = new JPanel();
             mainPane.addTab("Microarray Analysis", maaPanel);
@@ -425,7 +426,7 @@ public class ActionDialogs extends JDialog
         }
         getContentPane().add(mainPane, BorderLayout.CENTER);
 
-        if (context.equals("Hotnet"))
+        if (actionType.equals("Hotnet"))
         {
             JPanel hnaPanel = new JPanel();
             mainPane.addTab("HotNet Mutation Analysis", hnaPanel);
