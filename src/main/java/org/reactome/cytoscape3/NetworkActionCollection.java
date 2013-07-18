@@ -153,7 +153,19 @@ class NetworkActionCollection
                 Map<String, Object> nodeToSamples = tableManager
                         .getNodeTableValuesByName(view.getModel(), "samples",
                                 String.class);
-    //            VisualStyleHelper visHelper = ;
+                BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+                ServiceReference visHelperRef = context.getServiceReference(VisualStyleHelper.class.getName());
+                try
+                {
+                    VisualStyleHelper visStyleHelper = (VisualStyleHelper) context.getService(visHelperRef);
+                    visStyleHelper.setVisualStyle(view);
+                    context.ungetService(visHelperRef);
+                }
+                catch (Throwable t)
+                {
+                    JOptionPane.showMessageDialog(null, "The visual style could not be applied.", "Visual Style Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
                 
             }
             catch (Exception e)

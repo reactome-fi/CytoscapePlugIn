@@ -29,6 +29,8 @@ import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.reactome.cancer.CancerAnalysisUtilitites;
 import org.reactome.cancer.MATFileLoader;
 import org.reactome.r3.util.FileUtility;
@@ -247,7 +249,10 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             VisualStyleHelper styleHelper = new VisualStyleHelper(
                     visMapManager, visStyleFactory, visMapFuncFactoryC,
                     visMapFuncFactoryD, visMapFuncFactoryP, layoutManager,
-                    taskManager, desktopApp);
+                   taskManager, desktopApp);
+//            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+//            ServiceReference styleHelperRef = context.getServiceReference(VisualStyleHelper.class.getName());
+//            VisualStyleHelper styleHelper = (VisualStyleHelper) context.getService(styleHelperRef);
             styleHelper.setVisualStyle(view);
             taskMonitor.setProgress(1.0d);
         }

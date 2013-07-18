@@ -69,7 +69,7 @@ public class VisualStyleHelper
         this.taskManager = taskManager;
         this.desktopApp = desktopApp;
     }
-    
+
 //    public static VisualStyleHelper getInstance()
 //    {
 //        if (instance == null)
@@ -77,6 +77,7 @@ public class VisualStyleHelper
 //            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
 //            ServiceReference visMapRef = context.getServiceReference(VisualMappingManager.class.getName());
 //            ServiceReference visStyleFacRef = context.getServiceReference(VisualStyleFactory.class.getName());
+//            ServiceReference visMapFuncFactoryC = context.getServiceReference
 //            instance = new VisualStyleHelper(
 //                    visMapManager, visStyleFactory, visMapFuncFactoryC,
 //                    visMapFuncFactoryD, visMapFuncFactoryP, layoutManager,

@@ -17,6 +17,7 @@ import javax.swing.WindowConstants;
 
 import org.cytoscape.application.swing.CySwingApplication;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -204,5 +205,16 @@ public class PlugInScopeObjectManager
     public static String getUserGuideURL()
     {
         return userGuideURL;
+    }
+    //A lot of getter methods for retrieving the references to various cytoscape services.
+    
+    //A method to unget a service reference and release it for garbage collecting.
+    public void releaseService(BundleContext context, ServiceReference serviceRef)
+    {
+        if (serviceRef != null)
+        {
+            context.ungetService(serviceRef);
+            serviceRef = null;
+        }
     }
 }

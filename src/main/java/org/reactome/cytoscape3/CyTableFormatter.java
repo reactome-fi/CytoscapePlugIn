@@ -95,12 +95,9 @@ public class CyTableFormatter
         }
         if (nodeTable.getColumn("module") == null)
         {
-            ;
-        }
-        {
             // netTable.createColumn("moduleToSampleValue", Double.class,
             // Boolean.FALSE);
-            nodeTable.createColumn("module", Double.class, Boolean.FALSE);
+            nodeTable.createColumn("module", Integer.class, Boolean.FALSE);
         }
         if (netTable.getColumn("clustering_Type") == null)
         {
