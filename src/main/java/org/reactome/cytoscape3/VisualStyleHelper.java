@@ -39,9 +39,8 @@ import org.osgi.framework.ServiceReference;
  * @author Eric T. Dawson
  * @date July 2013
  */
-public class VisualStyleHelper
+public class VisualStyleHelper implements FIVisualStyle
 {
-    private static VisualStyleHelper instance;
     private final String FI_VISUAL_STYLE = "FI Network";
     private VisualMappingManager visMapManager;
     private VisualStyleFactory visStyleFactory;
@@ -102,7 +101,7 @@ public class VisualStyleHelper
         createVisualStyle(view);
     }
 
-    private void createVisualStyle(CyNetworkView view)
+    public void createVisualStyle(CyNetworkView view)
     {
 
         // Create a fresh visual style
@@ -134,7 +133,7 @@ public class VisualStyleHelper
 
         // Set the node color based on module
         DiscreteMapping colorToModuleFunction = (DiscreteMapping) this.visMapFuncFactoryD
-                .createVisualMappingFunction("module", Double.class,
+                .createVisualMappingFunction("module", Integer.class,
                         BasicVisualLexicon.NODE_FILL_COLOR);
         String moduleColors = PlugInScopeObjectManager.getManager()
                 .getProperties().getProperty("moduleColors");
@@ -189,15 +188,9 @@ public class VisualStyleHelper
         // Apply the visual style and update the network view.
         visMapManager.setVisualStyle(fiVisualStyle, view);
         view.updateView();
-
-        // Set the desired layout (yFiles Organic)
-        // This method manually clicks the menu item to trigger
-        // the new layout, as yFiles layouts are not available
-        // for programmatic use.
-        setLayout();
     }
 
-    private int[] getSampleNumberRange(CyNetworkView view)
+    public int[] getSampleNumberRange(CyNetworkView view)
     {
         Map<Long, Object> idToSampleNumber = new CyTableManager()
                 .getNodeTableValuesBySUID(view.getModel(), "sampleNumber",
@@ -217,7 +210,7 @@ public class VisualStyleHelper
         { min, max };
     }
 
-    private JMenuItem getyFilesOrganic()
+    public JMenuItem getyFilesOrganic()
     {
         JMenu yFilesMenu = null;
         for (Component item : desktopApp.getJMenu("Layout").getMenuComponents())
@@ -238,9 +231,16 @@ public class VisualStyleHelper
         return organicMenuItem;
     }
 
-    private void setLayout()
+
+    public void setLayout()
     {
+        // Set the desired layout (yFiles Organic)
+        // This method manually clicks the menu item to trigger
+        // the new layout, as yFiles layouts are not available
+        // for programmatic use.
         JMenuItem yFilesOrganicMenuItem = getyFilesOrganic();
-        yFilesOrganicMenuItem.doClick();
+        if (yFilesOrganicMenuItem != null) 
+            yFilesOrganicMenuItem.doClick();
     }
+
 }

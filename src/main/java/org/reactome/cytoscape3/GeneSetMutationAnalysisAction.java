@@ -42,12 +42,6 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
     private CyNetworkFactory networkFactory;
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
-    private VisualMappingManager visMapManager;
-    private CyLayoutAlgorithmManager layoutManager;
-    private VisualStyleFactory visStyleFactory;
-    private VisualMappingFunctionFactory visMapFuncFactoryP;
-    private VisualMappingFunctionFactory visMapFuncFactoryC;
-    private VisualMappingFunctionFactory visMapFuncFactoryD;
     private CyTableFactory tableFactory;
 
     // private TaskMonitor taskMonitor;
@@ -58,12 +52,6 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
             CySwingApplication desktopApp, CySessionManager sessionManager,
             CyNetworkFactory networkFactory, CyNetworkViewFactory viewFactory,
             CyNetworkViewManager viewManager,
-            CyLayoutAlgorithmManager layoutManager,
-            VisualMappingManager visMapManager,
-            VisualStyleFactory visStyleFactory,
-            VisualMappingFunctionFactory visMapFuncFactoryC,
-            VisualMappingFunctionFactory visMapFuncFactoryD,
-            VisualMappingFunctionFactory visMapFuncFactoryP,
             CyTableFactory tableFactory)
     {
         super(desktopApp, netManager, fileUtil, saveSession, tm,
@@ -77,12 +65,6 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         this.networkFactory = networkFactory;
         this.viewFactory = viewFactory;
         this.viewManager = viewManager;
-        this.visMapManager = visMapManager;
-        this.layoutManager = layoutManager;
-        this.visStyleFactory = visStyleFactory;
-        this.visMapFuncFactoryP = visMapFuncFactoryP;
-        this.visMapFuncFactoryC = visMapFuncFactoryC;
-        this.visMapFuncFactoryD = visMapFuncFactoryD;
         this.tableFactory = tableFactory;
         setPreferredMenu("Apps.Reactome FI");
 
@@ -98,7 +80,7 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         // Create the GUI. The first argument is the GUI context (the type
         // of analysis being performed.
         ActionDialogs gui = new ActionDialogs("GeneSetMutationAnalysis",
-                desktopApp, fileUtil);
+                fileUtil);
         gui.setLocationRelativeTo(desktopApp.getJFrame());
         gui.setModal(true);
         gui.setVisible(true);
@@ -119,51 +101,49 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
                         .getUnlinkedGeneBox().isEnabled(), gui
                         .showFIAnnotationsBeFetched(), gui
                         .getSampleCutoffValue(), networkFactory, netManager,
-                viewFactory, viewManager, layoutManager, visMapManager,
-                visStyleFactory, visMapFuncFactoryC, visMapFuncFactoryD,
-                visMapFuncFactoryP, tableFactory, tm);
+                viewFactory, viewManager, tableFactory, tm);
         tm.execute(gsmaFactory.createTaskIterator());
 
     }
 
-    @Override
-    protected boolean createNewSession(CyNetworkManager networkManager,
-            CySessionManager sessionManager)
-    {
-        // Checks if a session currently exists and if so whether the user would
-        // like to save that session. A new session is then created.
-
-        int networkCount = networkManager.getNetworkSet().size();
-        if (networkCount == 0)
-        {
-            networkManager.reset();
-            return true;
-        }
-        String msg = new String(
-                "A new session is needed to use Reactome FI plugin.\n"
-                        + "Do you want to save your session?");
-        int reply = JOptionPane.showConfirmDialog(this.desktopApp.getJFrame(),
-                msg, "Save Session?", JOptionPane.YES_NO_CANCEL_OPTION);
-        if (reply == JOptionPane.CANCEL_OPTION)
-            return false;
-        else if (reply == JOptionPane.NO_OPTION)
-        {
-            // networkManager.reset();
-            // viewManager.reset();
-            CySession.Builder builder = new CySession.Builder();
-            sessionManager.setCurrentSession(builder.build(), null);
-            return false;
-        }
-        else
-        {
-            tm.execute(saveSession.createTaskIterator());
-            if (sessionManager.getCurrentSession() == null) return true;
-            networkManager.reset();
-            viewManager.reset();
-            CySession.Builder builder = new CySession.Builder();
-            sessionManager.setCurrentSession(builder.build(), null);
-        }
-        return true;
-    }
+//    @Override
+//    protected boolean createNewSession(CyNetworkManager networkManager,
+//            CySessionManager sessionManager)
+//    {
+//        // Checks if a session currently exists and if so whether the user would
+//        // like to save that session. A new session is then created.
+//
+//        int networkCount = networkManager.getNetworkSet().size();
+//        if (networkCount == 0)
+//        {
+//            networkManager.reset();
+//            return true;
+//        }
+//        String msg = new String(
+//                "A new session is needed to use Reactome FI plugin.\n"
+//                        + "Do you want to save your session?");
+//        int reply = JOptionPane.showConfirmDialog(this.desktopApp.getJFrame(),
+//                msg, "Save Session?", JOptionPane.YES_NO_CANCEL_OPTION);
+//        if (reply == JOptionPane.CANCEL_OPTION)
+//            return false;
+//        else if (reply == JOptionPane.NO_OPTION)
+//        {
+//            // networkManager.reset();
+//            // viewManager.reset();
+//            CySession.Builder builder = new CySession.Builder();
+//            sessionManager.setCurrentSession(builder.build(), null);
+//            return false;
+//        }
+//        else
+//        {
+//            tm.execute(saveSession.createTaskIterator());
+//            if (sessionManager.getCurrentSession() == null) return true;
+//            networkManager.reset();
+//            viewManager.reset();
+//            CySession.Builder builder = new CySession.Builder();
+//            sessionManager.setCurrentSession(builder.build(), null);
+//        }
+//        return true;
+//    }
 
 }

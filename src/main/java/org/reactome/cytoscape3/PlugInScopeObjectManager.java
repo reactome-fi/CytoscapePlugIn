@@ -206,10 +206,20 @@ public class PlugInScopeObjectManager
     {
         return userGuideURL;
     }
+
     //A lot of getter methods for retrieving the references to various cytoscape services.
-    
+    public CySwingApplication getCySwingApp()
+    {
+        CySwingApplication desktopApp = null;
+        ServiceReference servRef = context.getServiceReference(CySwingApplication.class.getName());
+        if (servRef != null)
+        {
+            desktopApp = (CySwingApplication) context.getService(servRef);
+        }
+        return desktopApp;
+    }
     //A method to unget a service reference and release it for garbage collecting.
-    public void releaseService(BundleContext context, ServiceReference serviceRef)
+    public void releaseService(ServiceReference serviceRef)
     {
         if (serviceRef != null)
         {

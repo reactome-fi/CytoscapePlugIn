@@ -153,13 +153,13 @@ class NetworkActionCollection
                 Map<String, Object> nodeToSamples = tableManager
                         .getNodeTableValuesByName(view.getModel(), "samples",
                                 String.class);
-                BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-                ServiceReference visHelperRef = context.getServiceReference(VisualStyleHelper.class.getName());
                 try
                 {
-                    VisualStyleHelper visStyleHelper = (VisualStyleHelper) context.getService(visHelperRef);
-                    visStyleHelper.setVisualStyle(view);
-                    context.ungetService(visHelperRef);
+                    BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+                    ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+                    VisualStyleHelper visStyler = (VisualStyleHelper) context.getService(servRef);
+                    visStyler.setVisualStyle(view);
+                    
                 }
                 catch (Throwable t)
                 {

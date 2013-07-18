@@ -82,18 +82,18 @@ public class CyActivator extends AbstractCyActivator
                 VisualMappingFunctionFactory.class,
                 "(mapping.type=passthrough)");
 
-//        VisualStyleHelper styleHelper = new VisualStyleHelper(
-//                visMapManager, visStyleFactory, vmfFactoryC,
-//                vmfFactoryD, vmfFactoryP, layoutManager,
-//                taskManager, desktopApp);
-//        registerAllServices(context, styleHelper, new Properties());
-        // Instantiate Reactome FI App services
+        VisualStyleHelper styleHelper = new VisualStyleHelper(
+                visMapManager, visStyleFactory, vmfFactoryC,
+                vmfFactoryD, vmfFactoryP, layoutManager,
+                taskManager, desktopApp);
+        Properties visStyleHelperProps = new Properties();
+        visStyleHelperProps.setProperty("title", "VisualStyleHelper");
+        registerAllServices(context, styleHelper, visStyleHelperProps);
+        //Instantiate Reactome FI App services
         GeneSetMutationAnalysisAction gsma = new GeneSetMutationAnalysisAction(
                 taskManager, networkManager, saveSessionAsTaskFactory,
                 fileUtil, desktopApp, sessionManager, networkFactory,
-                viewFactory, viewManager, layoutManager, visMapManager,
-                visStyleFactory, vmfFactoryC, vmfFactoryD, vmfFactoryP,
-                tableFactory);
+                viewFactory, viewManager,tableFactory);
 
         UserGuideAction uga = new UserGuideAction();
 

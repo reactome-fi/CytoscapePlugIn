@@ -52,12 +52,6 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
     private CyNetworkManager netManager;
-    private VisualMappingManager visMapManager;
-    private CyLayoutAlgorithmManager layoutManager;
-    private VisualStyleFactory visStyleFactory;
-    private VisualMappingFunctionFactory visMapFuncFactoryP;
-    private VisualMappingFunctionFactory visMapFuncFactoryC;
-    private VisualMappingFunctionFactory visMapFuncFactoryD;
     private CyTableFactory tableFactory;
     private TaskManager taskManager;
 
@@ -67,12 +61,6 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             boolean showUnlinkedEnabled, boolean fetchFIAnnotations,
             CyNetworkFactory networkFactory, CyNetworkManager netManager,
             CyNetworkViewFactory viewFactory, CyNetworkViewManager viewManager,
-            CyLayoutAlgorithmManager layoutManager,
-            VisualMappingManager visMapManager,
-            VisualStyleFactory visStyleFactory,
-            VisualMappingFunctionFactory visMapFuncFactoryC,
-            VisualMappingFunctionFactory visMapFuncFactoryD,
-            VisualMappingFunctionFactory visMapFuncFactoryP,
             CyTableFactory tableFactory, TaskManager taskManager)
     {
         this.desktopApp = desktopApp;
@@ -88,12 +76,6 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
         this.viewFactory = viewFactory;
         this.viewManager = viewManager;
         this.fetchFIAnnotations = fetchFIAnnotations;
-        this.visMapManager = visMapManager;
-        this.layoutManager = layoutManager;
-        this.visStyleFactory = visStyleFactory;
-        this.visMapFuncFactoryP = visMapFuncFactoryP;
-        this.visMapFuncFactoryC = visMapFuncFactoryC;
-        this.visMapFuncFactoryD = visMapFuncFactoryD;
         this.tableFactory = tableFactory;
         this.taskManager = taskManager;
     }
@@ -160,6 +142,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             taskMonitor.setProgress(.50d);
             CyNetwork network = constructFINetwork(selectedGenes, file
                     .getName());
+            network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", file.getName());
             if (network == null)
             {
                 JOptionPane.showMessageDialog(desktopApp.getJFrame(),
@@ -246,14 +229,18 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
                     tableManager.storeEdgeName(edge, view);
                 }
             }
-            VisualStyleHelper styleHelper = new VisualStyleHelper(
-                    visMapManager, visStyleFactory, visMapFuncFactoryC,
-                    visMapFuncFactoryD, visMapFuncFactoryP, layoutManager,
-                   taskManager, desktopApp);
+            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+            ServiceReference visHelperRef = context.getServiceReference(FIVisualStyle.class.getName());
+            if (visHelperRef != null)
+            {
+                VisualStyleHelper styleHelper = (VisualStyleHelper) context.getService(visHelperRef);
+                styleHelper.setVisualStyle(view);
+                styleHelper.setLayout();
+            }
 //            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
 //            ServiceReference styleHelperRef = context.getServiceReference(VisualStyleHelper.class.getName());
 //            VisualStyleHelper styleHelper = (VisualStyleHelper) context.getService(styleHelperRef);
-            styleHelper.setVisualStyle(view);
+            
             taskMonitor.setProgress(1.0d);
         }
         catch (Exception e)

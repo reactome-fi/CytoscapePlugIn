@@ -33,12 +33,6 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
     private CyNetworkManager netManager;
-    private VisualMappingManager visMapManager;
-    private CyLayoutAlgorithmManager layoutManager;
-    private VisualStyleFactory visStyleFactory;
-    private VisualMappingFunctionFactory visMapFuncFactoryP;
-    private VisualMappingFunctionFactory visMapFuncFactoryC;
-    private VisualMappingFunctionFactory visMapFuncFactoryD;
     private TaskManager taskManager;
     private CyTableFactory tableFactory;
 
@@ -49,12 +43,7 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
             int sampleCutoffValue, CyNetworkFactory networkFactory,
             CyNetworkManager netManager, CyNetworkViewFactory viewFactory,
             CyNetworkViewManager viewManager,
-            CyLayoutAlgorithmManager layoutManager,
-            VisualMappingManager visMapManager,
-            VisualStyleFactory visStyleFactory,
-            VisualMappingFunctionFactory visMapFuncFactoryC,
-            VisualMappingFunctionFactory visMapFuncFactoryD,
-            VisualMappingFunctionFactory visMapFuncFactoryP,
+
             CyTableFactory tableFactory, TaskManager taskManager)
     {
         this.desktopApp = desktopApp;
@@ -71,12 +60,6 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
         this.netManager = netManager;
         this.viewFactory = viewFactory;
         this.viewManager = viewManager;
-        this.visMapManager = visMapManager;
-        this.layoutManager = layoutManager;
-        this.visStyleFactory = visStyleFactory;
-        this.visMapFuncFactoryP = visMapFuncFactoryP;
-        this.visMapFuncFactoryC = visMapFuncFactoryC;
-        this.visMapFuncFactoryD = visMapFuncFactoryD;
         this.taskManager = taskManager;
         this.tableFactory = tableFactory;
     }
@@ -88,8 +71,6 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
                 format, file, chooseHomoGenes, useLinkers, sampleCutoffValue,
                 showUnlinked, showUnlinkedEnabled, fetchFIAnnotations,
                 networkFactory, netManager, viewFactory, viewManager,
-                layoutManager, visMapManager, visStyleFactory,
-                visMapFuncFactoryC, visMapFuncFactoryD, visMapFuncFactoryP,
                 tableFactory, taskManager));
     }
 }

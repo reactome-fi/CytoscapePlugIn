@@ -36,6 +36,8 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.gk.util.DialogControlPane;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 
 /**
  * This class sets up the GUIs for the various actions. Since all GUI creation
@@ -68,17 +70,23 @@ public class ActionDialogs extends JDialog
 
     private CySwingApplication desktopApp;
 
-    public ActionDialogs(String context, CySwingApplication desktopApp,
+    public ActionDialogs(String actionType,
             FileUtil fileUtil)
     {
-        this.desktopApp = desktopApp;
+        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        ServiceReference cyAppRef = context.getServiceReference(CySwingApplication.class.getName());
+        if (cyAppRef != null)
+        {
+            CySwingApplication desktopApp = (CySwingApplication) context.getService(cyAppRef);
+            this.desktopApp = desktopApp;
+        }
         this.fileUtil = fileUtil;
 
-        if (context.equals("GeneSetMutationAnalysis")
-                || context.equals("UserGuide") || context.equals("Microarray")
-                || context.equals("Hotnet"))
+        if (actionType.equals("GeneSetMutationAnalysis")
+                || actionType.equals("UserGuide") || actionType.equals("Microarray")
+                || actionType.equals("Hotnet"))
         {
-            init(context);
+            init(actionType);
         }
     }
 
@@ -413,6 +421,7 @@ public class ActionDialogs extends JDialog
             JPanel maaPanel = new JPanel();
             mainPane.addTab("Microarray Analysis", maaPanel);
             mainPane.setSelectedComponent(maaPanel);
+            
         }
         getContentPane().add(mainPane, BorderLayout.CENTER);
 
