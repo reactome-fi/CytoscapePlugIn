@@ -88,7 +88,7 @@
  						<Import-Package>!*</Import-Package>
 						<Export-Package>${bundle.namespace}</Export-Package>
 						<Private-Package>${bundle.namespace}.cytoscape3.*,org.reactome.cancerindex.*</Private-Package>
-						<Bundle-Activator>${bundle.namespace}.cytoscape3.CyActivator</Bundle-Activator>
+						<Bundle-Activator>${bundle.namespace}.cytoscape3.ReactomeFIBundleActivator</Bundle-Activator>
 						<Embed-Dependency>
 							*;groupId=!org.osgi|org.cytoscape;
 						</Embed-Dependency>

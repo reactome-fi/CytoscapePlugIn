@@ -34,12 +34,12 @@ import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
 
 //import org.cytoscape.application.CyApplicationManager;
 
-public class CyActivator extends AbstractCyActivator
+public class ReactomeFIBundleActivator extends AbstractCyActivator
 {
 
     public BundleContext context;
 
-    public CyActivator()
+    public ReactomeFIBundleActivator()
     {
         super();
     }
