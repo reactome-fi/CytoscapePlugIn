@@ -39,7 +39,7 @@ import org.osgi.framework.ServiceReference;
  * @author Eric T. Dawson
  * @date July 2013
  */
-public class VisualStyleHelper implements FIVisualStyle
+public class FIVisualStyleImpl implements FIVisualStyle
 {
     private final String FI_VISUAL_STYLE = "FI Network";
     private VisualMappingManager visMapManager;
@@ -51,7 +51,7 @@ public class VisualStyleHelper implements FIVisualStyle
     private CySwingApplication desktopApp;
     private VisualMappingFunctionFactory visMapFuncFactoryC;
 
-    public VisualStyleHelper(VisualMappingManager visMapManager,
+    public FIVisualStyleImpl(VisualMappingManager visMapManager,
             VisualStyleFactory visStyleFactory,
             VisualMappingFunctionFactory visMapFuncFactoryC,
             VisualMappingFunctionFactory visMapFuncFactoryD,
@@ -69,7 +69,7 @@ public class VisualStyleHelper implements FIVisualStyle
         this.desktopApp = desktopApp;
     }
 
-//    public static VisualStyleHelper getInstance()
+//    public static FIVisualStyleImpl getInstance()
 //    {
 //        if (instance == null)
 //        {
@@ -77,7 +77,7 @@ public class VisualStyleHelper implements FIVisualStyle
 //            ServiceReference visMapRef = context.getServiceReference(VisualMappingManager.class.getName());
 //            ServiceReference visStyleFacRef = context.getServiceReference(VisualStyleFactory.class.getName());
 //            ServiceReference visMapFuncFactoryC = context.getServiceReference
-//            instance = new VisualStyleHelper(
+//            instance = new FIVisualStyleImpl(
 //                    visMapManager, visStyleFactory, visMapFuncFactoryC,
 //                    visMapFuncFactoryD, visMapFuncFactoryP, layoutManager,
 //                    taskManager, desktopApp);

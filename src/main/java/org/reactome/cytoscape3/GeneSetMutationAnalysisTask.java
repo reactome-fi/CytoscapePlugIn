@@ -233,13 +233,13 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             ServiceReference visHelperRef = context.getServiceReference(FIVisualStyle.class.getName());
             if (visHelperRef != null)
             {
-                VisualStyleHelper styleHelper = (VisualStyleHelper) context.getService(visHelperRef);
+                FIVisualStyleImpl styleHelper = (FIVisualStyleImpl) context.getService(visHelperRef);
                 styleHelper.setVisualStyle(view);
                 styleHelper.setLayout();
             }
 //            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-//            ServiceReference styleHelperRef = context.getServiceReference(VisualStyleHelper.class.getName());
-//            VisualStyleHelper styleHelper = (VisualStyleHelper) context.getService(styleHelperRef);
+//            ServiceReference styleHelperRef = context.getServiceReference(FIVisualStyleImpl.class.getName());
+//            FIVisualStyleImpl styleHelper = (FIVisualStyleImpl) context.getService(styleHelperRef);
             
             taskMonitor.setProgress(1.0d);
         }

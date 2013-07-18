@@ -157,7 +157,7 @@ class NetworkActionCollection
                 {
                     BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
                     ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-                    VisualStyleHelper visStyler = (VisualStyleHelper) context.getService(servRef);
+                    FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
                     visStyler.setVisualStyle(view);
                     
                 }

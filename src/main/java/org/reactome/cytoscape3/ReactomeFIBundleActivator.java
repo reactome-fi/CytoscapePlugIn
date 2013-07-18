@@ -82,12 +82,12 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
                 VisualMappingFunctionFactory.class,
                 "(mapping.type=passthrough)");
 
-        VisualStyleHelper styleHelper = new VisualStyleHelper(
+        FIVisualStyleImpl styleHelper = new FIVisualStyleImpl(
                 visMapManager, visStyleFactory, vmfFactoryC,
                 vmfFactoryD, vmfFactoryP, layoutManager,
                 taskManager, desktopApp);
         Properties visStyleHelperProps = new Properties();
-        visStyleHelperProps.setProperty("title", "VisualStyleHelper");
+        visStyleHelperProps.setProperty("title", "FIVisualStyleImpl");
         registerAllServices(context, styleHelper, visStyleHelperProps);
         //Instantiate Reactome FI App services
         GeneSetMutationAnalysisAction gsma = new GeneSetMutationAnalysisAction(
