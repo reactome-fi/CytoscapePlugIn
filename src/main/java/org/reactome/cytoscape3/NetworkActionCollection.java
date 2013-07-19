@@ -117,17 +117,9 @@ class NetworkActionCollection
             tm.setStatusMessage("Clustering FI Network...");
             Thread.sleep(3000);
             List<CyEdge> edgeList = view.getModel().getEdgeList();
-            // List<String> edgeNames = new ArrayList<String>();
-            // for (CyEdge edge : edgeList)
-            // {
-            //
-            // }
-
             try
             {
-
                 RESTFulFIService service = new RESTFulFIService(view);
-
                 // The below method takes CyEdges as an input type, but with the
                 // reorganization of the API in 3.x it should really take the
                 // name
@@ -158,8 +150,7 @@ class NetworkActionCollection
                     BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
                     ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
                     FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
-                    visStyler.setVisualStyle(view);
-                    
+                    visStyler.setVisualStyle(view);    
                 }
                 catch (Throwable t)
                 {
@@ -170,6 +161,7 @@ class NetworkActionCollection
             }
             catch (Exception e)
             {
+                JOptionPane.showMessageDialog(null, "There was an error during network clustering.", "Error in clustering", JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         }
@@ -180,7 +172,7 @@ class NetworkActionCollection
     {
 
         @Override
-        public CyMenuItem createMenuItem(CyNetworkView arg0)
+        public CyMenuItem createMenuItem(CyNetworkView view)
         {
             JMenuItem fetchFIAnnotationsMenu = new JMenuItem(
                     "Fetch FI Annotations");
@@ -188,7 +180,7 @@ class NetworkActionCollection
         }
 
     }
-
+    
     class NetworkPathwayEnrichmentMenu implements
             CyNetworkViewContextMenuFactory
     {
@@ -243,7 +235,7 @@ class NetworkActionCollection
     {
 
         @Override
-        public CyMenuItem createMenuItem(CyNetworkView arg0)
+        public CyMenuItem createMenuItem(CyNetworkView view)
         {
             // TODO Auto-generated method stub
             return null;
@@ -255,7 +247,7 @@ class NetworkActionCollection
     {
 
         @Override
-        public CyMenuItem createMenuItem(CyNetworkView arg0)
+        public CyMenuItem createMenuItem(CyNetworkView view)
         {
             // TODO Auto-generated method stub
             return null;
@@ -267,7 +259,7 @@ class NetworkActionCollection
     {
 
         @Override
-        public CyMenuItem createMenuItem(CyNetworkView arg0)
+        public CyMenuItem createMenuItem(CyNetworkView view)
         {
             // TODO Auto-generated method stub
             return null;
@@ -280,7 +272,7 @@ class NetworkActionCollection
     {
 
         @Override
-        public CyMenuItem createMenuItem(CyNetworkView arg0)
+        public CyMenuItem createMenuItem(CyNetworkView view)
         {
             // TODO Auto-generated method stub
             return null;
@@ -293,7 +285,7 @@ class NetworkActionCollection
     {
 
         @Override
-        public CyMenuItem createMenuItem(CyNetworkView arg0)
+        public CyMenuItem createMenuItem(CyNetworkView view)
         {
             // TODO Auto-generated method stub
             return null;

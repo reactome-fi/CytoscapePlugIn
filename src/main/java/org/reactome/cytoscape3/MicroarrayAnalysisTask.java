@@ -1,6 +1,16 @@
 package org.reactome.cytoscape3;
 
-public class MicroarrayAnalysisTask
+import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.TaskMonitor;
+
+public class MicroarrayAnalysisTask extends AbstractTask
 {
+
+    @Override
+    public void run(TaskMonitor arg0) throws Exception
+    {
+        // TODO Auto-generated method stub
+        
+    }
 
 }

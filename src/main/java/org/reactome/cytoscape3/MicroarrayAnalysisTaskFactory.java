@@ -1,6 +1,16 @@
 package org.reactome.cytoscape3;
 
-public class MicroarrayAnalysisTaskFactory
+import org.cytoscape.work.AbstractTaskFactory;
+import org.cytoscape.work.TaskIterator;
+
+public class MicroarrayAnalysisTaskFactory extends AbstractTaskFactory
 {
+
+    @Override
+    public TaskIterator createTaskIterator()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

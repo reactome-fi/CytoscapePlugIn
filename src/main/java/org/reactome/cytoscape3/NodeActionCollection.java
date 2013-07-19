@@ -36,8 +36,53 @@ public class NodeActionCollection
                 }
 
             });
-            return new CyMenuItem(geneCardMenuItem, 1.0f);
+            return new CyMenuItem(geneCardMenuItem, 3.0f);
         }
+    }
+    class fetchFIsMenu implements CyNodeViewContextMenuFactory
+    {
+
+        @Override
+        public CyMenuItem createMenuItem(CyNetworkView netView, View<CyNode> nodeview)
+        {
+            JMenuItem fetchFIsItem = new JMenuItem("Fetch FIs");
+            fetchFIsItem.addActionListener(new ActionListener()
+            {
+
+                @Override
+                public void actionPerformed(ActionEvent e)
+                {
+                    // TODO Auto-generated method stub
+                    
+                }
+                
+            });
+
+            return new CyMenuItem(fetchFIsItem, 1.0f);
+        }
+        
+    }
+    class cancerGeneIndexMenu implements CyNodeViewContextMenuFactory
+    {
+
+        @Override
+        public CyMenuItem createMenuItem(CyNetworkView arg0, View<CyNode> arg1)
+        {
+            JMenuItem getCancerGeneIndexItem = new JMenuItem("Fetch Cancer Gene Index");
+            getCancerGeneIndexItem.addActionListener(new ActionListener()
+            {
+
+                @Override
+                public void actionPerformed(ActionEvent e)
+                {
+                    // TODO Auto-generated method stub
+                    
+                }
+                
+            });
+            return null;
+        }
+        
     }
 
 }
