@@ -10,7 +10,6 @@ package org.reactome.cytoscape3;
  */
 import java.util.Properties;
 
-import org.cytoscape.application.swing.CyAction;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
@@ -101,7 +100,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         
         // Test code for loading pathway diagram into Cytoscape
         PathwayLoadAction pathwayLoadAction = new PathwayLoadAction();
-
+        pathwayLoadAction.setBundleContext(context);
+        
         // Register said Reactome FI Services with the OSGi framework.
         registerAllServices(context, gsma, new Properties());
         registerAllServices(context, pathwayLoadAction, new Properties());

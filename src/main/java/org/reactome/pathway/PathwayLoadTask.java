@@ -20,6 +20,7 @@ public class PathwayLoadTask extends AbstractTask {
 
     @Override
     public void run(TaskMonitor taskMonitor) throws Exception {
+        System.out.println("Loading pathway diagram using PathwayLoadTask!");
     }
 
     @Override
