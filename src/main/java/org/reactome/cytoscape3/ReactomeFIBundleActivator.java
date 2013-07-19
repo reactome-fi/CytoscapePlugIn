@@ -10,6 +10,7 @@ package org.reactome.cytoscape3;
  */
 import java.util.Properties;
 
+import org.cytoscape.application.swing.CyAction;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
@@ -31,6 +32,7 @@ import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
+import org.reactome.pathway.PathwayLoadAction;
 
 //import org.cytoscape.application.CyApplicationManager;
 
@@ -96,9 +98,13 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
                 viewFactory, viewManager,tableFactory);
 
         UserGuideAction uga = new UserGuideAction();
+        
+        // Test code for loading pathway diagram into Cytoscape
+        PathwayLoadAction pathwayLoadAction = new PathwayLoadAction();
 
         // Register said Reactome FI Services with the OSGi framework.
         registerAllServices(context, gsma, new Properties());
+        registerAllServices(context, pathwayLoadAction, new Properties());
         registerAllServices(context, uga, new Properties());
 
         // Instantiate and register the context menus for the network view
