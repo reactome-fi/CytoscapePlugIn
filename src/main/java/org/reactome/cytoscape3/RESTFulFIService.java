@@ -9,11 +9,7 @@ package org.reactome.cytoscape3;
  * @date July 2013
  */
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -30,26 +26,18 @@ import java.util.Set;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.httpclient.methods.RequestEntity;
-import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.RenderablePathway;
-import org.jdom.Document;
 import org.jdom.Element;
-import org.jdom.input.SAXBuilder;
 import org.jdom.output.DOMOutputter;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.Sentence;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.r3.graph.NetworkClusterResult;
@@ -58,8 +46,8 @@ import org.w3c.dom.NodeList;
 
 public class RESTFulFIService implements FINetworkService
 {
-    private final static String HTTP_GET = "Get";
-    private final static String HTTP_POST = "Post";
+    private final static String HTTP_GET = PlugInUtilities.HTTP_GET;
+    private final static String HTTP_POST = PlugInUtilities.HTTP_POST;
     private String restfulURL;
 
     public RESTFulFIService()
@@ -283,73 +271,12 @@ public class RESTFulFIService implements FINetworkService
 
     private Element callInXML(String url, String query) throws Exception
     {
-        PostMethod post = new PostMethod(url);
-        HttpClient client = initializeHTTPClient(post, query);
-        int responseCode = client.executeMethod(post);
-        if (responseCode == HttpStatus.SC_OK)
-        {
-            InputStream stream = post.getResponseBodyAsStream();
-            SAXBuilder builder = new SAXBuilder();
-            Document document = builder.build(stream);
-            Element root = document.getRootElement();
-            return root;
-        }
-        else
-            throw new IllegalStateException(post.getResponseBodyAsString());
+        return PlugInUtilities.callHttpInXML(url, query);
     }
 
-    //
     private String callHttp(String url, String type, String query)
-            throws IOException
-    {
-        HttpMethod method = null;
-        HttpClient client = null;
-        if (type.equals(HTTP_POST))
-        {
-            method = new PostMethod(url);
-            client = initializeHTTPClient((PostMethod) method, query);
-        }
-        else
-        {
-            method = new GetMethod(url); // Default
-            method.setRequestHeader("Accept", "text/plain");
-            client = new HttpClient();
-        }
-        int responseCode = client.executeMethod(method);
-        if (responseCode == HttpStatus.SC_OK)
-        {
-            InputStream is = method.getResponseBodyAsStream();
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader reader = new BufferedReader(isr);
-            StringBuilder builder = new StringBuilder();
-            String line = null;
-            while ((line = reader.readLine()) != null)
-            {
-                builder.append(line).append("\n");
-            }
-            reader.close();
-            isr.close();
-            is.close();
-            // Remove the last new line
-            String rtn = builder.toString();
-            // Just in case an empty string is returned
-            if (rtn.length() == 0) return rtn;
-            return rtn.substring(0, rtn.length() - 1);
-        }
-        else
-            throw new IllegalStateException(method.getResponseBodyAsString());
-
-    }
-
-    private HttpClient initializeHTTPClient(PostMethod post, String query)
-            throws UnsupportedEncodingException
-    {
-        RequestEntity entity = new StringRequestEntity(query, "text/plain",
-                "UTF-8");
-        post.setRequestEntity(entity);
-        post.setRequestHeader("Accept", "application/xml, text/plain");
-        HttpClient client = new HttpClient();
-        return client;
+            throws IOException {
+        return PlugInUtilities.callHttpInText(url, type, query);
     }
 
     public List<ModuleGeneSetAnnotation> annotateGeneSet(Set<String> genes,

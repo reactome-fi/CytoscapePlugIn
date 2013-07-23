@@ -16,6 +16,7 @@ import javax.swing.ImageIcon;
 import javax.swing.WindowConstants;
 
 import org.cytoscape.application.swing.CySwingApplication;
+import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
@@ -40,7 +41,7 @@ public class PlugInScopeObjectManager
     private CancerIndexSentenceDisplayFrame cgiFrame;
     // Currently selected FI network version
     private String fiNetworkVersion;
-    private static final String userGuideURL = "http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin";
+    private String userGuideURL = "http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin";
     // Cache a bundle context to be used later
     private BundleContext context;
 
@@ -202,11 +203,6 @@ public class PlugInScopeObjectManager
         return getDataSourceURL(getFiNetworkVersion());
     }
 
-    public static String getUserGuideURL()
-    {
-        return userGuideURL;
-    }
-
     //A lot of getter methods for retrieving the references to various cytoscape services.
     public CySwingApplication getCySwingApp()
     {
@@ -218,6 +214,7 @@ public class PlugInScopeObjectManager
         }
         return desktopApp;
     }
+    
     //A method to unget a service reference and release it for garbage collecting.
     public void releaseService(ServiceReference serviceRef)
     {
@@ -227,4 +224,5 @@ public class PlugInScopeObjectManager
             serviceRef = null;
         }
     }
+    
 }

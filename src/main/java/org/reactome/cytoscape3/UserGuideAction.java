@@ -12,6 +12,7 @@ package org.reactome.cytoscape3;
 import java.awt.event.ActionEvent;
 
 import org.cytoscape.application.swing.AbstractCyAction;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 public class UserGuideAction extends AbstractCyAction
 {

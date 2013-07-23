@@ -29,9 +29,9 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
+import org.reactome.cytoscape.pathway.PathwayLoadAction;
 import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
-import org.reactome.pathway.PathwayLoadAction;
 
 //import org.cytoscape.application.CyApplicationManager;
 
@@ -101,6 +101,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         // Test code for loading pathway diagram into Cytoscape
         PathwayLoadAction pathwayLoadAction = new PathwayLoadAction();
         pathwayLoadAction.setBundleContext(context);
+        String reactomeRestfulUrl = PlugInScopeObjectManager.getManager().getProperties().getProperty("ReactomeRESTfulAPI");
+        pathwayLoadAction.setReactomeRestfulURL(reactomeRestfulUrl);
         
         // Register said Reactome FI Services with the OSGi framework.
         registerAllServices(context, gsma, new Properties());
