@@ -68,7 +68,7 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         this.tableFactory = tableFactory;
         this.tableManager = tableManager;
         setPreferredMenu("Apps.Reactome FI");
-
+        setMenuGravity(1.0f);
     }
 
     @Override

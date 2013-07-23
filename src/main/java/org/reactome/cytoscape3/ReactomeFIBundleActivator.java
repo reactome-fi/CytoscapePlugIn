@@ -8,12 +8,15 @@ package org.reactome.cytoscape3;
  * and the OSGi R4 specs.
  * @author Eric T Dawson, July 2013
  */
+import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
+
 import java.util.Properties;
 
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyNetworkTableManager;
 import org.cytoscape.model.CyTableManager;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
@@ -60,6 +63,7 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
                 CySessionManager.class);
         CyNetworkFactory networkFactory = getService(context,
                 CyNetworkFactory.class);
+        CyNetworkTableManager networkTableManager = getService(context, CyNetworkTableManager.class);
         CyNetworkViewFactory viewFactory = getService(context,
                 CyNetworkViewFactory.class);
         CyNetworkViewManager viewManager = getService(context,
@@ -69,9 +73,9 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         SaveSessionAsTaskFactory saveSessionAsTaskFactory = getService(context,
                 SaveSessionAsTaskFactory.class);
         FileUtil fileUtil = getService(context, FileUtil.class);
-     //   OpenBrowser browser = getService(context, OpenBrowser.class);
         CyLayoutAlgorithmManager layoutManager = getService(context,
                 CyLayoutAlgorithmManager.class);
+        MapTableToNetworkTablesTaskFactory mapNetworkAttrTFServiceRef = getService(context,MapTableToNetworkTablesTaskFactory.class);
         VisualMappingManager visMapManager = getService(context,
                 VisualMappingManager.class);
         VisualStyleFactory visStyleFactory = getService(context,
@@ -84,6 +88,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
                 VisualMappingFunctionFactory.class,
                 "(mapping.type=passthrough)");
 
+        //Initialize and register the FI VIsual Style with the framework,
+        //allowing it to be used by all Reactome FI classes.
         FIVisualStyleImpl styleHelper = new FIVisualStyleImpl(
                 visMapManager, visStyleFactory, vmfFactoryC,
                 vmfFactoryD, vmfFactoryP, layoutManager,
@@ -92,6 +98,12 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         visStyleHelperProps.setProperty("title", "FIVisualStyleImpl");
         registerAllServices(context, styleHelper, visStyleHelperProps);
         
+        //Initialize and register the TableFormatter with the network
+        //so that it is accessible across the app.
+        TableFormatterImpl tableFormatter = new TableFormatterImpl(tableFactory, tableManager, networkTableManager, mapNetworkAttrTFServiceRef);
+        Properties tableFormatterProps = new Properties();
+        tableFormatterProps.setProperty("title", "TableFormatterImpl");
+        registerAllServices(context, tableFormatter, tableFormatterProps);
         
         //Instantiate Reactome FI App services
         GeneSetMutationAnalysisAction gsma = new GeneSetMutationAnalysisAction(
@@ -99,9 +111,9 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
                 fileUtil, desktopApp, sessionManager, networkFactory,
                 viewFactory, viewManager,tableFactory, tableManager);
 
-        MicroarrayAnalysisAction maa = new MicroarrayAnalysisAction();
+        MicroarrayAnalysisAction maa = new MicroarrayAnalysisAction(desktopApp);
         UserGuideAction uga = new UserGuideAction();
-        
+        HotNetAnalysisAction hna = new HotNetAnalysisAction(desktopApp);
         // Test code for loading pathway diagram into Cytoscape
         PathwayLoadAction pathwayLoadAction = new PathwayLoadAction();
         pathwayLoadAction.setBundleContext(context);
@@ -114,7 +126,7 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         registerAllServices(context, maa, new Properties());
         registerAllServices(context, pathwayLoadAction, new Properties());
         registerAllServices(context, uga, new Properties());
-        
+        registerAllServices(context, hna, new Properties());
 
         // Instantiate and register the context menus for the network view
         NetworkActionCollection networkMenu = new NetworkActionCollection();

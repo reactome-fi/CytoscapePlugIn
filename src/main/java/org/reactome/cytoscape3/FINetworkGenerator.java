@@ -11,6 +11,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JOptionPane;
+
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
@@ -18,12 +20,16 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 
 public class FINetworkGenerator
 {
     private CyNetworkFactory networkFactory;
     private CyTableFactory tableFactory;
     private CyTableManager tableManager;
+    private ServiceReference tableFormatterServRef;
+    private TableFormatterImpl tableFormatter;
 
     public FINetworkGenerator(CyNetworkFactory networkFactory,
             CyTableFactory tableFactory, CyTableManager tableManager)
@@ -32,12 +38,36 @@ public class FINetworkGenerator
         this.tableFactory = tableFactory;
         this.tableManager = tableManager;
     }
-
+    private void getTableFormatter()
+    {
+        try
+        {
+            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+            ServiceReference servRef = context.getServiceReference(TableFormatter.class.getName());
+            if (servRef != null)
+            {
+                this.tableFormatterServRef = servRef;
+                this.tableFormatter = (TableFormatterImpl) context.getService(servRef);
+            }
+            else
+                throw new Exception();
+        }
+        catch (Throwable t)
+        {
+            JOptionPane.showMessageDialog(null, "The table formatter could not be retrieved.", "Table Formatting Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    private void releaseTableFormatter()
+    {
+        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        context.ungetService(tableFormatterServRef);
+    }
     public CyNetwork constructFINetwork(Set<String> nodes, Set<String> fis)
     {
         // Construct an empty network.
         CyNetwork network = networkFactory.createNetwork();
-        TableFormatter tableFormatter = new TableFormatter(tableFactory, tableManager);
+        getTableFormatter();
         tableFormatter.makeGeneSetMutationAnalysisTables(network);
         // Generate a source, edge and target for each FI interaction
         // retrieved from the Reactome database.
@@ -63,6 +93,7 @@ public class FINetworkGenerator
                 CyNode node = getNode(name, name2Node, network);
             }
         }
+        releaseTableFormatter();
         return network;
     }
 

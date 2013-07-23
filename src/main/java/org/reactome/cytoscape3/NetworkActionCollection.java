@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,9 @@ import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
+import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
 import org.cytoscape.view.model.CyNetworkView;
@@ -26,6 +29,7 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.r3.graph.GeneClusterPair;
 import org.reactome.r3.graph.NetworkClusterResult;
 
+
 /**
  * This class provides a bunch of methods to modify a network (e.g. clustering,
  * retrieving cancer gene index, etc). Most functions appear as pop-up menus in
@@ -37,13 +41,38 @@ import org.reactome.r3.graph.NetworkClusterResult;
 class NetworkActionCollection
 {
     private TableHelper tableHelper;
-
+    ServiceReference tableFormatterServRef;
+    TableFormatterImpl tableFormatter;
     // private ModuleBasedSurvivalHelper survivalHelper;
     public NetworkActionCollection()
     {
         tableHelper = new TableHelper();
     }
-
+    private void getTableFormatter()
+    {
+        try
+        {
+            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+            ServiceReference servRef = context.getServiceReference(TableFormatter.class.getName());
+            if (servRef != null)
+            {
+                this.tableFormatterServRef = servRef;
+                this.tableFormatter = (TableFormatterImpl) context.getService(servRef);
+            }
+            else
+                throw new Exception();
+        }
+        catch (Throwable t)
+        {
+            JOptionPane.showMessageDialog(null, "The table formatter could not be retrieved.", "Table Formatting Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    private void releaseTableFormatter()
+    {
+        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        context.ungetService(tableFormatterServRef);
+    }
     //Subclasses for performing various network actions via context menus
     //in the network view.
     /**
@@ -61,26 +90,36 @@ class NetworkActionCollection
             JMenuItem clusterMenuItem = new JMenuItem("Cluster FI Network");
             clusterMenuItem.addActionListener(new ActionListener()
             {
-
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
-                    ClusterFINetworkTaskFactory clusterFactory = new ClusterFINetworkTaskFactory(
-                            view);
-                    BundleContext context = PlugInScopeObjectManager
-                            .getManager().getBundleContext();
-                    ServiceReference taskMgrRef = context
-                            .getServiceReference(TaskManager.class.getName());
+                    CyTable netTable = view.getModel().getDefaultNetworkTable();
+                    String clustering = netTable.getRow(view.getModel().getSUID()).get("clustering_Type", String.class);
                     try
                     {
-                        List<String> clazzes = new ArrayList<String>();
-                        clazzes.add(CyTableManager.class.getName());
-                        clazzes.add(CyTableFactory.class.getName());
-                        Map<ServiceReference, Object> servRefServiceMap = PlugInScopeObjectManager.getManager().getServiceReferenceObjectList(clazzes);
-                        System.out.println(servRefServiceMap);
+                        if (clustering != null && !clustering.equals(TableFormatterImpl.getSpectralPartitionCluster()))
+                        {   
+                            CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+                            int reply = JOptionPane.showConfirmDialog(desktopApp.getJFrame(), 
+                                "The displayed network has been clustered before using a different algorithm.\n" +
+                                "You may get different clustering results using this clustering feature. Do\n" +
+                                "you want to continue?", 
+                                "Clustering Algorithm Warning", 
+                                JOptionPane.OK_CANCEL_OPTION);
+                            
+                            if (reply != JOptionPane.OK_CANCEL_OPTION)
+                                return;
+                        }
+                        ClusterFINetworkTaskFactory clusterFactory = new ClusterFINetworkTaskFactory(
+                                view);
+                        BundleContext context = PlugInScopeObjectManager
+                                .getManager().getBundleContext();
+                        ServiceReference taskMgrRef = context
+                                .getServiceReference(TaskManager.class.getName());
                         TaskManager taskMgr = (TaskManager) context
                                 .getService(taskMgrRef);
                         taskMgr.execute(clusterFactory.createTaskIterator());
+                        context.ungetService(taskMgrRef);
                     }
                     catch (Throwable t)
                     {
@@ -89,7 +128,7 @@ class NetworkActionCollection
                                         + t, "Error in Clustering Network",
                                 JOptionPane.ERROR_MESSAGE);
                     }
-                    context.ungetService(taskMgrRef);
+                    
                 }
 
             });
@@ -134,12 +173,15 @@ class NetworkActionCollection
             List<CyEdge> edgeList = view.getModel().getEdgeList();
             try
             {
+                getTableFormatter();
+                tableFormatter.makeModuleAnalysisTables(view.getModel());
                 RESTFulFIService service = new RESTFulFIService(view);
                 // The below method takes CyEdges as an input type, but with the
                 // reorganization of the API in 3.x it should really take the
                 // name
-                // of the nodes (nodes now have an SUID and not a String
+                // of the nodes (nodes now have a Long SUID and not a String
                 // Identifier).
+                
                 NetworkClusterResult clusterResult = service.cluster(edgeList,
                         view);
                 Map<String, Integer> nodeToCluster = new HashMap<String, Integer>();
@@ -156,7 +198,7 @@ class NetworkActionCollection
                 
                 tableHelper.loadNodeAttributesByName(view, "module",
                         nodeToCluster);
-                tableHelper.storeClusteringType(view, TableFormatter
+                tableHelper.storeClusteringType(view, TableFormatterImpl
                         .getSpectralPartitionCluster());
                 Map<String, Object> nodeToSamples = tableHelper
                         .getNodeTableValuesByName(view.getModel(), "samples",
@@ -173,7 +215,7 @@ class NetworkActionCollection
                     JOptionPane.showMessageDialog(null, "The visual style could not be applied.", "Visual Style Error",
                             JOptionPane.ERROR_MESSAGE);
                 }
-                
+                releaseTableFormatter();
             }
             catch (Exception e)
             {

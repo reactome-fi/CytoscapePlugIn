@@ -12,11 +12,11 @@ import org.cytoscape.view.model.CyNetworkView;
 
 public class TableHelper
 {
-    private final String FI_NETWORK_VERSION = TableFormatter
+    private final String FI_NETWORK_VERSION = TableFormatterImpl
             .getFINetworkVersion();
-    private final String MCL_ARRAY_CLUSTERING = TableFormatter
+    private final String MCL_ARRAY_CLUSTERING = TableFormatterImpl
             .getMCLArrayClustering();
-    private final String SAMPLE_MUTATION_DATA = TableFormatter
+    private final String SAMPLE_MUTATION_DATA = TableFormatterImpl
             .getSampleMutationData();
 
     public TableHelper()

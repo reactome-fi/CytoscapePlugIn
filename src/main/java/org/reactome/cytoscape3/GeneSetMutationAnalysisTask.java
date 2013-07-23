@@ -189,7 +189,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             TableHelper tableHelper = new TableHelper();
             CyNetworkView view = viewFactory.createNetworkView(network);
             tableHelper.storeFINetworkVersion(view);
-            tableHelper.storeDataSetType(network, TableFormatter
+            tableHelper.storeDataSetType(network, TableFormatterImpl
                     .getSampleMutationData());
             viewManager.addNetworkView(view);
             if (geneToSampleNumber != null && !geneToSampleNumber.isEmpty())

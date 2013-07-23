@@ -15,34 +15,33 @@ public class MicroarrayAnalysisAction extends FICytoscapeAction
 
     private CySwingApplication desktopApp;
 
-    public MicroarrayAnalysisAction()
+    public MicroarrayAnalysisAction(CySwingApplication desktopApp)
     {
         super("Microarray Analysis");
         setPreferredMenu("Apps.Reactome FI");
-        setMenuGravity(3);
+        setMenuGravity(2.0f);
+        this.desktopApp = desktopApp;
     }
 
     @Override
     public void actionPerformed(ActionEvent e)
     {
-        Map<ServiceReference, Object> servRefToService = null;
-        try
-        {
-            List<String> clazzes = new ArrayList<String>();
-            clazzes.add(CySwingApplication.class.getName());
-            //clazzes.add()
-            servRefToService = PlugInScopeObjectManager.getManager().getServiceReferenceObjectList(clazzes);
-            for (Object service : servRefToService.entrySet())
-            {
-                if (service instanceof CySwingApplication)
-                    this.desktopApp = (CySwingApplication) service;
-            }
-        }
-        catch (Throwable t)
-        {
-            JOptionPane.showMessageDialog(null, "An error occurred in retrieving services;\nPlease try again.", "OSGi Service Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+//        Map<ServiceReference, CySwingApplication> servRefToService = null;
+//        try
+//        {
+//            servRefToService = PlugInScopeObjectManager.getManager().getCySwingApp();
+//            for (Object service : servRefToService.entrySet())
+//            {
+//                if (service instanceof CySwingApplication)
+//                    this.desktopApp = (CySwingApplication) service;
+//            }
+//
+//        }
+//        catch (Throwable t)
+//        {
+//            JOptionPane.showMessageDialog(null, "An error occurred in retrieving services;\nPlease try again.", "OSGi Service Error", JOptionPane.ERROR_MESSAGE);
+//            return;
+//        }
         if (!createNewSession())
         {
             return;
@@ -51,7 +50,8 @@ public class MicroarrayAnalysisAction extends FICytoscapeAction
         gui.setLocationRelativeTo(desktopApp.getJFrame());
         gui.setModal(true);
         gui.setVisible(true);
-        PlugInScopeObjectManager.getManager().releaseAllServices(servRefToService);
+        //Instantiate task factory
+        //Run task factory's createIterator method
     }
 
 }

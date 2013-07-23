@@ -49,6 +49,8 @@ public class PlugInScopeObjectManager
     private String userGuideURL = "http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin";
     // Cache a bundle context to be used later
     private BundleContext context;
+    private CySwingApplication desktopApp;
+    private ServiceReference desktopAppRef;
 
     private PlugInScopeObjectManager()
     {
@@ -211,21 +213,21 @@ public class PlugInScopeObjectManager
     }
 
     //A lot of getter methods for retrieving the references to various cytoscape services.
-    public Map<ServiceReference, CySwingApplication> getCySwingApp()
+    public CySwingApplication getCySwingApp()
     {
-        Map<ServiceReference, CySwingApplication> refToApp = new HashMap<ServiceReference, CySwingApplication>();
         CySwingApplication desktopApp = null;
         ServiceReference servRef = context.getServiceReference(CySwingApplication.class.getName());
         if (servRef != null)
         {
             desktopApp = (CySwingApplication) context.getService(servRef);
-            refToApp.put(servRef, desktopApp);
+            this.desktopApp = desktopApp;
+            this.desktopAppRef = servRef;
         }
-        return refToApp;
+        return desktopApp;
     }
-    public Map<ServiceReference, Object> getServiceReferenceObjectList(List<String> clazzes)
+    public LinkedHashMap<ServiceReference, Object> getServiceReferenceObjectList(List<String> clazzes)
     {
-        Map<ServiceReference, Object> refToService = new LinkedHashMap<ServiceReference, Object>();
+        LinkedHashMap<ServiceReference, Object> refToService = new LinkedHashMap<ServiceReference, Object>();
         for (String name : clazzes)
         {
             if (context.getServiceReference(name) != null)
@@ -251,7 +253,15 @@ public class PlugInScopeObjectManager
         }
         return null;
     }
-
+    
+    public void releaseSingleService(ServiceReference servRef)
+    {
+        context.ungetService(servRef);
+    }
+    public void releaseSingleService(Map<ServiceReference, Object> servRefToService)
+    {
+        context.ungetService((ServiceReference) servRefToService.keySet().toArray()[1]);
+    }
     //A method to unget a service reference and release it for garbage collecting.
     public void releaseAllServices(Map<ServiceReference, Object> servRefToService)
     {
@@ -261,7 +271,7 @@ public class PlugInScopeObjectManager
         {
             if (servRef != null)
             {
-                context.ungetService(servRef);
+                releaseSingleService(servRef);
             }
         }
     }
