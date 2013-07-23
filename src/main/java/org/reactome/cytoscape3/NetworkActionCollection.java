@@ -2,6 +2,7 @@ package org.reactome.cytoscape3;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,8 @@ import javax.swing.JOptionPane;
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyTableFactory;
+import org.cytoscape.model.CyTableManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.AbstractTaskFactory;
@@ -33,14 +36,22 @@ import org.reactome.r3.graph.NetworkClusterResult;
  */
 class NetworkActionCollection
 {
-    private CyTableManager tableManager;
+    private TableHelper tableHelper;
 
     // private ModuleBasedSurvivalHelper survivalHelper;
     public NetworkActionCollection()
     {
-        tableManager = new CyTableManager();
+        tableHelper = new TableHelper();
     }
 
+    //Subclasses for performing various network actions via context menus
+    //in the network view.
+    /**
+     * A class for the network view right-click menu item
+     * which clusters the network and a corresponding task/factory.
+     * @author Eric T. Dawson
+     *
+     */
     class ClusterFINetworkMenu implements CyNetworkViewContextMenuFactory
     {
 
@@ -62,6 +73,11 @@ class NetworkActionCollection
                             .getServiceReference(TaskManager.class.getName());
                     try
                     {
+                        List<String> clazzes = new ArrayList<String>();
+                        clazzes.add(CyTableManager.class.getName());
+                        clazzes.add(CyTableFactory.class.getName());
+                        Map<ServiceReference, Object> servRefServiceMap = PlugInScopeObjectManager.getManager().getServiceReferenceObjectList(clazzes);
+                        System.out.println(servRefServiceMap);
                         TaskManager taskMgr = (TaskManager) context
                                 .getService(taskMgrRef);
                         taskMgr.execute(clusterFactory.createTaskIterator());
@@ -115,7 +131,6 @@ class NetworkActionCollection
         {
             tm.setProgress(-1);
             tm.setStatusMessage("Clustering FI Network...");
-            Thread.sleep(3000);
             List<CyEdge> edgeList = view.getModel().getEdgeList();
             try
             {
@@ -138,11 +153,12 @@ class NetworkActionCollection
                                 .getCluster());
                     }
                 }
-                tableManager.loadNodeAttributesByName(view, "module",
+                
+                tableHelper.loadNodeAttributesByName(view, "module",
                         nodeToCluster);
-                tableManager.storeClusteringType(view, CyTableFormatter
+                tableHelper.storeClusteringType(view, TableFormatter
                         .getSpectralPartitionCluster());
-                Map<String, Object> nodeToSamples = tableManager
+                Map<String, Object> nodeToSamples = tableHelper
                         .getNodeTableValuesByName(view.getModel(), "samples",
                                 String.class);
                 try

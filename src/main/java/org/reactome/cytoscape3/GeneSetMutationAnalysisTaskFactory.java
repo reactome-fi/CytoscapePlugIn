@@ -6,6 +6,7 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
+import org.cytoscape.model.CyTableManager;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
@@ -35,6 +36,7 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
     private CyNetworkManager netManager;
     private TaskManager taskManager;
     private CyTableFactory tableFactory;
+    private CyTableManager tableManager;
 
     public GeneSetMutationAnalysisTaskFactory(CySwingApplication desktopApp,
             String format, File file, boolean chooseHomoGenes,
@@ -44,7 +46,7 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
             CyNetworkManager netManager, CyNetworkViewFactory viewFactory,
             CyNetworkViewManager viewManager,
 
-            CyTableFactory tableFactory, TaskManager taskManager)
+            CyTableFactory tableFactory, CyTableManager tableManager2, TaskManager taskManager)
     {
         this.desktopApp = desktopApp;
 
@@ -62,6 +64,7 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
         this.viewManager = viewManager;
         this.taskManager = taskManager;
         this.tableFactory = tableFactory;
+        this.tableManager = tableManager2;
     }
 
     @Override
@@ -71,6 +74,6 @@ public class GeneSetMutationAnalysisTaskFactory extends AbstractTaskFactory
                 format, file, chooseHomoGenes, useLinkers, sampleCutoffValue,
                 showUnlinked, showUnlinkedEnabled, fetchFIAnnotations,
                 networkFactory, netManager, viewFactory, viewManager,
-                tableFactory, taskManager));
+                tableFactory, tableManager, taskManager));
     }
 }

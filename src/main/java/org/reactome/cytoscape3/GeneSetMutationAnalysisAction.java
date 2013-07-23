@@ -9,6 +9,7 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
+import org.cytoscape.model.CyTableManager;
 import org.cytoscape.session.CySession;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
@@ -43,16 +44,16 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
     private CyTableFactory tableFactory;
+    private CyTableManager tableManager;
 
     // private TaskMonitor taskMonitor;
     public GeneSetMutationAnalysisAction(TaskManager tm,
-            CyNetworkManager netManager,
-
-            SaveSessionAsTaskFactory saveSession, FileUtil fileUtil,
+            CyNetworkManager netManager, SaveSessionAsTaskFactory saveSession, FileUtil fileUtil,
             CySwingApplication desktopApp, CySessionManager sessionManager,
             CyNetworkFactory networkFactory, CyNetworkViewFactory viewFactory,
             CyNetworkViewManager viewManager,
-            CyTableFactory tableFactory)
+            CyTableFactory tableFactory,
+            CyTableManager tableManager)
     {
         super("Gene Set / Mutant Analysis");
         this.desktopApp = desktopApp;
@@ -65,6 +66,7 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         this.viewFactory = viewFactory;
         this.viewManager = viewManager;
         this.tableFactory = tableFactory;
+        this.tableManager = tableManager;
         setPreferredMenu("Apps.Reactome FI");
 
     }
@@ -99,7 +101,7 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
                         .getUnlinkedGeneBox().isEnabled(), gui
                         .showFIAnnotationsBeFetched(), gui
                         .getSampleCutoffValue(), networkFactory, netManager,
-                viewFactory, viewManager, tableFactory, tm);
+                viewFactory, viewManager, tableFactory, tableManager, tm);
         tm.execute(gsmaFactory.createTaskIterator());
 
     }

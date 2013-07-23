@@ -10,16 +10,16 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 
-public class CyTableManager
+public class TableHelper
 {
-    private final String FI_NETWORK_VERSION = CyTableFormatter
+    private final String FI_NETWORK_VERSION = TableFormatter
             .getFINetworkVersion();
-    private final String MCL_ARRAY_CLUSTERING = CyTableFormatter
+    private final String MCL_ARRAY_CLUSTERING = TableFormatter
             .getMCLArrayClustering();
-    private final String SAMPLE_MUTATION_DATA = CyTableFormatter
+    private final String SAMPLE_MUTATION_DATA = TableFormatter
             .getSampleMutationData();
 
-    public CyTableManager()
+    public TableHelper()
     {
     }
 

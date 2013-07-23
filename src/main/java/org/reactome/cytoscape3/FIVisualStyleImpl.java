@@ -192,7 +192,7 @@ public class FIVisualStyleImpl implements FIVisualStyle
 
     public int[] getSampleNumberRange(CyNetworkView view)
     {
-        Map<Long, Object> idToSampleNumber = new CyTableManager()
+        Map<Long, Object> idToSampleNumber = new TableHelper()
                 .getNodeTableValuesBySUID(view.getModel(), "sampleNumber",
                         Integer.class);
         if (idToSampleNumber == null || idToSampleNumber.isEmpty())

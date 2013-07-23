@@ -17,25 +17,28 @@ import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
+import org.cytoscape.model.CyTableManager;
 
-public class CyNetworkGenerator
+public class FINetworkGenerator
 {
     private CyNetworkFactory networkFactory;
     private CyTableFactory tableFactory;
+    private CyTableManager tableManager;
 
-    public CyNetworkGenerator(CyNetworkFactory networkFactory,
-            CyTableFactory tableFactory)
+    public FINetworkGenerator(CyNetworkFactory networkFactory,
+            CyTableFactory tableFactory, CyTableManager tableManager)
     {
         this.networkFactory = networkFactory;
         this.tableFactory = tableFactory;
+        this.tableManager = tableManager;
     }
 
     public CyNetwork constructFINetwork(Set<String> nodes, Set<String> fis)
     {
         // Construct an empty network.
         CyNetwork network = networkFactory.createNetwork();
-        CyTableFormatter cyTableFormatter = new CyTableFormatter(tableFactory);
-        cyTableFormatter.makeGeneSetMutationAnalysisTables(network);
+        TableFormatter tableFormatter = new TableFormatter(tableFactory, tableManager);
+        tableFormatter.makeGeneSetMutationAnalysisTables(network);
         // Generate a source, edge and target for each FI interaction
         // retrieved from the Reactome database.
         int index = 0;

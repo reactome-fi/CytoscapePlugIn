@@ -10,6 +10,11 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.swing.ImageIcon;
@@ -46,6 +51,8 @@ public class PlugInScopeObjectManager
 
     private PlugInScopeObjectManager()
     {
+//        Map<ServiceReference, Object> serviceReferences = new HashMap<ServiceReference, Object>();
+//        this.ServiceReferences = servicesReferences;
     }
 
     public static PlugInScopeObjectManager getManager()
@@ -208,23 +215,58 @@ public class PlugInScopeObjectManager
     }
 
     //A lot of getter methods for retrieving the references to various cytoscape services.
-    public CySwingApplication getCySwingApp()
+    public Map<ServiceReference, CySwingApplication> getCySwingApp()
     {
+        Map<ServiceReference, CySwingApplication> refToApp = new HashMap<ServiceReference, CySwingApplication>();
         CySwingApplication desktopApp = null;
         ServiceReference servRef = context.getServiceReference(CySwingApplication.class.getName());
         if (servRef != null)
         {
             desktopApp = (CySwingApplication) context.getService(servRef);
+            refToApp.put(servRef, desktopApp);
         }
-        return desktopApp;
+        return refToApp;
     }
-    //A method to unget a service reference and release it for garbage collecting.
-    public void releaseService(ServiceReference serviceRef)
+    public Map<ServiceReference, Object> getServiceReferenceObjectList(List<String> clazzes)
     {
-        if (serviceRef != null)
+        Map<ServiceReference, Object> refToService = new LinkedHashMap<ServiceReference, Object>();
+        for (String name : clazzes)
         {
-            context.ungetService(serviceRef);
-            serviceRef = null;
+            if (context.getServiceReference(name) != null)
+            {
+                ServiceReference servRef = context.getServiceReference(name);
+                Object obj = context.getService(servRef);
+                refToService.put(servRef, obj);
+            }
+            else
+                throw new RuntimeException();
+        }
+        return refToService;
+    }
+    public Map<ServiceReference, Object> getServiceReferenceObject(String name)
+    {
+        Map<ServiceReference, Object> refToService = new LinkedHashMap<ServiceReference, Object>();
+        ServiceReference servRef = context.getServiceReference(name);
+        if (servRef != null)
+        {
+            Object obj = context.getService(servRef);
+            refToService.put(servRef, obj);
+            return refToService;
+        }
+        return null;
+    }
+
+    //A method to unget a service reference and release it for garbage collecting.
+    public void releaseAllServices(Map<ServiceReference, Object> servRefToService)
+    {
+        if (servRefToService.isEmpty() || servRefToService == null)
+            return;
+        for (ServiceReference servRef : servRefToService.keySet())
+        {
+            if (servRef != null)
+            {
+                context.ungetService(servRef);
+            }
         }
     }
 }

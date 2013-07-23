@@ -75,7 +75,7 @@ public class RESTFulFIService implements FINetworkService
 
     private void init(CyNetworkView view)
     {
-        CyTableManager tableManager = new CyTableManager();
+        TableHelper tableManager = new TableHelper();
         String fiVersion = tableManager.getStoredFINetworkVersion(view);
         restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL(
                 fiVersion);

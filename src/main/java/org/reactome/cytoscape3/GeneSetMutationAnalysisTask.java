@@ -19,6 +19,7 @@ import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
+import org.cytoscape.model.CyTableManager;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
@@ -54,6 +55,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
     private CyNetworkManager netManager;
     private CyTableFactory tableFactory;
     private TaskManager taskManager;
+    private CyTableManager tableManager;
 
     public GeneSetMutationAnalysisTask(CySwingApplication desktopApp,
             String format, File file, boolean chooseHomoGenes,
@@ -61,7 +63,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             boolean showUnlinkedEnabled, boolean fetchFIAnnotations,
             CyNetworkFactory networkFactory, CyNetworkManager netManager,
             CyNetworkViewFactory viewFactory, CyNetworkViewManager viewManager,
-            CyTableFactory tableFactory, TaskManager taskManager)
+            CyTableFactory tableFactory, CyTableManager tableManager, TaskManager taskManager)
     {
         this.desktopApp = desktopApp;
         this.networkFactory = networkFactory;
@@ -77,6 +79,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
         this.viewManager = viewManager;
         this.fetchFIAnnotations = fetchFIAnnotations;
         this.tableFactory = tableFactory;
+        this.tableManager = tableManager;
         this.taskManager = taskManager;
     }
 
@@ -183,20 +186,20 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             }
             taskMonitor.setStatusMessage("Formatting network attributes...");
             taskMonitor.setProgress(.65d);
-            CyTableManager tableManager = new CyTableManager();
+            TableHelper tableHelper = new TableHelper();
             CyNetworkView view = viewFactory.createNetworkView(network);
-            tableManager.storeFINetworkVersion(view);
-            tableManager.storeDataSetType(network, CyTableFormatter
+            tableHelper.storeFINetworkVersion(view);
+            tableHelper.storeDataSetType(network, TableFormatter
                     .getSampleMutationData());
             viewManager.addNetworkView(view);
             if (geneToSampleNumber != null && !geneToSampleNumber.isEmpty())
             {
-                tableManager.loadNodeAttributesByName(view, "sampleNumber",
+                tableHelper.loadNodeAttributesByName(view, "sampleNumber",
                         geneToSampleNumber);
             }
             if (geneToSampleString != null && !geneToSampleString.isEmpty())
             {
-                tableManager.loadNodeAttributesByName(view, "samples",
+                tableHelper.loadNodeAttributesByName(view, "samples",
                         geneToSampleString);
             }
             // Check if linker genes are to be used.
@@ -213,20 +216,20 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
                     geneToIsLinker.put(nodeName, !selectedGenes
                             .contains(nodeName));
                 }
-                tableManager.loadNodeAttributesByName(view, "isLinker",
+                tableHelper.loadNodeAttributesByName(view, "isLinker",
                         geneToIsLinker);
             }
             if (fetchFIAnnotations)
             {
                 taskMonitor.setStatusMessage("Fetching FI annotations...");
                 new FIAnnotationHelper().annotateFIs(view,
-                        new RESTFulFIService(), tableManager);
+                        new RESTFulFIService(), tableHelper);
             }
             if (view.getModel().getEdgeCount() != 0)
             {
                 for (CyEdge edge : view.getModel().getEdgeList())
                 {
-                    tableManager.storeEdgeName(edge, view);
+                    tableHelper.storeEdgeName(edge, view);
                 }
             }
             BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
@@ -324,8 +327,8 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
         if (fis != null && fis.size() > 0)
         {
 
-            CyNetworkGenerator generator = new CyNetworkGenerator(
-                    networkFactory, tableFactory);
+            FINetworkGenerator generator = new FINetworkGenerator(
+                    networkFactory, tableFactory, tableManager);
             // Check if any unlinked nodes should be added
             if (showUnlinkedEnabled && showUnlinked)
             {
@@ -337,7 +340,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             }
         }
         // netManager.addNetwork(network);
-        // CyTableManager manager = new CyTableManager();
+        // TableHelper manager = new TableHelper();
         // manager.storeDataSetType(network, "Data Set");
         return network;
     }

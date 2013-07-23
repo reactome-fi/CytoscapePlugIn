@@ -14,13 +14,13 @@ import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyTableManager;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.util.swing.FileUtil;
-import org.cytoscape.util.swing.OpenBrowser;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
@@ -65,10 +65,11 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         CyNetworkViewManager viewManager = getService(context,
                 CyNetworkViewManager.class);
         CyTableFactory tableFactory = getService(context, CyTableFactory.class);
+        CyTableManager tableManager = getService(context, CyTableManager.class);
         SaveSessionAsTaskFactory saveSessionAsTaskFactory = getService(context,
                 SaveSessionAsTaskFactory.class);
         FileUtil fileUtil = getService(context, FileUtil.class);
-        OpenBrowser browser = getService(context, OpenBrowser.class);
+     //   OpenBrowser browser = getService(context, OpenBrowser.class);
         CyLayoutAlgorithmManager layoutManager = getService(context,
                 CyLayoutAlgorithmManager.class);
         VisualMappingManager visMapManager = getService(context,
@@ -90,22 +91,28 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         Properties visStyleHelperProps = new Properties();
         visStyleHelperProps.setProperty("title", "FIVisualStyleImpl");
         registerAllServices(context, styleHelper, visStyleHelperProps);
+        
+        
         //Instantiate Reactome FI App services
         GeneSetMutationAnalysisAction gsma = new GeneSetMutationAnalysisAction(
                 taskManager, networkManager, saveSessionAsTaskFactory,
                 fileUtil, desktopApp, sessionManager, networkFactory,
-                viewFactory, viewManager,tableFactory);
+                viewFactory, viewManager,tableFactory, tableManager);
 
+        MicroarrayAnalysisAction maa = new MicroarrayAnalysisAction();
         UserGuideAction uga = new UserGuideAction();
         
         // Test code for loading pathway diagram into Cytoscape
         PathwayLoadAction pathwayLoadAction = new PathwayLoadAction();
         pathwayLoadAction.setBundleContext(context);
         
+        
         // Register said Reactome FI Services with the OSGi framework.
         registerAllServices(context, gsma, new Properties());
+        registerAllServices(context, maa, new Properties());
         registerAllServices(context, pathwayLoadAction, new Properties());
         registerAllServices(context, uga, new Properties());
+        
 
         // Instantiate and register the context menus for the network view
         NetworkActionCollection networkMenu = new NetworkActionCollection();
@@ -115,6 +122,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         clusterProps.setProperty("preferredMenu", "Apps.Reactome FI");
         registerService(context, clusterMenu,
                 CyNetworkViewContextMenuFactory.class, clusterProps);
+        
+        
         // Instantiate and register the context menus for the node views
         NodeActionCollection nodeActionCollection = new NodeActionCollection();
         GeneCardMenu geneCardMenu = nodeActionCollection.new GeneCardMenu();

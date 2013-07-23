@@ -20,10 +20,12 @@ import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -39,10 +41,11 @@ import org.gk.util.DialogControlPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
+
 /**
  * This class sets up the GUIs for the various actions. Since all GUI creation
  * is handled through this class, a "context" parameter is used to determine
- * which GUI is to be implemented.
+ * which GUI is to be implemented. Think of this as a lame GUI factory.
  * 
  * @author Eric T. Dawson
  * 
@@ -422,7 +425,117 @@ public class ActionDialogs extends JDialog
             JPanel maaPanel = new JPanel();
             mainPane.addTab("Microarray Analysis", maaPanel);
             mainPane.setSelectedComponent(maaPanel);
+            JPanel filePanel = new JPanel();
+            filePanel.setBorder(BorderFactory.createEtchedBorder());
+            GridBagLayout layout = new GridBagLayout();
+            filePanel.setLayout(layout);
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(4, 4, 4, 4);
+            constraints.anchor = GridBagConstraints.WEST;
+            constraints.gridwidth = 1;
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            constraints.weightx = 0.1;
             
+//            // Add a control panel
+//            DialogControlPane controlPane = new DialogControlPane();
+//            JLabel fileChooseLabel = new JLabel("Choose Data File:");
+//            JButton okBtn = controlPane.getOKBtn();
+//            JButton browseButton = new JButton("Browse");
+//            final JTextField fileTF = new JTextField();
+//            createFileChooserGui(fileChooseLabel, fileTF, okBtn, browseButton, filePanel, constraints);
+//            // Add a note text
+//            JTextArea noteTA = new JTextArea();
+//            Font font3 = filePanel.getFont();
+//            noteTA.setFont(font3.deriveFont(font3.getSize2D() - 2.0f));
+//            noteTA.setEditable(false);
+//            noteTA.setLineWrap(true);
+//            noteTA.setWrapStyleWord(true);
+//            noteTA.setBackground(filePanel.getBackground());
+//            noteTA.setText("Note: The array file should be a tab-delimited text file" +
+//                    " with table header. The first column should be gene names. " +
+//                    "All other columns should be expression values in samples. " +
+//                    "One column for one sample. All values should be pre-normalized.");
+//            constraints.gridx = 0;
+//            constraints.gridy = 1;
+//            constraints.gridwidth = 3;
+//            filePanel.add(noteTA, constraints);
+//            mainPane.add(filePanel);
+//            
+//            // Set up a panel for correlation method
+//            JPanel correlationPanel = new JPanel();
+//            correlationPanel.setBorder(BorderFactory.createEtchedBorder());
+//            correlationPanel.setLayout(layout);
+//            constraints.gridx = 0;
+//            constraints.gridy = 0;
+//            constraints.gridwidth = 1;
+//            // Currently only Pearson correlation is supported
+//            JLabel corLabel = new JLabel("Correlation calculation method: ");
+//            JTextField corField = new JTextField("Pearson correlation");
+//            corField.setEditable(false);
+//            correlationPanel.add(corLabel, constraints);
+//            constraints.gridx = 1;
+//            correlationPanel.add(corField, constraints);
+//            JCheckBox corBox = new JCheckBox("Use absolute value (checked is preferred)");
+//            corBox.setSelected(true); // Default should be selected
+//            constraints.gridy = 1;
+//            constraints.gridx = 0;
+//            constraints.gridwidth = 2;
+//            correlationPanel.add(corBox, constraints);
+//            mainPane.add(correlationPanel);
+//            
+//            // Set up a panel for network clustering for weighted network
+//            JPanel clusterPanel = new JPanel();
+//            clusterPanel.setBorder(BorderFactory.createEtchedBorder());
+//            clusterPanel.setLayout(layout);
+//            constraints.gridx = 0;
+//            constraints.gridy = 0;
+//            constraints.gridwidth = 1;
+//            JLabel clusterLable = new JLabel("Network clustering algorithm: ");
+//            clusterPanel.add(clusterLable, constraints);
+//            JTextField clusterTF = new JTextField("MCL (Markov Cluster Algorithm)");
+//            clusterTF.setEditable(false);
+//            constraints.gridx = 1;
+//            constraints.gridwidth = 2;
+//            clusterPanel.add(clusterTF, constraints);
+//            JLabel paraLabel = new JLabel("Set inflation parameter (-I) for MCL: ");
+//            constraints.gridx = 0;
+//            constraints.gridy = 1;
+//            constraints.gridwidth = 1;
+//            clusterPanel.add(paraLabel, constraints);
+//            JTextField mclITF = new JTextField("5.0");
+//            constraints.gridx = 1;
+//            clusterPanel.add(mclITF, constraints);
+//            JLabel mclIRangeLabel = new JLabel("1.2 - 5.0 (default 5.0)");
+//            constraints.gridx = 2;
+//            clusterPanel.add(mclIRangeLabel, constraints);
+//            mainPane.add(clusterPanel);
+//            
+//            getContentPane().add(mainPane, BorderLayout.CENTER);
+//
+//            okBtn.addActionListener(new ActionListener() {
+//                
+//                public void actionPerformed(ActionEvent e) {
+//                    if (!validateFile(fileTF, desktopApp.getJFrame()))
+//                        return;
+//                    setVisible(false);
+//                    dispose();
+//                    isOkClicked = true;
+//                }});
+//            controlPane.getCancelBtn().addActionListener(new ActionListener() {
+//                
+//                @Override
+//                public void actionPerformed(ActionEvent e) {
+//                    setVisible(false);
+//                    dispose();
+//                }
+//            });
+//            okBtn.setDefaultCapable(true);
+//            getRootPane().setDefaultButton(okBtn);
+////            okBtn.setEnabled(false); // If no file is selected
+//            getContentPane().add(controlPane, BorderLayout.SOUTH);
+//            setSize(515, 480);
+//            setLocationRelativeTo(getOwner());
+        
         }
         getContentPane().add(mainPane, BorderLayout.CENTER);
 
@@ -471,5 +584,28 @@ public class ActionDialogs extends JDialog
     public boolean showFIAnnotationsBeFetched()
     {
         return fetchFIAnnotations.isSelected();
+    }
+    protected boolean validateFile(JTextField fileTF,
+            java.awt.Component parentComp)
+    {
+        if (fileTF.getText().trim().length() == 0)
+        {
+            JOptionPane.showMessageDialog(parentComp,
+                    "Please enter a file name in the file field",
+                    "Empty file name", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        String text = fileTF.getText().trim();
+        File file = new File(text);
+        if (!file.exists())
+        {
+            JOptionPane
+                    .showMessageDialog(
+                            parentComp,
+                            "The file you entered does no exist. Please enter a valid file name",
+                            "Incorrect File Name", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
     }
 }
