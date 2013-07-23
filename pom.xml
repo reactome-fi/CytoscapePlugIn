@@ -19,8 +19,8 @@
 	<build>
 		<resources>
 			<resource>
-				<directory>${project.basedir}/src/main/java/org/reactome/cytoscape3</directory>
-				<targetPath>org/reactome/cytoscape3</targetPath>
+				<directory>${project.basedir}/src/main/java/org/reactome/cytoscape/util</directory>
+				<targetPath>org/reactome/cytoscape/util</targetPath>
 				<includes>
           			<include>Config.prop</include>
         		</includes>
@@ -219,7 +219,12 @@
 				<artifactId>property-api</artifactId>
 				<version>RELEASE</version> 
 		</dependency>
-
+        <!-- In order to use app API -->
+        <dependency>
+                <groupId>org.cytoscape</groupId>
+                <artifactId>app-api</artifactId>
+                <version>RELEASE</version>
+        </dependency>
 				
 		<dependency>
 			<groupId>org.reactome</groupId>

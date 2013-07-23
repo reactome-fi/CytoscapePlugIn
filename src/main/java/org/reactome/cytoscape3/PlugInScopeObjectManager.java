@@ -7,21 +7,15 @@ package org.reactome.cytoscape3;
 import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.Properties;
 
-import javax.swing.ImageIcon;
 import javax.swing.WindowConstants;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
  * A singleton to manage other singleton objects, and some utility methods.
@@ -30,11 +24,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PlugInScopeObjectManager
 {
-    private static Logger logger = LoggerFactory
-            .getLogger(PlugInScopeObjectManager.class);
     private static PlugInScopeObjectManager manager;
-    // Properties setting for this Cytoscape
-    private Properties properties;
     // Don't cache it in case FI network version has been changed
     private FINetworkService networkService;
     // Try to track CancerIndexSentenceDisplayFrame
@@ -42,8 +32,6 @@ public class PlugInScopeObjectManager
     // Currently selected FI network version
     private String fiNetworkVersion;
     private String userGuideURL = "http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin";
-    // Cache a bundle context to be used later
-    private BundleContext context;
 
     private PlugInScopeObjectManager()
     {
@@ -57,15 +45,9 @@ public class PlugInScopeObjectManager
         }
         return manager;
     }
-
-    public void setBundleContext(BundleContext context)
-    {
-        this.context = context;
-    }
-
-    public BundleContext getBundleContext()
-    {
-        return this.context;
+    
+    public BundleContext getBundleContext() {
+        return PlugInObjectManager.getManager().getBundleContext();
     }
 
     public String getFiNetworkVersion()
@@ -121,25 +103,7 @@ public class PlugInScopeObjectManager
 
     public Properties getProperties()
     {
-        if (properties == null)
-        {
-            try
-            {
-                properties = new Properties();
-                InputStream is = RESTFulFIService.class
-                        .getResourceAsStream("Config.prop");
-                properties.load(is);
-            }
-            catch (IOException e)
-            {
-                System.err.println("PlugInScopeObjectManager.getProperties(): "
-                        + e);
-                e.printStackTrace();
-                logger.error("Cannot initialize RESTFulFIService: "
-                        + e.getMessage(), e);
-            }
-        }
-        return this.properties;
+        return PlugInObjectManager.getManager().getProperties();
     }
 
     public FINetworkService getNetworkService() throws Exception
@@ -152,22 +116,6 @@ public class PlugInScopeObjectManager
         // FINetworkService networkService = (FINetworkService) new
         // LocalService();
         return networkService;
-    }
-
-    public ImageIcon createImageIcon(String imgFileName)
-    {
-        String urlName = "org/reactome/cytoscape/" + imgFileName;
-        URL url = getClass().getClassLoader().getResource(urlName);
-        ImageIcon icon = null;
-        if (url == null)
-        {
-            icon = new ImageIcon(imgFileName);
-        }
-        else
-        {
-            icon = new ImageIcon(url);
-        }
-        return icon;
     }
 
     /**
@@ -207,6 +155,7 @@ public class PlugInScopeObjectManager
     public CySwingApplication getCySwingApp()
     {
         CySwingApplication desktopApp = null;
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(CySwingApplication.class.getName());
         if (servRef != null)
         {
@@ -220,6 +169,7 @@ public class PlugInScopeObjectManager
     {
         if (serviceRef != null)
         {
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             context.ungetService(serviceRef);
             serviceRef = null;
         }

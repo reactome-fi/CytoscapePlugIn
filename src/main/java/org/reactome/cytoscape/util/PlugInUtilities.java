@@ -5,12 +5,19 @@
 package org.reactome.cytoscape.util;
 
 import java.awt.Component;
+import java.awt.Container;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
 
+import javax.swing.ImageIcon;
+import javax.swing.JDesktopPane;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.httpclient.HttpClient;
@@ -42,6 +49,41 @@ public class PlugInUtilities {
 
     public PlugInUtilities() {
     }
+    
+    /**
+     * Get the JDesktop used by the Swing-based Cytoscape Application.
+     * @return
+     */
+    public static JDesktopPane getCytoscapeDesktop() {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference ref = context.getServiceReference(CySwingApplication.class.getName());
+        if (ref == null)
+            return null;
+        CySwingApplication application = (CySwingApplication) context.getService(ref);
+        JFrame frame = application.getJFrame();
+        // Use this loop to find JDesktopPane
+        Set<Component> children = new HashSet<Component>();
+        for (Component comp : frame.getComponents())
+            children.add(comp);
+        Set<Component> next = new HashSet<Component>();
+        while (children.size() > 0) {
+            for (Component comp : children) {
+                if (comp instanceof JDesktopPane)
+                    return (JDesktopPane) comp;
+                if (comp instanceof Container) {
+                    Container container = (Container) comp;
+                    if (container.getComponentCount() > 0) {
+                        for (Component comp1 : container.getComponents())
+                            next.add(comp1);
+                    }
+                }
+            }
+            children.clear();
+            children.addAll(next);
+            next.clear();
+        }
+        return null;
+    }  
 
     /**
      * Show an error message
@@ -180,5 +222,24 @@ public class PlugInUtilities {
         else
             throw new IllegalStateException(method.getResponseBodyAsString());
     }
-
+    
+    /**
+     * Load an ImageIcon based on a file name.
+     * @param src
+     * @param imgFileName
+     * @return
+     */
+    public static ImageIcon createImageIcon(Object src,
+                                            String imgFileName) {
+        String urlName = "org/reactome/cytoscape/" + imgFileName;
+        URL url = src.getClass().getClassLoader().getResource(urlName);
+        ImageIcon icon = null;
+        if (url == null) {
+            icon = new ImageIcon(imgFileName);
+        }
+        else {
+            icon = new ImageIcon(url);
+        }
+        return icon;
+    }
 }
