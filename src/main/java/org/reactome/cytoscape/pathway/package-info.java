@@ -5,4 +5,4 @@
  * @author gwu
  *
  */
-package org.reactome.pathway;
+package org.reactome.cytoscape.pathway;

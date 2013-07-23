@@ -10,6 +10,7 @@ import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 public class NodeActionCollection
 {
