@@ -25,7 +25,13 @@ import org.osgi.framework.ServiceReference;
 
 public class TableFormatterImpl implements TableFormatter
 {
-
+    
+    /**
+     * This class contains methods for creating the necessary columns for
+     * FI analysis in the default CyTables and instantiating custom CyTables
+     * for clustering and other sorts of analyses.
+     * @author Eric T Dawson
+     */
     //Strings important to multiple classes in the package are cached here.
     private static final String FI_NETWORK_VERSION = "Reactome_FI_Network_Version";
     private static final String SAMPLE_MUTATION_DATA = "SAMPLE_MUTATION_DATA";
@@ -70,8 +76,9 @@ public class TableFormatterImpl implements TableFormatter
         return SPECTRAL_PARTITION_CLUSTER;
     }
 
-    /* (non-Javadoc)
-     * @see org.reactome.cytoscape3.TableFormatter#makeGeneSetMutationAnalysisTables(org.cytoscape.model.CyNetwork)
+    /**
+     * Creates the necessary columns in the default tables for Gene Set / Mutation Analysis
+     * @param network The network created from the input file by querying the FI database.
      */
     @Override
     public void makeGeneSetMutationAnalysisTables(CyNetwork network)
@@ -141,8 +148,10 @@ public class TableFormatterImpl implements TableFormatter
 
     }
 
-    /* (non-Javadoc)
-     * @see org.reactome.cytoscape3.TableFormatter#makeModuleAnalysisTables(org.cytoscape.model.CyNetwork)
+    /**
+     * Creates the necessary columns for network clustering in the default node table,
+     * the default network table, and in the newly created module table.
+     * @param network The network model of a given network view.
      */
     @Override
     public void makeModuleAnalysisTables(CyNetwork network)
@@ -153,7 +162,7 @@ public class TableFormatterImpl implements TableFormatter
         CyTable nodeTable = network.getDefaultNodeTable();
         if (netTable.getColumn("clustering_Type") == null)
         {
-            netTable.createColumn("clustering_Type", Integer.class,
+            netTable.createColumn("clustering_Type", String.class,
                     Boolean.FALSE);
         }
         if (nodeTable.getColumn("module") == null)
@@ -205,8 +214,9 @@ public class TableFormatterImpl implements TableFormatter
             networkTableManager.setTable(network, CyNetwork.class, CyNetwork.LOCAL_ATTRS, moduleTable);
         }
     }
-    /* (non-Javadoc)
-     * @see org.reactome.cytoscape3.TableFormatter#makeHotNetAnalysisTables(org.cytoscape.model.CyNetwork)
+    /**
+     * Creates the columns for HotNet analysis in the default node table and in the HotNet module-linked table.
+     * @param network The network generated from the provided file.
      */
     @Override
     public void makeHotNetAnalysisTables(CyNetwork network)
@@ -253,8 +263,10 @@ public class TableFormatterImpl implements TableFormatter
         }
         tableManager.addTable(hotNetTable);
     }
-    /* (non-Javadoc)
-     * @see org.reactome.cytoscape3.TableFormatter#makeEnrichmentTables(org.cytoscape.model.CyNetwork, org.cytoscape.model.CyTable)
+    /**
+     * Creates the columns in a given table for a specific type of enrichment/GO analysis.
+     * @param network The network being analyzed
+     * @param table The table for the analysis to be performed.
      */
     @Override
     public void makeEnrichmentTables(CyNetwork network, CyTable table)
@@ -289,8 +301,9 @@ public class TableFormatterImpl implements TableFormatter
             table.createColumn("Nodes", String.class, Boolean.FALSE);
         }
     }
-    /* (non-Javadoc)
-     * @see org.reactome.cytoscape3.TableFormatter#makeNetPathEnrichmentTables(org.cytoscape.model.CyNetwork)
+    /**
+     * Creates the pathways needed for network pathway enrichment analysis
+     * @param network The FI network to be analyzed.
      */
     @Override
     public void makeNetPathEnrichmentTables(CyNetwork network)
@@ -299,8 +312,9 @@ public class TableFormatterImpl implements TableFormatter
         makeEnrichmentTables(network, netPathEnrichmentTable);
         tableManager.addTable(netPathEnrichmentTable);
     }
-    /* (non-Javadoc)
-     * @see org.reactome.cytoscape3.TableFormatter#makeNetCellComponentTables(org.cytoscape.model.CyNetwork)
+    /**
+     * Creates the table necessary for network cellular component analysis.
+     * @param network The FI network for analysis.
      */
     @Override
     public void makeNetCellComponentTables(CyNetwork network)
@@ -309,8 +323,9 @@ public class TableFormatterImpl implements TableFormatter
        makeEnrichmentTables(network, netCellComponentTable);
        tableManager.addTable(netCellComponentTable);
     }
-    /* (non-Javadoc)
-     * @see org.reactome.cytoscape3.TableFormatter#makeNetBiologicalProcessTable(org.cytoscape.model.CyNetwork)
+    /**
+     * Creates the table and necessary columns for analyzing network GO biological processes.
+     * @param network the network being analyzed.
      */
     @Override
     public void makeNetBiologicalProcessTable(CyNetwork network)
@@ -319,8 +334,9 @@ public class TableFormatterImpl implements TableFormatter
         makeEnrichmentTables(network, netBiologicalProcessTable);
         tableManager.addTable(netBiologicalProcessTable);
     }
-    /* (non-Javadoc)
-     * @see org.reactome.cytoscape3.TableFormatter#makeNetMolecularFunctionTables(org.cytoscape.model.CyNetwork)
+    /**
+     * Creates the Necessary table and columns for network GO molecular function.
+     * @param network the CyNetwork being analyzed.
      */
     @Override
     public void makeNetMolecularFunctionTables(CyNetwork network)

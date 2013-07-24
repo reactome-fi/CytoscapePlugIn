@@ -51,8 +51,11 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
     @Override
     public void start(BundleContext context) throws Exception
     {
+        
+        //Cache the bundlecontext.
         this.context = context;
         PlugInScopeObjectManager.getManager().setBundleContext(context);
+        
         /* Grab essential Cytoscape Service References */
         CySwingApplication desktopApp = getService(context,
                 CySwingApplication.class);

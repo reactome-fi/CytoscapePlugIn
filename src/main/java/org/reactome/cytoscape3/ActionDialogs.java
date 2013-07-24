@@ -95,15 +95,20 @@ public class ActionDialogs extends JDialog
             init(actionType);
         }
     }
-    // Retrieves the file path from the JFileTextfield
+    /**
+     * Retrieves the file given from the path in the textbox.
+     * @return The file at the specified location
+     */
     public File getSelectedFile()
     {
         String text = fileTF.getText().trim();
         return new File(text);
     }
 
-    // Allows the user to select a file using Cytoscape's
-    // built-in file utility.
+    /**
+     * Allows a user to browse for a file using Cytoscape's built-in file utility.
+     * @param tf
+     */
     private void getFile(JTextField tf)
     {
         Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
@@ -122,6 +127,16 @@ public class ActionDialogs extends JDialog
 
     }
 
+    /**
+     * Sets up actions for the various buttons and file fields
+     * and places them according to a given set of layout constraints.
+     * @param fileChooseLabel
+     * @param tf
+     * @param okBtn
+     * @param browseButton
+     * @param loadPanel
+     * @param constraints
+     */
     protected void createFileChooserGui(final JLabel fileChooseLabel,
             final JTextField tf, final JButton okBtn,
             final JButton browseButton, JPanel loadPanel,
@@ -181,6 +196,10 @@ public class ActionDialogs extends JDialog
         okBtn.setEnabled(false);
     }
 
+    /**
+     * Creates the graphical user interfaces for each of the Reactome FI analyses.
+     * @param actionType
+     */
     public void init(String actionType)
     {
         BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
@@ -707,29 +726,46 @@ public class ActionDialogs extends JDialog
             setLocationRelativeTo(getOwner());
         }
     }
-
+    /**
+     * 
+     * @return whether the ok button has been clicked or not.
+     */
     public boolean isOkClicked()
     {
         return this.isOkClicked;
     }
 
+    /**
+     * 
+     * @return the sample cutoff value from the Gene Set/Mutation Analysis dialog.
+     */
     public int getSampleCutoffValue()
     {
         String text = sampleCutoffField.getText().trim();
         if (text.length() == 0) return 0;
         return Integer.parseInt(text);
     }
-
+    /**
+     * 
+     * @return Whether or not to use linker genes from the FI database in the network.
+     */
     public boolean useLinkers()
     {
         return this.useLinkerBox.isSelected();
     }
-
+    /**
+     * 
+     * @return Whether or not to use genes which are not linked to others in the final network.
+     */
     public JCheckBox getUnlinkedGeneBox()
     {
         return this.showUnlinkedBox;
     }
 
+    /**
+     * 
+     * @return Whether or not to use genes mutated in both alleles.
+     */
     public boolean chooseHomoGenes()
     {
         return this.chooseHomoBox.isSelected();
@@ -746,6 +782,12 @@ public class ActionDialogs extends JDialog
     {
         return fetchFIAnnotations.isSelected();
     }
+    /**
+     * Verifies whether the file entered in the text field is a valid file.
+     * @param fileTF
+     * @param parentComp
+     * @return
+     */
     protected boolean validateFile(JTextField fileTF,
             java.awt.Component parentComp)
     {
@@ -769,6 +811,10 @@ public class ActionDialogs extends JDialog
         }
         return true;
     }
+    /**
+     * Checks whether the number of permutations is within the permissible range (<1000).
+     * @return
+     */
     private boolean validateParameters() {
         // Make sure permutation number no more than 1000
         String text = permutationTF.getText().trim();
