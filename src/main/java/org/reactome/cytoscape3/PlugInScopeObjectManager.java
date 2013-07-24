@@ -215,13 +215,14 @@ public class PlugInScopeObjectManager
     //A lot of getter methods for retrieving the references to various cytoscape services.
     public CySwingApplication getCySwingApp()
     {
-        CySwingApplication desktopApp = null;
-        ServiceReference servRef = context.getServiceReference(CySwingApplication.class.getName());
-        if (servRef != null)
+        if( desktopApp == null)
         {
-            desktopApp = (CySwingApplication) context.getService(servRef);
-            this.desktopApp = desktopApp;
-            this.desktopAppRef = servRef;
+            ServiceReference servRef = context.getServiceReference(CySwingApplication.class.getName());
+            if (servRef != null)
+            {
+                this.desktopApp = (CySwingApplication) context.getService(servRef);
+                this.desktopAppRef = servRef;
+            }
         }
         return desktopApp;
     }

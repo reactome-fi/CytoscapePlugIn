@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
@@ -11,6 +12,11 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.AbstractTaskFactory;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskMonitor;
+
 
 public class NodeActionCollection
 {
@@ -82,6 +88,54 @@ public class NodeActionCollection
                 
             });
             return null;
+        }
+        
+    }
+    class CancerGeneIndexTaskFactory extends AbstractTaskFactory
+    {
+
+        private CyNetworkView view;
+        CancerGeneIndexTaskFactory(CyNetworkView view)
+        {
+            super();
+            this.view = view;
+        }
+        @Override
+        public TaskIterator createTaskIterator()
+        {
+
+            return new TaskIterator(new CancerGeneIndexTask(view));
+        }
+        
+    }
+    class CancerGeneIndexTask extends AbstractTask
+    {
+
+        private CyNetworkView view;
+
+        CancerGeneIndexTask(CyNetworkView view)
+        {
+            this.view = view;
+        }
+
+        @Override
+        public void run(TaskMonitor tm) throws Exception
+        {
+            try
+            {
+                NCICancerIndexDiseaseHelper diseaseHelper = new NCICancerIndexDiseaseHelper();
+            }
+            catch(Exception e)
+            {
+                System.err.println("NetworkActionCollection.loadCancerGeneIndex(): " + e);
+                e.printStackTrace();
+                String message = e.getMessage();
+                String line = message.split("\n")[0];
+                JOptionPane.showMessageDialog(null,
+                                              "Error in loading cancer gene index: " + line,
+                                              "Error in Loading Cancer Gene Index",
+                                              JOptionPane.ERROR_MESSAGE);
+            }
         }
         
     }
