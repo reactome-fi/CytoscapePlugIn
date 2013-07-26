@@ -4,11 +4,9 @@
  */
 package org.reactome.cytoscape.pathway;
 
-import java.awt.BorderLayout;
+import java.beans.PropertyVetoException;
 
 import javax.swing.JDesktopPane;
-import javax.swing.JInternalFrame;
-import javax.swing.JScrollPane;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
@@ -17,8 +15,6 @@ import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
-import org.gk.graphEditor.PathwayEditor;
-import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -30,61 +26,64 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  * @author gwu
  *
  */
-public class PathwayLoadTask extends AbstractTask {
+public class PathwayDiagramLoadTask extends AbstractTask {
+    // DB_ID to be used for opening pathway diagram
+    private Long pathwayId;
     
-    public PathwayLoadTask() {
+    public PathwayDiagramLoadTask() {
+    }
+    
+    public void setPathwayId(Long dbId) {
+        this.pathwayId = dbId;
     }
     
     @Override
     public void run(TaskMonitor taskMonitor) throws Exception {
-        taskMonitor.setTitle("Loading Pathway");
+        taskMonitor.setTitle("Load Pathway");
+        if (pathwayId == null) {
+            taskMonitor.setStatusMessage("No pathway id is specifcied!");
+            taskMonitor.setProgress(1.0d);
+            return; // Nothing to be displayed!
+        }
         taskMonitor.setProgress(0);
-        taskMonitor.setStatusMessage("Load pathway diagram...");
+        taskMonitor.setStatusMessage("Loading pathway diagram...");
         // This is just for test by query pathway diagram for Cell Cycle Checkpoints 
         Long dbId = 69620L;
-        String reactomeRestfulURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeRESTfulAPI");
-        String url = reactomeRestfulURL + "pathwayDiagram/69620/xml";
-        String text = PlugInUtilities.callHttpInText(url, PlugInUtilities.HTTP_GET, "");
+        String text = ReactomeRESTfulService.getService().pathwayDiagram(pathwayId);
+        taskMonitor.setProgress(0.50d);
+        taskMonitor.setStatusMessage("Open pathway diagram...");
 //        System.out.println(text);
-        PathwayEditor pathwayEditor = createPathwayEditor(text);
-        JInternalFrame pathwayFrame = createInteranalFrame(pathwayEditor);
+        PathwayInternalFrame pathwayFrame = createPathwayFrame(text);
         JDesktopPane desktop = PlugInUtilities.getCytoscapeDesktop();
         desktop.add(pathwayFrame);
+        try {
+            pathwayFrame.setSelected(true);
+            pathwayFrame.toFront();
+        }
+        catch(PropertyVetoException e) {
+            e.printStackTrace(); // Should not throw an exception
+        }
+        taskMonitor.setProgress(1.0d);
     }
     
     /**
-     * A helper method to create a JInternalFrame to display pathway diagram from Reactome.
-     * @param pathwayEditor
-     * @return
-     */
-    private JInternalFrame createInteranalFrame(PathwayEditor pathwayEditor) {
-        JInternalFrame pathwayFrame = new JInternalFrame("Pathway: Cell Cycle Checkpoints", true, true, true, true);
-        InternalFrameListener frameLister = createFrameListener();
-        pathwayFrame.addInternalFrameListener(frameLister);
-        pathwayFrame.setSize(600, 450);
-        JScrollPane jsp = new JScrollPane();
-        jsp.setViewportView(pathwayEditor);
-//        jsp.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-//        jsp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        pathwayFrame.getContentPane().add(jsp, 
-                                          BorderLayout.CENTER);
-        pathwayFrame.setVisible(true);
-        return pathwayFrame;
-    }
-    
-    /**
-     * A helper method to create a PathwayEditor. 
+     * A helper method to create a PathwayInternalFrame. 
      * @param xml
      * @return
      * @throws Exception
      */
-    private PathwayEditor createPathwayEditor(String xml) throws Exception {
-        final PathwayEditor editor = new CyPathwayEditor();
-        DiagramGKBReader reader = new DiagramGKBReader();
-        RenderablePathway pathway = reader.openDiagram(xml);
-        editor.setRenderable(pathway);
-        editor.setEditable(false);
-        return editor;
+    private PathwayInternalFrame createPathwayFrame(String xml) throws Exception {
+        PathwayInternalFrame pathwayFrame = new PathwayInternalFrame("Pathway Diagram", true, true, true, true);
+        pathwayFrame.setPathwayDiagramInXML(xml);
+        RenderablePathway pathway = (RenderablePathway) pathwayFrame.getDisplayedPathway();
+        PathwayDiagramRegistry.getRegistry().register(pathway.getReactomeDiagramId(),
+                                                      pathwayFrame);
+        pathwayFrame.setTitle(pathway.getDisplayName());
+        InternalFrameListener frameLister = createFrameListener();
+        pathwayFrame.addInternalFrameListener(frameLister);
+        pathwayFrame.setSize(600, 450);
+        pathwayFrame.setVisible(true);
+        return pathwayFrame;
     }
     
     /**
@@ -94,7 +93,7 @@ public class PathwayLoadTask extends AbstractTask {
     private InternalFrameListener createFrameListener() {
         InternalFrameListener listener = new InternalFrameAdapter() {
             @Override
-            public void internalFrameActivated(InternalFrameEvent arg0) {
+            public void internalFrameActivated(InternalFrameEvent event) {
                 BundleContext context = PlugInObjectManager.getManager().getBundleContext();
                 ServiceReference ref = context.getServiceReference(CyAppAdapter.class.getName());
                 if (ref == null)

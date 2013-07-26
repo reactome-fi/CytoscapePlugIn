@@ -7,6 +7,7 @@
 	<properties>
 		<bundle.symbolicName>org.reactome</bundle.symbolicName>
 		<bundle.namespace>org.reactome</bundle.namespace>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -25,9 +26,13 @@
           			<include>Config.prop</include>
         		</includes>
 			</resource>
-<!-- 			<resource> -->
-<!-- 				<directory>${project.basedir}/src/main/java/org/reactome/cancerindex/model</directory> -->
-<!-- 			</resource> -->
+            <resource>
+                <directory>${project.basedir}/src/main/java/org/reactome/cytoscape/pathway</directory>
+                <targetPath>org/reactome/cytoscape/pathway</targetPath>
+                <includes>
+                    <include>*.gif</include>
+                </includes>
+            </resource>
 		</resources>
 		<!-- Cytoscape requires Java 1.6 -->
 		<plugins>

@@ -6,9 +6,17 @@ package org.reactome.cytoscape.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
+import org.cytoscape.app.CyAppAdapter;
+import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleEvent;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.SynchronousBundleListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,14 +31,24 @@ public class PlugInObjectManager {
     private final Logger logger = LoggerFactory.getLogger(PlugInObjectManager.class);
     // BundleContext for the whole Reactome FI plug-in.
     private BundleContext context;
-    // System-wide proeprties
+    // System-wide properties
     private Properties properties;
     private static PlugInObjectManager manager;
+    // Record cached ServiceReference so that they can be unget when this bundle (aka) is stopped
+    private List<ServiceReference> serviceReferences;
+    // Cache CyAppAdapter so that no need to search it multiple times
+    private CyAppAdapter appAdapter;
+    // Cache the CySwingApplication to be used multiple times
+    private CySwingApplication cyApplication;
+    // Cache TaskManager since it will be used multiple times
+    @SuppressWarnings("rawtypes")
+    private TaskManager taskManager;
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
      */
     private PlugInObjectManager() {
+        serviceReferences = new ArrayList<ServiceReference>();
     }
     
     public static PlugInObjectManager getManager() {
@@ -39,12 +57,76 @@ public class PlugInObjectManager {
         return manager;
     }
     
-    public void setBundleContext(BundleContext context) {
+    public void setBundleContext(final BundleContext context) {
         this.context = context;
+        context.addBundleListener(new SynchronousBundleListener() {
+            
+            @Override
+            public void bundleChanged(BundleEvent event) {
+                if (event.getType() == BundleEvent.STOPPING) {
+//                    System.out.println("Bundle is stopped!");
+                    if (serviceReferences.size() > 0) {
+                        for (ServiceReference reference : serviceReferences) {
+                            if (reference != null)
+                                context.ungetService(reference);
+                        }
+                    }
+                }
+            }
+            
+        });
     }
     
     public BundleContext getBundleContext() {
         return this.context;
+    }
+    
+    /**
+     * Get the system-wide CyAppAdapter that is registered as a service.
+     * @return
+     */
+    public CyAppAdapter getAppAdapter() {
+        if (appAdapter == null) {
+            ServiceReference reference = context.getServiceReference(CyAppAdapter.class.getName());
+            if (reference == null)
+                return null;
+            appAdapter = (CyAppAdapter) context.getService(reference);
+            if (appAdapter != null)
+                serviceReferences.add(reference);
+        }
+        return appAdapter;
+    }
+    
+    /**
+     * Get the system-wide TaskManager that is registered as a service
+     */
+    @SuppressWarnings("rawtypes")
+    public TaskManager getTaskManager() {
+        if (taskManager != null)
+            return taskManager;
+        ServiceReference ref = context.getServiceReference(TaskManager.class.getName());
+        if (ref == null)
+            return null;
+        taskManager = (TaskManager) context.getService(ref);
+        if (taskManager != null)
+            serviceReferences.add(ref);
+        return taskManager;
+    }
+    
+    /**
+     * Get the system-wide CySwingApplication that is registered as a service.
+     * @return
+     */
+    public CySwingApplication getCySwingApplication() {
+        if (cyApplication == null) {
+            ServiceReference ref = context.getServiceReference(CySwingApplication.class.getName());
+            if (ref == null)
+                return null;
+            cyApplication = (CySwingApplication) context.getService(ref);
+            if (cyApplication != null)
+                serviceReferences.add(ref);
+        }
+        return cyApplication;
     }
     
     /**

@@ -29,7 +29,7 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
-import org.reactome.cytoscape.pathway.PathwayLoadAction;
+import org.reactome.cytoscape.pathway.ReactomePathwayAction;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
@@ -100,7 +100,7 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         UserGuideAction uga = new UserGuideAction();
         
         // Test code for loading pathway diagram into Cytoscape
-        PathwayLoadAction pathwayLoadAction = new PathwayLoadAction();
+        ReactomePathwayAction pathwayLoadAction = new ReactomePathwayAction();
         
         // Register said Reactome FI Services with the OSGi framework.
         registerAllServices(context, gsma, new Properties());

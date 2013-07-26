@@ -271,7 +271,9 @@ public class RESTFulFIService implements FINetworkService
 
     private Element callInXML(String url, String query) throws Exception
     {
-        return PlugInUtilities.callHttpInXML(url, query);
+        return PlugInUtilities.callHttpInXML(url, 
+                                             PlugInUtilities.HTTP_POST,
+                                             query);
     }
 
     private String callHttp(String url, String type, String query)

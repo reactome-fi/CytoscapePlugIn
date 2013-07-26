@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.HashSet;
@@ -34,7 +35,6 @@ import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.reactome.cytoscape3.PlugInScopeObjectManager;
 
 /**
  * Utility methods that can be used by Reactome FI plug-in have been grouped
@@ -49,17 +49,13 @@ public class PlugInUtilities {
 
     public PlugInUtilities() {
     }
-    
+
     /**
      * Get the JDesktop used by the Swing-based Cytoscape Application.
      * @return
      */
     public static JDesktopPane getCytoscapeDesktop() {
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceReference ref = context.getServiceReference(CySwingApplication.class.getName());
-        if (ref == null)
-            return null;
-        CySwingApplication application = (CySwingApplication) context.getService(ref);
+        CySwingApplication application = PlugInObjectManager.getManager().getCySwingApplication();
         JFrame frame = application.getJFrame();
         // Use this loop to find JDesktopPane
         Set<Component> children = new HashSet<Component>();
@@ -93,27 +89,11 @@ public class PlugInUtilities {
     public static void showErrorMessage(String title, String message)
     {
         // Need a parent window to display error message
-        Component parent = null;
-        BundleContext context = PlugInScopeObjectManager.getManager()
-                .getBundleContext();
-        ServiceReference serviceReference = context
-                .getServiceReference(CySwingApplication.class.getName());
-        if (serviceReference != null)
-        {
-            CySwingApplication cytoscape = (CySwingApplication) context
-                    .getService(serviceReference);
-            if (cytoscape != null)
-            {
-                parent = cytoscape.getJFrame();
-            }
-        }
-        JOptionPane.showMessageDialog(parent, message, title,
-                JOptionPane.ERROR_MESSAGE);
-        if (serviceReference != null)
-        { // Unget the service and null serviceReference
-            context.ungetService(serviceReference);
-            serviceReference = null;
-        }
+        CySwingApplication application = PlugInObjectManager.getManager().getCySwingApplication();
+        JOptionPane.showMessageDialog(application.getJFrame(), 
+                                      message, 
+                                      title,
+                                      JOptionPane.ERROR_MESSAGE);
     }
 
     /**
@@ -123,15 +103,12 @@ public class PlugInUtilities {
      */
     public static void openURL(String url)
     {
-        BundleContext context = PlugInScopeObjectManager.getManager()
-                .getBundleContext();
-        ServiceReference serviceReference = context
-                .getServiceReference(OpenBrowser.class.getName());
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference serviceReference = context.getServiceReference(OpenBrowser.class.getName());
         boolean isOpened = false;
         if (serviceReference != null)
         {
-            OpenBrowser browser = (OpenBrowser) context
-                    .getService(serviceReference);
+            OpenBrowser browser = (OpenBrowser) context.getService(serviceReference);
             if (browser != null)
             {
                 browser.openURL(url);
@@ -163,20 +140,18 @@ public class PlugInUtilities {
      * @return
      * @throws Exception
      */
-    public static Element callHttpInXML(String url, String query) throws Exception {
-        PostMethod post = new PostMethod(url);
-        HttpClient client = initializeHTTPClient(post, query);
-        int responseCode = client.executeMethod(post);
-        if (responseCode == HttpStatus.SC_OK)
-        {
-            InputStream stream = post.getResponseBodyAsStream();
-            SAXBuilder builder = new SAXBuilder();
-            Document document = builder.build(stream);
-            Element root = document.getRootElement();
-            return root;
-        }
-        else
-            throw new IllegalStateException(post.getResponseBodyAsString());
+    public static Element callHttpInXML(String url, 
+                                        String type,
+                                        String query) throws Exception {
+        String text = callHttp(url, 
+                               type,
+                               query, 
+                               "application/xml");
+        StringReader reader = new StringReader(text);
+        SAXBuilder builder = new SAXBuilder();
+        Document document = builder.build(reader);
+        Element root = document.getRootElement();
+        return root;
     }
     
     /**
@@ -188,6 +163,25 @@ public class PlugInUtilities {
      * @throws IOException
      */
     public static String callHttpInText(String url, String type, String query) throws IOException {
+        return callHttp(url, 
+                        type, 
+                        query, 
+                        "text/plain");
+    }
+    
+    /**
+     * The actual method body to make a http call.
+     * @param url
+     * @param type
+     * @param query
+     * @param requestType
+     * @return
+     * @throws IOException
+     */
+    private static String callHttp(String url,
+                                   String type,
+                                   String query,
+                                   String requestType) throws IOException {
         HttpMethod method = null;
         HttpClient client = null;
         if (type.equals(HTTP_POST)) {
@@ -196,7 +190,7 @@ public class PlugInUtilities {
         }
         else {
             method = new GetMethod(url); // Default
-            method.setRequestHeader("Accept", "text/plain");
+            method.setRequestHeader("Accept", requestType);
             client = new HttpClient();
         }
         int responseCode = client.executeMethod(method);
