@@ -21,5 +21,17 @@ public interface TableFormatter
     public abstract void makeNetBiologicalProcessTable(CyNetwork network);
 
     public abstract void makeNetMolecularFunctionTables(CyNetwork network);
+    
+    public abstract void makeModulePathwayAnalysisTables(CyNetwork network);
+    
+    public abstract void makeModuleCellComponentTables(CyNetwork network);
+    
+    public abstract void makeModuleMolecularFunctionTables(CyNetwork network);
+    
+    public abstract void makeModuleBiologicalProcessTables(CyNetwork network);
+    
+    public abstract void makeModuleMolecularFunctionTable(CyNetwork network);
+    
+    public abstract void makeModuleSurvivalAnalysisTables(CyNetwork network);
 
 }

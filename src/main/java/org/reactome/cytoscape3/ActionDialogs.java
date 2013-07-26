@@ -82,7 +82,7 @@ public class ActionDialogs extends JDialog
     private JLabel fdrLabel;
     
     //Universal parameters
-    private boolean isOkClicked;
+    boolean isOkClicked;
     private FileUtil fileUtil;
     private CySwingApplication desktopApp;
 
@@ -198,7 +198,7 @@ public class ActionDialogs extends JDialog
 
     /**
      * Creates the graphical user interfaces for each of the Reactome FI analyses.
-     * @param actionType
+     * @param actionType A string indicating the type of action to be performed (GeneSetMutationAnalysis, UserGuide, Microarray, Hotnet).
      */
     public void init(String actionType)
     {
@@ -827,5 +827,21 @@ public class ActionDialogs extends JDialog
             return false;
         }
         return true;
+    }
+    
+    public boolean isAutoDeltaSelected() {
+        return this.deltaAutoBox.isSelected();
+    }
+    
+    public Double getDelta() {
+        return new Double(deltaTF.getText().trim());
+    }
+    
+    public Integer getPermutationNumber() {
+        return new Integer(permutationTF.getText().trim());
+    }
+    
+    public Double getFDRCutoff() {
+        return new Double(fdrCutoffTF.getText().trim());
     }
 }

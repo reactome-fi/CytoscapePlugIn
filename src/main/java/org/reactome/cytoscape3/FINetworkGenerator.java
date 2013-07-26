@@ -16,10 +16,12 @@ import javax.swing.JOptionPane;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
+import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
@@ -30,6 +32,9 @@ public class FINetworkGenerator
     private CyTableManager tableManager;
     private ServiceReference tableFormatterServRef;
     private TableFormatterImpl tableFormatter;
+    private ServiceReference networkFactoryRef;
+    private ServiceReference tableManagerRef;
+    private ServiceReference tableFactoryRef;
 
     public FINetworkGenerator(CyNetworkFactory networkFactory,
             CyTableFactory tableFactory, CyTableManager tableManager)
@@ -37,6 +42,10 @@ public class FINetworkGenerator
         this.networkFactory = networkFactory;
         this.tableFactory = tableFactory;
         this.tableManager = tableManager;
+    }
+    public FINetworkGenerator()
+    {
+       // getCyServices();
     }
     private void getTableFormatter()
     {
@@ -63,11 +72,46 @@ public class FINetworkGenerator
         BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
         context.ungetService(tableFormatterServRef);
     }
+    private void getCyServices()
+    {
+        Map<ServiceReference,  Object> netFactoryRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyNetworkFactory.class.getName());
+        ServiceReference servRef = (ServiceReference) netFactoryRefToObj.keySet().toArray()[0];
+        CyNetworkFactory netFactory = (CyNetworkFactory) netFactoryRefToObj.get(servRef);
+        this.networkFactory = netFactory;
+        this.networkFactoryRef = servRef;
+        
+        Map<ServiceReference,  Object> tableManagerRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyTableManager.class.getName());
+        servRef = (ServiceReference) tableManagerRefToObj.keySet().toArray()[0];
+        CyTableManager tableManager = (CyTableManager) tableManagerRefToObj.get(servRef);
+        this.tableManager = tableManager;
+        this.tableManagerRef = servRef;
+        
+        Map<ServiceReference,  Object> tableFactoryRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyTableFactory.class.getName());
+        servRef = (ServiceReference) tableFactoryRefToObj.keySet().toArray()[0];
+        CyTableFactory tableFactory = (CyTableFactory) tableFactoryRefToObj.get(servRef);
+        this.tableFactory = tableFactory;
+        this.tableFactoryRef = servRef;
+        
+        getTableFormatter();
+    }
+    
+    private void releaseCyServices()
+    {
+        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        if (networkFactoryRef != null)
+            context.ungetService(networkFactoryRef);
+        if (tableManagerRef != null)
+            context.ungetService(tableManagerRef);
+        if (tableFactoryRef != null)
+            context.ungetService(tableFactoryRef);
+        if (tableFormatterServRef != null)
+            releaseTableFormatter();
+    }
     public CyNetwork constructFINetwork(Set<String> nodes, Set<String> fis)
     {
+        getCyServices();
         // Construct an empty network.
         CyNetwork network = networkFactory.createNetwork();
-        getTableFormatter();
         tableFormatter.makeGeneSetMutationAnalysisTables(network);
         // Generate a source, edge and target for each FI interaction
         // retrieved from the Reactome database.
@@ -93,7 +137,7 @@ public class FINetworkGenerator
                 CyNode node = getNode(name, name2Node, network);
             }
         }
-        releaseTableFormatter();
+        releaseCyServices();
         return network;
     }
 

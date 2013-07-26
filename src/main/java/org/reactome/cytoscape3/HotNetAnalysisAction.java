@@ -1,8 +1,15 @@
 package org.reactome.cytoscape3;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
+import java.util.Map;
+
+import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.work.TaskManager;
+import org.osgi.framework.ServiceReference;
+
 
 
 
@@ -23,15 +30,37 @@ public class HotNetAnalysisAction extends FICytoscapeAction
     @Override
     public void actionPerformed(ActionEvent e)
     {
+        if (!createNewSession())
+        {
+            return;
+        }
         ActionDialogs gui = new ActionDialogs("Hotnet");
         gui.setLocationRelativeTo(desktopApp.getJFrame());
         gui.setModal(true);
         gui.setVisible(true);
-        
+        if (!gui.isOkClicked())
+            return;
+        final File file = gui.getSelectedFile();
+        if (file == null || !file.exists())
+        {
+            JOptionPane.showMessageDialog(desktopApp.getJFrame(), 
+                    "No file is chosen or the selected file doesn't exist!", 
+                    "Error in File", 
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         //Initialize a new HotNet task factory.
-        
+        //HotNetAnalysisTaskFactory hnTaskFactory = new HotNetAnalysisTaskFactory(gui);
         //Activate the task via the TaskFactory's createIterator method.
+//        Map<ServiceReference,  Object> tmRefToTM =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(TaskManager.class.getName());
+//        ServiceReference servRef = (ServiceReference) tmRefToTM.keySet().toArray()[0];
+//        TaskManager tm = (TaskManager) tmRefToTM.get(servRef);
+//        tm.execute(hnTaskFactory.createTaskIterator());
         
+ //       PlugInScopeObjectManager.getManager().releaseSingleService(tmRefToTM);
+        
+        Thread t = new Thread(new HotNetAnalysisTask(gui));
+        t.start();
     }
 
 }

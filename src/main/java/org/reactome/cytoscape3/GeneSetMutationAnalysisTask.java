@@ -56,6 +56,8 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
     private CyTableFactory tableFactory;
     private TaskManager taskManager;
     private CyTableManager tableManager;
+    private ServiceReference tableFormatterServRef;
+    private TableFormatterImpl tableFormatter;
 
     public GeneSetMutationAnalysisTask(CySwingApplication desktopApp,
             String format, File file, boolean chooseHomoGenes,
@@ -146,7 +148,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             CyNetwork network = constructFINetwork(selectedGenes, file
                     .getName());
             network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", file.getName());
-            if (network == null)
+            if (network == null || network.getNodeCount() <= 0)
             {
                 JOptionPane.showMessageDialog(desktopApp.getJFrame(),
                         "Cannot find any functional interaction among provided genes.\n"
@@ -158,7 +160,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
             }
             netManager.addNetwork(network);
 
-            // Fix for missing default value persistence in CyTables
+            // Fix for broken default value persistence in CyTables
             // Should be remedied in the 3.1 api
             CyTable nodeTable = network.getDefaultNodeTable();
             for (Object name : network.getNodeList())
@@ -252,6 +254,7 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
                     "Error in Loading File: " + e.getMessage(),
                     "Error in Loading", JOptionPane.ERROR_MESSAGE);
             desktopApp.getJFrame().getGlassPane().setVisible(false);
+            e.printStackTrace();
         }
         desktopApp.getJFrame().getGlassPane().setVisible(false);
     }
@@ -343,5 +346,30 @@ public class GeneSetMutationAnalysisTask extends AbstractTask
         // TableHelper manager = new TableHelper();
         // manager.storeDataSetType(network, "Data Set");
         return network;
+    }
+    private void getTableFormatter()
+    {
+        try
+        {
+            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+            ServiceReference servRef = context.getServiceReference(TableFormatter.class.getName());
+            if (servRef != null)
+            {
+                this.tableFormatterServRef = servRef;
+                this.tableFormatter = (TableFormatterImpl) context.getService(servRef);
+            }
+            else
+                throw new Exception();
+        }
+        catch (Throwable t)
+        {
+            JOptionPane.showMessageDialog(null, "The table formatter could not be retrieved.", "Table Formatting Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    private void releaseTableFormatter()
+    {
+        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        context.ungetService(tableFormatterServRef);
     }
 }

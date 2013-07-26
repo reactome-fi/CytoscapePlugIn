@@ -242,10 +242,10 @@ public class PlugInScopeObjectManager
         }
         return refToService;
     }
-    public Map<ServiceReference, Object> getServiceReferenceObject(String name)
+    public Map<ServiceReference, Object> getServiceReferenceObject(String clazz)
     {
         Map<ServiceReference, Object> refToService = new LinkedHashMap<ServiceReference, Object>();
-        ServiceReference servRef = context.getServiceReference(name);
+        ServiceReference servRef = context.getServiceReference(clazz);
         if (servRef != null)
         {
             Object obj = context.getService(servRef);
@@ -261,7 +261,7 @@ public class PlugInScopeObjectManager
     }
     public void releaseSingleService(Map<ServiceReference, Object> servRefToService)
     {
-        context.ungetService((ServiceReference) servRefToService.keySet().toArray()[1]);
+        context.ungetService((ServiceReference) servRefToService.keySet().toArray()[0]);
     }
     //A method to unget a service reference and release it for garbage collecting.
     public void releaseAllServices(Map<ServiceReference, Object> servRefToService)

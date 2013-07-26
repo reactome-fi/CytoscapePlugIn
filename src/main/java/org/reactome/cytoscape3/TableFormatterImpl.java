@@ -346,4 +346,46 @@ public class TableFormatterImpl implements TableFormatter
         makeEnrichmentTables(network, netMolecularFunctionTable);
         tableManager.addTable(netMolecularFunctionTable);
     }
+
+    @Override
+    public void makeModulePathwayAnalysisTables(CyNetwork network)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void makeModuleCellComponentTables(CyNetwork network)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void makeModuleMolecularFunctionTables(CyNetwork network)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void makeModuleBiologicalProcessTables(CyNetwork network)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void makeModuleMolecularFunctionTable(CyNetwork network)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void makeModuleSurvivalAnalysisTables(CyNetwork network)
+    {
+        // TODO Auto-generated method stub
+        
+    }
 }
