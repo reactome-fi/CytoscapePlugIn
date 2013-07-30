@@ -52,7 +52,6 @@ public class RESTFulFIService implements FINetworkService
 
     public RESTFulFIService()
     {
-
         init();
     }
 
@@ -63,10 +62,15 @@ public class RESTFulFIService implements FINetworkService
 
     private void init(CyNetworkView view)
     {
-        TableHelper tableManager = new TableHelper();
-        String fiVersion = tableManager.getStoredFINetworkVersion(view);
-        restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL(
-                fiVersion);
+        String fiVersion = PlugInScopeObjectManager.getManager().getFiNetworkVersion();
+        if (fiVersion == null || fiVersion.length() <= 0)
+        {
+          TableHelper tableManager = new TableHelper();
+          fiVersion = tableManager.getStoredFINetworkVersion(view);
+          restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL(fiVersion);
+        }
+        else
+            restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL();
     }
 
     private void init()

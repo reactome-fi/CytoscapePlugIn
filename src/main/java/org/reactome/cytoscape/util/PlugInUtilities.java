@@ -5,12 +5,17 @@
 package org.reactome.cytoscape.util;
 
 import java.awt.Component;
+import java.awt.Container;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.HashSet;
+import java.util.Set;
 
+import javax.swing.JDesktopPane;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.httpclient.HttpClient;
@@ -43,6 +48,36 @@ public class PlugInUtilities {
     public PlugInUtilities() {
     }
 
+    /**
+     * Get the JDesktop used by the Swing-based Cytoscape Application.
+     * @return
+     */
+    public static JDesktopPane getCytoscapeDesktop() {
+        CySwingApplication application = PlugInScopeObjectManager.getManager().getCySwingApp();
+        JFrame frame = application.getJFrame();
+        // Use this loop to find JDesktopPane
+        Set<Component> children = new HashSet<Component>();
+        for (Component comp : frame.getComponents())
+            children.add(comp);
+        Set<Component> next = new HashSet<Component>();
+        while (children.size() > 0) {
+            for (Component comp : children) {
+                if (comp instanceof JDesktopPane)
+                    return (JDesktopPane) comp;
+                if (comp instanceof Container) {
+                    Container container = (Container) comp;
+                    if (container.getComponentCount() > 0) {
+                        for (Component comp1 : container.getComponents())
+                            next.add(comp1);
+                    }
+                }
+            }
+            children.clear();
+            children.addAll(next);
+            next.clear();
+        }
+        return null;
+    }
     /**
      * Show an error message
      * 

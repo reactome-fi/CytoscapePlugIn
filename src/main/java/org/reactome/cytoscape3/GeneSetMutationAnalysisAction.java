@@ -95,14 +95,16 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         }
         // Create and display a network based on the user's input and the
         // data in the FI database.
-        GeneSetMutationAnalysisTaskFactory gsmaFactory = new GeneSetMutationAnalysisTaskFactory(
-                desktopApp, gui.getFileFormat(), file, gui.chooseHomoGenes(),
-                gui.useLinkers(), gui.getUnlinkedGeneBox().isSelected(), gui
-                        .getUnlinkedGeneBox().isEnabled(), gui
-                        .showFIAnnotationsBeFetched(), gui
-                        .getSampleCutoffValue(), networkFactory, netManager,
-                viewFactory, viewManager, tableFactory, tableManager, tm);
-        tm.execute(gsmaFactory.createTaskIterator());
+        
+        Thread t = new Thread(new GeneSetMutationAnalysisTask(gui));
+        t.start();
+//        GeneSetMutationAnalysisTaskFactory gsmaFactory = new GeneSetMutationAnalysisTaskFactory(
+//                desktopApp, gui.getFileFormat(), file, gui.chooseHomoGenes(),
+//                gui.useLinkers(), gui.getUnlinkedGeneBox().isSelected(), gui
+//                        .getUnlinkedGeneBox().isEnabled(), gui
+//                        .showFIAnnotationsBeFetched(), gui
+//                        .getSampleCutoffValue(), networkFactory, netManager,
+//                viewFactory, viewManager, tableFactory, tableManager, tm);
 
     }
 

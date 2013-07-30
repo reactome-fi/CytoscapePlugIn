@@ -6,6 +6,8 @@ import org.cytoscape.model.CyTable;
 public interface TableFormatter
 {
 
+    public abstract void makeBasicTableColumns(CyNetwork network);
+    
     public abstract void makeGeneSetMutationAnalysisTables(CyNetwork network);
 
     public abstract void makeModuleAnalysisTables(CyNetwork network);

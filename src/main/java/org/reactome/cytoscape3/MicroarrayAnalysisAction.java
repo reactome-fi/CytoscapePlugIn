@@ -1,6 +1,7 @@
 package org.reactome.cytoscape3;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,22 +27,6 @@ public class MicroarrayAnalysisAction extends FICytoscapeAction
     @Override
     public void actionPerformed(ActionEvent e)
     {
-//        Map<ServiceReference, CySwingApplication> servRefToService = null;
-//        try
-//        {
-//            servRefToService = PlugInScopeObjectManager.getManager().getCySwingApp();
-//            for (Object service : servRefToService.entrySet())
-//            {
-//                if (service instanceof CySwingApplication)
-//                    this.desktopApp = (CySwingApplication) service;
-//            }
-//
-//        }
-//        catch (Throwable t)
-//        {
-//            JOptionPane.showMessageDialog(null, "An error occurred in retrieving services;\nPlease try again.", "OSGi Service Error", JOptionPane.ERROR_MESSAGE);
-//            return;
-//        }
         if (!createNewSession())
         {
             return;
@@ -50,8 +35,19 @@ public class MicroarrayAnalysisAction extends FICytoscapeAction
         gui.setLocationRelativeTo(desktopApp.getJFrame());
         gui.setModal(true);
         gui.setVisible(true);
-        //Instantiate task factory
-        //Run task factory's createIterator method
+        if (!gui.isOkClicked())
+            return;
+        final File file = gui.getSelectedFile();
+        if (file == null || !file.exists())
+        {
+            JOptionPane.showMessageDialog(desktopApp.getJFrame(), 
+                    "No file is chosen or the selected file doesn't exist!", 
+                    "Error in File", 
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        Thread t = new Thread(new MicroarrayAnalysisTask(gui));
+        t.start();
     }
 
 }

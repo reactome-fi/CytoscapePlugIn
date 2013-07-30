@@ -12,71 +12,19 @@ import javax.swing.JProgressBar;
 import javax.swing.border.TitledBorder;
 
 import org.cytoscape.application.swing.CySwingApplication;
+import org.gk.util.ProgressPane;
 
-public class FIProgressBar extends JDialog
+@SuppressWarnings("serial")
+public class FIProgressBar extends ProgressPane
 {
     JProgressBar progressBar;
     private CySwingApplication desktopApp;
     private String status = "";
     private boolean isVisible = true;
     
-    public FIProgressBar(String title)
+    public FIProgressBar()
     {
-        init(title);
-    }
-    
-    private void init(String title)
-    {
-        setTitle(title);
-        JPanel panel = new JPanel();
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
-        this.desktopApp = desktopApp;
-        progressBar = new JProgressBar();
-        progressBar.setValue(0);
-        progressBar.setIndeterminate(true);
-        progressBar.setStringPainted(true);
-        JPanel statusPanel = new JPanel();
-        JPanel progPanel = new JPanel();
-        JLabel statusLabel = new JLabel("Status: " + this.status);
-        statusPanel.add(statusLabel);
-        progPanel.add(progressBar);
-        panel.add(statusPanel);
-        panel.add(progPanel);
-        add(panel);
-        setSize(300, 150);
-        setLocationRelativeTo(getOwner());
-        setVisible(isVisible);
 
     }
     
-    public void setProgress(int i)
-    {
-        progressBar.setValue(i);
-        
-    }
-    
-    public void setStatusMessage(String status)
-    {
-        this.status  = status;
-    }
-    
-    public void setWaitCursor()
-    {
-        desktopApp.getJFrame().getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-    }
-    
-    public void unsetWaitCursor()
-    {
-        desktopApp.getJFrame().getContentPane().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-    }
-    public void hide()
-    {
-        this.isVisible = false;
-    }
-    public void unhide()
-    {
-        this.isVisible = true;
-    }
 }

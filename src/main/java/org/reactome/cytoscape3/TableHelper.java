@@ -23,15 +23,19 @@ public class TableHelper
     {
     }
 
-    public void storeFINetworkVersion(CyNetworkView view)
+    public void storeFINetworkVersion(CyNetwork network)
     {
-        CyTable netTable = view.getModel().getDefaultNetworkTable();
+        CyTable netTable = network.getDefaultNetworkTable();
         String version = PlugInScopeObjectManager.getManager()
                 .getFiNetworkVersion();
-        netTable.getRow(view.getModel().getSUID()).set(FI_NETWORK_VERSION,
+        netTable.getRow(network.getSUID()).set(FI_NETWORK_VERSION,
                 version);
     }
-
+    public void storeFINetworkVersion(CyNetworkView view)
+    {
+        storeFINetworkVersion(view.getModel());
+    }
+    
     public String getStoredFINetworkVersion(CyNetworkView view)
     {
         CyTable netTable = view.getModel().getDefaultNetworkTable();
@@ -78,11 +82,15 @@ public class TableHelper
         return null;
     }
 
+    public void storeClusteringType(CyNetwork network, String clusteringType)
+    {
+        CyTable netTable = network.getDefaultNetworkTable();
+        Long netSUID = network.getSUID();
+        netTable.getRow(netSUID).set("clustering_Type", clusteringType);
+    }
     public void storeClusteringType(CyNetworkView view, String clusteringType)
     {
-        CyTable netTable = view.getModel().getDefaultNetworkTable();
-        Long netSUID = view.getModel().getSUID();
-        netTable.getRow(netSUID).set("clustering_Type", clusteringType);
+        storeClusteringType(view.getModel(), clusteringType);
     }
 
     public String getClusteringType(CyNetwork network)

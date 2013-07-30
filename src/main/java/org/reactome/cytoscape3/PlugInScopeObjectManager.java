@@ -18,13 +18,17 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.view.model.events.NetworkViewAboutToBeDestroyedEvent;
+import org.cytoscape.view.model.events.NetworkViewAboutToBeDestroyedListener;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @author wgm ported July 2013 by Eric T Dawson
  */
-public class PlugInScopeObjectManager
+public class PlugInScopeObjectManager implements NetworkViewAboutToBeDestroyedListener
 {
     private static Logger logger = LoggerFactory
             .getLogger(PlugInScopeObjectManager.class);
@@ -51,6 +55,7 @@ public class PlugInScopeObjectManager
     private BundleContext context;
     private CySwingApplication desktopApp;
     private ServiceReference desktopAppRef;
+    private Map<Integer, Map<String, Double>> moduleToSampleToValue;
 
     private PlugInScopeObjectManager()
     {
@@ -254,10 +259,17 @@ public class PlugInScopeObjectManager
         }
         return null;
     }
-    
+
     public void releaseSingleService(ServiceReference servRef)
     {
-        context.ungetService(servRef);
+        if (servRef != null)
+            try{
+                context.ungetService(servRef);
+            }
+        catch (Throwable t){
+            getCySwingApp();
+            PlugInUtilities.showErrorMessage("Error in Releasing Service", "The Cytoscape service could not be released.");
+        }
     }
     public void releaseSingleService(Map<ServiceReference, Object> servRefToService)
     {
@@ -277,4 +289,29 @@ public class PlugInScopeObjectManager
         }
     }
     
+    public void storeModuleToSampleToValue(Map<Integer, Map<String, Double>> moduleToSampleToValue)
+    {
+        this.moduleToSampleToValue = moduleToSampleToValue;
+        
+    }
+    public Map<Integer, Map<String, Double>> getModuleToSampleToValue()
+    {
+        return this.moduleToSampleToValue;
+    }
+
+    @Override
+    public void handleEvent(NetworkViewAboutToBeDestroyedEvent e)
+    {
+        // TODO Auto-generated method stub
+        
+        //Destroy module browsers in South Cytopanel
+        
+        //Garbage collect CyTables/JTables
+        
+        //Clean up stored fields and instances.
+        
+        //Dump cytoscape services
+    }
+    
+    //TODO new session listener nulls all instances and fields
 }

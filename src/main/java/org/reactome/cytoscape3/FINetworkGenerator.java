@@ -112,7 +112,7 @@ public class FINetworkGenerator
         getCyServices();
         // Construct an empty network.
         CyNetwork network = networkFactory.createNetwork();
-        tableFormatter.makeGeneSetMutationAnalysisTables(network);
+        tableFormatter.makeBasicTableColumns(network);
         // Generate a source, edge and target for each FI interaction
         // retrieved from the Reactome database.
         int index = 0;

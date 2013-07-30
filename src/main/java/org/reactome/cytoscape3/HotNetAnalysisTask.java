@@ -24,35 +24,30 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ProgressMonitor;
 import javax.swing.border.Border;
 import javax.swing.table.AbstractTableModel;
 
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
-import org.cytoscape.work.AbstractTask;
-import org.cytoscape.work.TaskManager;
-import org.cytoscape.work.TaskMonitor;
 import org.gk.util.DialogControlPane;
+import org.gk.util.ProgressPane;
 import org.jdom.Element;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancer.MATFileLoader;
-import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkTaskFactory;
-
-
-
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.InteractionUtilities;
 
 
 
-public class HotNetAnalysisTask implements Runnable //extends AbstractTask
+public class HotNetAnalysisTask implements Runnable
 {
 
     private ActionDialogs gui;
@@ -64,6 +59,8 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
     private ServiceReference viewManagerRef;
     private CyNetworkViewFactory viewFactory;
     private ServiceReference viewFactoryRef;
+    private TableFormatterImpl tableFormatter;
+    private ServiceReference tableFormatterServRef;
     public HotNetAnalysisTask(ActionDialogs gui)
     {
         this.gui = gui;
@@ -73,20 +70,22 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
     public void run()
     {
         getCyServices();
-        FIProgressBar progBar = new FIProgressBar("HotNet Analysis");
         this.desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
-//        tm.setTitle("HotNet Analysis");
-//        tm.setProgress(.15);
-//        tm.setStatusMessage("Loading mutation file...");
+        ProgressPane progPane = new ProgressPane();
+        desktopApp.getJFrame().setGlassPane(progPane);
+        progPane.setTitle("HotNet Analysis");
+        progPane.setText("Loading HotNet mutation file...");
+        progPane.setMaximum(100);
+        progPane.setMinimum(1);
+        progPane.setSize(400, 200);
+        progPane.setVisible(true);
         try
         {
-            progBar.setWaitCursor();
-            progBar.setProgress(25);
+            
             Map<String, Set<String>> sampleToGenes = new MATFileLoader().loadSampleToGenes(file.getAbsolutePath(), 
                     false);
             Map<String, Double> geneToScore = generateGeneScoreFromSamples(sampleToGenes);
-//            tm.setStatusMessage("Doing HotNet analysis...");
-//            tm.setProgress(-1);
+            progPane.setValue(25);
             Double delta = null;
             Double fdrCutoff = null;
             if (gui.isAutoDeltaSelected())
@@ -95,24 +94,25 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
                 delta = gui.getDelta();
             Integer permutationNumber = gui.getPermutationNumber();
             RESTFulFIService fiService = new RESTFulFIService();
-            progBar.setProgress(50);
+            progPane.setText("Performing HotNet analysis...");
+            progPane.setIndeterminate(true);
             Element resultElm = fiService.doHotNetAnalysis(geneToScore, 
                     delta, 
                     fdrCutoff, 
                     permutationNumber);
             HotNetResult hotNetResult = parseResults(resultElm);
-//            tm.setProgress(.5);
-//            tm.setStatusMessage("Choosing HotNet modules...");
-            progBar.unsetWaitCursor();
+            progPane.setValue(85);
+            progPane.setIndeterminate(false);
+            progPane.setText("Choosing HotNet modules...");
             List<HotNetModule> selectedModules = displayModules(hotNetResult);
             if (selectedModules != null && !selectedModules.isEmpty())
             {
-//                tm.setProgress(.75);
-//                tm.setStatusMessage("Building FI Network...");
+                progPane.setText("Building FI network...");
+                progPane.setIndeterminate(true);
                 buildFINetwork(selectedModules,
                         sampleToGenes);
             }
-            
+           
         }
         
         catch (Exception e)
@@ -123,14 +123,13 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
                     JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
-        progBar.setVisible(false);
-        progBar.dispose();
+        desktopApp.getJFrame().getGlassPane().setVisible(false);
         releaseCyServices();
-
     }
 
     private void buildFINetwork(List<HotNetModule> modules, Map<String, Set<String>> sampleToGenes) throws Exception
     {
+        TableHelper tableHelper = new TableHelper();
         Set<String> allGenes = new HashSet<String>();
         for (HotNetModule module : modules)
             allGenes.addAll(module.genes); 
@@ -138,6 +137,7 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
         Set<String> fis = fiService.buildFINetwork(allGenes, false);
         FINetworkGenerator generator = new FINetworkGenerator();
         CyNetwork network = generator.constructFINetwork(fis);
+        tableFormatter.makeHotNetAnalysisTables(network);
         network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", "FI Network for HotNet Analysis");
         if (network == null || network.getNodeCount() <= 0)
         {
@@ -149,22 +149,30 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
             desktopApp.getJFrame().getGlassPane().setVisible(false);
             return;
         }
+        Map<String, Integer> nodeToModule = new HashMap<String, Integer>();
+        for (int i = 0; i < modules.size(); i++) {
+            HotNetModule module = modules.get(i);
+            for (String gene : module.genes)
+                nodeToModule.put(gene, i);
+        }
+        tableHelper.loadNodeAttributesByName(network, "module", nodeToModule);
+        Map<String, String> geneToSampleString = new HashMap<String, String>();
+        Map<String, Set<String>> geneToSamples = InteractionUtilities.switchKeyValues(sampleToGenes);
+        for (String gene : geneToSamples.keySet()) {
+            Set<String> samples = geneToSamples.get(gene);
+            geneToSampleString.put(gene, InteractionUtilities.joinStringElements(";", samples));
+        }
+        tableHelper.loadNodeAttributesByName(network, "samples", geneToSampleString);
         networkManager.addNetwork(network);
         CyNetworkView view = viewFactory.createNetworkView(network);
+        tableHelper.storeClusteringType(view, TableFormatterImpl.getHotNetModule());
+        tableHelper.storeDataSetType(network, TableFormatterImpl.getSampleMutationData());
+        tableHelper.storeFINetworkVersion(view);
         viewManager.addNetworkView(view);
         
         try
         {
-//            NetworkActionCollection nac = new NetworkActionCollection();
-//            ClusterFINetworkTaskFactory clusterFactory = nac.new ClusterFINetworkTaskFactory(
-//                    view);
             BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-//            ServiceReference taskMgrRef = context
-//                    .getServiceReference(TaskManager.class.getName());
-//            TaskManager taskMgr = (TaskManager) context
-//                    .getService(taskMgrRef);
-//            taskMgr.execute(clusterFactory.createTaskIterator());
-//            context.ungetService(taskMgrRef);
             ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
             FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
             visStyler.setVisualStyle(view);
@@ -172,10 +180,11 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
         }
         catch (Throwable t)
         {
-            JOptionPane.showMessageDialog(null, "The visual style could not be applied.", "Visual Style Error",
-                    JOptionPane.ERROR_MESSAGE);
+            PlugInUtilities.showErrorMessage("The visual style could not be applied.", "Visual Style Error");
         }
-        
+        ResultDisplayHelper.getHelper().showHotnetModulesInTab(modules,
+                sampleToGenes,
+                view);
     }
     private Map<String, Double> generateGeneScoreFromSamples(Map<String, Set<String>> sampleToGenes)
     {
@@ -190,11 +199,11 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
     }
     @SuppressWarnings("unchecked")
     private HotNetResult parseResults(Element resultElm) {
-        try {
-            XMLOutputter output = new XMLOutputter(Format.getPrettyFormat());
-            output.output(resultElm, System.out);
-        }
-        catch(IOException e) {}
+//        try {
+//            XMLOutputter output = new XMLOutputter(Format.getPrettyFormat());
+//            output.output(resultElm, System.out);
+//        }
+//        catch(IOException e) {}
         List<HotNetModule> modules = new ArrayList<HotNetModule>();
         HotNetResult result = new HotNetResult();
         result.modules = modules;
@@ -491,6 +500,7 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
         CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) viewFactoryRefToObj.get(servRef);
         this.viewFactory = viewFactory;
         this.viewFactoryRef = servRef;
+        
         //Get CyNetworkViewManager
         Map<ServiceReference,  Object> viewManagerRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyNetworkViewManager.class.getName());
         servRef = (ServiceReference) viewManagerRefToObj.keySet().toArray()[0];
@@ -498,6 +508,11 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
         this.viewManager = viewManager;
         this.viewManagerRef = servRef;
        
+        Map<ServiceReference, Object> tableFormatterRefToObj = PlugInScopeObjectManager.getManager().getServiceReferenceObject(TableFormatter.class.getName());
+        servRef = (ServiceReference) tableFormatterRefToObj.keySet().toArray()[0];
+        TableFormatterImpl tableFormatter = (TableFormatterImpl) tableFormatterRefToObj.get(servRef);
+        this.tableFormatter = tableFormatter;
+        this.tableFormatterServRef = servRef;
     }
     private void releaseCyServices()
     {
@@ -505,5 +520,7 @@ public class HotNetAnalysisTask implements Runnable //extends AbstractTask
         context.ungetService(networkManagerRef);
         context.ungetService(viewFactoryRef);
         context.ungetService(viewManagerRef);
+        context.ungetService(tableFormatterServRef);
     }
+
 }

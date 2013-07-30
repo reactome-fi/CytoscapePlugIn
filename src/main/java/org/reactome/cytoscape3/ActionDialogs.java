@@ -778,7 +778,7 @@ public class ActionDialogs extends JDialog
         return "GeneSet";
     }
 
-    public boolean showFIAnnotationsBeFetched()
+    public boolean shouldFIAnnotationsBeFetched()
     {
         return fetchFIAnnotations.isSelected();
     }
@@ -844,4 +844,13 @@ public class ActionDialogs extends JDialog
     public Double getFDRCutoff() {
         return new Double(fdrCutoffTF.getText().trim());
     }
+    public boolean isSelectedCorBox()
+    {
+        return corBox.isSelected();
+    }
+    public String getMclTIFPath()
+    {
+        return mclITF.getText().trim();
+    }
+    
 }

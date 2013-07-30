@@ -25,7 +25,7 @@ import org.osgi.framework.ServiceReference;
 
 public class TableFormatterImpl implements TableFormatter
 {
-    
+
     /**
      * This class contains methods for creating the necessary columns for
      * FI analysis in the default CyTables and instantiating custom CyTables
@@ -56,6 +56,10 @@ public class TableFormatterImpl implements TableFormatter
         this.mapNetworkAttrTF = mapNetworkAttrTF;
     }
 
+    public static String getHotNetModule()
+    {
+        return HOTNET_MODULE;
+    }
     public static String getFINetworkVersion()
     {
         return FI_NETWORK_VERSION;
@@ -76,22 +80,45 @@ public class TableFormatterImpl implements TableFormatter
         return SPECTRAL_PARTITION_CLUSTER;
     }
 
-    /**
-     * Creates the necessary columns in the default tables for Gene Set / Mutation Analysis
-     * @param network The network created from the input file by querying the FI database.
-     */
-    @Override
-    public void makeGeneSetMutationAnalysisTables(CyNetwork network)
+    private void makeLinkerGenesColumn(CyNetwork network)
     {
-        //Grab default tables from the network.
+        CyTable nodeTable = network.getDefaultNodeTable();
+        if (nodeTable.getColumn("isLinker") == null)
+        {
+            nodeTable.createColumn("isLinker", Boolean.class, Boolean.FALSE);
+        }
+
+    }
+    private void makeSamplesColumn(CyNetwork network)
+    {
+        CyTable nodeTable = network.getDefaultNodeTable();
+        if (nodeTable.getColumn("samples") == null)
+        {
+            nodeTable.createColumn("samples", String.class, Boolean.FALSE);
+        }
+    }
+    private void makeSampleNumberColumn(CyNetwork network)
+    {
+        CyTable nodeTable = network.getDefaultNodeTable();
+        if (nodeTable.getColumn("sampleNumber") == null)
+        {
+            nodeTable
+            .createColumn("sampleNumber", Integer.class, Boolean.FALSE);
+        }
+    }
+    private void makeNodeTypeColumn(CyNetwork network)
+    {
+        CyTable nodeTable = network.getDefaultNodeTable();
+        if (nodeTable.getColumn("nodeType") == null)
+        {
+            nodeTable.createColumn("nodeType", String.class, Boolean.FALSE);
+        }
+    }
+    public void makeBasicTableColumns(CyNetwork network)
+    {
         CyTable netTable = network.getDefaultNetworkTable();
         CyTable nodeTable = network.getDefaultNodeTable();
         CyTable edgeTable = network.getDefaultEdgeTable();
-
-        // Creates a set of columns in the default network table and creates
-        // matching virtual columns
-        // within the default edge and node tables upon network creation or
-        // network view creation.
         if (netTable.getColumn("isReactomeFINetwork") == null)
         {
             netTable.createColumn("isReactomeFINetwork", Boolean.class,
@@ -115,37 +142,46 @@ public class TableFormatterImpl implements TableFormatter
             netTable.createColumn("clustering_Type", String.class,
                     Boolean.FALSE);
         }
-        if (nodeTable.getColumn("samples") == null)
+        if (netTable.getColumn("name") == null)
         {
-            nodeTable.createColumn("samples", String.class, Boolean.FALSE);
-        }
-
-        if (nodeTable.getColumn("isLinker") == null)
-        {
-            nodeTable.createColumn("isLinker", Boolean.class, Boolean.FALSE);
-        }
-        if (nodeTable.getColumn("nodeLabel") == null)
-        {
-            nodeTable.createColumn("nodeLabel", String.class, Boolean.FALSE);
-        }
-        if (nodeTable.getColumn("sampleNumber") == null)
-        {
-            nodeTable
-                    .createColumn("sampleNumber", Integer.class, Boolean.FALSE);
-        }
-        if (nodeTable.getColumn("commonName") == null)
-        {
-            nodeTable.createColumn("commonName", String.class, Boolean.FALSE);
-        }
-        if (nodeTable.getColumn("nodeToolTip") == null)
-        {
-            nodeTable.createColumn("nodeToolTip", String.class, Boolean.FALSE);
+            netTable.createColumn("name", String.class,
+                    Boolean.FALSE);
         }
         if (edgeTable.getColumn("name") == null)
         {
             edgeTable.createColumn("name", String.class, Boolean.FALSE);
         }
-
+        if (nodeTable.getColumn("commonName") == null)
+        {
+            nodeTable.createColumn("commonName", String.class, Boolean.FALSE);
+        }
+        if (nodeTable.getColumn("name") == null)
+        {
+            nodeTable.createColumn("name", String.class, Boolean.FALSE);
+        }
+        if (nodeTable.getColumn("nodeToolTip") == null)
+        {
+            nodeTable.createColumn("nodeToolTip", String.class, Boolean.FALSE);
+        }
+        if (nodeTable.getColumn("nodeLabel") == null)
+        {
+            nodeTable.createColumn("nodeLabel", String.class, Boolean.FALSE);
+        }
+    }
+    /**
+     * Creates the necessary columns in the default tables for Gene Set / Mutation Analysis
+     * @param network The network created from the input file by querying the FI database.
+     */
+    @Override
+    public void makeGeneSetMutationAnalysisTables(CyNetwork network)
+    {
+        //Make the basic network attribute table
+        makeBasicTableColumns(network);
+        //Make the columns for Sample number, Linker Genes, and Samples.
+        //Linker genes and samples are unique to Gene Set/Mutation Analysis.
+        makeSampleNumberColumn(network);
+        makeLinkerGenesColumn(network);
+        makeSamplesColumn(network);
     }
 
     /**
@@ -182,7 +218,7 @@ public class TableFormatterImpl implements TableFormatter
         if (found == false)
         {
             CyTable moduleTable = tableFactory.createTable("Network Module",
-                    "module", Integer.class, Boolean.TRUE, Boolean.FALSE);
+                    "module", Integer.class, Boolean.FALSE, Boolean.FALSE);
             if (moduleTable.getColumn("module") == null)
             {
                 moduleTable.createColumn("module", Integer.class, Boolean.FALSE);
@@ -221,47 +257,98 @@ public class TableFormatterImpl implements TableFormatter
     @Override
     public void makeHotNetAnalysisTables(CyNetwork network)
     {
-        //Creates the attribute tables for HotNet Analysis
-        CyTable nodeTable = network.getDefaultNodeTable();
-        CyTable hotNetTable = tableFactory.createTable("HotNet Module", "module", Integer.class, Boolean.TRUE, Boolean.FALSE);
-        if (nodeTable.getColumn("module") == null)
+        //Make the basic attribute tables and the table for Samples.
+        makeBasicTableColumns(network);
+        makeSamplesColumn(network);
+        //Creates the attribute table specifically for HotNet Analysis data
+        boolean found = false;
+        Set<CyTable> tables = tableManager.getAllTables(Boolean.TRUE);
+        for (CyTable table : tables)
         {
-            nodeTable.createColumn("module", Integer.class, Boolean.FALSE);
+            if (table.getTitle().equals("HotNet Module Browser"))
+            {
+                found = true;
+                break;
+            }
         }
-        if (hotNetTable.getColumn("module") == null)
+        if (!found)
         {
-            hotNetTable.createColumn("module", Integer.class, Boolean.FALSE);
+            CyTable hotNetTable = tableFactory.createTable("HotNet Module", "module", Integer.class, Boolean.FALSE, Boolean.FALSE);
+            if (hotNetTable.getColumn("module") == null)
+            {
+                hotNetTable.createColumn("module", Integer.class, Boolean.FALSE);
+            }
+            if (hotNetTable.getColumn("Nodes in Module") == null)
+            {
+                hotNetTable.createColumn("Nodes in Module", Integer.class, Boolean.FALSE);
+            }
+            if (hotNetTable.getColumn("Node Percentage") == null)
+            {
+                hotNetTable.createColumn("Node Percentage", Integer.class,
+                        Boolean.FALSE);
+            }
+            if (hotNetTable.getColumn("Samples in Module") == null)
+            {
+                hotNetTable.createColumn("Samples in Module", Integer.class, Boolean.FALSE);
+            }
+            if (hotNetTable.getColumn("Sample Percentage") == null)
+            {
+                hotNetTable.createColumn("Sample Percentage", Double.class, Boolean.FALSE);
+            }
+            if (hotNetTable.getColumn("pvalue") == null)
+            {
+                hotNetTable.createColumn("pvalue", Double.class, Boolean.FALSE);
+            }
+            if (hotNetTable.getColumn("FDR") == null)
+            {
+                hotNetTable.createColumn("FDR", Double.class, Boolean.FALSE);
+            }
+            if (hotNetTable.getColumn("Node List") == null)
+            {
+                hotNetTable.createColumn("Node List", String.class, Boolean.FALSE);
+            }
+            tableManager.addTable(hotNetTable);
         }
-        if (hotNetTable.getColumn("Nodes in Module") == null)
+    }
+    public void makeMicroarrayAnalysisTable(CyNetwork network)
+    {
+        makeBasicTableColumns(network);
+        makeNodeTypeColumn(network);
+        boolean found = false;
+        Set<CyTable> tables = tableManager.getAllTables(Boolean.TRUE);
+        for (CyTable table : tables)
         {
-            hotNetTable.createColumn("Nodes in Module", Integer.class, Boolean.FALSE);
+            if (table.getTitle().equals("MCL Module Browser"))
+            {
+                found = true;
+                break;
+            }
         }
-        if (hotNetTable.getColumn("Node Percentage") == null)
+        if (!found)
         {
-            hotNetTable.createColumn("Node Percentage", Integer.class,
-                    Boolean.FALSE);
+            CyTable mclTable = tableFactory.createTable("MCL Module Browser", "module", Integer.class, Boolean.FALSE, Boolean.TRUE);
+            if (mclTable.getColumn("module") == null)
+            {
+                mclTable.createColumn("module", Integer.class, Boolean.FALSE);
+            }
+            if (mclTable.getColumn("nodes in Module") == null)
+            {
+                mclTable.createColumn("nodes in Module", Integer.class, Boolean.FALSE);
+            }
+            if (mclTable.getColumn("node Percentage") == null)
+            {
+                mclTable.createColumn("node Percentage", Double.class, Boolean.FALSE);
+            }
+            if (mclTable.getColumn("average Correlation") == null)
+            {
+                mclTable.createColumn("average Correlation", Double.class, Boolean.FALSE);
+            }
+            if (mclTable.getColumn("node List") == null)
+            {
+                mclTable.createColumn("node List", String.class, Boolean.FALSE);
+            }
         }
-        if (hotNetTable.getColumn("Samples in Module") == null)
-        {
-            hotNetTable.createColumn("Samples in Module", Integer.class, Boolean.FALSE);
-        }
-        if (hotNetTable.getColumn("Sample Percentage") == null)
-        {
-            hotNetTable.createColumn("Sample Percentage", Double.class, Boolean.FALSE);
-        }
-        if (hotNetTable.getColumn("pvalue") == null)
-        {
-            hotNetTable.createColumn("pvalue", Double.class, Boolean.FALSE);
-        }
-        if (hotNetTable.getColumn("FDR") == null)
-        {
-            hotNetTable.createColumn("FDR", Double.class, Boolean.FALSE);
-        }
-        if (hotNetTable.getColumn("Node List") == null)
-        {
-            hotNetTable.createColumn("Node List", String.class, Boolean.FALSE);
-        }
-        tableManager.addTable(hotNetTable);
+
     }
     /**
      * Creates the columns in a given table for a specific type of enrichment/GO analysis.
@@ -308,7 +395,7 @@ public class TableFormatterImpl implements TableFormatter
     @Override
     public void makeNetPathEnrichmentTables(CyNetwork network)
     {
-        CyTable netPathEnrichmentTable = tableFactory.createTable("Pathways in Network", "Gene Set", String.class, Boolean.TRUE, Boolean.FALSE);
+        CyTable netPathEnrichmentTable = tableFactory.createTable("Pathways in Network", "Gene Set", String.class, Boolean.FALSE, Boolean.FALSE);
         makeEnrichmentTables(network, netPathEnrichmentTable);
         tableManager.addTable(netPathEnrichmentTable);
     }
@@ -319,9 +406,9 @@ public class TableFormatterImpl implements TableFormatter
     @Override
     public void makeNetCellComponentTables(CyNetwork network)
     {
-       CyTable netCellComponentTable = tableFactory.createTable("GO CC in Network", "Gene Set", String.class, Boolean.TRUE, Boolean.FALSE);
-       makeEnrichmentTables(network, netCellComponentTable);
-       tableManager.addTable(netCellComponentTable);
+        CyTable netCellComponentTable = tableFactory.createTable("GO CC in Network", "Gene Set", String.class, Boolean.FALSE, Boolean.FALSE);
+        makeEnrichmentTables(network, netCellComponentTable);
+        tableManager.addTable(netCellComponentTable);
     }
     /**
      * Creates the table and necessary columns for analyzing network GO biological processes.
@@ -330,7 +417,7 @@ public class TableFormatterImpl implements TableFormatter
     @Override
     public void makeNetBiologicalProcessTable(CyNetwork network)
     {
-        CyTable netBiologicalProcessTable = tableFactory.createTable("GO BP in Network", "Gene Set", String.class, Boolean.TRUE, Boolean.FALSE);
+        CyTable netBiologicalProcessTable = tableFactory.createTable("GO BP in Network", "Gene Set", String.class, Boolean.FALSE, Boolean.FALSE);
         makeEnrichmentTables(network, netBiologicalProcessTable);
         tableManager.addTable(netBiologicalProcessTable);
     }
@@ -341,7 +428,7 @@ public class TableFormatterImpl implements TableFormatter
     @Override
     public void makeNetMolecularFunctionTables(CyNetwork network)
     {
-        CyTable netMolecularFunctionTable = tableFactory.createTable("GO MF in Network", "Gene Set", String.class, Boolean.TRUE, Boolean.FALSE);
+        CyTable netMolecularFunctionTable = tableFactory.createTable("GO MF in Network", "Gene Set", String.class, Boolean.FALSE, Boolean.FALSE);
         netMolecularFunctionTable.setTitle("GO MF in Network");
         makeEnrichmentTables(network, netMolecularFunctionTable);
         tableManager.addTable(netMolecularFunctionTable);
@@ -351,41 +438,41 @@ public class TableFormatterImpl implements TableFormatter
     public void makeModulePathwayAnalysisTables(CyNetwork network)
     {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void makeModuleCellComponentTables(CyNetwork network)
     {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void makeModuleMolecularFunctionTables(CyNetwork network)
     {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void makeModuleBiologicalProcessTables(CyNetwork network)
     {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void makeModuleMolecularFunctionTable(CyNetwork network)
     {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void makeModuleSurvivalAnalysisTables(CyNetwork network)
     {
         // TODO Auto-generated method stub
-        
+
     }
 }
