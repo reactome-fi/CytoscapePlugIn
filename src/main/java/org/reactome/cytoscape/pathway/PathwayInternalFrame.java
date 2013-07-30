@@ -7,15 +7,25 @@ package org.reactome.cytoscape.pathway;
 import java.awt.BorderLayout;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.List;
 
 import javax.swing.JInternalFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.persistence.DiagramGKBReader;
+import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
+import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * Customized JInternalFrame for displaying Reactome pathway diagrams.
@@ -95,6 +105,48 @@ public class PathwayInternalFrame extends JInternalFrame {
     private class CyPathwayEditor extends PathwayEditor {
         
         public CyPathwayEditor() {
+            init();
+        }
+        
+        private void init() {
+            addMouseListener(new MouseAdapter() {
+
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (e.isPopupTrigger())
+                        doPopup(e);
+                }
+
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    if (e.isPopupTrigger())
+                        doPopup(e);
+                }
+                
+            });
+        }
+        
+        private void doPopup(MouseEvent e) {
+            List<?> selection = getSelection();
+            if (selection.size() != 1)
+                return;
+            Renderable r = (Renderable) selection.get(0);
+            final Long dbId = r.getReactomeId();
+            if (dbId == null)
+                return;
+            JPopupMenu popup = new JPopupMenu();
+            JMenuItem showDetailed = new JMenuItem("View in Reactome");
+            showDetailed.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
+                    String url = reactomeURL + dbId;
+                    PlugInUtilities.openURL(url);
+                }
+            });
+            popup.add(showDetailed);
+            popup.show(this, e.getX(), e.getY());
         }
         
         @Override

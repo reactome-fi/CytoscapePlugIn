@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyVetoException;
 import java.util.List;
 
 import javax.swing.Icon;
@@ -23,6 +24,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
@@ -38,6 +41,7 @@ import org.cytoscape.work.TaskMonitor;
 import org.gk.model.ReactomeJavaConstants;
 import org.jdom.Element;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * A customized JPanel that is used to display an event tree loaded via RESTful API.
@@ -46,6 +50,8 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  */
 public class EventTreePane extends JPanel {
     private JTree eventTree;
+    // A flag to syncrhonize selection
+    private boolean selectionFromTree;
     
     /**
      * Default constructor
@@ -113,6 +119,53 @@ public class EventTreePane extends JPanel {
             }
             
         });
+        
+        // In order to synchronize selection
+        eventTree.addTreeSelectionListener(new TreeSelectionListener() {
+            
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
+                if (selectionFromTree)
+                    return;
+                selectionFromTree = true;
+                highlightDiagramForSelection();
+                selectionFromTree = false;
+            }
+        });
+    }
+    
+    /**
+     * Highlight pathway diagram for a selected event in the tree. The highlight (aka selection) is 
+     * implemented as following:
+     * 1). All PathwayInternalFrames registered will be checked.
+     * 2). The selected event in a pathway diagram will be highlighted if it is drawn as a box (for pathway)
+     * or as edge (for reaction)
+     * 3). If the selected event is not drawn in a pathway diagram, its contained sub-pathways and reactions
+     * will be checked. However, only the parent pathway diagram for the selected event will be checked.
+     */
+    private void highlightDiagramForSelection() {
+        if (eventTree.getSelectionCount() == 0) {
+            // De-selection anything
+            PathwayDiagramRegistry.getRegistry().clearSelection();
+            return; 
+        }
+        TreePath treePath = eventTree.getSelectionPath();
+        DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+        EventObject selectedEvent = (EventObject) treeNode.getUserObject();
+        // Find a pathway diagram and select it
+        for (Object obj : treePath.getPath()) {
+            treeNode = (DefaultMutableTreeNode) obj;
+            if (treeNode.getUserObject() == null)
+                continue; // This should be the root
+            // Don't need to check the last event
+            EventObject event = (EventObject) treeNode.getUserObject();
+            if (event == selectedEvent)
+                continue;
+            if (event.hasDiagram)
+                PathwayDiagramRegistry.getRegistry().select(event.dbId, 
+                                                            selectedEvent.dbId,
+                                                            selectedEvent.isPathway);
+        }
     }
     
     /**
@@ -152,19 +205,33 @@ public class EventTreePane extends JPanel {
     }
     
     private void showTreePopup(MouseEvent e) {
-        EventObject event = getSelectedEvent();
-        if (event == null || !event.hasDiagram)
+        final EventObject event = getSelectedEvent();
+        if (event == null)
             return;
         JPopupMenu popup = new JPopupMenu();
-        JMenuItem showDiagramMenu = new JMenuItem("Show Diagram");
-        showDiagramMenu.addActionListener(new ActionListener() {
+        // Point to Reactome web site
+        JMenuItem showDetailed = new JMenuItem("View in Reactome");
+        showDetailed.addActionListener(new ActionListener() {
             
             @Override
             public void actionPerformed(ActionEvent e) {
-                showPathwayDiagram();
+                String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
+                String url = reactomeURL + event.dbId;
+                PlugInUtilities.openURL(url);
             }
         });
-        popup.add(showDiagramMenu);
+        popup.add(showDetailed);
+        if (event.hasDiagram) {
+            JMenuItem showDiagramMenu = new JMenuItem("Show Diagram");
+            showDiagramMenu.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    showPathwayDiagram();
+                }
+            });
+            popup.add(showDiagramMenu);
+        }
         popup.show(eventTree, e.getX(), e.getY());
     }
     
@@ -176,6 +243,18 @@ public class EventTreePane extends JPanel {
         EventObject event = getSelectedEvent();
         if (event == null)
             return; // In case there is nothing selected
+        // See if we have a diagram opened already
+        PathwayInternalFrame frame = PathwayDiagramRegistry.getRegistry().getPathwayFrame(event.dbId);
+        if (frame != null) {
+            try {
+                frame.setSelected(true);
+                frame.toFront();
+            }
+            catch(PropertyVetoException e) {
+                e.printStackTrace();
+            }
+            return; 
+        }
         TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
         PathwayDiagramLoadTask task = new PathwayDiagramLoadTask();
         task.setPathwayId(event.dbId);
