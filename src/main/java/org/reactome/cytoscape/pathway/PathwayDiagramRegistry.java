@@ -15,6 +15,7 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
 
+import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
@@ -38,7 +39,10 @@ public class PathwayDiagramRegistry {
     private Map<Long, PathwayInternalFrame> diagramIdToFrame;
     // Register Pathway DB_ID to PathwayDiagram ID
     private Map<Long, Long> pathwayIdToDiagramId;
+    // For handling internal frame events
     private List<InternalFrameListener> frameListeners;
+    // For selection
+    private EventSelectionMediator selectionMediator;
     // A flag to avoid a ConcurrentModficationException
     private boolean isFromCloseAll;
     
@@ -48,6 +52,7 @@ public class PathwayDiagramRegistry {
     private PathwayDiagramRegistry() {
         diagramIdToFrame = new HashMap<Long, PathwayInternalFrame>();
         pathwayIdToDiagramId = new HashMap<Long, Long>();
+        selectionMediator = new EventSelectionMediator();
     }
     
     public static PathwayDiagramRegistry getRegistry() {
@@ -65,6 +70,10 @@ public class PathwayDiagramRegistry {
             });
         }
         return registry;
+    }
+    
+    public EventSelectionMediator getEventSelectionMediator() {
+        return this.selectionMediator;
     }
     
     /**
@@ -139,13 +148,14 @@ public class PathwayDiagramRegistry {
      * @param frame
      */
     public void register(final Long diagramId,
-                         PathwayInternalFrame frame) {
+                         final PathwayInternalFrame frame) {
         diagramIdToFrame.put(diagramId, frame);
         // In order to remove this registry if the passed frame is closed
         frame.addInternalFrameListener(new InternalFrameAdapter() {
 
             @Override
             public void internalFrameClosed(InternalFrameEvent e) {
+                selectionMediator.removeEventSelectionListener(frame);
                 if (isFromCloseAll)
                     return; // Don't do anything
                 diagramIdToFrame.remove(diagramId);
@@ -158,27 +168,32 @@ public class PathwayDiagramRegistry {
                         it.remove();
                     }
                 }
-            }
+            }            
             
         });
         if (frameListeners != null && frameListeners.size() > 0) {
             for (InternalFrameListener listener : frameListeners)
                 frame.addInternalFrameListener(listener);
         }
-        // Use another thread to fetch all pathways related to this diagrams
-        fetchPathwaysForDiagram(diagramId);
+        selectionMediator.addEventSelectionListener(frame);
+        fetchPathwaysForDiagram(frame,
+                                diagramId);
     }
     
-    private void fetchPathwaysForDiagram(Long diagramId) {
+    private void fetchPathwaysForDiagram(PathwayInternalFrame frame,
+                                         Long diagramId) {
         try {
             Element diagramElm = ReactomeRESTfulService.getService().queryById(diagramId, 
                                                                                ReactomeJavaConstants.PathwayDiagram);
             List<?> children = diagramElm.getChildren(ReactomeJavaConstants.representedPathway);
+            List<Long> pathwayIds = new ArrayList<Long>();
             for (Object obj : children) {
                 Element elm = (Element) obj;
                 Long dbId = new Long(elm.getChildText("dbId"));
                 pathwayIdToDiagramId.put(dbId, diagramId);
+                pathwayIds.add(dbId);
             }
+            frame.setPathwayIds(pathwayIds);
         }
         catch (Exception e) {
             e.printStackTrace();

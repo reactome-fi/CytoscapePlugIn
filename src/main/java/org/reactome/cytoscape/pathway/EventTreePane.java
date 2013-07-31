@@ -48,10 +48,10 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  * @author gwu
  *
  */
-public class EventTreePane extends JPanel {
+public class EventTreePane extends JPanel implements EventSelectionListener {
     private JTree eventTree;
-    // A flag to syncrhonize selection
-    private boolean selectionFromTree;
+    // To control tree selection event firing
+    private TreeSelectionListener selectionListener;
     
     /**
      * Default constructor
@@ -120,20 +120,66 @@ public class EventTreePane extends JPanel {
             
         });
         
-        // In order to synchronize selection
-        eventTree.addTreeSelectionListener(new TreeSelectionListener() {
+        selectionListener = new TreeSelectionListener() {
             
             @Override
             public void valueChanged(TreeSelectionEvent e) {
-                if (selectionFromTree)
-                    return;
-                selectionFromTree = true;
-                highlightDiagramForSelection();
-                selectionFromTree = false;
+                doTreeSelection();
             }
-        });
+        };
+        
+        // In order to synchronize selection
+        eventTree.addTreeSelectionListener(selectionListener);
+        
+        PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().addEventSelectionListener(this);
     }
     
+    @Override
+    public void eventSelected(EventSelectionEvent selectionEvent) {
+        eventTree.removeTreeSelectionListener(selectionListener);
+        eventTree.clearSelection();
+        Long containerId = selectionEvent.getParentId();
+        Long eventId = selectionEvent.getEventId();
+        // Check all displayed events 
+        DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+        boolean isSelected = false;
+        for (int i = 0; i < root.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) root.getChildAt(i);
+            isSelected = selectEvent(eventId, child, model);
+            if (isSelected)
+                break;
+        }
+        if (!isSelected) {
+            // Select the container instead
+            for (int i = 0; i < root.getChildCount(); i++) {
+                DefaultMutableTreeNode child = (DefaultMutableTreeNode) root.getChildAt(i);
+                isSelected = selectEvent(containerId, child, model);
+                if (isSelected)
+                    break;
+            }
+        }
+        eventTree.addTreeSelectionListener(selectionListener);
+    }
+    
+    private boolean selectEvent(Long dbId,
+                                DefaultMutableTreeNode treeNode,
+                                DefaultTreeModel treeModel) {
+        EventObject event = (EventObject) treeNode.getUserObject();
+        if (event.dbId.equals(dbId)) {
+            TreePath treePath = new TreePath(treeModel.getPathToRoot(treeNode));
+            eventTree.setSelectionPath(treePath);
+            eventTree.scrollPathToVisible(treePath);
+            return true;
+        }
+        for (int i = 0; i < treeNode.getChildCount(); i++) {
+            DefaultMutableTreeNode childNode = (DefaultMutableTreeNode) treeNode.getChildAt(i);
+            if (selectEvent(dbId, childNode, treeModel))
+                return true;
+        }
+        return false;
+    }
+
     /**
      * Highlight pathway diagram for a selected event in the tree. The highlight (aka selection) is 
      * implemented as following:
@@ -143,13 +189,10 @@ public class EventTreePane extends JPanel {
      * 3). If the selected event is not drawn in a pathway diagram, its contained sub-pathways and reactions
      * will be checked. However, only the parent pathway diagram for the selected event will be checked.
      */
-    private void highlightDiagramForSelection() {
-        if (eventTree.getSelectionCount() == 0) {
-            // De-selection anything
-            PathwayDiagramRegistry.getRegistry().clearSelection();
-            return; 
-        }
+    private void doTreeSelection() {
         TreePath treePath = eventTree.getSelectionPath();
+        if (treePath == null)
+            return;
         DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) treePath.getLastPathComponent();
         EventObject selectedEvent = (EventObject) treeNode.getUserObject();
         // Find a pathway diagram and select it
@@ -159,12 +202,17 @@ public class EventTreePane extends JPanel {
                 continue; // This should be the root
             // Don't need to check the last event
             EventObject event = (EventObject) treeNode.getUserObject();
-            if (event == selectedEvent)
-                continue;
-            if (event.hasDiagram)
-                PathwayDiagramRegistry.getRegistry().select(event.dbId, 
-                                                            selectedEvent.dbId,
-                                                            selectedEvent.isPathway);
+            // The last event may be displayed directly 
+//            if (event == selectedEvent)
+//                continue;
+            if (event.hasDiagram) {
+                EventSelectionEvent selectionEvent = new EventSelectionEvent();
+                selectionEvent.setParentId(event.dbId);
+                selectionEvent.setEventId(selectedEvent.dbId);
+                selectionEvent.setIsPathway(selectedEvent.isPathway);
+                PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(this,
+                                                                                                            selectionEvent);
+            }
         }
     }
     
