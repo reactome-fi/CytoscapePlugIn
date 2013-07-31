@@ -31,42 +31,16 @@ import org.cytoscape.work.TaskManager;
  * 
  */
 
+@SuppressWarnings("serial")
 public class GeneSetMutationAnalysisAction extends FICytoscapeAction
 {
-
     private CySwingApplication desktopApp;
-    private TaskManager tm;
-    private CyNetworkManager netManager;
-    private SaveSessionAsTaskFactory saveSession;
-    private FileUtil fileUtil;
-    private CySessionManager sessionManager;
-    private CyNetworkFactory networkFactory;
-    private CyNetworkViewFactory viewFactory;
-    private CyNetworkViewManager viewManager;
-    private CyTableFactory tableFactory;
-    private CyTableManager tableManager;
-
+    
     // private TaskMonitor taskMonitor;
-    public GeneSetMutationAnalysisAction(TaskManager tm,
-            CyNetworkManager netManager, SaveSessionAsTaskFactory saveSession, FileUtil fileUtil,
-            CySwingApplication desktopApp, CySessionManager sessionManager,
-            CyNetworkFactory networkFactory, CyNetworkViewFactory viewFactory,
-            CyNetworkViewManager viewManager,
-            CyTableFactory tableFactory,
-            CyTableManager tableManager)
+    public GeneSetMutationAnalysisAction(CySwingApplication desktopApp)
     {
         super("Gene Set / Mutant Analysis");
         this.desktopApp = desktopApp;
-        this.tm = tm;
-        this.netManager = netManager;
-        this.saveSession = saveSession;
-        this.fileUtil = fileUtil;
-        this.sessionManager = sessionManager;
-        this.networkFactory = networkFactory;
-        this.viewFactory = viewFactory;
-        this.viewManager = viewManager;
-        this.tableFactory = tableFactory;
-        this.tableManager = tableManager;
         setPreferredMenu("Apps.Reactome FI");
         setMenuGravity(1.0f);
     }
@@ -95,17 +69,8 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         }
         // Create and display a network based on the user's input and the
         // data in the FI database.
-        
         Thread t = new Thread(new GeneSetMutationAnalysisTask(gui));
         t.start();
-//        GeneSetMutationAnalysisTaskFactory gsmaFactory = new GeneSetMutationAnalysisTaskFactory(
-//                desktopApp, gui.getFileFormat(), file, gui.chooseHomoGenes(),
-//                gui.useLinkers(), gui.getUnlinkedGeneBox().isSelected(), gui
-//                        .getUnlinkedGeneBox().isEnabled(), gui
-//                        .showFIAnnotationsBeFetched(), gui
-//                        .getSampleCutoffValue(), networkFactory, netManager,
-//                viewFactory, viewManager, tableFactory, tableManager, tm);
-
     }
 
 }

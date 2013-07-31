@@ -17,7 +17,9 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.presentation.property.ArrowShapeVisualProperty;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.view.presentation.property.LineTypeVisualProperty;
 import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
 import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
 import org.cytoscape.view.vizmap.VisualMappingManager;
@@ -69,22 +71,6 @@ public class FIVisualStyleImpl implements FIVisualStyle
         this.desktopApp = desktopApp;
     }
 
-//    public static FIVisualStyleImpl getInstance()
-//    {
-//        if (instance == null)
-//        {
-//            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-//            ServiceReference visMapRef = context.getServiceReference(VisualMappingManager.class.getName());
-//            ServiceReference visStyleFacRef = context.getServiceReference(VisualStyleFactory.class.getName());
-//            ServiceReference visMapFuncFactoryC = context.getServiceReference
-//            instance = new FIVisualStyleImpl(
-//                    visMapManager, visStyleFactory, visMapFuncFactoryC,
-//                    visMapFuncFactoryD, visMapFuncFactoryP, layoutManager,
-//                    taskManager, desktopApp);
-//        }
-//        return instance;
-//        
-//    }
     public void setVisualStyle(CyNetworkView view)
     {
         // VisualStyle style = visMapManager.getVisualStyle(view);
@@ -161,11 +147,34 @@ public class FIVisualStyleImpl implements FIVisualStyle
                 Color.BLUE);
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_WIDTH, 1.5d);
 
-        // Set the edge target/source shape based
-        // on the FI direction.
-
+        // Set the edge target arrow shape based on FI Direction
+        DiscreteMapping arrowMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("FI Direction", String.class, BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE);
+        arrowMapping.putMapValue("->", ArrowShapeVisualProperty.ARROW);
+        arrowMapping.putMapValue("|->", ArrowShapeVisualProperty.ARROW);
+        arrowMapping.putMapValue("<->", ArrowShapeVisualProperty.ARROW);
+        
+        arrowMapping.putMapValue("-|", ArrowShapeVisualProperty.T);
+        arrowMapping.putMapValue("|-|", ArrowShapeVisualProperty.T);
+        arrowMapping.putMapValue("<-|", ArrowShapeVisualProperty.T);
+        
+        fiVisualStyle.addVisualMappingFunction(arrowMapping);
+        
+        //Set the edge source arrow shape based on FI Direction
+        arrowMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("FI Direction", String.class, BasicVisualLexicon.EDGE_SOURCE_ARROW_SHAPE);
+        arrowMapping.putMapValue("<-", ArrowShapeVisualProperty.ARROW);
+        arrowMapping.putMapValue("<-|", ArrowShapeVisualProperty.ARROW);
+        arrowMapping.putMapValue("<->", ArrowShapeVisualProperty.ARROW);
+        
+        arrowMapping.putMapValue("|-", ArrowShapeVisualProperty.T);
+        arrowMapping.putMapValue("|-|", ArrowShapeVisualProperty.T);
+        arrowMapping.putMapValue("|->", ArrowShapeVisualProperty.T);
+        
+        fiVisualStyle.addVisualMappingFunction(arrowMapping);
         // Use dashed lines for predicted interactions.
-
+        DiscreteMapping edgeLineMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("FI Annotation", String.class, BasicVisualLexicon.EDGE_LINE_TYPE);
+        edgeLineMapping.putMapValue("predicted", LineTypeVisualProperty.LONG_DASH);
+        
+        fiVisualStyle.addVisualMappingFunction(edgeLineMapping);
         // Set the node size based on sample number
         int[] sampleNumberRange = getSampleNumberRange(view);
         if (sampleNumberRange != null)

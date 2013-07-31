@@ -4,7 +4,9 @@ package org.reactome.cytoscape3;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Graphics;
+import java.awt.MenuComponent;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -42,10 +44,15 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTable;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
 
@@ -73,12 +80,15 @@ public abstract class NetworkModulePanel extends JPanel implements
     protected Component closeGlue;
     protected FileUtil fileUtil;
     private CySwingApplication desktopApp;
+    private ServiceRegistration servReg;
 
     public NetworkModulePanel()
     {
         init();
         BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-        context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
+        ServiceRegistration servReg = context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
+        //The above returns null. Attempts to cache it have been futile.
+        this.servReg = servReg;
     }
     
     public NetworkModulePanel(String title)
@@ -156,21 +166,105 @@ public abstract class NetworkModulePanel extends JPanel implements
     
     private void doHideOtherNodesAction()
     {
-        // TODO Auto-generated method stub
-        
+        if (!hideOtherNodesBox.isSelected())
+        {
+            showAllEdges();
+            showAllNodes();
+        }
+        doTableSelection();
     }
+    private void showAllEdges()
+    {
+        if (this.view != null)
+        {
+            for (View<CyEdge> edgeView : view.getEdgeViews())
+            {
+                NetworkActionCollection.showEdge(edgeView);
+            }
+        }
+    }
+    
+    private void showAllNodes()
+    {
+        if (this.view != null)
+        {
+            for (View<CyNode> nodeView : view.getNodeViews())
+            {
+                NetworkActionCollection.showNode(nodeView);
+            }
+        }
+    }
+    
     private void doTableSelection()
     {
-        //TODO not implemented yet
+        //Check if there is a network view.
+        if (this.view == null)
+            return;
+        //Retrieve a selection from user input.
+        Set<String> selectedNodes = getSelectedNodes();
+        //Select the given nodes.
+        isFromTable = true;
+        if (hideOtherNodesBox.isSelected())
+        {
+            //First, show all of the edges. This is an old
+            //fix from the original app.
+            showAllEdges();
+            //Cover the corner case in which no nodes are selected.
+            if (selectedNodes.isEmpty())
+            {
+                showAllNodes();
+            }
+            else
+            {
+                showAllEdges();
+                CyTable nodeTable = view.getModel().getDefaultNodeTable();
+                for (View<CyNode> nodeView : view.getNodeViews())
+                {
+                    Long nodeSUID = nodeView.getModel().getSUID();
+                    String nodeName = nodeTable.getRow(nodeSUID).get("name", String.class);
+                    if (selectedNodes.contains(nodeName))
+                        NetworkActionCollection.showNode(nodeView);
+                    else
+                        NetworkActionCollection.hideNode(nodeView);
+                }
+            }
+            //Redraw edges. Otherwise, the edges don't appear if nodes
+            //have been hidden/unhidden.
+            showAllEdges();
+        }
+        else
+        {
+            showAllEdges();
+            for (View<CyNode> nodeView : view.getNodeViews())
+            {
+                Long nodeSUID = nodeView.getModel().getSUID();
+                String nodeName = view.getModel().getDefaultNodeTable().getRow(nodeSUID).get("name", String.class);
+                setSelectedOrUnselected(nodeView, selectedNodes.contains(nodeName));
+            }
+        }
+        isFromTable = false;
+        view.updateView();
+
+
+    }
+    private void setSelectedOrUnselected(View<CyNode> nodeView, boolean value)
+    {
+        Long nodeSUID = nodeView.getModel().getSUID();
+        CyTable nodeTable = view.getModel().getDefaultNodeTable();
+        nodeTable.getRow(nodeSUID).set("selected", value);
     }
     protected abstract NetworkModuleTableModel createTableModel();
-    
+
     public void close()
     {
-        //TODO no remove method for cytopanels
         if (container == null)
             return;
-        //container.remove(this);
+        //To have the rest of the network reappear after
+        //closing the browser panel, uncomment the next two lines.
+        //this.hideOtherNodesBox.setSelected(false);
+        //showAllEdges();
+        ((Container) container).remove(this);
+
     }
     public void setTitle(String title)
     {

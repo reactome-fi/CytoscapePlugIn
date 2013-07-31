@@ -34,8 +34,7 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
 
-public class GeneSetMutationAnalysisTask implements Runnable // extends
-                                                             // AbstractTask
+public class GeneSetMutationAnalysisTask implements Runnable
 {
     private CySwingApplication desktopApp;
     private String format;
@@ -46,14 +45,11 @@ public class GeneSetMutationAnalysisTask implements Runnable // extends
     private boolean showUnlinkedEnabled;
     private boolean fetchFIAnnotations;
     private int sampleCutoffValue;
-    private CyNetworkFactory networkFactory;
     private CyNetworkViewFactory viewFactory;
     private CyNetworkViewManager viewManager;
     private CyNetworkManager netManager;
-    private TaskManager taskManager;
     private ServiceReference tableFormatterServRef;
     private TableFormatterImpl tableFormatter;
-    private ServiceReference networkFactoryRef;
     private ServiceReference netManagerRef;
     private ServiceReference viewFactoryRef;
     private ServiceReference viewManagerRef;
@@ -75,22 +71,12 @@ public class GeneSetMutationAnalysisTask implements Runnable // extends
     {
         BundleContext context = PlugInScopeObjectManager.getManager()
                 .getBundleContext();
-
-        Map<ServiceReference, Object> netFactoryRefToObj = PlugInScopeObjectManager
-                .getManager().getServiceReferenceObject(
-                        CyNetworkFactory.class.getName());
-        ServiceReference servRef = (ServiceReference) netFactoryRefToObj
-                .keySet().toArray()[0];
-        CyNetworkFactory networkFactory = (CyNetworkFactory) netFactoryRefToObj
-                .get(servRef);
-        this.networkFactory = networkFactory;
-        this.networkFactoryRef = servRef;
-
+        
         // Get CyNetworkManager
         Map<ServiceReference, Object> netManagerRefToObj = PlugInScopeObjectManager
                 .getManager().getServiceReferenceObject(
                         CyNetworkManager.class.getName());
-        servRef = (ServiceReference) netManagerRefToObj.keySet().toArray()[0];
+        ServiceReference servRef = (ServiceReference) netManagerRefToObj.keySet().toArray()[0];
         CyNetworkManager netManager = (CyNetworkManager) netManagerRefToObj
                 .get(servRef);
         this.netManager = netManager;
@@ -116,7 +102,9 @@ public class GeneSetMutationAnalysisTask implements Runnable // extends
         this.viewManager = viewManager;
         this.viewManagerRef = servRef;
 
+        //Get CySwingApp
         this.desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+        //Get the FI table formatter.
         getTableFormatter();
     }
     
@@ -126,7 +114,6 @@ public class GeneSetMutationAnalysisTask implements Runnable // extends
         try
         {
             context.ungetService(netManagerRef);
-            context.ungetService(networkFactoryRef);
             context.ungetService(viewFactoryRef);
             context.ungetService(viewManagerRef);
             releaseTableFormatter();
@@ -279,12 +266,6 @@ public class GeneSetMutationAnalysisTask implements Runnable // extends
                 tableHelper.loadNodeAttributesByName(view, "isLinker",
                         geneToIsLinker);
             }
-            if (fetchFIAnnotations)
-            {
-                progPane.setText("Fetching FI annotations...");
-                new FIAnnotationHelper().annotateFIs(view,
-                        new RESTFulFIService(), tableHelper);
-            }
             if (view.getModel().getEdgeCount() != 0)
             {
                 for (CyEdge edge : view.getModel().getEdgeList())
@@ -292,6 +273,12 @@ public class GeneSetMutationAnalysisTask implements Runnable // extends
                     tableHelper.storeEdgeName(edge, view);
                 }
             }
+            if (fetchFIAnnotations)
+            {
+                progPane.setText("Fetching FI annotations...");
+                new EdgeActionCollection().annotateFIs(view);
+            }
+            
             BundleContext context = PlugInScopeObjectManager.getManager()
                     .getBundleContext();
             ServiceReference visHelperRef = context

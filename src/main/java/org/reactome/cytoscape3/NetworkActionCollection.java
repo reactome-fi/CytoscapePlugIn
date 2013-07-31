@@ -17,15 +17,21 @@ import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
+import org.cytoscape.model.events.NetworkAboutToBeDestroyedEvent;
+import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
+import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.AbstractTaskFactory;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
+import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.r3.graph.GeneClusterPair;
@@ -40,7 +46,7 @@ import org.reactome.r3.graph.NetworkClusterResult;
  * @author Eric T. Dawson
  * 
  */
-class NetworkActionCollection
+class NetworkActionCollection implements NetworkAboutToBeDestroyedListener
 {
     private TableHelper tableHelper;
     ServiceReference tableFormatterServRef;
@@ -85,6 +91,31 @@ class NetworkActionCollection
         context.ungetService(tableFormatterServRef);
     }
     /**
+     * A convenience method to show a node in the current network view.
+     * @param nodeView The View object for the node to show.
+     */
+    public static void showNode(View<CyNode> nodeView)
+    {
+        nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, true);
+    }
+    /**
+     * A convenience method to hide a node in the current network view.
+     * @param nodeView The View object for the node to be hidden.
+     */
+    public static void hideNode(View<CyNode> nodeView)
+    {
+        nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, false);
+    }
+    public static void showEdge(View<CyEdge> edgeView)
+    {
+        edgeView.setLockedValue(BasicVisualLexicon.EDGE_VISIBLE, true);
+    }
+    public static void hideEdge(View<CyEdge> edgeView)
+    {
+        edgeView.setLockedValue(BasicVisualLexicon.EDGE_VISIBLE, false);
+    }
+    
+    /**
      * A class for the network view right-click menu item
      * which clusters the network and a corresponding task/factory.
      * @author Eric T. Dawson
@@ -120,16 +151,6 @@ class NetworkActionCollection
                                 return;
                         }
                         clusterFINetwork(view);
-//                        ClusterFINetworkTaskFactory clusterFactory = new ClusterFINetworkTaskFactory(
-//                                view);
-//                        BundleContext context = PlugInScopeObjectManager
-//                                .getManager().getBundleContext();
-//                        ServiceReference taskMgrRef = context
-//                                .getServiceReference(TaskManager.class.getName());
-//                        TaskManager taskMgr = (TaskManager) context
-//                                .getService(taskMgrRef);
-//                        taskMgr.execute(clusterFactory.createTaskIterator());
-//                        context.ungetService(taskMgrRef);
                     }
                     catch (Throwable t)
                     {
@@ -147,44 +168,6 @@ class NetworkActionCollection
         }
 
     }
-
-    class ClusterFINetworkTaskFactory extends AbstractTaskFactory
-    {
-        private CyNetworkView view;
-
-        ClusterFINetworkTaskFactory(CyNetworkView view)
-        {
-            super();
-            this.view = view;
-        }
-
-        @Override
-        public TaskIterator createTaskIterator()
-        {
-            return new TaskIterator(new ClusterFINetworkTask(view));
-        }
-    }
-
-    class ClusterFINetworkTask extends AbstractTask
-    {
-        private CyNetworkView view;
-
-        public ClusterFINetworkTask(CyNetworkView view)
-        {
-            super();
-            this.view = view;
-        }
-
-        @Override
-        public void run(TaskMonitor tm) throws Exception
-        {
-            tm.setProgress(-1);
-            tm.setStatusMessage("Clustering FI Network...");
-            clusterFINetwork(view);
-            
-        }
-
-    }
     /**
      * A class for the network view context menu item to fetch FI annotations.
      * @author Eric T. Dawson
@@ -194,7 +177,7 @@ class NetworkActionCollection
     {
 
         @Override
-        public CyMenuItem createMenuItem(CyNetworkView view)
+        public CyMenuItem createMenuItem(final CyNetworkView view)
         {
             JMenuItem fetchFIAnnotationsMenu = new JMenuItem(
                     "Fetch FI Annotations");
@@ -205,6 +188,20 @@ class NetworkActionCollection
                 public void actionPerformed(ActionEvent e)
                 {
                     // TODO Auto-generated method stub
+                    new EdgeActionCollection().annotateFIs(view);
+                    try
+                    {
+                        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+                        ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+                        FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
+                        visStyler.setVisualStyle(view);
+                        context.ungetService(servRef);
+                    }
+                    catch (Throwable t)
+                    {
+                        JOptionPane.showMessageDialog(null, "The visual style could not be applied.", "Visual Style Error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
                     
                 }
                 
@@ -222,7 +219,7 @@ class NetworkActionCollection
         public CyMenuItem createMenuItem(CyNetworkView view)
         {
             JMenuItem netPathMenuItem = new JMenuItem(
-                    "Network Pathway Enrichment Analysis");
+                    "Pathway Enrichment");
             netPathMenuItem.addActionListener(new ActionListener()
             {
 
@@ -419,7 +416,7 @@ class NetworkActionCollection
      * @author Eric T. Dawson
      *
      */
-    class SurvivalAnalysisMenuFactory implements
+    class SurvivalAnalysisMenu implements
             CyNetworkViewContextMenuFactory
     {
 
@@ -453,6 +450,10 @@ class NetworkActionCollection
     {
         try
         {
+//            ProgressPane progPane = new ProgressPane();
+//            progPane.setText("Clustering network...");
+//            progPane.setIndeterminate(true);
+//            desktopApp.getJFrame().
             getTableFormatter();
             tableFormatter.makeModuleAnalysisTables(view.getModel());
             List<CyEdge> edgeList = view.getModel().getEdgeList();
@@ -533,5 +534,24 @@ class NetworkActionCollection
             }
         }
         return nodeToSampleSet;
+    }
+    @Override
+    public void handleEvent(NetworkAboutToBeDestroyedEvent e)
+    {
+        CyTable netTable = e.getNetwork().getDefaultNetworkTable();
+        boolean isReactomeFINetwork = netTable.getRow(e.getNetwork().getSUID()).get("isReactomeFINetwork", Boolean.class);
+        if (isReactomeFINetwork)
+        {
+            // TODO Auto-generated method stub
+
+            //Destroy module browsers in South Cytopanel
+            ResultDisplayHelper.removeAllResultsPanels(e.getNetwork());
+            //Garbage collect CyTables/JTables
+
+            //Clean up stored fields and instances.
+            
+            //Dump cytoscape services
+            
+        }
     }
 }

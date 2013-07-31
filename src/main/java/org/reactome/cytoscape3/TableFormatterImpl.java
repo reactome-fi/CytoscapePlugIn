@@ -133,10 +133,7 @@ public class TableFormatterImpl implements TableFormatter
         {
             netTable.createColumn("dataSetType", String.class, Boolean.FALSE);
         }
-        if (nodeTable.getColumn("module") == null)
-        {
-            nodeTable.createColumn("module", Integer.class, Boolean.FALSE);
-        }
+        
         if (netTable.getColumn("clustering_Type") == null)
         {
             netTable.createColumn("clustering_Type", String.class,
@@ -150,6 +147,22 @@ public class TableFormatterImpl implements TableFormatter
         if (edgeTable.getColumn("name") == null)
         {
             edgeTable.createColumn("name", String.class, Boolean.FALSE);
+        }
+        if (edgeTable.getColumn("FI Annotation") == null)
+        {
+            edgeTable.createColumn("FI Annotation", String.class, Boolean.FALSE);
+        }
+        if (edgeTable.getColumn("FI Direction") == null)
+        {
+            edgeTable.createColumn("FI Direction", String.class, Boolean.FALSE);
+        }
+        if (edgeTable.getColumn("FI Score") == null)
+        {
+            edgeTable.createColumn("FI Score", Double.class, Boolean.FALSE);
+        }
+        if (nodeTable.getColumn("module") == null)
+        {
+            nodeTable.createColumn("module", Integer.class, Boolean.FALSE);
         }
         if (nodeTable.getColumn("commonName") == null)
         {

@@ -29,6 +29,7 @@ import javax.swing.border.Border;
 import javax.swing.table.AbstractTableModel;
 
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.view.model.CyNetworkView;
@@ -105,14 +106,64 @@ public class HotNetAnalysisTask implements Runnable
             progPane.setIndeterminate(false);
             progPane.setText("Choosing HotNet modules...");
             List<HotNetModule> selectedModules = displayModules(hotNetResult);
+            CyNetwork network = null;
             if (selectedModules != null && !selectedModules.isEmpty())
             {
                 progPane.setText("Building FI network...");
                 progPane.setIndeterminate(true);
-                buildFINetwork(selectedModules,
+                network = buildFINetwork(selectedModules,
                         sampleToGenes);
             }
-           
+            TableHelper tableHelper = new TableHelper();
+            tableFormatter.makeHotNetAnalysisTables(network);
+            network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", "FI Network for HotNet Analysis");
+            if (network == null || network.getNodeCount() <= 0)
+            {
+                JOptionPane.showMessageDialog(desktopApp.getJFrame(),
+                        "Cannot find any functional interaction among provided genes.\n"
+                                + "No network can be constructed.\n"
+                                + "Note: only human gene names are supported.",
+                        "Empty Network", JOptionPane.INFORMATION_MESSAGE);
+                desktopApp.getJFrame().getGlassPane().setVisible(false);
+                return;
+            }
+            Map<String, Integer> nodeToModule = new HashMap<String, Integer>();
+            for (int i = 0; i < selectedModules.size(); i++) {
+                HotNetModule module = selectedModules.get(i);
+                for (String gene : module.genes)
+                    nodeToModule.put(gene, i);
+            }
+            tableHelper.loadNodeAttributesByName(network, "module", nodeToModule);
+            Map<String, String> geneToSampleString = new HashMap<String, String>();
+            Map<String, Set<String>> geneToSamples = InteractionUtilities.switchKeyValues(sampleToGenes);
+            for (String gene : geneToSamples.keySet()) {
+                Set<String> samples = geneToSamples.get(gene);
+                geneToSampleString.put(gene, InteractionUtilities.joinStringElements(";", samples));
+            }
+            tableHelper.loadNodeAttributesByName(network, "samples", geneToSampleString);
+            networkManager.addNetwork(network);
+            CyNetworkView view = viewFactory.createNetworkView(network);
+            tableHelper.storeClusteringType(view, TableFormatterImpl.getHotNetModule());
+            tableHelper.storeDataSetType(network, TableFormatterImpl.getSampleMutationData());
+            tableHelper.storeFINetworkVersion(view);
+            viewManager.addNetworkView(view);
+            EdgeActionCollection.setEdgeNames(view);
+            
+            try
+            {
+                BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+                ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+                FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
+                visStyler.setVisualStyle(view);
+                visStyler.setLayout();
+            }
+            catch (Throwable t)
+            {
+                PlugInUtilities.showErrorMessage("The visual style could not be applied.", "Visual Style Error");
+            }
+            ResultDisplayHelper.getHelper().showHotnetModulesInTab(selectedModules,
+                    sampleToGenes,
+                    view);
         }
         
         catch (Exception e)
@@ -127,7 +178,7 @@ public class HotNetAnalysisTask implements Runnable
         releaseCyServices();
     }
 
-    private void buildFINetwork(List<HotNetModule> modules, Map<String, Set<String>> sampleToGenes) throws Exception
+    private CyNetwork buildFINetwork(List<HotNetModule> modules, Map<String, Set<String>> sampleToGenes) throws Exception
     {
         TableHelper tableHelper = new TableHelper();
         Set<String> allGenes = new HashSet<String>();
@@ -137,54 +188,7 @@ public class HotNetAnalysisTask implements Runnable
         Set<String> fis = fiService.buildFINetwork(allGenes, false);
         FINetworkGenerator generator = new FINetworkGenerator();
         CyNetwork network = generator.constructFINetwork(fis);
-        tableFormatter.makeHotNetAnalysisTables(network);
-        network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", "FI Network for HotNet Analysis");
-        if (network == null || network.getNodeCount() <= 0)
-        {
-            JOptionPane.showMessageDialog(desktopApp.getJFrame(),
-                    "Cannot find any functional interaction among provided genes.\n"
-                            + "No network can be constructed.\n"
-                            + "Note: only human gene names are supported.",
-                    "Empty Network", JOptionPane.INFORMATION_MESSAGE);
-            desktopApp.getJFrame().getGlassPane().setVisible(false);
-            return;
-        }
-        Map<String, Integer> nodeToModule = new HashMap<String, Integer>();
-        for (int i = 0; i < modules.size(); i++) {
-            HotNetModule module = modules.get(i);
-            for (String gene : module.genes)
-                nodeToModule.put(gene, i);
-        }
-        tableHelper.loadNodeAttributesByName(network, "module", nodeToModule);
-        Map<String, String> geneToSampleString = new HashMap<String, String>();
-        Map<String, Set<String>> geneToSamples = InteractionUtilities.switchKeyValues(sampleToGenes);
-        for (String gene : geneToSamples.keySet()) {
-            Set<String> samples = geneToSamples.get(gene);
-            geneToSampleString.put(gene, InteractionUtilities.joinStringElements(";", samples));
-        }
-        tableHelper.loadNodeAttributesByName(network, "samples", geneToSampleString);
-        networkManager.addNetwork(network);
-        CyNetworkView view = viewFactory.createNetworkView(network);
-        tableHelper.storeClusteringType(view, TableFormatterImpl.getHotNetModule());
-        tableHelper.storeDataSetType(network, TableFormatterImpl.getSampleMutationData());
-        tableHelper.storeFINetworkVersion(view);
-        viewManager.addNetworkView(view);
-        
-        try
-        {
-            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-            ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-            FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
-            visStyler.setVisualStyle(view);
-            visStyler.setLayout();
-        }
-        catch (Throwable t)
-        {
-            PlugInUtilities.showErrorMessage("The visual style could not be applied.", "Visual Style Error");
-        }
-        ResultDisplayHelper.getHelper().showHotnetModulesInTab(modules,
-                sampleToGenes,
-                view);
+        return network;
     }
     private Map<String, Double> generateGeneScoreFromSamples(Map<String, Set<String>> sampleToGenes)
     {

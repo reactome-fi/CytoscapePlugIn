@@ -140,6 +140,7 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
                 networkManager.addNetwork(network);
                 CyNetworkView view = viewFactory.createNetworkView(network);
                 viewManager.addNetworkView(view);
+                EdgeActionCollection.setEdgeNames(view);
                 try
                 {
                     BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();

@@ -140,9 +140,9 @@ public class TableHelper
 
     private void setAttributeValueByName(String attributeName,
             Map<String, ?> idToValue, CyTable cyIdenTable, Long cyIdenSUID,
-            String nodeName, Class<?> type)
+            String idenName, Class<?> type)
     {
-        Object value = idToValue.get(nodeName);
+        Object value = idToValue.get(idenName);
         if (type == Integer.class)
         {
             cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Integer) value);
@@ -166,9 +166,9 @@ public class TableHelper
     {
         CyTable nodeTable = network.getDefaultNodeTable();
         Class<?> type = guessAttributeType(idToValue);
-        for (Object name2 : network.getNodeList())
+        for (CyNode node : network.getNodeList())
         {
-            CyNode node = (CyNode) name2;
+            //CyNode node = (CyNode) name2;
             Long nodeSUID = node.getSUID();
             String name = nodeTable.getRow(nodeSUID).get("name", String.class);
             setAttributeValueByName(attributeName, idToValue, nodeTable,
@@ -267,6 +267,29 @@ public class TableHelper
 
         String edgeName = sourceName + " (FI) " + targetName;
         edgeTable.getRow(edge.getSUID()).set("name", edgeName);
+    }
+
+    public void loadEdgeAttributesByName(CyNetwork network, String attr, Map<String, ?> idToValue)
+    {
+        CyTable edgeTable = network.getDefaultEdgeTable();
+        Class<?> type = guessAttributeType(idToValue);
+        for (CyEdge edge : network.getEdgeList())
+        {
+            Long edgeSUID = edge.getSUID();
+            String name = edgeTable.getRow(edgeSUID).get("name", String.class);
+            setAttributeValueByName(attr, idToValue, edgeTable, edgeSUID, name, type);
+        }
+    }
+    public void loadEdgeAttributesByName(CyNetworkView view, String attr, Map<String, ?> idToValue)
+    {
+        loadEdgeAttributesByName(view.getModel(), attr, idToValue);
+    }
+    public boolean hasEdgeAttribute(CyNetworkView view, CyEdge edge, String attr, Class<?> t)
+    {
+        CyTable edgeTable = view.getModel().getDefaultEdgeTable();
+        if (edgeTable.getRow(edge.getSUID()).get(attr, t) != null)
+            return true;
+        return false;
     }
 
 }

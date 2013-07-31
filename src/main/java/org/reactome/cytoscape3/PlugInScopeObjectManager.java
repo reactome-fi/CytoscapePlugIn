@@ -22,6 +22,9 @@ import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.model.CyTable;
+import org.cytoscape.model.events.NetworkAboutToBeDestroyedEvent;
+import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
 import org.cytoscape.view.model.events.NetworkViewAboutToBeDestroyedEvent;
 import org.cytoscape.view.model.events.NetworkViewAboutToBeDestroyedListener;
 import org.junit.Test;
@@ -37,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * 
  * @author wgm ported July 2013 by Eric T Dawson
  */
-public class PlugInScopeObjectManager implements NetworkViewAboutToBeDestroyedListener
+public class PlugInScopeObjectManager
 {
     private static Logger logger = LoggerFactory
             .getLogger(PlugInScopeObjectManager.class);
@@ -288,30 +291,16 @@ public class PlugInScopeObjectManager implements NetworkViewAboutToBeDestroyedLi
             }
         }
     }
-    
+
     public void storeModuleToSampleToValue(Map<Integer, Map<String, Double>> moduleToSampleToValue)
     {
         this.moduleToSampleToValue = moduleToSampleToValue;
-        
+
     }
     public Map<Integer, Map<String, Double>> getModuleToSampleToValue()
     {
         return this.moduleToSampleToValue;
     }
 
-    @Override
-    public void handleEvent(NetworkViewAboutToBeDestroyedEvent e)
-    {
-        // TODO Auto-generated method stub
-        
-        //Destroy module browsers in South Cytopanel
-        
-        //Garbage collect CyTables/JTables
-        
-        //Clean up stored fields and instances.
-        
-        //Dump cytoscape services
-    }
     
-    //TODO new session listener nulls all instances and fields
 }

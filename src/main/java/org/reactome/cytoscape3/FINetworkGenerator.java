@@ -45,7 +45,6 @@ public class FINetworkGenerator
     }
     public FINetworkGenerator()
     {
-       // getCyServices();
     }
     private void getTableFormatter()
     {

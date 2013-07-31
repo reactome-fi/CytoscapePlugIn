@@ -485,8 +485,7 @@ public class RESTFulFIService implements FINetworkService
             CyNode start = edge.getSource();
             CyNode end = edge.getTarget();
             // The view must be passed in because a call to getNetworkPointer()
-            // returns
-            // null. This must be a bug in the API.
+            // returns null. It is impossible to grab a network from a node or edge.
             CyTable edgeTable = view.getModel().getDefaultEdgeTable();
             // edge.getSource().getNetworkPointer().getDefaultEdgeTable();
             String edgeName = edgeTable.getRow(edge.getSUID()).get("name",
