@@ -306,7 +306,12 @@ public class NodeActionCollection
         {
             FINetworkGenerator generator = new FINetworkGenerator();
             Set<String> partners = new HashSet<String>();
-            List<Object> selected = outList.getSelectedValuesList();
+            
+           // List<Object> selected = outList.getSelectedValuesList();
+            //The below method is deprecated. When Apple updates to Java 1.7
+            //the above should be used instead. TODO
+            @SuppressWarnings("deprecation")
+            Object [] selected = outList.getSelectedValues(); 
             for (Object s : selected)
             {
                 partners.add(s.toString());
