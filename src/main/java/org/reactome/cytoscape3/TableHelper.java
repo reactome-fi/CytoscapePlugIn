@@ -292,4 +292,13 @@ public class TableHelper
         return false;
     }
 
+    public String getDataSetType(CyNetworkView view)
+    {
+        CyTable netTable = view.getModel().getDefaultNetworkTable();
+        Long netSUID = view.getModel().getSUID();
+        String dataType = null;
+        dataType = netTable.getRow(netSUID).get("dataSetType", String.class);
+        return dataType;
+    }
+
 }

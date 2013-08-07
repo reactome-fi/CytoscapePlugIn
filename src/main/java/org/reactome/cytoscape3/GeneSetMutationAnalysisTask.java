@@ -209,9 +209,8 @@ public class GeneSetMutationAnalysisTask implements Runnable
             // Fix for broken default value persistence in CyTables
             // Should be remedied in the 3.1 api
             CyTable nodeTable = network.getDefaultNodeTable();
-            for (Object name : network.getNodeList())
+            for (CyNode node : network.getNodeList())
             {
-                CyNode node = (CyNode) name;
                 Long nodeSUID = node.getSUID();
                 nodeTable.getRow(nodeSUID).set("isLinker", false);
             }
@@ -254,9 +253,8 @@ public class GeneSetMutationAnalysisTask implements Runnable
             {
                 progPane.setText("Fetching linker genes...");
                 Map<String, Boolean> geneToIsLinker = new HashMap<String, Boolean>();
-                for (Object name : network.getNodeList())
+                for (CyNode node : network.getNodeList())
                 {
-                    CyNode node = (CyNode) name;
                     Long suid = node.getSUID();
                     String nodeName = network.getDefaultNodeTable()
                             .getRow(suid).get("name", String.class);
@@ -265,13 +263,6 @@ public class GeneSetMutationAnalysisTask implements Runnable
                 }
                 tableHelper.loadNodeAttributesByName(view, "isLinker",
                         geneToIsLinker);
-            }
-            if (view.getModel().getEdgeCount() != 0)
-            {
-                for (CyEdge edge : view.getModel().getEdgeList())
-                {
-                    tableHelper.storeEdgeName(edge, view);
-                }
             }
             if (fetchFIAnnotations)
             {

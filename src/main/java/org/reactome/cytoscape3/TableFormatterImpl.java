@@ -148,6 +148,10 @@ public class TableFormatterImpl implements TableFormatter
         {
             edgeTable.createColumn("name", String.class, Boolean.FALSE);
         }
+        if (edgeTable.getColumn("EDGE_TYPE") == null)
+        {
+            edgeTable.createColumn("EDGE_TYPE", String.class, Boolean.FALSE);
+        }
         if (edgeTable.getColumn("FI Annotation") == null)
         {
             edgeTable.createColumn("FI Annotation", String.class, Boolean.FALSE);
@@ -179,6 +183,10 @@ public class TableFormatterImpl implements TableFormatter
         if (nodeTable.getColumn("nodeLabel") == null)
         {
             nodeTable.createColumn("nodeLabel", String.class, Boolean.FALSE);
+        }
+        if (nodeTable.getColumn("nodeType") == null)
+        {
+            nodeTable.createColumn("nodeType", String.class, Boolean.FALSE);
         }
     }
     /**

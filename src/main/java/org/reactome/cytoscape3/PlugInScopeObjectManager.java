@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
@@ -25,6 +26,7 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.events.NetworkAboutToBeDestroyedEvent;
 import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
+import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.events.NetworkViewAboutToBeDestroyedEvent;
 import org.cytoscape.view.model.events.NetworkViewAboutToBeDestroyedListener;
 import org.junit.Test;
@@ -34,7 +36,6 @@ import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 /**
  * A singleton to manage other singleton objects, and some utility methods.
  * 
@@ -87,7 +88,10 @@ public class PlugInScopeObjectManager
 
     public String getFiNetworkVersion()
     {
-        return this.fiNetworkVersion;
+        if (this.fiNetworkVersion != null)
+            return this.fiNetworkVersion;
+        else
+            return getDefaultFINeworkVersion();
     }
 
     public String getDefaultFINeworkVersion()
@@ -107,9 +111,8 @@ public class PlugInScopeObjectManager
     {
         this.fiNetworkVersion = fiNetworkVersion;
     }
-
     public CancerIndexSentenceDisplayFrame getCancerIndexFrame(
-            CySwingApplication desktopApp)
+            JFrame jFrame)
     {
         if (cgiFrame == null)
         {
@@ -125,7 +128,7 @@ public class PlugInScopeObjectManager
                 }
             });
             cgiFrame.setSize(800, 600);
-            cgiFrame.setLocationRelativeTo(desktopApp.getJFrame());
+            cgiFrame.setLocationRelativeTo(jFrame);
             cgiFrame.setVisible(true);
         }
         else
@@ -234,6 +237,12 @@ public class PlugInScopeObjectManager
         }
         return desktopApp;
     }
+    public JFrame getCytoscapeDesktop()
+    {
+        getCySwingApp();
+        JFrame frame = desktopApp.getJFrame();
+        return frame;
+    }
     public LinkedHashMap<ServiceReference, Object> getServiceReferenceObjectList(List<String> clazzes)
     {
         LinkedHashMap<ServiceReference, Object> refToService = new LinkedHashMap<ServiceReference, Object>();
@@ -292,15 +301,14 @@ public class PlugInScopeObjectManager
         }
     }
 
-    public void storeModuleToSampleToValue(Map<Integer, Map<String, Double>> moduleToSampleToValue)
+    public void storeMCLModuleToSampleToValue(Map<Integer, Map<String, Double>> moduleToSampleToValue)
     {
         this.moduleToSampleToValue = moduleToSampleToValue;
 
     }
-    public Map<Integer, Map<String, Double>> getModuleToSampleToValue()
+    public Map<Integer, Map<String, Double>> getMCLModuleToSampleToValue()
     {
         return this.moduleToSampleToValue;
     }
-
     
 }

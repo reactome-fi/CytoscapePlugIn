@@ -698,7 +698,7 @@ public class ActionDialogs extends JDialog
             
             hnaPanel.add(paramPane);
             
-            getContentPane().add(hnaPanel, BorderLayout.CENTER);
+            getContentPane().add(mainPane, BorderLayout.CENTER);
 
             okBtn.addActionListener(new ActionListener() {
                 

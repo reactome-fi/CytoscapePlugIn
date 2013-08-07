@@ -13,6 +13,7 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
+import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cytoscape3.HotNetAnalysisTask.HotNetModule;
 
 public class ResultDisplayHelper
@@ -190,4 +191,65 @@ public class ResultDisplayHelper
             }
         }
     }
+
+    public void displayModuleAnnotations(
+            List<ModuleGeneSetAnnotation> annotations, CyNetworkView view,
+            String type, boolean isForModule)
+    {
+        // TODO Auto-generated method stub
+        String title = null;
+        if (isForModule) {
+            if (type.equals("Pathway"))
+                title = "Pathways in Modules";
+            else
+                title = "GO " + type + " in Modules";
+        }
+        else {
+            if (type.equals("Pathway"))
+                title = "Pathways in Network";
+            else
+                title = "GO " + type + " in Network";
+        }
+        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager()
+                .getCySwingApp();
+        CytoPanel tableBrowserPane = desktopApp
+                .getCytoPanel(CytoPanelName.SOUTH);
+        boolean found = false;
+        int numComps = tableBrowserPane.getCytoPanelComponentCount();
+        int componentIndex = -1;
+        for (int i = 0; i < numComps; i++)
+        {
+            CytoPanelComponent aComp = (CytoPanelComponent) tableBrowserPane
+                    .getComponentAt(i);
+            if (aComp.getTitle().equalsIgnoreCase(title))
+            {
+                found = true;
+                componentIndex = i;
+                break;
+            }
+        }
+        if (found == false)
+        {
+            GeneSetAnnotationPanel annotationPane = null;
+            if (isForModule)
+                annotationPane = new GeneSetAnnotationPanelForModules(title);
+            else
+                annotationPane = new GeneSetAnnotationPanel(title);
+            if (tableBrowserPane.getState() == CytoPanelState.HIDE)
+            {
+                tableBrowserPane.setState(CytoPanelState.DOCK);
+            }
+            int index = tableBrowserPane.indexOfComponent(annotationPane);
+            if (index == -1) return;
+            componentIndex = index;
+            tableBrowserPane.setSelectedIndex(index);
+            tableBrowserPane.setSelectedIndex(componentIndex);
+            annotationPane.setContainer(tableBrowserPane);
+        }
+        GeneSetAnnotationPanel annotationPanel = (GeneSetAnnotationPanel) tableBrowserPane.getComponentAt(componentIndex);
+        annotationPanel.setNetworkView(view);
+        annotationPanel.setAnnotations(annotations);
+        tableBrowserPane.setSelectedIndex(componentIndex);
+    }
+
 }

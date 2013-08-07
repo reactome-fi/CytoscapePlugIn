@@ -12,6 +12,7 @@ import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
 
 import java.util.Properties;
 
+import org.cytoscape.application.swing.CyEdgeViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
@@ -34,6 +35,7 @@ import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.pathway.PathwayLoadAction;
+import org.reactome.cytoscape3.EdgeActionCollection.EdgeQueryFIMenuItem;
 import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;
 import org.reactome.cytoscape3.NetworkActionCollection.FIAnnotationFetcherMenu;
 import org.reactome.cytoscape3.NetworkActionCollection.ModuleGOBioProcessMenu;
@@ -45,9 +47,9 @@ import org.reactome.cytoscape3.NetworkActionCollection.NetworkGOCellComponentMen
 import org.reactome.cytoscape3.NetworkActionCollection.NetworkGOMolecularFunctionMenu;
 import org.reactome.cytoscape3.NetworkActionCollection.NetworkPathwayEnrichmentMenu;
 import org.reactome.cytoscape3.NetworkActionCollection.SurvivalAnalysisMenu;
+import org.reactome.cytoscape3.NodeActionCollection.CancerGeneIndexMenu;
+import org.reactome.cytoscape3.NodeActionCollection.FetchFIsMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
-
-//import org.cytoscape.application.CyApplicationManager;
 
 public class ReactomeFIBundleActivator extends AbstractCyActivator
 {
@@ -216,6 +218,25 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         registerService(context, geneCardMenu,
                 CyNodeViewContextMenuFactory.class, geneCardProps);
         
+        CancerGeneIndexMenu cgiMenu = nodeActionCollection.new CancerGeneIndexMenu();
+        Properties cgiMenuProps = new Properties();
+        cgiMenuProps.setProperty("title", "Fetch Cancer Gene Index");
+        cgiMenuProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        registerService(context, cgiMenu, CyNodeViewContextMenuFactory.class, cgiMenuProps);
+        
+        FetchFIsMenu fetchFIs = nodeActionCollection.new FetchFIsMenu();
+        Properties fetchFIsProps = new Properties();
+        fetchFIsProps.setProperty("title", "Fetch FIs");
+        fetchFIsProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        registerService(context, fetchFIs, CyNodeViewContextMenuFactory.class, fetchFIsProps);
+        
+        //Instantiate and register the context menus for edge views
+        EdgeActionCollection edgeAC = new EdgeActionCollection();
+        EdgeQueryFIMenuItem edgeQueryMenu = edgeAC.new EdgeQueryFIMenuItem();
+        Properties edgeMenuProps = new Properties();
+        edgeMenuProps.setProperty("title", "Query FI Source");
+        edgeMenuProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        registerService(context, edgeQueryMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
         //Register the listener for cleaning things up after network destruction.
         registerService(context, new NetworkActionCollection(), NetworkAboutToBeDestroyedListener.class, new Properties());
 

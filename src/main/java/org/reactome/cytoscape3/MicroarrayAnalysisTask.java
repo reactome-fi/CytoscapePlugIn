@@ -193,6 +193,7 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
         }
         Map<Integer, Map<String, Double>> moduleToSampleToValue = generateModuleToSampleToValue(
                 clusters, geneToSampleToValue);
+        PlugInScopeObjectManager.getManager().storeMCLModuleToSampleToValue(moduleToSampleToValue);
         TableHelper tableHelper = new TableHelper();
         network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", "FI Network for MCL Modules");
         tableHelper.loadNodeAttributesByName(network, "module", nodeToCluster);
@@ -506,7 +507,7 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
                         "Error in Filtering", JOptionPane.ERROR_MESSAGE);
             }
         }
-
+        
         public Map<Set<String>, Double> getSelectedClusters()
         {
             Map<Set<String>, Double> clusterToCorr = new HashMap<Set<String>, Double>();
