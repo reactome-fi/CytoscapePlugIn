@@ -170,33 +170,12 @@ public class ResultDisplayHelper
         moduleBrowser.setContainer(tableBrowserPane);
         moduleBrowser.showModules(clusters, clusterToCorr);
     }
-    public static void removeAllResultsPanels(CyNetwork network)
-    {
-        String [] titles = {"MCL Module Browser", "HotNet Module Browser", "Network Module Browser"};
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager()
-                .getCySwingApp();
-        CytoPanel tableBrowserPane = desktopApp
-                .getCytoPanel(CytoPanelName.SOUTH);
-        int numComps = tableBrowserPane.getCytoPanelComponentCount();
-        for (int i = 0; i < numComps; i++)
-        {
-            CytoPanelComponent aComp = (CytoPanelComponent) tableBrowserPane
-                    .getComponentAt(i);
-            for (String title : titles)
-            {
-                if (aComp.getTitle().equalsIgnoreCase(title))
-                {
-                    ((Container) tableBrowserPane).remove((Component) aComp);
-                }
-            }
-        }
-    }
+ 
 
     public void displayModuleAnnotations(
             List<ModuleGeneSetAnnotation> annotations, CyNetworkView view,
             String type, boolean isForModule)
     {
-        // TODO Auto-generated method stub
         String title = null;
         if (isForModule) {
             if (type.equals("Pathway"))

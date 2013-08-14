@@ -2,6 +2,7 @@ package org.reactome.cytoscape3;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -294,7 +295,8 @@ public class ModuleBasedSurvivalAnalysisHelper
     private File savePlotResult(String plotFileName, String plotResult) throws IOException
     {
         // TODO Auto-generated method stub
-        File tempFile = File.createTempFile(plotFileName, "pdf");
+        String tDir = System.getProperty("java.io.tmpdir");
+        File tempFile = new File(tDir, plotFileName);
         tempFile.deleteOnExit();
         FileUtility fu = new FileUtility();
         fu.decodeInBase64(plotResult, tempFile.getAbsolutePath());
@@ -332,11 +334,15 @@ public class ModuleBasedSurvivalAnalysisHelper
                 componentIndex = i;
                 break;
             }
+            else
+            {
+                ((Container) tabbedPane).remove(aComp);
+            }
         }
         if (found == false)
         {
             SurvivalAnalysisResultPane resultPane = new SurvivalAnalysisResultPane("Survival Analysis");
-            //tabbedPane.
+            resultPane.setSize(400, 235);
             int index = tabbedPane.indexOfComponent(resultPane);
             if (index == -1) return;
             componentIndex = index;
@@ -346,7 +352,7 @@ public class ModuleBasedSurvivalAnalysisHelper
         SurvivalAnalysisResultPane resultPane = (SurvivalAnalysisResultPane) tabbedPane.getComponentAt(componentIndex);
         tabbedPane.setSelectedIndex(componentIndex);
         resultPane.setContainer(tabbedPane);
-        resultPane.setSize(300, 235);
+        resultPane.setSize(400, 235);
         String[] results = new String[3];
         results[0] = output;
         results[1] = error;

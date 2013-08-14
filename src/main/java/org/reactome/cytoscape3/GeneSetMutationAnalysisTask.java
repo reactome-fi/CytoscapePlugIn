@@ -108,7 +108,7 @@ public class GeneSetMutationAnalysisTask implements Runnable
         getTableFormatter();
     }
     
-    private void removeCyServices()
+    private void releaseCyServices()
     {
         BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
         try
@@ -185,8 +185,6 @@ public class GeneSetMutationAnalysisTask implements Runnable
                 }
             }
 
-            CytoPanel controlPane = desktopApp.getCytoPanel(CytoPanelName.WEST);
-            int selectedIndex = controlPane.getSelectedIndex();
             progPane.setIndeterminate(true);
             progPane.setText("Constructing FI network...");
             CyNetwork network = constructFINetwork(selectedGenes, file
@@ -215,7 +213,6 @@ public class GeneSetMutationAnalysisTask implements Runnable
                 nodeTable.getRow(nodeSUID).set("isLinker", false);
             }
 
-            controlPane.setSelectedIndex(selectedIndex);
             if (sampleToGenes != null)
             {
                 geneToSampleNumber = new HashMap<String, Integer>();
@@ -267,7 +264,7 @@ public class GeneSetMutationAnalysisTask implements Runnable
             if (fetchFIAnnotations)
             {
                 progPane.setText("Fetching FI annotations...");
-                new EdgeActionCollection().annotateFIs(view);
+                EdgeActionCollection.annotateFIs(view);
             }
             
             BundleContext context = PlugInScopeObjectManager.getManager()
@@ -301,6 +298,7 @@ public class GeneSetMutationAnalysisTask implements Runnable
         }
         desktopApp.getJFrame().getGlassPane().setVisible(false);
         progPane = null;
+        releaseCyServices();
         releaseTableFormatter();
     }
 

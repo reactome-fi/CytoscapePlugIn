@@ -30,8 +30,6 @@ import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.view.vizmap.mappings.PassthroughMapping;
 import org.cytoscape.work.TaskManager;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 
 /**
  * This class provides layout/VisMap setup for a given network view. Without it,
@@ -71,6 +69,7 @@ public class FIVisualStyleImpl implements FIVisualStyle
         this.desktopApp = desktopApp;
     }
 
+    @Override
     public void setVisualStyle(CyNetworkView view)
     {
         // VisualStyle style = visMapManager.getVisualStyle(view);
@@ -85,14 +84,15 @@ public class FIVisualStyleImpl implements FIVisualStyle
             }
         }
         createVisualStyle(view);
+        view.updateView();
     }
 
+    @Override
     public void createVisualStyle(CyNetworkView view)
     {
 
         // Create a fresh visual style
-        VisualStyle fiVisualStyle = visStyleFactory
-                .createVisualStyle(FI_VISUAL_STYLE);
+        VisualStyle fiVisualStyle = visStyleFactory.createVisualStyle(FI_VISUAL_STYLE);
         CyTable tableForStyling = view.getModel().getDefaultNodeTable();
 
         // Set the default node shape and color
@@ -101,43 +101,37 @@ public class FIVisualStyleImpl implements FIVisualStyle
         Color color = new Color(0, 204, 0);
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_BORDER_PAINT,
                 color);
-        fiVisualStyle
-                .setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, color);
-        fiVisualStyle
-                .setDefaultValue(BasicVisualLexicon.NODE_TRANSPARENCY, 100);
+        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, color);
+        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_TRANSPARENCY, 100);
         // Give the nodes a label based on their name
         String nodeLabelAttrName = "nodeLabel";
-        PassthroughMapping labelFunction = (PassthroughMapping) this.visMapFuncFactoryP
-                .createVisualMappingFunction(nodeLabelAttrName, String.class,
-                        BasicVisualLexicon.NODE_LABEL);
+        PassthroughMapping labelFunction = (PassthroughMapping) this.visMapFuncFactoryP.createVisualMappingFunction(
+                nodeLabelAttrName, String.class, BasicVisualLexicon.NODE_LABEL);
         String toolTipAttrName = "nodeToolTip";
-        PassthroughMapping toolTipFunction = (PassthroughMapping) this.visMapFuncFactoryP
-                .createVisualMappingFunction(toolTipAttrName, String.class,
-                        BasicVisualLexicon.NODE_TOOLTIP);
+        PassthroughMapping toolTipFunction = (PassthroughMapping) this.visMapFuncFactoryP.createVisualMappingFunction(
+                toolTipAttrName, String.class, BasicVisualLexicon.NODE_TOOLTIP);
         fiVisualStyle.addVisualMappingFunction(labelFunction);
         fiVisualStyle.addVisualMappingFunction(toolTipFunction);
 
         // Set the node color based on module
-        DiscreteMapping colorToModuleFunction = (DiscreteMapping) this.visMapFuncFactoryD
-                .createVisualMappingFunction("module", Integer.class,
-                        BasicVisualLexicon.NODE_FILL_COLOR);
-        String moduleColors = PlugInScopeObjectManager.getManager()
-                .getProperties().getProperty("moduleColors");
+        DiscreteMapping colorToModuleFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
+                "module", Integer.class, BasicVisualLexicon.NODE_FILL_COLOR);
+        String moduleColors = PlugInScopeObjectManager.getManager().getProperties().getProperty(
+                "moduleColors");
         String[] tokens = moduleColors.split(";");
         for (int i = 0; i < tokens.length; i++)
         {
             String[] text = tokens[i].split(",");
-            Color moduleColor = new Color(Integer.parseInt(text[0]), Integer
-                    .parseInt(text[1]), Integer.parseInt(text[2]));
+            Color moduleColor = new Color(Integer.parseInt(text[0]),
+                    Integer.parseInt(text[1]), Integer.parseInt(text[2]));
             colorToModuleFunction.putMapValue(i, moduleColor);
         }
         fiVisualStyle.addVisualMappingFunction(colorToModuleFunction);
 
         // Change the node shape from the default (ellipse)
         // to diamond if the gene is a linker.
-        DiscreteMapping linkerGeneShapeFunction = (DiscreteMapping) this.visMapFuncFactoryD
-                .createVisualMappingFunction("isLinker", Boolean.class,
-                        BasicVisualLexicon.NODE_SHAPE);
+        DiscreteMapping linkerGeneShapeFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
+                "isLinker", Boolean.class, BasicVisualLexicon.NODE_SHAPE);
         boolean key = true;
         linkerGeneShapeFunction.putMapValue(key,
                 NodeShapeVisualProperty.DIAMOND);
@@ -148,40 +142,46 @@ public class FIVisualStyleImpl implements FIVisualStyle
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_WIDTH, 1.5d);
 
         // Set the edge target arrow shape based on FI Direction
-        DiscreteMapping arrowMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("FI Direction", String.class, BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE);
+        DiscreteMapping arrowMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
+                "FI Direction", String.class,
+                BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE);
         arrowMapping.putMapValue("->", ArrowShapeVisualProperty.ARROW);
         arrowMapping.putMapValue("|->", ArrowShapeVisualProperty.ARROW);
         arrowMapping.putMapValue("<->", ArrowShapeVisualProperty.ARROW);
-        
+
         arrowMapping.putMapValue("-|", ArrowShapeVisualProperty.T);
         arrowMapping.putMapValue("|-|", ArrowShapeVisualProperty.T);
         arrowMapping.putMapValue("<-|", ArrowShapeVisualProperty.T);
-        
+
         fiVisualStyle.addVisualMappingFunction(arrowMapping);
-        
-        //Set the edge source arrow shape based on FI Direction
-        arrowMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("FI Direction", String.class, BasicVisualLexicon.EDGE_SOURCE_ARROW_SHAPE);
+
+        // Set the edge source arrow shape based on FI Direction
+        arrowMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
+                "FI Direction", String.class,
+                BasicVisualLexicon.EDGE_SOURCE_ARROW_SHAPE);
         arrowMapping.putMapValue("<-", ArrowShapeVisualProperty.ARROW);
         arrowMapping.putMapValue("<-|", ArrowShapeVisualProperty.ARROW);
         arrowMapping.putMapValue("<->", ArrowShapeVisualProperty.ARROW);
-        
+
         arrowMapping.putMapValue("|-", ArrowShapeVisualProperty.T);
         arrowMapping.putMapValue("|-|", ArrowShapeVisualProperty.T);
         arrowMapping.putMapValue("|->", ArrowShapeVisualProperty.T);
-        
+
         fiVisualStyle.addVisualMappingFunction(arrowMapping);
         // Use dashed lines for predicted interactions.
-        DiscreteMapping edgeLineMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("FI Annotation", String.class, BasicVisualLexicon.EDGE_LINE_TYPE);
-        edgeLineMapping.putMapValue("predicted", LineTypeVisualProperty.LONG_DASH);
-        
+        DiscreteMapping edgeLineMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
+                "FI Annotation", String.class,
+                BasicVisualLexicon.EDGE_LINE_TYPE);
+        edgeLineMapping.putMapValue("predicted",
+                LineTypeVisualProperty.LONG_DASH);
+
         fiVisualStyle.addVisualMappingFunction(edgeLineMapping);
         // Set the node size based on sample number
         int[] sampleNumberRange = getSampleNumberRange(view);
         if (sampleNumberRange != null)
         {
-            ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) this.visMapFuncFactoryC
-                    .createVisualMappingFunction("sampleNumber", Integer.class,
-                            BasicVisualLexicon.NODE_SIZE);
+            ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) this.visMapFuncFactoryC.createVisualMappingFunction(
+                    "sampleNumber", Integer.class, BasicVisualLexicon.NODE_SIZE);
             Integer lowerSampleNumberBound = sampleNumberRange[0];
             BoundaryRangeValues<Integer> lowerBoundary = new BoundaryRangeValues<Integer>(
                     30, 30, 30);
@@ -199,11 +199,11 @@ public class FIVisualStyleImpl implements FIVisualStyle
         view.updateView();
     }
 
+    @Override
     public int[] getSampleNumberRange(CyNetworkView view)
     {
-        Map<Long, Object> idToSampleNumber = new TableHelper()
-                .getNodeTableValuesBySUID(view.getModel(), "sampleNumber",
-                        Integer.class);
+        Map<Long, Object> idToSampleNumber = new TableHelper().getNodeTableValuesBySUID(
+                view.getModel(), "sampleNumber", Integer.class);
         if (idToSampleNumber == null || idToSampleNumber.isEmpty())
             return null;
         Set<Object> set = new HashSet<Object>(idToSampleNumber.values());
@@ -219,6 +219,7 @@ public class FIVisualStyleImpl implements FIVisualStyle
         { min, max };
     }
 
+    @Override
     public JMenuItem getyFilesOrganic()
     {
         JMenu yFilesMenu = null;
@@ -240,7 +241,7 @@ public class FIVisualStyleImpl implements FIVisualStyle
         return organicMenuItem;
     }
 
-
+    @Override
     public void setLayout()
     {
         // Set the desired layout (yFiles Organic)
@@ -248,8 +249,10 @@ public class FIVisualStyleImpl implements FIVisualStyle
         // the new layout, as yFiles layouts are not available
         // for programmatic use.
         JMenuItem yFilesOrganicMenuItem = getyFilesOrganic();
-        if (yFilesOrganicMenuItem != null) 
+        if (yFilesOrganicMenuItem != null)
+        {
             yFilesOrganicMenuItem.doClick();
+        }
     }
 
 }

@@ -19,6 +19,7 @@ import org.cytoscape.model.CyNetworkTableManager;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
+import org.cytoscape.model.SavePolicy;
 import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -119,6 +120,10 @@ public class TableFormatterImpl implements TableFormatter
         CyTable netTable = network.getDefaultNetworkTable();
         CyTable nodeTable = network.getDefaultNodeTable();
         CyTable edgeTable = network.getDefaultEdgeTable();
+        //netTable.setSavePolicy(SavePolicy.SESSION_FILE);
+        //nodeTable.setSavePolicy(SavePolicy.SESSION_FILE);
+        //edgeTable.setSavePolicy(SavePolicy.SESSION_FILE);
+        
         if (netTable.getColumn("isReactomeFINetwork") == null)
         {
             netTable.createColumn("isReactomeFINetwork", Boolean.class,

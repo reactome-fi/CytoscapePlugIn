@@ -327,7 +327,7 @@ public class FINetworkGenerator
         size[1] = (int) 50;
     }
 
-    public void addFIs(Set<String> fis, CyNetwork network)
+    private void addFIs(Set<String> fis, CyNetwork network)
     {
         CyTable nodeTable = network.getDefaultNodeTable();
         List<CyNode> oldNodes = new ArrayList<CyNode>();
@@ -378,7 +378,7 @@ public class FINetworkGenerator
         addFIs(fis, view.getModel());
         view.updateView();
     }
-    public CyNode addFINode(String name, CyNetwork network)
+    private CyNode addFINode(String name, CyNetwork network)
     {
         CyTable nodeTable = network.getDefaultNodeTable();
         TableHelper tableHelper = new TableHelper();

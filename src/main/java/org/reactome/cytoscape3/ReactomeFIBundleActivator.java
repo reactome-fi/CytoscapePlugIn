@@ -22,6 +22,7 @@ import org.cytoscape.model.CyTableManager;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
+import org.cytoscape.model.events.NetworkDestroyedListener;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
@@ -29,6 +30,7 @@ import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.model.events.NetworkViewDestroyedListener;
 import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
 import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
@@ -38,6 +40,7 @@ import org.reactome.cytoscape.pathway.PathwayLoadAction;
 import org.reactome.cytoscape3.EdgeActionCollection.EdgeQueryFIMenuItem;
 import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;
 import org.reactome.cytoscape3.NetworkActionCollection.FIAnnotationFetcherMenu;
+import org.reactome.cytoscape3.NetworkActionCollection.LoadCancerGeneIndexForNetwork;
 import org.reactome.cytoscape3.NetworkActionCollection.ModuleGOBioProcessMenu;
 import org.reactome.cytoscape3.NetworkActionCollection.ModuleGOCellComponentMenu;
 import org.reactome.cytoscape3.NetworkActionCollection.ModuleGOMolecularFunctionMenu;
@@ -209,6 +212,12 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         survivalMenuProps.setProperty("preferredMenu", "Apps.Reactome FI.Analyze Module Functions");
         registerService(context, survivalMenu, CyNetworkViewContextMenuFactory.class, survivalMenuProps);
         
+        LoadCancerGeneIndexForNetwork fetchCGINetwork = networkMenu.new LoadCancerGeneIndexForNetwork();
+        Properties fetchCGINetprops = new Properties();
+        fetchCGINetprops.setProperty("title", "Fetch Cancer Gene Index");
+        fetchCGINetprops.setProperty("preferredMenu", "Apps.Reactome FI");
+        registerService(context, fetchCGINetwork, CyNetworkViewContextMenuFactory.class, fetchCGINetprops);
+        
         // Instantiate and register the context menus for the node views
         NodeActionCollection nodeActionCollection = new NodeActionCollection();
         GeneCardMenu geneCardMenu = nodeActionCollection.new GeneCardMenu();
@@ -238,7 +247,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         edgeMenuProps.setProperty("preferredMenu", "Apps.Reactome FI");
         registerService(context, edgeQueryMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
         //Register the listener for cleaning things up after network destruction.
-        registerService(context, new NetworkActionCollection(), NetworkAboutToBeDestroyedListener.class, new Properties());
+        FISessionCleanup sessionCleanup = new FISessionCleanup();
+        registerService(context, sessionCleanup, NetworkViewDestroyedListener.class, new Properties());
 
     }
 

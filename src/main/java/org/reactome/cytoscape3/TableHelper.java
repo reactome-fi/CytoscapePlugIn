@@ -23,6 +23,10 @@ public class TableHelper
     {
     }
 
+    public void createNewColumn(CyTable table, String columnName, Class<?> type)
+    {
+        table.createColumn(columnName, type, Boolean.FALSE);
+    }
     public void storeFINetworkVersion(CyNetwork network)
     {
         CyTable netTable = network.getDefaultNetworkTable();
@@ -288,7 +292,11 @@ public class TableHelper
     {
         CyTable edgeTable = view.getModel().getDefaultEdgeTable();
         if (edgeTable.getRow(edge.getSUID()).get(attr, t) != null)
+        {
+            if( edgeTable.getRow(edge.getSUID()).get(attr, t) instanceof String && ((String) edgeTable.getRow(edge.getSUID()).get(attr, t)).length() <= 0)
+                return false;
             return true;
+        }
         return false;
     }
 
