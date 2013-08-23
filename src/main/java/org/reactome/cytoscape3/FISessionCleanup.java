@@ -10,14 +10,30 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.session.events.SessionAboutToBeSavedEvent;
+import org.cytoscape.session.events.SessionAboutToBeSavedListener;
 import org.cytoscape.view.model.events.NetworkViewDestroyedEvent;
 import org.cytoscape.view.model.events.NetworkViewDestroyedListener;
+import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-public class FISessionCleanup implements NetworkViewDestroyedListener
+public class FISessionCleanup implements NetworkViewDestroyedListener, SessionAboutToBeSavedListener
 {
-
+    @Override
+    public void handleEvent(SessionAboutToBeSavedEvent e)
+    {
+        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        ServiceReference visMapManRef = context.getServiceReference(VisualMappingManager.class.getName());
+        VisualMappingManager visMapMan = (VisualMappingManager) context.getService(visMapManRef); 
+      //Remove FI Visual Style (fix for inability to save
+        //continuous mapping of integer values.
+        if(visMapMan.getCurrentVisualStyle().getTitle().equals("FI Network"));
+        {
+            visMapMan.removeVisualStyle(visMapMan.getCurrentVisualStyle());
+            visMapMan.setCurrentVisualStyle(visMapMan.getDefaultVisualStyle());
+        }
+    }
     @Override
     public void handleEvent(NetworkViewDestroyedEvent e)
     {
@@ -25,9 +41,11 @@ public class FISessionCleanup implements NetworkViewDestroyedListener
         // TODO Auto-generated method stub
         BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(CyNetworkManager.class.getName());
+        
         if (servRef != null)
         {
             CyNetworkManager manager = (CyNetworkManager) context.getService(servRef);
+            
             Set<CyNetwork> networkSet = manager.getNetworkSet();
             for (CyNetwork network : networkSet)
             {
@@ -48,8 +66,7 @@ public class FISessionCleanup implements NetworkViewDestroyedListener
 
                     // Dump cytoscape services
 
-                    //destroy network
-                    //manager.destroyNetwork(network);
+                    
                 }
             }
         }

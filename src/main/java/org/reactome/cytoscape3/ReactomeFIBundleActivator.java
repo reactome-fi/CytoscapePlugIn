@@ -136,6 +136,11 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         String reactomeRestfulUrl = PlugInScopeObjectManager.getManager().getProperties().getProperty("ReactomeRESTfulAPI");
         pathwayLoadAction.setReactomeRestfulURL(reactomeRestfulUrl);
         
+        //Initialize and register the FI Control Panel
+        ReactomeFIControlPanel cPanel = new ReactomeFIControlPanel();
+        Properties cPanelProps = new Properties();
+        registerAllServices(context, cPanel, cPanelProps);
+        
         // Register said Reactome FI Services with the OSGi framework.
         registerAllServices(context, gsma, new Properties());
         registerAllServices(context, maa, new Properties());

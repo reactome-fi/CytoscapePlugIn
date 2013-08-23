@@ -391,7 +391,7 @@ public class ActionDialogs extends JDialog
         Font font = new Font("Verdana", Font.BOLD, 13);
         Border etchedBorder = BorderFactory.createEtchedBorder();
         JPanel maaPanel = new JPanel();
-        
+        maaPanel.setLayout(new BoxLayout(maaPanel, BoxLayout.Y_AXIS));
         maaPanel.add(versionPane);
         JPanel filePanel = new JPanel();
         Border fileBorder = BorderFactory.createTitledBorder(etchedBorder,
@@ -486,6 +486,7 @@ public class ActionDialogs extends JDialog
         constraints.gridx = 2;
         clusterPanel.add(mclIRangeLabel, constraints);
         maaPanel.add(clusterPanel);
+        
         okBtn.addActionListener(new ActionListener() {
             
             public void actionPerformed(ActionEvent e) {

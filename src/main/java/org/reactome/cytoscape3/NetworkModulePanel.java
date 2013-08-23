@@ -318,17 +318,9 @@ public abstract class NetworkModulePanel extends JPanel implements
     
     protected void exportAnnotations() {
         // Export annotations in a text file
-        //TODO This function is broken.
         Collection<FileChooserFilter> fileFilters = new ArrayList<FileChooserFilter>();
         FileChooserFilter fileFilter = new FileChooserFilter("A file containing FI annotations", ".txt");
         fileFilters.add(fileFilter);
-//        File[] files = fileUtil.getFiles(desktopApp.getJFrame(),
-//                                         "Export Annotations",
-//                                         FileUtil.SAVE,
-//                                         fileFilters);
-//        if (files == null || files.length == 0)
-//            return;
-//        File file = files[0];
         Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
         FileChooserFilter filter = new FileChooserFilter("Annotation File", "txt");
         filters.add(filter);

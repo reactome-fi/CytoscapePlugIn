@@ -1,4 +1,4 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape3.Design;
 
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyTable;

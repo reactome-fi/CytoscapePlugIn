@@ -44,6 +44,9 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancer.MATFileLoader;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape3.Design.FINetworkService;
+import org.reactome.cytoscape3.Design.FIVisualStyle;
+import org.reactome.cytoscape3.Design.TableFormatter;
 import org.reactome.r3.util.InteractionUtilities;
 
 

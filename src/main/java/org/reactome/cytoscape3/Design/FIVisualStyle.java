@@ -1,4 +1,4 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape3.Design;
 
 import javax.swing.JMenuItem;
 

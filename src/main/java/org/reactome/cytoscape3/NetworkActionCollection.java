@@ -31,6 +31,8 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape3.Design.FIVisualStyle;
+import org.reactome.cytoscape3.Design.TableFormatter;
 import org.reactome.r3.graph.GeneClusterPair;
 import org.reactome.r3.graph.NetworkClusterResult;
 import org.reactome.r3.util.InteractionUtilities;
@@ -541,7 +543,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
 
     private void fetchNetworkCGI(final CyNetworkView view)
     {
-        // TODO Auto-generated method stub
         Thread t = new Thread()
         {
             @Override

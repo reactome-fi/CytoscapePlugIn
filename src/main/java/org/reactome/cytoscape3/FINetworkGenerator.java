@@ -41,8 +41,11 @@ import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape3.Design.FIVisualStyle;
+import org.reactome.cytoscape3.Design.NetworkGenerator;
+import org.reactome.cytoscape3.Design.TableFormatter;
 
-public class FINetworkGenerator
+public class FINetworkGenerator implements NetworkGenerator
 {
     private CyNetworkFactory networkFactory;
     private CyTableFactory tableFactory;

@@ -30,6 +30,7 @@ import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.view.vizmap.mappings.PassthroughMapping;
 import org.cytoscape.work.TaskManager;
+import org.reactome.cytoscape3.Design.FIVisualStyle;
 
 /**
  * This class provides layout/VisMap setup for a given network view. Without it,
@@ -183,11 +184,11 @@ public class FIVisualStyleImpl implements FIVisualStyle
             ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) this.visMapFuncFactoryC.createVisualMappingFunction(
                     "sampleNumber", Integer.class, BasicVisualLexicon.NODE_SIZE);
             Integer lowerSampleNumberBound = sampleNumberRange[0];
-            BoundaryRangeValues<Integer> lowerBoundary = new BoundaryRangeValues<Integer>(
-                    30, 30, 30);
+            BoundaryRangeValues<Double> lowerBoundary = new BoundaryRangeValues<Double>(
+                    30.0, 30.0, 30.0);
             Integer upperSampleNumberBound = sampleNumberRange[1];
-            BoundaryRangeValues<Integer> upperBoundary = new BoundaryRangeValues<Integer>(
-                    100, 100, 100);
+            BoundaryRangeValues<Double> upperBoundary = new BoundaryRangeValues<Double>(
+                    100.0, 100.0, 100.0);
             sampleNumberToSizeFunction.addPoint(lowerSampleNumberBound,
                     lowerBoundary);
             sampleNumberToSizeFunction.addPoint(upperSampleNumberBound,

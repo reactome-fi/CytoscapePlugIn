@@ -38,6 +38,7 @@ import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.Sentence;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape3.Design.FINetworkService;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.r3.graph.NetworkClusterResult;

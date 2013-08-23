@@ -151,20 +151,16 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
         }
     }
     
-    private void showPathwayDiagramForKEGG(String pathway,
-                                           String nodes) throws Exception {
-        // Need to get KEGG pathway id first
-        RESTFulFIService service = new RESTFulFIService();
-        String name = pathway.substring(0, pathway.length() - 3); // Remove the tag (K).
-        String id = service.queryKEGGPathwayId(name);
-        String geneIds = service.queryKEGGGeneIds(nodes);
-        KEGGLocator locator = new KEGGLocator();
-        KEGGPortType serv = locator.getKEGGPort();
-        String pathwayId = "path:hsa" + id;
-        String queryIds[] = geneIds.split(", ");
-        String url = serv.get_html_of_marked_pathway_by_objects(pathwayId, 
-                                                             queryIds);
-        PlugInUtilities.openURL(url);
+    private void showPathwayDiagramForKEGG(final String pathway,
+                                           final String nodes) throws Exception {
+        Thread t = new Thread(){
+            public void run(){
+                KEGGHelper keggHelper = new KEGGHelper();
+                keggHelper.openKeggUrl(pathway, nodes);  
+            }
+        };
+        t.start();
+        
     }
     
     private void showPathwayDetail(String pathway) {

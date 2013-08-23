@@ -23,6 +23,7 @@
 				<targetPath>org/reactome/cytoscape3</targetPath>
 				<includes>
           			<include>Config.prop</include>
+          			<include>Reactome_Logo_sq.png</include>
         		</includes>
 			</resource>
 <!-- 			<resource> -->

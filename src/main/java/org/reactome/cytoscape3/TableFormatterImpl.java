@@ -23,6 +23,7 @@ import org.cytoscape.model.SavePolicy;
 import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape3.Design.TableFormatter;
 
 public class TableFormatterImpl implements TableFormatter
 {
@@ -232,19 +233,22 @@ public class TableFormatterImpl implements TableFormatter
             nodeTable.createColumn("module", Integer.class, Boolean.FALSE);
         }
         boolean found = false;
+        CyTable moduleTable = null;
         Set<CyTable> tables = tableManager.getAllTables(Boolean.TRUE);
         for (CyTable table : tables)
         {
-            if (table.getTitle().equals("Network Module"))
+            if (table.getTitle().equals("Network Modules"))
             {
+                moduleTable = table;
                 found = true;
                 break;
             }
         }
         if (found == false)
         {
-            CyTable moduleTable = tableFactory.createTable("Network Module",
+            moduleTable = tableFactory.createTable("Network Modules",
                     "module", Integer.class, Boolean.FALSE, Boolean.FALSE);
+            tableManager.addTable(moduleTable);
             if (moduleTable.getColumn("module") == null)
             {
                 moduleTable.createColumn("module", Integer.class, Boolean.FALSE);
@@ -273,8 +277,9 @@ public class TableFormatterImpl implements TableFormatter
             }
             tableManager.addTable(moduleTable);
             //mapNetworkAttrTF.createTaskIterator(moduleTable);
-            networkTableManager.setTable(network, CyNetwork.class, CyNetwork.LOCAL_ATTRS, moduleTable);
+            networkTableManager.setTable(network, CyNetwork.class, "Modules", moduleTable);
         }
+        
     }
     /**
      * Creates the columns for HotNet analysis in the default node table and in the HotNet module-linked table.
@@ -464,35 +469,35 @@ public class TableFormatterImpl implements TableFormatter
     public void makeModulePathwayAnalysisTables(CyNetwork network)
     {
         // TODO Auto-generated method stub
-
+        CyTable table = tableFactory.createTable("ModulePathwayTable", "module", Integer.class, Boolean.FALSE, Boolean.FALSE);
     }
 
     @Override
     public void makeModuleCellComponentTables(CyNetwork network)
     {
         // TODO Auto-generated method stub
-
+        CyTable table = tableFactory.createTable("ModuleCellTable", "module", Integer.class, Boolean.FALSE, Boolean.FALSE);
     }
 
     @Override
     public void makeModuleMolecularFunctionTables(CyNetwork network)
     {
         // TODO Auto-generated method stub
-
+        CyTable table = tableFactory.createTable("ModuleMolecularTable", "module", Integer.class, Boolean.FALSE, Boolean.FALSE);
     }
 
     @Override
     public void makeModuleBiologicalProcessTables(CyNetwork network)
     {
         // TODO Auto-generated method stub
-
+        CyTable table = tableFactory.createTable("ModuleBioTable", "module", Integer.class, Boolean.FALSE, Boolean.FALSE);
     }
 
     @Override
     public void makeModuleMolecularFunctionTable(CyNetwork network)
     {
         // TODO Auto-generated method stub
-
+        //CyTable table = tableFactory.createTable("Module")
     }
 
     @Override
