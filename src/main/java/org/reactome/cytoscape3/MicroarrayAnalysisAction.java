@@ -2,14 +2,10 @@ package org.reactome.cytoscape3;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.osgi.framework.ServiceReference;
 
 public class MicroarrayAnalysisAction extends FICytoscapeAction
 {
@@ -18,7 +14,7 @@ public class MicroarrayAnalysisAction extends FICytoscapeAction
 
     public MicroarrayAnalysisAction(CySwingApplication desktopApp)
     {
-        super("Microarray Analysis");
+        super("Microarray Data Analysis");
         setPreferredMenu("Apps.Reactome FI");
         setMenuGravity(2.0f);
         this.desktopApp = desktopApp;

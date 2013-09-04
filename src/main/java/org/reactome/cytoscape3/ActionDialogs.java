@@ -11,22 +11,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JEditorPane;
-import javax.swing.JFormattedTextField;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
@@ -40,7 +25,6 @@ import org.cytoscape.util.swing.FileUtil;
 import org.gk.util.DialogControlPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.reactome.cytoscape.util.PlugInUtilities;
 
 
 /**
@@ -55,7 +39,6 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 public class ActionDialogs extends JDialog
 {
 
-    private String reactome_help_url = "http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin";
     //Gene Set / Mutation Analysis parameters
     // FI parameters and file parameters
     private JTextField sampleCutoffField;
@@ -213,7 +196,7 @@ public class ActionDialogs extends JDialog
         // for future tabbed user interfaces.
         setTitle("Reactome FI");
         JTabbedPane mainPane = new JTabbedPane();
-        setSize(475, 535);
+        setSize(500, 535);
         Font font = new Font("Verdana", Font.BOLD, 13);
 
         // Pane for FI Network version selection.

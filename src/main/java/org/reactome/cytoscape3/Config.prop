@@ -25,4 +25,4 @@ FINetworkVersions=2009 (Default),2012 (Latest)
 evidenceProperties=humanInteraction,scePPI,dmePPI,celPPI,mousePPI,genewaysPPI,pavlidisGeneExp,carlosGeneExp,pfamDomainInt,goBPSharing,probability
 evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interaction,Mouse Interaction,Geneways Interaction,Pavlidis Gene Exp,Carlos Gene Exp,PfamDomain Interaction,GO BP Sharing,Score
 #ReactomeRESTfulAPI=http://localhost:8080/ReactomeRESTfulAPI/RESTfulWS/
-ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/ReactomeRESTfulAPI/RESTfulWS/
+ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:80/ReactomeRESTfulAPI/RESTfulWS/

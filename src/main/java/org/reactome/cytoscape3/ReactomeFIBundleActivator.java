@@ -8,8 +8,6 @@ package org.reactome.cytoscape3;
  * and the OSGi R4 specs.
  * @author Eric T Dawson, July 2013
  */
-import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
-
 import java.util.Properties;
 
 import org.cytoscape.application.swing.CyEdgeViewContextMenuFactory;
@@ -17,14 +15,13 @@ import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetworkFactory;
-import org.cytoscape.model.CyNetworkTableManager;
-import org.cytoscape.model.CyTableManager;
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.CyNetworkTableManager;
 import org.cytoscape.model.CyTableFactory;
-import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
-import org.cytoscape.model.events.NetworkDestroyedListener;
+import org.cytoscape.model.CyTableManager;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.session.CySessionManager;
+import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
@@ -36,7 +33,6 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
-import org.reactome.cytoscape.pathway.PathwayLoadAction;
 import org.reactome.cytoscape3.EdgeActionCollection.EdgeQueryFIMenuItem;
 import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;
 import org.reactome.cytoscape3.NetworkActionCollection.FIAnnotationFetcherMenu;
@@ -130,11 +126,12 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         MicroarrayAnalysisAction maa = new MicroarrayAnalysisAction(desktopApp);
         UserGuideAction uga = new UserGuideAction();
         HotNetAnalysisAction hna = new HotNetAnalysisAction(desktopApp);
-        // Test code for loading pathway diagram into Cytoscape
-        PathwayLoadAction pathwayLoadAction = new PathwayLoadAction();
-        pathwayLoadAction.setBundleContext(context);
-        String reactomeRestfulUrl = PlugInScopeObjectManager.getManager().getProperties().getProperty("ReactomeRESTfulAPI");
-        pathwayLoadAction.setReactomeRestfulURL(reactomeRestfulUrl);
+        
+//        // Test code for loading pathway diagram into Cytoscape
+//        PathwayLoadAction pathwayLoadAction = new PathwayLoadAction();
+//        pathwayLoadAction.setBundleContext(context);
+//        String reactomeRestfulUrl = PlugInScopeObjectManager.getManager().getProperties().getProperty("ReactomeRESTfulAPI");
+//        pathwayLoadAction.setReactomeRestfulURL(reactomeRestfulUrl);
         
         //Initialize and register the FI Control Panel
         ReactomeFIControlPanel cPanel = new ReactomeFIControlPanel();
@@ -143,10 +140,10 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         
         // Register said Reactome FI Services with the OSGi framework.
         registerAllServices(context, gsma, new Properties());
-        registerAllServices(context, maa, new Properties());
-        registerAllServices(context, pathwayLoadAction, new Properties());
-        registerAllServices(context, uga, new Properties());
         registerAllServices(context, hna, new Properties());
+        registerAllServices(context, maa, new Properties());
+//        registerAllServices(context, pathwayLoadAction, new Properties());
+        registerAllServices(context, uga, new Properties());
 
         // Instantiate and register the context menus for the network view
         NetworkActionCollection networkMenu = new NetworkActionCollection();
@@ -254,7 +251,6 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         //Register the listener for cleaning things up after network destruction.
         FISessionCleanup sessionCleanup = new FISessionCleanup();
         registerService(context, sessionCleanup, NetworkViewDestroyedListener.class, new Properties());
-
     }
 
 }

@@ -6,21 +6,6 @@ import java.io.File;
 import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.model.CyNetworkFactory;
-import org.cytoscape.model.CyNetworkManager;
-import org.cytoscape.model.CyTableFactory;
-import org.cytoscape.model.CyTableManager;
-import org.cytoscape.session.CySession;
-import org.cytoscape.session.CySessionManager;
-import org.cytoscape.task.write.SaveSessionAsTaskFactory;
-import org.cytoscape.util.swing.FileUtil;
-import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
-import org.cytoscape.view.model.CyNetworkViewFactory;
-import org.cytoscape.view.model.CyNetworkViewManager;
-import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
-import org.cytoscape.view.vizmap.VisualMappingManager;
-import org.cytoscape.view.vizmap.VisualStyleFactory;
-import org.cytoscape.work.TaskManager;
 
 /**
  * This class manages analysis of Gene Set, NCI MAF and Gene Sample / Number
@@ -39,7 +24,7 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
     // private TaskMonitor taskMonitor;
     public GeneSetMutationAnalysisAction(CySwingApplication desktopApp)
     {
-        super("Gene Set / Mutant Analysis");
+        super("Gene Set/Mutantion Analysis");
         this.desktopApp = desktopApp;
         setPreferredMenu("Apps.Reactome FI");
         setMenuGravity(1.0f);
