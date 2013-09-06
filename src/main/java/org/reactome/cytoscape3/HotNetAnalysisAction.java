@@ -24,7 +24,7 @@ public class HotNetAnalysisAction extends FICytoscapeAction
         super("HotNet Mutation Analysis");
         this.desktopApp = desktopApp;
         setPreferredMenu("Apps.Reactome FI");
-        setMenuGravity(3.0f);
+        setMenuGravity(1.0f);
     }
 
     @Override

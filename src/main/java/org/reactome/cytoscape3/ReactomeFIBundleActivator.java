@@ -127,17 +127,6 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         UserGuideAction uga = new UserGuideAction();
         HotNetAnalysisAction hna = new HotNetAnalysisAction(desktopApp);
         
-//        // Test code for loading pathway diagram into Cytoscape
-//        PathwayLoadAction pathwayLoadAction = new PathwayLoadAction();
-//        pathwayLoadAction.setBundleContext(context);
-//        String reactomeRestfulUrl = PlugInScopeObjectManager.getManager().getProperties().getProperty("ReactomeRESTfulAPI");
-//        pathwayLoadAction.setReactomeRestfulURL(reactomeRestfulUrl);
-        
-        //Initialize and register the FI Control Panel
-        ReactomeFIControlPanel cPanel = new ReactomeFIControlPanel();
-        Properties cPanelProps = new Properties();
-        registerAllServices(context, cPanel, cPanelProps);
-        
         // Register said Reactome FI Services with the OSGi framework.
         registerAllServices(context, gsma, new Properties());
         registerAllServices(context, hna, new Properties());
@@ -163,55 +152,57 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         NetworkPathwayEnrichmentMenu netPathMenu = networkMenu.new NetworkPathwayEnrichmentMenu();
         Properties netPathProps = new Properties();
         netPathProps.setProperty("title", "Network Pathway Enrichment");
-        netPathProps.setProperty("preferredMenu", "Apps.Reactome FI.Analyze Network Functions");
+        String preferredMenuText = "Apps.Reactome FI.Analyze Network Functions[10]";
+        netPathProps.setProperty("preferredMenu", preferredMenuText);
         registerService(context, netPathMenu, CyNetworkViewContextMenuFactory.class, netPathProps);
         
         NetworkGOCellComponentMenu netGOCellMenu = networkMenu.new NetworkGOCellComponentMenu();
         Properties netGOCellProps = new Properties();
         netGOCellProps.setProperty("title", "Network GO Cell Component");
-        netGOCellProps.setProperty("preferredMenu", "Apps.Reactome FI.Analyze Network Functions");
+        netGOCellProps.setProperty("preferredMenu", preferredMenuText);
         registerService(context, netGOCellMenu, CyNetworkViewContextMenuFactory.class, netGOCellProps);
         
         NetworkGOBioProcessMenu netGOBioMenu = networkMenu.new NetworkGOBioProcessMenu();
         Properties netGOBioProps = new Properties();
         netGOBioProps.setProperty("title", "Network GO Biological Process");
-        netGOBioProps.setProperty("preferredMenu", "Apps.Reactome FI.Analyze Network Functions");
+        netGOBioProps.setProperty("preferredMenu", preferredMenuText);
         registerService(context, netGOBioMenu, CyNetworkViewContextMenuFactory.class, netGOBioProps);
         
         NetworkGOMolecularFunctionMenu netGOMolMenu = networkMenu.new NetworkGOMolecularFunctionMenu();
         Properties netGOMolProps = new Properties();
         netGOMolProps.setProperty("title", "Network GO Molecular Function");
-        netGOMolProps.setProperty("preferredMenu", "Apps.Reactome FI.Analyze Network Functions");
+        netGOMolProps.setProperty("preferredMenu", preferredMenuText);
         registerService(context, netGOMolMenu, CyNetworkViewContextMenuFactory.class, netGOMolProps);
         
         ModulePathwayEnrichmentMenu modPathMenu = networkMenu.new ModulePathwayEnrichmentMenu();
         Properties modPathProps = new Properties();
+        preferredMenuText = "Apps.Reactome FI.Analyze Module Functions[30]";
         modPathProps.setProperty("title", "Module Pathway Enrichment");
-        modPathProps.setProperty("preferredMenu", "Apps.Reactome FI.Analyze Module Functions");
+        modPathProps.setProperty("preferredMenu", preferredMenuText);
         registerService(context, modPathMenu, CyNetworkViewContextMenuFactory.class, modPathProps);
         
         ModuleGOCellComponentMenu modCellMenu = networkMenu.new ModuleGOCellComponentMenu();
         Properties modCellProps = new Properties();
         modCellProps.setProperty("title", "Module GO Cell Component");
-        modCellProps.setProperty("preferredMenu", "Apps.Reactome FI.Analyze Module Functions");
+        modCellProps.setProperty("preferredMenu", preferredMenuText);
         registerService(context, modCellMenu, CyNetworkViewContextMenuFactory.class, modCellProps);
         
         ModuleGOBioProcessMenu modBioMenu = networkMenu.new ModuleGOBioProcessMenu();
         Properties modBioProps = new Properties();
         modBioProps.setProperty("title", "Module GO Biological Process");
-        modBioProps.setProperty("preferredMenu", "Apps.Reactome FI.Analyze Module Functions");
+        modBioProps.setProperty("preferredMenu", preferredMenuText);
         registerService(context, modBioMenu, CyNetworkViewContextMenuFactory.class, modBioProps);
         
         ModuleGOMolecularFunctionMenu modMolMenu = networkMenu.new ModuleGOMolecularFunctionMenu();
         Properties modMolProps = new Properties();
         modMolProps.setProperty("title", "Module GO Molecular Function");
-        modMolProps.setProperty("preferredMenu", "Apps.Reactome FI.Analyze Module Functions");
+        modMolProps.setProperty("preferredMenu", preferredMenuText);
         registerService(context, modMolMenu, CyNetworkViewContextMenuFactory.class, modMolProps);
         
         SurvivalAnalysisMenu survivalMenu = networkMenu.new SurvivalAnalysisMenu();
         Properties survivalMenuProps = new Properties();
         survivalMenuProps.setProperty("title", "Survival Analysis");
-        survivalMenuProps.setProperty("preferredMenu", "Apps.Reactome FI.Analyze Module Functions");
+        survivalMenuProps.setProperty("preferredMenu", preferredMenuText);
         registerService(context, survivalMenu, CyNetworkViewContextMenuFactory.class, survivalMenuProps);
         
         LoadCancerGeneIndexForNetwork fetchCGINetwork = networkMenu.new LoadCancerGeneIndexForNetwork();

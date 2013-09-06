@@ -239,7 +239,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
 
             });
 
-            return new CyMenuItem(clusterMenuItem, 3.0f);
+            return new CyMenuItem(clusterMenuItem, 20.0f);
         }
 
     }
@@ -528,7 +528,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView view)
         {
-            JMenuItem loadCGIItem = new JMenuItem("Fetch Cancer Gene Index");
+            JMenuItem loadCGIItem = new JMenuItem("Load Cancer Gene Index");
             loadCGIItem.addActionListener(new ActionListener()
             {
                 @Override
@@ -537,7 +537,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                     fetchNetworkCGI(view);
                 }
             });
-            return new CyMenuItem(loadCGIItem, 15f);
+            return new CyMenuItem(loadCGIItem, 40.0f);
         }
     }
 
