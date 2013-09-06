@@ -27,6 +27,13 @@ import javax.swing.border.TitledBorder;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 
+/**
+ * A class providing a panel for managing the Reactome FI context
+ * menu functions, since menu gravity has not been implemented as
+ * of Cytoscape 3.0.2.
+ * @author Eric T. Dawson
+ *
+ */
 public class ReactomeFIControlPanel extends JPanel implements CytoPanelComponent
 {
     public ReactomeFIControlPanel()

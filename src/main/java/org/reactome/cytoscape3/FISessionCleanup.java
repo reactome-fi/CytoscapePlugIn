@@ -12,14 +12,33 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.session.events.SessionAboutToBeSavedEvent;
 import org.cytoscape.session.events.SessionAboutToBeSavedListener;
+import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.events.NetworkViewDestroyedEvent;
 import org.cytoscape.view.model.events.NetworkViewDestroyedListener;
 import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-
+import org.reactome.cytoscape.util.PlugInUtilities;
+/**
+ * A class for cleaning up after the Reactome FI session is
+ * ended. Removes CytoPanelComponents from the Cytopanels and
+ * other functions.
+ * @author Eric T. Dawson
+ *
+ */
 public class FISessionCleanup implements NetworkViewDestroyedListener, SessionAboutToBeSavedListener
 {
+    private CyNetworkManager manager;
+
+    public FISessionCleanup()
+    {
+        
+    }
+    
+    public FISessionCleanup(CyNetworkManager manager)
+    {
+        this.manager = manager;
+    }
     @Override
     public void handleEvent(SessionAboutToBeSavedEvent e)
     {
@@ -37,39 +56,7 @@ public class FISessionCleanup implements NetworkViewDestroyedListener, SessionAb
     @Override
     public void handleEvent(NetworkViewDestroyedEvent e)
     {
-        // TODO Auto-generated method stub
-        // TODO Auto-generated method stub
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-        ServiceReference servRef = context.getServiceReference(CyNetworkManager.class.getName());
-        
-        if (servRef != null)
-        {
-            CyNetworkManager manager = (CyNetworkManager) context.getService(servRef);
-            
-            Set<CyNetwork> networkSet = manager.getNetworkSet();
-            for (CyNetwork network : networkSet)
-            {
-                boolean isReactomeFINetwork = network.getDefaultNetworkTable().getRow(network.getSUID())
-                        .get("isReactomeFINetwork", Boolean.class);
-                if (isReactomeFINetwork)
-                {
-                    // TODO Auto-generated method stub
-
-                    // Destroy module browsers in South Cytopanel,
-                    //the NCI Diseases panel in the West Cytopane,
-                    //and the Survival Analysis pane in the East Cytopanel.
-                    removeAllResultsPanels();
-                    
-                    // Garbage collect CyTables/JTables
-
-                    // Clean up stored fields and instances.
-
-                    // Dump cytoscape services
-
-                    
-                }
-            }
-        }
+        removeAllResultsPanels();
     }
 
 
