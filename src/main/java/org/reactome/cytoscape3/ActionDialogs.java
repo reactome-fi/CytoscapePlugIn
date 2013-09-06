@@ -211,17 +211,17 @@ public class ActionDialogs extends JDialog
         if (actionType.equals("GeneSetMutationAnalysis"))
         {
             innerPanel = makeGSMAPanel(versionPane);
-            tabTitle = "Gene Set / Mutation Analysis";
+            tabTitle = "Gene Set/Mutation Analysis";
         }
         else if (actionType.equals("Microarray"))
         {
             innerPanel = makeMicroarrayPanel(versionPane);
-            tabTitle = "Microarray Analysis";
+            tabTitle = "Microarray Data Analysis";
         }
         else if (actionType.equals("Hotnet"))
         {
             innerPanel = makeHotnetPanel(versionPane);
-            tabTitle = "HotNet Analysis";
+            tabTitle = "HotNet Mutation Analysis";
         }
        
        mainPane.addTab(tabTitle, innerPanel);

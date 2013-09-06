@@ -3,6 +3,7 @@ package org.reactome.cytoscape3;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -13,29 +14,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
-import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.text.BadLocationException;
 
 import org.cytoscape.application.swing.CySwingApplication;
@@ -87,21 +68,21 @@ public class ModuleBasedSurvivalAnalysisHelper
         ServiceReference servRef = context.getServiceReference(FileUtil.class.getName());
         this.fileUtil = (FileUtil) context.getService(servRef);
     }
-
+    
     public void doSurvivalAnalysis(Map<String, Integer> nodeToModule,
-            Map<String, Set<String>> nodeToSampleSet) throws IOException
-            {
+                                   Map<String, Set<String>> nodeToSampleSet) throws IOException
+                                   {
         // TODO Auto-generated method stub
         final String scoreMatrix = generateScoreMatrix(nodeToModule, nodeToSampleSet);
         doSurvivalAnalysis(nodeToModule, 
-                null,
-                scoreMatrix);
-            }
-
+                           null,
+                           scoreMatrix);
+                                   }
+    
     public void doSurvivalAnalysisForMCLModules(
-            Map<String, Integer> nodeToModule,
-            Map<Integer, Map<String, Double>> moduleToSampleToValue) throws IOException
-            {
+                                                Map<String, Integer> nodeToModule,
+                                                Map<Integer, Map<String, Double>> moduleToSampleToValue) throws IOException
+                                                {
         // TODO Auto-generated method stub
         Set<Integer> selectedModules = new HashSet<Integer>(nodeToModule.values());
         Map<Integer, Map<String, Double>> copy = new HashMap<Integer, Map<String, Double>>(moduleToSampleToValue);
@@ -116,10 +97,10 @@ public class ModuleBasedSurvivalAnalysisHelper
         //System.out.println(nodeToModule + "\n\n\n\n");
         //System.out.println(scoreMatrix + "\n\n score matrix");
         doSurvivalAnalysis(nodeToModule, 
-                null,
-                scoreMatrix);
-            }
-
+                           null,
+                           scoreMatrix);
+                                                }
+    
     /**
      * This helper method is used to generate a String object containing a matrix
      * from sample to scores.
@@ -128,7 +109,7 @@ public class ModuleBasedSurvivalAnalysisHelper
      * @return
      */
     private String generateScoreMatrix(Map<String, Integer> nodeToModule,
-            Map<String, Set<String>> nodeToSamples) {
+                                       Map<String, Set<String>> nodeToSamples) {
         StringBuilder builder = new StringBuilder();
         // Title
         builder.append("Sample");
@@ -161,7 +142,7 @@ public class ModuleBasedSurvivalAnalysisHelper
         }
         return builder.toString();
     }
-
+    
     private String generateScoreMatrixForMCL(Map<Integer, Map<String, Double>> moduleToSampleToValue) {
         StringBuilder builder = new StringBuilder();
         List<Integer> modules = new ArrayList<Integer>(moduleToSampleToValue.keySet());
@@ -184,10 +165,10 @@ public class ModuleBasedSurvivalAnalysisHelper
         }
         return builder.toString();
     }
-
+    
     private void doSurvivalAnalysis(Map<String, Integer> nodeToModule,
-            Integer selectedModule, String scoreMatrixText) throws IOException
-    {   
+                                    Integer selectedModule, String scoreMatrixText) throws IOException
+                                    {   
         //TODO TODO TODO
         //TODO
         this.scoreMatrix = scoreMatrixText;
@@ -247,8 +228,8 @@ public class ModuleBasedSurvivalAnalysisHelper
             }
         };
         t.start();
-    }
-
+                                    }
+    
     private String loadClinInfo(String clinInfoFile) throws IOException
     {
         StringBuilder builder = new StringBuilder();
@@ -260,8 +241,9 @@ public class ModuleBasedSurvivalAnalysisHelper
         }
         return builder.toString();
     }
+    
     private void displaySurvivalAnalysisResult(String label,
-            Element result) throws IOException, BadLocationException {
+                                               Element result) throws IOException, BadLocationException {
         List<?> list = result.getChildren();
         String output = null;
         String error = null;
@@ -291,7 +273,7 @@ public class ModuleBasedSurvivalAnalysisHelper
             plotFile = savePlotResult(plotFileName, plotResult);
         displayResults(label, output, error, plotFile);
     }
-
+    
     private File savePlotResult(String plotFileName, String plotResult) throws IOException
     {
         // TODO Auto-generated method stub
@@ -302,65 +284,62 @@ public class ModuleBasedSurvivalAnalysisHelper
         fu.decodeInBase64(plotResult, tempFile.getAbsolutePath());
         return tempFile;
     }
+    
     private void displayResults(String title,
-            String output,
-            String error,
-            File plotFile) throws IOException, BadLocationException
-            {
-        //        CytoPanel tabbedPane = Cytoscape.getDesktop().getCytoPanel(SwingUtilities.EAST);
-        //        // Make sure it is displayed
-        //        CytoPanelState curState = tabbedPane.getState();
-        //        if (curState == CytoPanelState.HIDE) {
-        //            tabbedPane.setState(CytoPanelState.DOCK);
-        //        } 
+                                String output,
+                                String error,
+                                File plotFile) throws IOException, BadLocationException {
         String tabTitle = "Survival Analysis";
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager()
-                .getCySwingApp();
-        org.cytoscape.application.swing.CytoPanel tabbedPane = desktopApp
-                .getCytoPanel(CytoPanelName.EAST);
+        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+        org.cytoscape.application.swing.CytoPanel tabbedPane = desktopApp.getCytoPanel(CytoPanelName.EAST);
         CytoPanelState currentState = tabbedPane.getState();
         if (currentState == CytoPanelState.HIDE || currentState == CytoPanelState.FLOAT)
             tabbedPane.setState(CytoPanelState.DOCK);
-        boolean found = false;
         int numComps = tabbedPane.getCytoPanelComponentCount();
         int componentIndex = -1;
         for (int i = 0; i < numComps; i++)
         {
-            Component aComp = (Component) tabbedPane
-                    .getComponentAt(i);
+            Component aComp = (Component) tabbedPane.getComponentAt(i);
             if ( (aComp instanceof CytoPanelComponent) && ((CytoPanelComponent) aComp).getTitle().equalsIgnoreCase(tabTitle))
             {
-                found = true;
                 componentIndex = i;
-                break;
+//                break;
             }
+            // There are some annoying behavior related to this tabbed pabel. Just remove all
+            // other tabs, and hope it helps.
             else
             {
                 ((Container) tabbedPane).remove(aComp);
             }
         }
-        if (found == false)
-        {
+        if (componentIndex == -1) {
             SurvivalAnalysisResultPane resultPane = new SurvivalAnalysisResultPane("Survival Analysis");
-            resultPane.setSize(400, 235);
+            resultPane.setPreferredSize(new Dimension(400, 235));
+            // Initializing a SurvivalAnalysisResultPane should add it automatically
+            // into the tabbedPane since it is implemented as a CytoPanelComponent.
             int index = tabbedPane.indexOfComponent(resultPane);
-            if (index == -1) return;
+            if (index == -1) 
+                return;
             componentIndex = index;
-            tabbedPane.setSelectedIndex(index);
             addSingleModuleAnalysisAction(resultPane);
         }
         SurvivalAnalysisResultPane resultPane = (SurvivalAnalysisResultPane) tabbedPane.getComponentAt(componentIndex);
-        tabbedPane.setSelectedIndex(componentIndex);
+//      It seems that doing a selection will resize the tabbed panel. Since right now,
+        // only one tab should be displayed. Don't select it to avoid annoying resizing
+        // problem.
+//        tabbedPane.setSelectedIndex(componentIndex);
         resultPane.setContainer(tabbedPane);
-        resultPane.setSize(400, 235);
+        // Use whatever size that has been set by the user
+//        resultPane.setSize(400, 235);
         String[] results = new String[3];
         results[0] = output;
         results[1] = error;
         if (plotFile != null)
             results[2] = plotFile.getAbsolutePath();
         resultPane.appendResult(title, 
-                results);
-            }
+                                results);
+    }
+    
     private void addSingleModuleAnalysisAction(final SurvivalAnalysisResultPane resultPane) {
         SingleModuleSurvivalActionListener action = new SingleModuleSurvivalActionListener() {
             @Override
@@ -371,28 +350,28 @@ public class ModuleBasedSurvivalAnalysisHelper
         };
         resultPane.setSingleModuleSurivivalAnalysisActionListener(action);
     }
-
+    
     private void doSingleModuleAnalysis(String module) {
         try {
             Integer moduleIndex = new Integer(module);
             doSurvivalAnalysis(null, 
-                    moduleIndex,
-                    scoreMatrix);
+                               moduleIndex,
+                               scoreMatrix);
         }
         catch(NumberFormatException e) {
             PlugInUtilities.showErrorMessage(
-                    "Cannot find module index from text link.",
+                                             "Cannot find module index from text link.",
                     "Error in Survival Analysis");
             e.printStackTrace();
         }
         catch(IOException ioe) {
             PlugInUtilities.showErrorMessage(
-                    "Error in single module survival analysis: " + ioe,
+                                             "Error in single module survival analysis: " + ioe,
                     "Error in Survival Analysis");
             ioe.printStackTrace();
         }
     }
-
+    
     /**
      * A customized JDialog to gather information for survival analysis.
      */
@@ -402,12 +381,12 @@ public class ModuleBasedSurvivalAnalysisHelper
         private JTextField clinFileTF;
         private JRadioButton coxphBtn;
         private JRadioButton kmBtn;
-
+        
         public SurvivalInfoDialog() {
             super(PlugInScopeObjectManager.getManager().getCytoscapeDesktop());
             init();
         }
-
+        
         public void setModules(Map<String, Integer> nodeToModule) {
             // Extract module information
             Set<Integer> set = new HashSet<Integer>(nodeToModule.values());
@@ -418,12 +397,12 @@ public class ModuleBasedSurvivalAnalysisHelper
             for (Integer module : list)
                 moduleList.addItem(module);
         }
-
+        
         public void setModule(Integer module) {
             moduleList.removeAllItems();
             moduleList.addItem(module + "");
         }
-
+        
         private void init() {
             setTitle("Module-based Surival Analysis");
             JPanel contentPane = new JPanel();
@@ -450,7 +429,7 @@ public class ModuleBasedSurvivalAnalysisHelper
                         filters.add(new FileChooserFilter("Survival Information File", "txt"));
                         new FileChooserFilter("Survival Information File", "txt");
                         File file = fileUtil.getFile(PlugInScopeObjectManager.getManager().getCytoscapeDesktop(),
-                                "Select Survival Information File", FileUtil.LOAD, filters);
+                                                     "Select Survival Information File", FileUtil.LOAD, filters);
                         clinFileTF.setText(file.getAbsolutePath());
                     }
                 }
@@ -485,7 +464,7 @@ public class ModuleBasedSurvivalAnalysisHelper
             constraints.gridwidth = 3;
             constraints.gridheight = 2;
             contentPane.add(noteTA, constraints);
-
+            
             constraints.fill = GridBagConstraints.NONE;
             constraints.gridwidth = 1;
             constraints.weightx = 0.0d;
@@ -524,7 +503,7 @@ public class ModuleBasedSurvivalAnalysisHelper
             // Add a control panel
             DialogControlPane controlPane = new DialogControlPane();
             controlPane.getOKBtn().addActionListener(new ActionListener() {
-
+                
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     if (validateFields()) {
@@ -535,14 +514,14 @@ public class ModuleBasedSurvivalAnalysisHelper
                         if (prop != null) {
                             // Store for temp
                             prop.setProperty(CLINICAL_FILE_PROP_KEY,
-                                    fileName);
+                                             fileName);
                         }
                         dispose();
                     }
                 }
             });
             controlPane.getCancelBtn().addActionListener(new ActionListener() {
-
+                
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     isOkClicked = false;
@@ -551,19 +530,19 @@ public class ModuleBasedSurvivalAnalysisHelper
             });
             // Add these two panels
             contentPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),
-                    BorderFactory.createEmptyBorder(4, 4, 4, 4)));
+                                                                     BorderFactory.createEmptyBorder(4, 4, 4, 4)));
             controlPane.setBorder(BorderFactory.createEtchedBorder());
             getContentPane().add(contentPane, BorderLayout.CENTER);
             getContentPane().add(controlPane, BorderLayout.SOUTH);
         }
-
+        
         private boolean validateFields() {
             String text = clinFileTF.getText().trim();
             if (text.length() == 0 || text.equals("Double click to select a file...")) {
                 JOptionPane.showMessageDialog(this,
-                        "You have to enter a valid clinical information file to do surival analysis.", 
-                        "No Clinical Information File Specified", 
-                        JOptionPane.ERROR_MESSAGE);
+                                              "You have to enter a valid clinical information file to do surival analysis.", 
+                                              "No Clinical Information File Specified", 
+                                              JOptionPane.ERROR_MESSAGE);
                 clinFileTF.requestFocus();
                 return false;
             }
@@ -572,16 +551,16 @@ public class ModuleBasedSurvivalAnalysisHelper
                 Object value = moduleList.getSelectedItem();
                 if (value.equals("")) {
                     JOptionPane.showMessageDialog(this,
-                            "You have to choose a module for Kaplan-Meier analysis.",
-                            "No Module Specified",
-                            JOptionPane.ERROR_MESSAGE);
+                                                  "You have to choose a module for Kaplan-Meier analysis.",
+                                                  "No Module Specified",
+                                                  JOptionPane.ERROR_MESSAGE);
                     moduleList.requestFocus();
                     return false;
                 }
             }
             return true;
         }
-
+        
         public String generateLabel() {
             StringBuilder builder = new StringBuilder();
             if (coxphBtn.isSelected())
@@ -594,6 +573,6 @@ public class ModuleBasedSurvivalAnalysisHelper
                 builder.append(" (module ").append(moduleList.getSelectedItem()).append(")");
             return builder.toString();
         }
-
+        
     }
 }
