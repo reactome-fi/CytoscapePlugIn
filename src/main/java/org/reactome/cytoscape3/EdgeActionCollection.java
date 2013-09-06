@@ -38,7 +38,12 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.funcInt.ReactomeSource;
-
+/**
+ * A class which contains functions performed on edges
+ * in the FI network.
+ * @author Eric T. Dawson
+ *
+ */
 public class EdgeActionCollection
 {
 

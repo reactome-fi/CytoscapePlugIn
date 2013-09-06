@@ -36,7 +36,12 @@ import org.reactome.cytoscape3.Design.FIVisualStyle;
 import org.reactome.cytoscape3.Design.TableFormatter;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
-
+/**
+ * Performs Gene Set/Mutation Analysis on a given input file
+ * and parameters provided by an ActionDialog.
+ * @author Eric T. Dawson
+ *
+ */
 public class GeneSetMutationAnalysisTask implements Runnable
 {
     private CySwingApplication desktopApp;

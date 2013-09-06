@@ -13,7 +13,8 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * A class for handling interaction with the KEGG
- * RESTful API.
+ * RESTful API. Displays a KEGG diagram in a browser
+ * window with genes present in the sample highlighted in red.
  * @author Eric T. Dawson
  *
  */
