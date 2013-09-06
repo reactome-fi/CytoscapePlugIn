@@ -5,14 +5,14 @@
 
 
 	<properties>
-		<bundle.symbolicName>org.reactome</bundle.symbolicName>
+		<bundle.symbolicName>ReactomeFIPlugIn</bundle.symbolicName>
 		<bundle.namespace>org.reactome</bundle.namespace>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome</groupId>
 	<artifactId>reactomeFI-app</artifactId>
-	<version>1.0.0-alpha</version>
+	<version>3.0.0-beta</version>
 	<name>${bundle.symbolicName}</name>
 	<packaging>bundle</packaging>
 	
@@ -93,7 +93,7 @@
 						<Embed-Dependency>
 							*;groupId=!org.osgi|org.cytoscape;
 						</Embed-Dependency>
-						</instructions>
+					</instructions>
 				</configuration>
 			</plugin>
  			 <plugin>
