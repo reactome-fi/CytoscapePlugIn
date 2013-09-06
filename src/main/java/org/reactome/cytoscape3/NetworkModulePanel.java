@@ -429,6 +429,9 @@ public abstract class NetworkModulePanel extends JPanel implements
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
+            // Just in case
+            if (rowIndex >= tableData.size())
+                return null;
             String[] rowData = tableData.get(rowIndex);
             return rowData[columnIndex];
         }
