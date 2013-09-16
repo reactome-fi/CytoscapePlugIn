@@ -85,8 +85,13 @@
 					<instructions>
 						<Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName>
 						<Bundle-Version>${project.version}</Bundle-Version>
-						<DynamicImport-Package>*</DynamicImport-Package>
- 						<Import-Package>!*</Import-Package>
+						<DynamicImport-Package>javax.jnlp,javax.servlet,javax.servlet.http,
+							oracle.xml.parser,oracle.xml.parser.v2,org.apache.axis,org.apache.axis.client,
+							org.apache.axis.constants,org.apache.axis.description,org.apache.axis.encoding,
+							org.apache.axis.encoding.ser,org.apache.axis.soap,org.apache.axis.utils,
+							org.apache.xerces.dom,org.apache.xerces.parsers,org.gk.pathView,org.jaxen,org.jaxen.jdom
+						</DynamicImport-Package>
+<!--  						<Import-Package>!*</Import-Package> -->
 <!-- 						<Export-Package>${bundle.namespace}</Export-Package> -->
 						<Private-Package>org.reactome.cytoscape3.*,org.reactome.cytoscape.*,org.reactome.cancerindex.*</Private-Package>
 						<Bundle-Activator>${bundle.namespace}.cytoscape3.ReactomeFIBundleActivator</Bundle-Activator>
@@ -272,11 +277,12 @@
 			<version>3.1.0</version>
 			<scope>provided</scope>
 		</dependency>
-		<!-- <dependency> -->
-			<!-- 	<groupId>maven</groupId> -->
-			<!-- 	<artifactId>maven-jnlp-plugin</artifactId> -->
-			<!-- 	<version>1.4.1</version> -->
-			<!-- </dependency> -->
+		
+<!-- 		<dependency> -->
+<!-- 				<groupId>maven</groupId> -->
+<!-- 				<artifactId>maven-jnlp-plugin</artifactId> -->
+<!-- 				<version>1.4.1</version> -->
+<!-- 			</dependency> -->
 			
 		<dependency> <groupId>org.hamcrest</groupId> 
 			<artifactId>com.springsource.org.hamcrest.core</artifactId>

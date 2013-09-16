@@ -550,7 +550,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
             {
                 ProgressPane progPane = new ProgressPane();
                 progPane.setIndeterminate(true);
-                progPane.setText("Fetching Cancer Gene Indices");
+                progPane.setText("Fetching cancer gene index annotations...");
                 JFrame frame = PlugInScopeObjectManager.getManager().getCytoscapeDesktop();
                 frame.setGlassPane(progPane);
                 progPane.setVisible(true);

@@ -24,7 +24,7 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
     // private TaskMonitor taskMonitor;
     public GeneSetMutationAnalysisAction(CySwingApplication desktopApp)
     {
-        super("Gene Set/Mutantion Analysis");
+        super("Gene Set/Mutation Analysis");
         this.desktopApp = desktopApp;
         setPreferredMenu("Apps.Reactome FI");
         setMenuGravity(0.0f);

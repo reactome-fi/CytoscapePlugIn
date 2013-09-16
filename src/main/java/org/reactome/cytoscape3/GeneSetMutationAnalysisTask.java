@@ -138,7 +138,7 @@ public class GeneSetMutationAnalysisTask implements Runnable
         ProgressPane progPane = new ProgressPane();
         progPane.setMinimum(1);
         progPane.setMaximum(100);
-        progPane.setTitle("Gene Set / Mutation Analysis");
+        progPane.setTitle("Gene Set/Mutation Analysis");
         progPane.setText("Loading file...");
         progPane.setValue(25);
         desktopApp.getJFrame().setGlassPane(progPane);

@@ -77,8 +77,8 @@ public class HotNetAnalysisTask implements Runnable
         this.desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
         ProgressPane progPane = new ProgressPane();
         desktopApp.getJFrame().setGlassPane(progPane);
-        progPane.setTitle("HotNet Analysis");
-        progPane.setText("Loading HotNet mutation file...");
+        progPane.setTitle("HotNet Mutation Analysis");
+        progPane.setText("Loading mutation file...");
         progPane.setMaximum(100);
         progPane.setMinimum(1);
         progPane.setSize(400, 200);

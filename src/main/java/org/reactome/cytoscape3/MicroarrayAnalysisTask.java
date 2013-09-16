@@ -77,7 +77,7 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
         this.desktopApp = PlugInScopeObjectManager.getManager()
                 .getCySwingApp();
         ProgressPane progPane = new ProgressPane();
-        progPane.setTitle("Microarray Analysis");
+        progPane.setTitle("Microarray Data Analysis");
         progPane.setText("Loading microarray file");
         progPane.setMinimum(1);
         progPane.setMaximum(100);
