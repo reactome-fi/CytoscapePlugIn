@@ -10,8 +10,6 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,17 +17,9 @@ import java.util.Properties;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.model.CyTable;
-import org.cytoscape.model.events.NetworkAboutToBeDestroyedEvent;
-import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
-import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.events.NetworkViewAboutToBeDestroyedEvent;
-import org.cytoscape.view.model.events.NetworkViewAboutToBeDestroyedListener;
-import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
@@ -42,30 +32,21 @@ import org.slf4j.LoggerFactory;
  * 
  * @author wgm ported July 2013 by Eric T Dawson
  */
-public class PlugInScopeObjectManager
-{
-    private static Logger logger = LoggerFactory
-            .getLogger(PlugInScopeObjectManager.class);
+public class PlugInScopeObjectManager {
+    private static Logger logger = LoggerFactory.getLogger(PlugInScopeObjectManager.class);
     private static PlugInScopeObjectManager manager;
     // Properties setting for this Cytoscape
     private Properties properties;
-    // Don't cache it in case FI network version has been changed
-    private FINetworkService networkService;
     // Try to track CancerIndexSentenceDisplayFrame
     private CancerIndexSentenceDisplayFrame cgiFrame;
     // Currently selected FI network version
     private String fiNetworkVersion;
-    private String userGuideURL = "http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin";
     // Cache a bundle context to be used later
     private BundleContext context;
     private CySwingApplication desktopApp;
-    private ServiceReference desktopAppRef;
     private Map<Integer, Map<String, Double>> moduleToSampleToValue;
 
-    private PlugInScopeObjectManager()
-    {
-//        Map<ServiceReference, Object> serviceReferences = new HashMap<ServiceReference, Object>();
-//        this.ServiceReferences = servicesReferences;
+    private PlugInScopeObjectManager() {
     }
 
     public static PlugInScopeObjectManager getManager()
@@ -108,13 +89,11 @@ public class PlugInScopeObjectManager
         return null;
     }
 
-    public void setFiNetworkVersion(String fiNetworkVersion)
-    {
+    public void setFiNetworkVersion(String fiNetworkVersion) {
         this.fiNetworkVersion = fiNetworkVersion;
     }
-    public CancerIndexSentenceDisplayFrame getCancerIndexFrame(
-            JFrame jFrame)
-    {
+    
+    public CancerIndexSentenceDisplayFrame getCancerIndexFrame(JFrame jFrame) {
         if (cgiFrame == null)
         {
             cgiFrame = new CancerIndexSentenceDisplayFrame();
@@ -233,17 +212,18 @@ public class PlugInScopeObjectManager
             if (servRef != null)
             {
                 this.desktopApp = (CySwingApplication) context.getService(servRef);
-                this.desktopAppRef = servRef;
             }
         }
         return desktopApp;
     }
+    
     public JFrame getCytoscapeDesktop()
     {
         getCySwingApp();
         JFrame frame = desktopApp.getJFrame();
         return frame;
     }
+    
     public LinkedHashMap<ServiceReference, Object> getServiceReferenceObjectList(List<String> clazzes)
     {
         LinkedHashMap<ServiceReference, Object> refToService = new LinkedHashMap<ServiceReference, Object>();
@@ -260,6 +240,7 @@ public class PlugInScopeObjectManager
         }
         return refToService;
     }
+    
     public Map<ServiceReference, Object> getServiceReferenceObject(String clazz)
     {
         Map<ServiceReference, Object> refToService = new LinkedHashMap<ServiceReference, Object>();
@@ -284,10 +265,12 @@ public class PlugInScopeObjectManager
             PlugInUtilities.showErrorMessage("Error in Releasing Service", "The Cytoscape service could not be released.");
         }
     }
+    
     public void releaseSingleService(Map<ServiceReference, Object> servRefToService)
     {
         context.ungetService((ServiceReference) servRefToService.keySet().toArray()[0]);
     }
+    
     //A method to unget a service reference and release it for garbage collecting.
     public void releaseAllServices(Map<ServiceReference, Object> servRefToService)
     {
@@ -307,6 +290,7 @@ public class PlugInScopeObjectManager
         this.moduleToSampleToValue = moduleToSampleToValue;
 
     }
+    
     public Map<Integer, Map<String, Double>> getMCLModuleToSampleToValue()
     {
         return this.moduleToSampleToValue;

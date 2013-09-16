@@ -184,64 +184,17 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
-                    ProgressPane progPane = new ProgressPane();
-                    progPane.setIndeterminate(true);
-                    progPane.setText("Clustering FI network...");
-                    PlugInScopeObjectManager.getManager().getCytoscapeDesktop().setGlassPane(
-                            progPane);
-                    PlugInScopeObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(
-                            true);
-                    CyTable netTable = view.getModel().getDefaultNetworkTable();
-                    String clustering = netTable.getRow(
-                            view.getModel().getSUID()).get("clustering_Type",
-                            String.class);
-                    try
-                    {
-                        if (clustering != null && !(clustering.length() <=0)
-                                && !clustering.equals(TableFormatterImpl.getSpectralPartitionCluster()))
-                        {
-                            CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
-                            int reply = JOptionPane.showConfirmDialog(
-                                    desktopApp.getJFrame(),
-                                    "The displayed network has been clustered before using a different algorithm.\n"
-                                            + "You may get different clustering results using this clustering feature. Do\n"
-                                            + "you want to continue?",
-                                    "Clustering Algorithm Warning",
-                                    JOptionPane.OK_CANCEL_OPTION);
-
-                            if (reply != JOptionPane.OK_OPTION)
-                            {
-                                progPane.setIndeterminate(false);
-                                progPane.setVisible(false);
-                                return;
-                            }
+                    Thread t = new Thread() {
+                        public void run() {
+                            clusterFINetwork(view);
                         }
-                        Thread t = new Thread()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                clusterFINetwork(view);
-                            }
-                        };
-                        t.start();
-                    }
-                    catch (Throwable t)
-                    {
-                        JOptionPane.showMessageDialog(null,
-                                "The network cannot be clustered at this time\n"
-                                        + t, "Error in Clustering Network",
-                                JOptionPane.ERROR_MESSAGE);
-                    }
-                    progPane.setIndeterminate(false);
-                    progPane.setVisible(false);
+                    };
+                    t.start();
                 }
-
             });
 
             return new CyMenuItem(clusterMenuItem, 20.0f);
         }
-
     }
 
     /**
@@ -662,34 +615,52 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                     "Survival Analysis could not be performed.\n Please see the logs.");
         }
     }
+    
+    /**
+     * This method is called by a wrapped thread in the menu item for doing FI network
+     * clustering.
+     */
+    private void clusterFINetwork(CyNetworkView view) {
+        JFrame frame = PlugInScopeObjectManager.getManager().getCytoscapeDesktop();
+        CyTable netTable = view.getModel().getDefaultNetworkTable();
+        String clustering = netTable.getRow(view.getModel().getSUID()).get("clustering_Type",
+                                                                           String.class);
+        if ( clustering != null && 
+            !(clustering.length() <=0) && 
+            !clustering.equals(TableFormatterImpl.getSpectralPartitionCluster())) {
+            CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+            int reply = JOptionPane.showConfirmDialog(frame,
+                                                      "The displayed network has been clustered before using a different algorithm.\n"
+                                                              + "You may get different clustering results using this clustering feature. Do\n"
+                                                              + "you want to continue?",
+                                                              "Clustering Algorithm Warning",
+                                                              JOptionPane.OK_CANCEL_OPTION);
+            
+            if (reply != JOptionPane.OK_OPTION) {
+                return;
+            }
+        }
+        
+        clusterFINetwork(frame, view);
+    }
 
     /**
-     * A method for performing clustering of the FI network. This function is
-     * only applicable for Spectral Partition Clustering. Reclustering networks
-     * originally clustered with other algorithms may change results.
-     * 
-     * @param view
-     *            The current network view.
-     * @author Eric T Dawson
+     * The actual place for doing network clustering.
      */
-    public void clusterFINetwork(CyNetworkView view)
-    {
-        try
-        {
-            // ProgressPane progPane = new ProgressPane();
-            // progPane.setText("Clustering network...");
-            // progPane.setIndeterminate(true);
-            // desktopApp.getJFrame().
-            getTableFormatter();
-            tableFormatter.makeModuleAnalysisTables(view.getModel());
-            List<CyEdge> edgeList = view.getModel().getEdgeList();
-            RESTFulFIService service = new RESTFulFIService(view);
-            // The below method takes CyEdges as an input type, but with the
-            // reorganization of the API in 3.x it should really take the
-            // name
-            // of the nodes (nodes now have a Long SUID and not a String
-            // Identifier).
-
+    private void clusterFINetwork(JFrame frame, 
+                                  CyNetworkView view) {
+        ProgressPane progPane = new ProgressPane();
+        progPane.setIndeterminate(true);
+        progPane.setText("Clustering FI network...");
+        frame.setGlassPane(progPane);
+        frame.getGlassPane().setVisible(true);
+        
+        getTableFormatter();
+        tableFormatter.makeModuleAnalysisTables(view.getModel());
+        List<CyEdge> edgeList = view.getModel().getEdgeList();
+        
+        RESTFulFIService service = new RESTFulFIService(view);
+        try {
             NetworkClusterResult clusterResult = service.cluster(edgeList, view);
             Map<String, Integer> nodeToCluster = new HashMap<String, Integer>();
             List<GeneClusterPair> geneClusterPairs = clusterResult.getGeneClusterPairs();
@@ -698,42 +669,36 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                 for (GeneClusterPair geneCluster : geneClusterPairs)
                 {
                     nodeToCluster.put(geneCluster.getGeneId(),
-                            geneCluster.getCluster());
+                                      geneCluster.getCluster());
                 }
             }
-
+            
             tableHelper.loadNodeAttributesByName(view, "module", nodeToCluster);
+            
+            progPane.setText("Storing clustering results...");
             tableHelper.storeClusteringType(view,
-                    TableFormatterImpl.getSpectralPartitionCluster());
+                                            TableFormatterImpl.getSpectralPartitionCluster());
             Map<String, Object> nodeToSamples = tableHelper.getNodeTableValuesByName(
-                    view.getModel(), "samples", String.class);
-
-            try
-            {
-                showModuleInTab(nodeToCluster, nodeToSamples,
-                        clusterResult.getModularity(), view);
-
-                BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-                ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-                FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
-                visStyler.setVisualStyle(view);
-            }
-            catch (Throwable t)
-            {
-                JOptionPane.showMessageDialog(null,
-                        "The visual style could not be applied.",
-                        "Visual Style Error", JOptionPane.ERROR_MESSAGE);
-            }
-            releaseTableFormatter();
+                                                                                     view.getModel(), "samples", String.class);
+            
+            showModuleInTab(nodeToCluster, nodeToSamples,
+                            clusterResult.getModularity(), view);
         }
-        catch (Exception e)
-        {
-            JOptionPane.showMessageDialog(null,
-                    "There was an error during network clustering.",
-                    "Error in clustering", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(frame,
+                                          "Error in clustering FI network: " + e.getMessage(),
+                                          "Error in Clustering",
+                                          JOptionPane.ERROR_MESSAGE);
+            frame.getGlassPane().setVisible(false);
         }
-
+        
+        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+        FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
+        visStyler.setVisualStyle(view);
+        releaseTableFormatter();
+        
+        frame.getGlassPane().setVisible(false);
     }
 
     private void showModuleInTab(Map<String, Integer> nodeToCluster,

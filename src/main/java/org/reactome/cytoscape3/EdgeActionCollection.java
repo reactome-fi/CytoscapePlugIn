@@ -88,7 +88,10 @@ public class EdgeActionCollection
                     int reply = JOptionPane.showConfirmDialog(desktopApp.getJFrame(), "All FIs have been annotated. Would you like to re-annotate them?",
                             "FI Annotation", JOptionPane.YES_NO_OPTION);
                     if (reply == JOptionPane.NO_OPTION)
-                    { desktopApp.getJFrame().getGlassPane().setVisible(false); return;}
+                    { 
+                        desktopApp.getJFrame().getGlassPane().setVisible(false); 
+                        return;
+                    }
                     edges = annotatedEdges;
                 }
                 else if (unannotatedEdges.size() > 0)

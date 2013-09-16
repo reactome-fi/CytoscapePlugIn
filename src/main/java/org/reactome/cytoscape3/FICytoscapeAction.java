@@ -24,12 +24,10 @@ import javax.swing.event.DocumentListener;
 
 import org.cytoscape.application.swing.AbstractCyAction;
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.io.CyFileFilter;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.session.CySession;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
-import org.cytoscape.task.write.SaveSessionTaskFactory;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.work.TaskManager;
