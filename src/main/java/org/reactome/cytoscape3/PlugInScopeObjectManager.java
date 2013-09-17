@@ -7,8 +7,6 @@ package org.reactome.cytoscape3;
 import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,6 +21,7 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape3.Design.FINetworkService;
 import org.slf4j.Logger;
@@ -119,27 +118,8 @@ public class PlugInScopeObjectManager {
         return cgiFrame;
     }
 
-    public Properties getProperties()
-    {
-        if (properties == null)
-        {
-            try
-            {
-                properties = new Properties();
-                InputStream is = RESTFulFIService.class
-                        .getResourceAsStream("Config.prop");
-                properties.load(is);
-            }
-            catch (IOException e)
-            {
-                System.err.println("PlugInScopeObjectManager.getProperties(): "
-                        + e);
-                e.printStackTrace();
-                logger.error("Cannot initialize RESTFulFIService: "
-                        + e.getMessage(), e);
-            }
-        }
-        return this.properties;
+    public Properties getProperties() {
+        return PlugInObjectManager.getManager().getProperties();
     }
 
     public FINetworkService getNetworkService() throws Exception
