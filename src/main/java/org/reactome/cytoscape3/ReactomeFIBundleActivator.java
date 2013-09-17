@@ -33,6 +33,8 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
+import org.reactome.cytoscape.pathway.ReactomePathwayAction;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape3.EdgeActionCollection.EdgeQueryFIMenuItem;
 import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;
 import org.reactome.cytoscape3.NetworkActionCollection.FIAnnotationFetcherMenu;
@@ -67,6 +69,7 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         //Cache the bundlecontext.
         this.context = context;
         PlugInScopeObjectManager.getManager().setBundleContext(context);
+        PlugInObjectManager.getManager().setBundleContext(context);
         
         /* Grab essential Cytoscape Service References */
         CySwingApplication desktopApp = getService(context,
@@ -126,12 +129,14 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         MicroarrayAnalysisAction maa = new MicroarrayAnalysisAction(desktopApp);
         UserGuideAction uga = new UserGuideAction();
         HotNetAnalysisAction hna = new HotNetAnalysisAction(desktopApp);
+        // Load pathway diagram into Cytoscape
+        ReactomePathwayAction pathwayLoadAction = new ReactomePathwayAction();
         
         // Register said Reactome FI Services with the OSGi framework.
         registerAllServices(context, gsma, new Properties());
         registerAllServices(context, hna, new Properties());
         registerAllServices(context, maa, new Properties());
-//        registerAllServices(context, pathwayLoadAction, new Properties());
+        registerAllServices(context, pathwayLoadAction, new Properties());
         registerAllServices(context, uga, new Properties());
 
         // Instantiate and register the context menus for the network view

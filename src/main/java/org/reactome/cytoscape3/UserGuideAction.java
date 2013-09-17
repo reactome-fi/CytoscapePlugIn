@@ -21,7 +21,7 @@ public class UserGuideAction extends AbstractCyAction
         // Add the 'User Guide' item to the ReactomeFI menu
         super("User Guide");
         setPreferredMenu("Apps.Reactome FI");
-        setMenuGravity(3.0f);
+        setMenuGravity(100.0f); // Give it a very large weight, so that it is always at the bottom.
     }
 
     @Override

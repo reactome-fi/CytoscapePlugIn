@@ -20,6 +20,7 @@ public class ReactomePathwayAction extends AbstractCyAction {
     public ReactomePathwayAction() {
         super("Reactome Pathways");
         setPreferredMenu("Apps.Reactome FI");
+        setMenuGravity(3.0f);
     }
     
     @Override
