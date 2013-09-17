@@ -6,20 +6,6 @@ import java.io.File;
 import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.model.CyNetworkFactory;
-import org.cytoscape.model.CyNetworkManager;
-import org.cytoscape.model.CyTableFactory;
-import org.cytoscape.session.CySession;
-import org.cytoscape.session.CySessionManager;
-import org.cytoscape.task.write.SaveSessionAsTaskFactory;
-import org.cytoscape.util.swing.FileUtil;
-import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
-import org.cytoscape.view.model.CyNetworkViewFactory;
-import org.cytoscape.view.model.CyNetworkViewManager;
-import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
-import org.cytoscape.view.vizmap.VisualMappingManager;
-import org.cytoscape.view.vizmap.VisualStyleFactory;
-import org.cytoscape.work.TaskManager;
 
 /**
  * This class manages analysis of Gene Set, NCI MAF and Gene Sample / Number
@@ -30,43 +16,18 @@ import org.cytoscape.work.TaskManager;
  * 
  */
 
+@SuppressWarnings("serial")
 public class GeneSetMutationAnalysisAction extends FICytoscapeAction
 {
-
     private CySwingApplication desktopApp;
-    private TaskManager tm;
-    private CyNetworkManager netManager;
-    private SaveSessionAsTaskFactory saveSession;
-    private FileUtil fileUtil;
-    private CySessionManager sessionManager;
-    private CyNetworkFactory networkFactory;
-    private CyNetworkViewFactory viewFactory;
-    private CyNetworkViewManager viewManager;
-    private CyTableFactory tableFactory;
-
+    
     // private TaskMonitor taskMonitor;
-    public GeneSetMutationAnalysisAction(TaskManager tm,
-            CyNetworkManager netManager,
-
-            SaveSessionAsTaskFactory saveSession, FileUtil fileUtil,
-            CySwingApplication desktopApp, CySessionManager sessionManager,
-            CyNetworkFactory networkFactory, CyNetworkViewFactory viewFactory,
-            CyNetworkViewManager viewManager,
-            CyTableFactory tableFactory)
+    public GeneSetMutationAnalysisAction(CySwingApplication desktopApp)
     {
-        super("Gene Set / Mutant Analysis");
+        super("Gene Set/Mutation Analysis");
         this.desktopApp = desktopApp;
-        this.tm = tm;
-        this.netManager = netManager;
-        this.saveSession = saveSession;
-        this.fileUtil = fileUtil;
-        this.sessionManager = sessionManager;
-        this.networkFactory = networkFactory;
-        this.viewFactory = viewFactory;
-        this.viewManager = viewManager;
-        this.tableFactory = tableFactory;
         setPreferredMenu("Apps.Reactome FI");
-
+        setMenuGravity(0.0f);
     }
 
     @Override
@@ -93,15 +54,8 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         }
         // Create and display a network based on the user's input and the
         // data in the FI database.
-        GeneSetMutationAnalysisTaskFactory gsmaFactory = new GeneSetMutationAnalysisTaskFactory(
-                desktopApp, gui.getFileFormat(), file, gui.chooseHomoGenes(),
-                gui.useLinkers(), gui.getUnlinkedGeneBox().isSelected(), gui
-                        .getUnlinkedGeneBox().isEnabled(), gui
-                        .showFIAnnotationsBeFetched(), gui
-                        .getSampleCutoffValue(), networkFactory, netManager,
-                viewFactory, viewManager, tableFactory, tm);
-        tm.execute(gsmaFactory.createTaskIterator());
-
+        Thread t = new Thread(new GeneSetMutationAnalysisTask(gui));
+        t.start();
     }
 
 }

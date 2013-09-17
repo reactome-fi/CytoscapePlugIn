@@ -2,7 +2,7 @@
  * Created on Jul 20, 2010
  *
  */
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape3.Design;
 
 import java.io.IOException;
 import java.util.Set;

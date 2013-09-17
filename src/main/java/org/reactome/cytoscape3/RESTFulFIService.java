@@ -38,6 +38,7 @@ import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.Sentence;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape3.Design.FINetworkService;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.r3.graph.NetworkClusterResult;
@@ -52,7 +53,6 @@ public class RESTFulFIService implements FINetworkService
 
     public RESTFulFIService()
     {
-
         init();
     }
 
@@ -63,10 +63,18 @@ public class RESTFulFIService implements FINetworkService
 
     private void init(CyNetworkView view)
     {
-        CyTableManager tableManager = new CyTableManager();
-        String fiVersion = tableManager.getStoredFINetworkVersion(view);
-        restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL(
-                fiVersion);
+        String fiVersion = PlugInScopeObjectManager.getManager().getFiNetworkVersion();
+        TableHelper tableManager = new TableHelper();
+        
+        if (fiVersion == null || fiVersion.length() <= 0)
+        {
+          fiVersion = tableManager.getStoredFINetworkVersion(view);
+          if (fiVersion == null || fiVersion.length() <= 0)
+              restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL(PlugInScopeObjectManager.getManager().getDefaultFINeworkVersion());
+          restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL(fiVersion);
+        }
+        else
+            restfulURL = PlugInScopeObjectManager.getManager().getRestfulURL();
     }
 
     private void init()
@@ -483,8 +491,7 @@ public class RESTFulFIService implements FINetworkService
             CyNode start = edge.getSource();
             CyNode end = edge.getTarget();
             // The view must be passed in because a call to getNetworkPointer()
-            // returns
-            // null. This must be a bug in the API.
+            // returns null. It is impossible to grab a network from a node or edge.
             CyTable edgeTable = view.getModel().getDefaultEdgeTable();
             // edge.getSource().getNetworkPointer().getDefaultEdgeTable();
             String edgeName = edgeTable.getRow(edge.getSUID()).get("name",

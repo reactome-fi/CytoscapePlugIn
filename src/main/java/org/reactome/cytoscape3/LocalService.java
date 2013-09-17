@@ -7,6 +7,7 @@ package org.reactome.cytoscape3;
 import java.io.IOException;
 import java.util.Set;
 
+import org.reactome.cytoscape3.Design.FINetworkService;
 import org.reactome.r3.graph.NetworkBuilderForGeneSet;
 import org.reactome.r3.util.InteractionUtilities;
 
@@ -25,7 +26,7 @@ public class LocalService implements FINetworkService
     // Cache some fetched information for performance reasons.
     // Don't cache anything in case the FI network version has
     // changed during a previous session.
-    private Set<String> allFIs;
+    //private Set<String> allFIs;
 
     public LocalService()
     {
@@ -63,6 +64,7 @@ public class LocalService implements FINetworkService
         {
             fis = InteractionUtilities.getFIs(selectedGenes, allFIs);
         }
+        allFIs = null;
         return fis;
     }
 }

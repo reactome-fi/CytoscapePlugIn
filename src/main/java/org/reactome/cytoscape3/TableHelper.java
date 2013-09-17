@@ -10,28 +10,36 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 
-public class CyTableManager
+public class TableHelper
 {
-    private final String FI_NETWORK_VERSION = CyTableFormatter
+    private final String FI_NETWORK_VERSION = TableFormatterImpl
             .getFINetworkVersion();
-    private final String MCL_ARRAY_CLUSTERING = CyTableFormatter
+    private final String MCL_ARRAY_CLUSTERING = TableFormatterImpl
             .getMCLArrayClustering();
-    private final String SAMPLE_MUTATION_DATA = CyTableFormatter
+    private final String SAMPLE_MUTATION_DATA = TableFormatterImpl
             .getSampleMutationData();
 
-    public CyTableManager()
+    public TableHelper()
     {
     }
 
-    public void storeFINetworkVersion(CyNetworkView view)
+    public void createNewColumn(CyTable table, String columnName, Class<?> type)
     {
-        CyTable netTable = view.getModel().getDefaultNetworkTable();
+        table.createColumn(columnName, type, Boolean.FALSE);
+    }
+    public void storeFINetworkVersion(CyNetwork network)
+    {
+        CyTable netTable = network.getDefaultNetworkTable();
         String version = PlugInScopeObjectManager.getManager()
                 .getFiNetworkVersion();
-        netTable.getRow(view.getModel().getSUID()).set(FI_NETWORK_VERSION,
+        netTable.getRow(network.getSUID()).set(FI_NETWORK_VERSION,
                 version);
     }
-
+    public void storeFINetworkVersion(CyNetworkView view)
+    {
+        storeFINetworkVersion(view.getModel());
+    }
+    
     public String getStoredFINetworkVersion(CyNetworkView view)
     {
         CyTable netTable = view.getModel().getDefaultNetworkTable();
@@ -78,11 +86,15 @@ public class CyTableManager
         return null;
     }
 
+    public void storeClusteringType(CyNetwork network, String clusteringType)
+    {
+        CyTable netTable = network.getDefaultNetworkTable();
+        Long netSUID = network.getSUID();
+        netTable.getRow(netSUID).set("clustering_Type", clusteringType);
+    }
     public void storeClusteringType(CyNetworkView view, String clusteringType)
     {
-        CyTable netTable = view.getModel().getDefaultNetworkTable();
-        Long netSUID = view.getModel().getSUID();
-        netTable.getRow(netSUID).set("clustering_Type", clusteringType);
+        storeClusteringType(view.getModel(), clusteringType);
     }
 
     public String getClusteringType(CyNetwork network)
@@ -132,9 +144,9 @@ public class CyTableManager
 
     private void setAttributeValueByName(String attributeName,
             Map<String, ?> idToValue, CyTable cyIdenTable, Long cyIdenSUID,
-            String nodeName, Class<?> type)
+            String idenName, Class<?> type)
     {
-        Object value = idToValue.get(nodeName);
+        Object value = idToValue.get(idenName);
         if (type == Integer.class)
         {
             cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Integer) value);
@@ -158,9 +170,9 @@ public class CyTableManager
     {
         CyTable nodeTable = network.getDefaultNodeTable();
         Class<?> type = guessAttributeType(idToValue);
-        for (Object name2 : network.getNodeList())
+        for (CyNode node : network.getNodeList())
         {
-            CyNode node = (CyNode) name2;
+            //CyNode node = (CyNode) name2;
             Long nodeSUID = node.getSUID();
             String name = nodeTable.getRow(nodeSUID).get("name", String.class);
             setAttributeValueByName(attributeName, idToValue, nodeTable,
@@ -259,6 +271,42 @@ public class CyTableManager
 
         String edgeName = sourceName + " (FI) " + targetName;
         edgeTable.getRow(edge.getSUID()).set("name", edgeName);
+    }
+
+    public void loadEdgeAttributesByName(CyNetwork network, String attr, Map<String, ?> idToValue)
+    {
+        CyTable edgeTable = network.getDefaultEdgeTable();
+        Class<?> type = guessAttributeType(idToValue);
+        for (CyEdge edge : network.getEdgeList())
+        {
+            Long edgeSUID = edge.getSUID();
+            String name = edgeTable.getRow(edgeSUID).get("name", String.class);
+            setAttributeValueByName(attr, idToValue, edgeTable, edgeSUID, name, type);
+        }
+    }
+    public void loadEdgeAttributesByName(CyNetworkView view, String attr, Map<String, ?> idToValue)
+    {
+        loadEdgeAttributesByName(view.getModel(), attr, idToValue);
+    }
+    public boolean hasEdgeAttribute(CyNetworkView view, CyEdge edge, String attr, Class<?> t)
+    {
+        CyTable edgeTable = view.getModel().getDefaultEdgeTable();
+        if (edgeTable.getRow(edge.getSUID()).get(attr, t) != null)
+        {
+            if( edgeTable.getRow(edge.getSUID()).get(attr, t) instanceof String && ((String) edgeTable.getRow(edge.getSUID()).get(attr, t)).length() <= 0)
+                return false;
+            return true;
+        }
+        return false;
+    }
+
+    public String getDataSetType(CyNetworkView view)
+    {
+        CyTable netTable = view.getModel().getDefaultNetworkTable();
+        Long netSUID = view.getModel().getSUID();
+        String dataType = null;
+        dataType = netTable.getRow(netSUID).get("dataSetType", String.class);
+        return dataType;
     }
 
 }

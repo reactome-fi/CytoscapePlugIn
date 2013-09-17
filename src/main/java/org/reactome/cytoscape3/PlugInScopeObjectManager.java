@@ -7,34 +7,46 @@ package org.reactome.cytoscape3;
 import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 import org.cytoscape.application.swing.CySwingApplication;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
-import org.reactome.cytoscape.util.PlugInObjectManager;
-
+import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape3.Design.FINetworkService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * A singleton to manage other singleton objects, and some utility methods.
  * 
  * @author wgm ported July 2013 by Eric T Dawson
  */
-public class PlugInScopeObjectManager
-{
+public class PlugInScopeObjectManager {
+    private static Logger logger = LoggerFactory.getLogger(PlugInScopeObjectManager.class);
     private static PlugInScopeObjectManager manager;
-    // Don't cache it in case FI network version has been changed
-    private FINetworkService networkService;
+    // Properties setting for this Cytoscape
+    private Properties properties;
     // Try to track CancerIndexSentenceDisplayFrame
     private CancerIndexSentenceDisplayFrame cgiFrame;
     // Currently selected FI network version
     private String fiNetworkVersion;
-    private String userGuideURL = "http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin";
+    // Cache a bundle context to be used later
+    private BundleContext context;
+    private CySwingApplication desktopApp;
+    private Map<Integer, Map<String, Double>> moduleToSampleToValue;
 
-    private PlugInScopeObjectManager()
-    {
+    private PlugInScopeObjectManager() {
     }
 
     public static PlugInScopeObjectManager getManager()
@@ -45,14 +57,23 @@ public class PlugInScopeObjectManager
         }
         return manager;
     }
-    
-    public BundleContext getBundleContext() {
-        return PlugInObjectManager.getManager().getBundleContext();
+
+    public void setBundleContext(BundleContext context)
+    {
+        this.context = context;
+    }
+
+    public BundleContext getBundleContext()
+    {
+        return this.context;
     }
 
     public String getFiNetworkVersion()
     {
-        return this.fiNetworkVersion;
+        if (this.fiNetworkVersion != null)
+            return this.fiNetworkVersion;
+        else
+            return getDefaultFINeworkVersion();
     }
 
     public String getDefaultFINeworkVersion()
@@ -68,14 +89,11 @@ public class PlugInScopeObjectManager
         return null;
     }
 
-    public void setFiNetworkVersion(String fiNetworkVersion)
-    {
+    public void setFiNetworkVersion(String fiNetworkVersion) {
         this.fiNetworkVersion = fiNetworkVersion;
     }
-
-    public CancerIndexSentenceDisplayFrame getCancerIndexFrame(
-            CySwingApplication desktopApp)
-    {
+    
+    public CancerIndexSentenceDisplayFrame getCancerIndexFrame(JFrame jFrame) {
         if (cgiFrame == null)
         {
             cgiFrame = new CancerIndexSentenceDisplayFrame();
@@ -90,7 +108,7 @@ public class PlugInScopeObjectManager
                 }
             });
             cgiFrame.setSize(800, 600);
-            cgiFrame.setLocationRelativeTo(desktopApp.getJFrame());
+            cgiFrame.setLocationRelativeTo(jFrame);
             cgiFrame.setVisible(true);
         }
         else
@@ -103,7 +121,25 @@ public class PlugInScopeObjectManager
 
     public Properties getProperties()
     {
-        return PlugInObjectManager.getManager().getProperties();
+        if (properties == null)
+        {
+            try
+            {
+                properties = new Properties();
+                InputStream is = RESTFulFIService.class
+                        .getResourceAsStream("Config.prop");
+                properties.load(is);
+            }
+            catch (IOException e)
+            {
+                System.err.println("PlugInScopeObjectManager.getProperties(): "
+                        + e);
+                e.printStackTrace();
+                logger.error("Cannot initialize RESTFulFIService: "
+                        + e.getMessage(), e);
+            }
+        }
+        return this.properties;
     }
 
     public FINetworkService getNetworkService() throws Exception
@@ -116,6 +152,22 @@ public class PlugInScopeObjectManager
         // FINetworkService networkService = (FINetworkService) new
         // LocalService();
         return networkService;
+    }
+
+    public ImageIcon createImageIcon(String imgFileName)
+    {
+        String urlName = "org/reactome/cytoscape/" + imgFileName;
+        URL url = getClass().getClassLoader().getResource(urlName);
+        ImageIcon icon = null;
+        if (url == null)
+        {
+            icon = new ImageIcon(imgFileName);
+        }
+        else
+        {
+            icon = new ImageIcon(url);
+        }
+        return icon;
     }
 
     /**
@@ -154,25 +206,94 @@ public class PlugInScopeObjectManager
     //A lot of getter methods for retrieving the references to various cytoscape services.
     public CySwingApplication getCySwingApp()
     {
-        CySwingApplication desktopApp = null;
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceReference servRef = context.getServiceReference(CySwingApplication.class.getName());
-        if (servRef != null)
+        if( desktopApp == null)
         {
-            desktopApp = (CySwingApplication) context.getService(servRef);
+            ServiceReference servRef = context.getServiceReference(CySwingApplication.class.getName());
+            if (servRef != null)
+            {
+                this.desktopApp = (CySwingApplication) context.getService(servRef);
+            }
         }
         return desktopApp;
     }
     
-    //A method to unget a service reference and release it for garbage collecting.
-    public void releaseService(ServiceReference serviceRef)
+    public JFrame getCytoscapeDesktop()
     {
-        if (serviceRef != null)
+        getCySwingApp();
+        JFrame frame = desktopApp.getJFrame();
+        return frame;
+    }
+    
+    public LinkedHashMap<ServiceReference, Object> getServiceReferenceObjectList(List<String> clazzes)
+    {
+        LinkedHashMap<ServiceReference, Object> refToService = new LinkedHashMap<ServiceReference, Object>();
+        for (String name : clazzes)
         {
-            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-            context.ungetService(serviceRef);
-            serviceRef = null;
+            if (context.getServiceReference(name) != null)
+            {
+                ServiceReference servRef = context.getServiceReference(name);
+                Object obj = context.getService(servRef);
+                refToService.put(servRef, obj);
+            }
+            else
+                throw new RuntimeException();
         }
+        return refToService;
+    }
+    
+    public Map<ServiceReference, Object> getServiceReferenceObject(String clazz)
+    {
+        Map<ServiceReference, Object> refToService = new LinkedHashMap<ServiceReference, Object>();
+        ServiceReference servRef = context.getServiceReference(clazz);
+        if (servRef != null)
+        {
+            Object obj = context.getService(servRef);
+            refToService.put(servRef, obj);
+            return refToService;
+        }
+        return null;
+    }
+
+    public void releaseSingleService(ServiceReference servRef)
+    {
+        if (servRef != null)
+            try{
+                context.ungetService(servRef);
+            }
+        catch (Throwable t){
+            getCySwingApp();
+            PlugInUtilities.showErrorMessage("Error in Releasing Service", "The Cytoscape service could not be released.");
+        }
+    }
+    
+    public void releaseSingleService(Map<ServiceReference, Object> servRefToService)
+    {
+        context.ungetService((ServiceReference) servRefToService.keySet().toArray()[0]);
+    }
+    
+    //A method to unget a service reference and release it for garbage collecting.
+    public void releaseAllServices(Map<ServiceReference, Object> servRefToService)
+    {
+        if (servRefToService.isEmpty() || servRefToService == null)
+            return;
+        for (ServiceReference servRef : servRefToService.keySet())
+        {
+            if (servRef != null)
+            {
+                releaseSingleService(servRef);
+            }
+        }
+    }
+
+    public void storeMCLModuleToSampleToValue(Map<Integer, Map<String, Double>> moduleToSampleToValue)
+    {
+        this.moduleToSampleToValue = moduleToSampleToValue;
+
+    }
+    
+    public Map<Integer, Map<String, Double>> getMCLModuleToSampleToValue()
+    {
+        return this.moduleToSampleToValue;
     }
     
 }
