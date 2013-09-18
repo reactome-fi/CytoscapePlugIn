@@ -38,6 +38,8 @@ public abstract class FICytoscapeAction extends AbstractCyAction {
         final ServiceReference desktopAppRef = context.getServiceReference(CySwingApplication.class.getName());
         final ServiceReference netManagerRef = context.getServiceReference(CyNetworkManager.class.getName());
         final ServiceReference taskManagerRef = context.getServiceReference(TaskManager.class.getName());
+        // For some reason, SaveSessionTaskFactor cannot work. Null is returned!
+        // So we have to use saveAsFactoryRef.
         final ServiceReference saveAsFactoryRef = context.getServiceReference(SaveSessionAsTaskFactory.class.getName());
         final ServiceReference sessionManagerRef = context.getServiceReference(CySessionManager.class.getName());
         // If any of above essential services is missing, we cannot do anything
