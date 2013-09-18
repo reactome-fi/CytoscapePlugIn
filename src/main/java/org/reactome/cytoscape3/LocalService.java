@@ -7,7 +7,7 @@ package org.reactome.cytoscape3;
 import java.io.IOException;
 import java.util.Set;
 
-import org.reactome.cytoscape3.Design.FINetworkService;
+import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.r3.graph.NetworkBuilderForGeneSet;
 import org.reactome.r3.util.InteractionUtilities;
 

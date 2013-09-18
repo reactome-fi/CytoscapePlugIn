@@ -30,7 +30,7 @@ import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.view.vizmap.mappings.PassthroughMapping;
 import org.cytoscape.work.TaskManager;
-import org.reactome.cytoscape3.Design.FIVisualStyle;
+import org.reactome.cytoscape.service.FIVisualStyle;
 
 /**
  * This class provides layout/VisMap setup for a given network view. Without it,

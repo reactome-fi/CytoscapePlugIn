@@ -15,22 +15,12 @@ import java.util.Set;
 
 import javax.swing.JOptionPane;
 
-import jiggle.ConjugateGradients;
-import jiggle.FirstOrderOptimizationProcedure;
-import jiggle.ForceModel;
-import jiggle.HybridVertexVertexRepulsionLaw;
-import jiggle.InverseSquareVertexEdgeRepulsionLaw;
-import jiggle.QuadraticSpringLaw;
-import jiggle.SpringLaw;
-import jiggle.Vertex;
-import jiggle.VertexEdgeRepulsionLaw;
-import jiggle.VertexVertexRepulsionLaw;
+import jiggle.*;
 
 import org.cytoscape.event.CyEventHelper;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
-import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
@@ -38,18 +28,17 @@ import org.cytoscape.model.CyTableManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
-import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.reactome.cytoscape3.Design.FIVisualStyle;
-import org.reactome.cytoscape3.Design.NetworkGenerator;
-import org.reactome.cytoscape3.Design.TableFormatter;
+import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.NetworkGenerator;
+import org.reactome.cytoscape.service.TableFormatter;
 
 public class FINetworkGenerator implements NetworkGenerator
 {
     private CyNetworkFactory networkFactory;
-    private CyTableFactory tableFactory;
-    private CyTableManager tableManager;
+//    private CyTableFactory tableFactory;
+//    private CyTableManager tableManager;
     private ServiceReference tableFormatterServRef;
     private TableFormatterImpl tableFormatter;
     private ServiceReference networkFactoryRef;
@@ -60,8 +49,8 @@ public class FINetworkGenerator implements NetworkGenerator
             CyTableFactory tableFactory, CyTableManager tableManager)
     {
         this.networkFactory = networkFactory;
-        this.tableFactory = tableFactory;
-        this.tableManager = tableManager;
+//        this.tableFactory = tableFactory;
+//        this.tableManager = tableManager;
     }
     public FINetworkGenerator()
     {
@@ -102,13 +91,13 @@ public class FINetworkGenerator implements NetworkGenerator
         Map<ServiceReference,  Object> tableManagerRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyTableManager.class.getName());
         servRef = (ServiceReference) tableManagerRefToObj.keySet().toArray()[0];
         CyTableManager tableManager = (CyTableManager) tableManagerRefToObj.get(servRef);
-        this.tableManager = tableManager;
+//        this.tableManager = tableManager;
         this.tableManagerRef = servRef;
 
         Map<ServiceReference,  Object> tableFactoryRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyTableFactory.class.getName());
         servRef = (ServiceReference) tableFactoryRefToObj.keySet().toArray()[0];
         CyTableFactory tableFactory = (CyTableFactory) tableFactoryRefToObj.get(servRef);
-        this.tableFactory = tableFactory;
+//        this.tableFactory = tableFactory;
         this.tableFactoryRef = servRef;
 
         getTableFormatter();
@@ -219,6 +208,7 @@ public class FINetworkGenerator implements NetworkGenerator
         // overloads constructFINetwork.
         return constructFINetwork(null, fis);
     }
+    
     public void addFIPartners(CyNode targetNode, Set<String> partners, CyNetworkView view)
     {
         CyNetwork network = view.getModel();
@@ -241,6 +231,7 @@ public class FINetworkGenerator implements NetworkGenerator
         NetworkActionCollection.selectNodesFromList(network, partnerNodes, true);
 
     }
+    
     public void addFIPartners(String target, Set<String> partners, CyNetworkView view)
     {
         addFIPartners(NodeActionCollection.getNodeByName(target, view.getModel()), partners, view);

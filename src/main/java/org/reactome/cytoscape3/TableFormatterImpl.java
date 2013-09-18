@@ -23,7 +23,7 @@ import org.cytoscape.model.SavePolicy;
 import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.reactome.cytoscape3.Design.TableFormatter;
+import org.reactome.cytoscape.service.TableFormatter;
 
 public class TableFormatterImpl implements TableFormatter
 {

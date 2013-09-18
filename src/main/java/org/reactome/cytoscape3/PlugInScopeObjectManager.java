@@ -21,9 +21,9 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
+import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.cytoscape3.Design.FINetworkService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**

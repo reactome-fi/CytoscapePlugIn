@@ -10,35 +10,29 @@ import java.util.Set;
 import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.application.swing.CytoPanel;
-import org.cytoscape.application.swing.CytoPanelName;
-import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
-import org.cytoscape.model.CyTableFactory;
-import org.cytoscape.model.CyTableManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
-import org.cytoscape.work.TaskManager;
-import org.cytoscape.work.TaskMonitor;
 import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancer.CancerAnalysisUtilitites;
 import org.reactome.cancer.MATFileLoader;
+import org.reactome.cytoscape.service.FINetworkService;
+import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.TableFormatter;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.cytoscape3.Design.FINetworkService;
-import org.reactome.cytoscape3.Design.FIVisualStyle;
-import org.reactome.cytoscape3.Design.TableFormatter;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
+
 /**
  * Performs Gene Set/Mutation Analysis on a given input file
- * and parameters provided by an ActionDialog.
+ * and parameters provided by an ActionDialog. This is not a thread-safe
+ * class, and should not be cached.
  * @author Eric T. Dawson
  *
  */
@@ -75,7 +69,7 @@ public class GeneSetMutationAnalysisTask implements Runnable
         this.fetchFIAnnotations = gui.shouldFIAnnotationsBeFetched();
     }
 
-    private void getCyServices()
+    private void initializeCyServices()
     {
         BundleContext context = PlugInScopeObjectManager.getManager()
                 .getBundleContext();
@@ -134,7 +128,7 @@ public class GeneSetMutationAnalysisTask implements Runnable
     @Override
     public void run()
     {
-        getCyServices();
+        initializeCyServices();
         ProgressPane progPane = new ProgressPane();
         progPane.setMinimum(1);
         progPane.setMaximum(100);
