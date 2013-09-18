@@ -6,7 +6,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -52,8 +51,7 @@ import org.reactome.r3.util.InteractionUtilities;
 
 public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
 {
-    private ActionDialogs gui;
-    private File file;
+    private MicroArrayAnalysisDialog gui;
     private CySwingApplication desktopApp;
     private CyNetworkManager networkManager;
     private ServiceReference networkManagerRef;
@@ -64,10 +62,9 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
     private TableFormatterImpl tableFormatter;
     private ServiceReference tableFormatterServRef;
 
-    public MicroarrayAnalysisTask(ActionDialogs gui)
+    public MicroarrayAnalysisTask(MicroArrayAnalysisDialog gui)
     {
         this.gui = gui;
-        this.file = gui.getSelectedFile();
     }
 
     @Override
@@ -655,6 +652,7 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
         this.tableFormatter = tableFormatter;
         this.tableFormatterServRef = servRef;
     }
+    
     private void releaseCyServices()
     {
         BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();

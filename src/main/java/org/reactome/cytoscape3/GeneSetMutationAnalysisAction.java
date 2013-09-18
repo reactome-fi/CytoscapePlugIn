@@ -39,7 +39,7 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         }
         // Create the GUI. The first argument is the GUI context (the type
         // of analysis being performed.
-        ActionDialogs gui = new ActionDialogs("GeneSetMutationAnalysis");
+        GeneSetMutationAnalysisDialog gui = new GeneSetMutationAnalysisDialog();
         gui.setLocationRelativeTo(desktopApp.getJFrame());
         gui.setModal(true);
         gui.setVisible(true);

@@ -56,7 +56,7 @@ public class GeneSetMutationAnalysisTask implements Runnable
     private ServiceReference viewFactoryRef;
     private ServiceReference viewManagerRef;
 
-    public GeneSetMutationAnalysisTask(ActionDialogs gui)
+    public GeneSetMutationAnalysisTask(GeneSetMutationAnalysisDialog gui)
     {
 
         this.chooseHomoGenes = gui.chooseHomoGenes();

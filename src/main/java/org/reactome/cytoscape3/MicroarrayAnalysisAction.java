@@ -27,7 +27,7 @@ public class MicroarrayAnalysisAction extends FICytoscapeAction
         {
             return;
         }
-        ActionDialogs gui = new ActionDialogs("Microarray");
+        MicroArrayAnalysisDialog gui = new MicroArrayAnalysisDialog();
         gui.setLocationRelativeTo(desktopApp.getJFrame());
         gui.setModal(true);
         gui.setVisible(true);

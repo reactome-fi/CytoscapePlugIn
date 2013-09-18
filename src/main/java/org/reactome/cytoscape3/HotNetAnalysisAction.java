@@ -2,16 +2,10 @@ package org.reactome.cytoscape3;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.util.Map;
 
 import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.work.TaskManager;
-import org.osgi.framework.ServiceReference;
-
-
-
 
 @SuppressWarnings("serial")
 public class HotNetAnalysisAction extends FICytoscapeAction
@@ -34,7 +28,7 @@ public class HotNetAnalysisAction extends FICytoscapeAction
         {
             return;
         }
-        ActionDialogs gui = new ActionDialogs("Hotnet");
+        HotNetAnalysisDialog gui = new HotNetAnalysisDialog();
         gui.setLocationRelativeTo(desktopApp.getJFrame());
         gui.setModal(true);
         gui.setVisible(true);

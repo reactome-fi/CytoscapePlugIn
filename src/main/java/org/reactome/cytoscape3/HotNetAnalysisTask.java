@@ -7,7 +7,6 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,12 +23,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.ProgressMonitor;
 import javax.swing.border.Border;
 import javax.swing.table.AbstractTableModel;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.view.model.CyNetworkView;
@@ -38,8 +35,6 @@ import org.cytoscape.view.model.CyNetworkViewManager;
 import org.gk.util.DialogControlPane;
 import org.gk.util.ProgressPane;
 import org.jdom.Element;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cancer.MATFileLoader;
@@ -54,8 +49,7 @@ import org.reactome.r3.util.InteractionUtilities;
 public class HotNetAnalysisTask implements Runnable
 {
 
-    private ActionDialogs gui;
-    private File file;
+    private HotNetAnalysisDialog gui;
     private CySwingApplication desktopApp;
     private ServiceReference networkManagerRef;
     private CyNetworkManager networkManager;
@@ -65,15 +59,15 @@ public class HotNetAnalysisTask implements Runnable
     private ServiceReference viewFactoryRef;
     private TableFormatterImpl tableFormatter;
     private ServiceReference tableFormatterServRef;
-    public HotNetAnalysisTask(ActionDialogs gui)
+    
+    public HotNetAnalysisTask(HotNetAnalysisDialog gui)
     {
         this.gui = gui;
-        this.file = gui.getSelectedFile();
     }
    
     public void run()
     {
-        getCyServices();
+        initCyServices();
         this.desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
         ProgressPane progPane = new ProgressPane();
         desktopApp.getJFrame().setGlassPane(progPane);
@@ -85,7 +79,7 @@ public class HotNetAnalysisTask implements Runnable
         progPane.setVisible(true);
         try
         {
-            
+            File file = gui.getSelectedFile();
             Map<String, Set<String>> sampleToGenes = new MATFileLoader().loadSampleToGenes(file.getAbsolutePath(), 
                     false);
             Map<String, Double> geneToScore = generateGeneScoreFromSamples(sampleToGenes);
@@ -490,9 +484,9 @@ public class HotNetAnalysisTask implements Runnable
             }
             return null;
         }
-        
     }
-    private void getCyServices()
+    
+    private void initCyServices()
     {
         //Get CyNetworkManager
         Map<ServiceReference,  Object> netManagerRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyNetworkManager.class.getName());
@@ -521,6 +515,7 @@ public class HotNetAnalysisTask implements Runnable
         this.tableFormatter = tableFormatter;
         this.tableFormatterServRef = servRef;
     }
+    
     private void releaseCyServices()
     {
         BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
