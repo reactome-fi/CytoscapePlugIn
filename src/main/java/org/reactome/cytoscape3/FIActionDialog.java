@@ -67,7 +67,8 @@ public abstract class FIActionDialog extends JDialog {
      */
     private void browseFile(JTextField tf) {
         Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
-        
+        // The following code to choose two file formats is not reliable.
+        // The user may choose a customized file (e.g. tab delimited).
         String[] mafExts = new String[2];
         mafExts[0] = "txt";
         mafExts[1] = "maf";
@@ -86,7 +87,7 @@ public abstract class FIActionDialog extends JDialog {
         }
         FileUtil fileUtil = (FileUtil) context.getService(fileUtilRef);
         File dataFile = fileUtil.getFile(this,
-                                         "Please select your file for analysis", 
+                                         "Select File for Analysis", 
                                          FileUtil.LOAD, 
                                          filters);
         if (dataFile == null) 
@@ -107,7 +108,7 @@ public abstract class FIActionDialog extends JDialog {
      * @param constraints
      */
     protected void createFileChooserGui(final JLabel fileChooseLabel,
-            final JTextField tf, final JButton okBtn,
+            final JButton okBtn,
             final JButton browseButton, JPanel loadPanel,
             GridBagConstraints constraints) {
 
@@ -118,7 +119,7 @@ public abstract class FIActionDialog extends JDialog {
             @Override
             public void removeUpdate(DocumentEvent e)
             {
-                if (tf.getText().trim().length() > 0)
+                if (fileTF.getText().trim().length() > 0)
                 {
                     okBtn.setEnabled(true);
                 }
@@ -146,16 +147,16 @@ public abstract class FIActionDialog extends JDialog {
             {
             }
         });
-        tf.setColumns(20);
+        fileTF.setColumns(20);
         constraints.gridx = 1;
         constraints.weightx = 0.80;
-        loadPanel.add(tf, constraints);
+        loadPanel.add(fileTF, constraints);
         browseButton.addActionListener(new ActionListener()
         {
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                browseFile(tf);
+                browseFile(fileTF);
             }
         });
 

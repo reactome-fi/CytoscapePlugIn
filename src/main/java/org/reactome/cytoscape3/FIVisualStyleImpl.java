@@ -31,6 +31,7 @@ import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.view.vizmap.mappings.PassthroughMapping;
 import org.cytoscape.work.TaskManager;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
  * This class provides layout/VisMap setup for a given network view. Without it,
@@ -117,7 +118,8 @@ public class FIVisualStyleImpl implements FIVisualStyle
         // Set the node color based on module
         DiscreteMapping colorToModuleFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
                 "module", Integer.class, BasicVisualLexicon.NODE_FILL_COLOR);
-        String moduleColors = PlugInScopeObjectManager.getManager().getProperties().getProperty(
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        String moduleColors = PlugInObjectManager.getManager().getProperties().getProperty(
                 "moduleColors");
         String[] tokens = moduleColors.split(";");
         for (int i = 0; i < tokens.length; i++)

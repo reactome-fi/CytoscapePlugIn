@@ -23,16 +23,9 @@
 				<targetPath>org/reactome/cytoscape/util</targetPath>
 				<includes>
           			<include>Config.prop</include>
+                    <include>*.gif</include>
         		</includes>
 			</resource>
-            <resource>
-                <directory>${project.basedir}/src/main/java/org/reactome/cytoscape3</directory>
-                <targetPath>org/reactome/cytoscape3</targetPath>
-                <includes>
-                    <include>Config.prop</include>
-                    <include>Reactome_Logo_sq.png</include>
-                </includes>
-            </resource>
             <resource>
                 <directory>${project.basedir}/src/main/java/org/reactome/cytoscape/pathway</directory>
                 <targetPath>org/reactome/cytoscape/pathway</targetPath>

@@ -41,34 +41,21 @@ import org.reactome.cancer.MATFileLoader;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableFormatter;
-import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.r3.util.InteractionUtilities;
 
-
-
-public class HotNetAnalysisTask implements Runnable
-{
+public class HotNetAnalysisTask extends FIAnalysisTask {
 
     private HotNetAnalysisDialog gui;
-    private CySwingApplication desktopApp;
-    private ServiceReference networkManagerRef;
-    private CyNetworkManager networkManager;
-    private CyNetworkViewManager viewManager;
-    private ServiceReference viewManagerRef;
-    private CyNetworkViewFactory viewFactory;
-    private ServiceReference viewFactoryRef;
-    private TableFormatterImpl tableFormatter;
-    private ServiceReference tableFormatterServRef;
     
     public HotNetAnalysisTask(HotNetAnalysisDialog gui)
     {
         this.gui = gui;
     }
    
-    public void run()
-    {
-        initCyServices();
-        this.desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+    @Override
+    protected void doAnalysis() {
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         ProgressPane progPane = new ProgressPane();
         desktopApp.getJFrame().setGlassPane(progPane);
         progPane.setTitle("HotNet Mutation Analysis");
@@ -81,7 +68,7 @@ public class HotNetAnalysisTask implements Runnable
         {
             File file = gui.getSelectedFile();
             Map<String, Set<String>> sampleToGenes = new MATFileLoader().loadSampleToGenes(file.getAbsolutePath(), 
-                    false);
+                                                                                           false);
             Map<String, Double> geneToScore = generateGeneScoreFromSamples(sampleToGenes);
             progPane.setValue(25);
             Double delta = null;
@@ -95,9 +82,9 @@ public class HotNetAnalysisTask implements Runnable
             progPane.setText("Performing HotNet analysis...");
             progPane.setIndeterminate(true);
             Element resultElm = fiService.doHotNetAnalysis(geneToScore, 
-                    delta, 
-                    fdrCutoff, 
-                    permutationNumber);
+                                                           delta, 
+                                                           fdrCutoff, 
+                                                           permutationNumber);
             HotNetResult hotNetResult = parseResults(resultElm);
             progPane.setValue(85);
             progPane.setIndeterminate(false);
@@ -109,18 +96,20 @@ public class HotNetAnalysisTask implements Runnable
                 progPane.setText("Building FI network...");
                 progPane.setIndeterminate(true);
                 network = buildFINetwork(selectedModules,
-                        sampleToGenes);
+                                         sampleToGenes);
             }
             TableHelper tableHelper = new TableHelper();
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            TableFormatter tableFormatter = (TableFormatter) context.getService(tableFormatterServRef);
             tableFormatter.makeHotNetAnalysisTables(network);
             network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", "FI Network for HotNet Analysis");
             if (network == null || network.getNodeCount() <= 0)
             {
                 JOptionPane.showMessageDialog(desktopApp.getJFrame(),
-                        "Cannot find any functional interaction among provided genes.\n"
-                                + "No network can be constructed.\n"
-                                + "Note: only human gene names are supported.",
-                        "Empty Network", JOptionPane.INFORMATION_MESSAGE);
+                                              "Cannot find any functional interaction among provided genes.\n"
+                                                      + "No network can be constructed.\n"
+                                                      + "Note: only human gene names are supported.",
+                                                      "Empty Network", JOptionPane.INFORMATION_MESSAGE);
                 desktopApp.getJFrame().getGlassPane().setVisible(false);
                 return;
             }
@@ -138,41 +127,32 @@ public class HotNetAnalysisTask implements Runnable
                 geneToSampleString.put(gene, InteractionUtilities.joinStringElements(";", samples));
             }
             tableHelper.loadNodeAttributesByName(network, "samples", geneToSampleString);
+            CyNetworkManager networkManager = (CyNetworkManager) context.getService(netManagerRef);
             networkManager.addNetwork(network);
+            CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) context.getService(viewFactoryRef);
             CyNetworkView view = viewFactory.createNetworkView(network);
             tableHelper.storeClusteringType(view, TableFormatterImpl.getHotNetModule());
             tableHelper.storeDataSetType(network, TableFormatterImpl.getSampleMutationData());
             tableHelper.storeFINetworkVersion(view);
+            CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);
             viewManager.addNetworkView(view);
             EdgeActionCollection.setEdgeNames(view);
-            
-            try
-            {
-                BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-                ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-                FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
-                visStyler.setVisualStyle(view);
-                visStyler.setLayout();
-            }
-            catch (Throwable t)
-            {
-                PlugInUtilities.showErrorMessage("The visual style could not be applied.", "Visual Style Error");
-            }
+            ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+            FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
+            visStyler.setVisualStyle(view);
+            visStyler.setLayout();
             ResultDisplayHelper.getHelper().showHotnetModulesInTab(selectedModules,
-                    sampleToGenes,
-                    view);
+                                                                   sampleToGenes,
+                                                                   view);
         }
-        
-        catch (Exception e)
-        {
-            JOptionPane.showMessageDialog(null,
-                    "Error in HotNet Mutation Analysis: " + e.getMessage(),
-                    "Error in HotNet",
-                    JOptionPane.ERROR_MESSAGE);
+        catch (Exception e) {
+            JOptionPane.showMessageDialog(desktopApp.getJFrame(),
+                                          "Error in HotNet Mutation Analysis: " + e.getMessage(),
+                                          "Error in HotNet",
+                                          JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
         desktopApp.getJFrame().getGlassPane().setVisible(false);
-        releaseCyServices();
     }
 
     private CyNetwork buildFINetwork(List<HotNetModule> modules, Map<String, Set<String>> sampleToGenes) throws Exception
@@ -181,12 +161,13 @@ public class HotNetAnalysisTask implements Runnable
         Set<String> allGenes = new HashSet<String>();
         for (HotNetModule module : modules)
             allGenes.addAll(module.genes); 
-        FINetworkService fiService = PlugInScopeObjectManager.getManager().getNetworkService();
+        FINetworkService fiService = FIPlugInHelper.getHelper().getNetworkService();
         Set<String> fis = fiService.buildFINetwork(allGenes, false);
         FINetworkGenerator generator = new FINetworkGenerator();
         CyNetwork network = generator.constructFINetwork(fis);
         return network;
     }
+    
     private Map<String, Double> generateGeneScoreFromSamples(Map<String, Set<String>> sampleToGenes)
     {
         int totalSamles = sampleToGenes.size();
@@ -198,6 +179,7 @@ public class HotNetAnalysisTask implements Runnable
         }
         return geneToScore;
     }
+    
     @SuppressWarnings("unchecked")
     private HotNetResult parseResults(Element resultElm) {
 //        try {
@@ -238,6 +220,7 @@ public class HotNetAnalysisTask implements Runnable
         }
         return result;
     }
+    
     private List<HotNetModule> displayModules(HotNetResult result) {
         ResultDialog resultDialog = new ResultDialog();
         resultDialog.showResults(result);
@@ -248,6 +231,7 @@ public class HotNetAnalysisTask implements Runnable
             return null;
         return resultDialog.getSelectedModules();
     }
+    
     static class HotNetModule {
         Set<String> genes;
         Double pvalue;
@@ -261,6 +245,7 @@ public class HotNetAnalysisTask implements Runnable
         Double delta;
         Boolean useAutoDelta;
     }
+    
     private class ResultDialog extends JDialog {
         private JTable resultTable;
         private boolean isOkClicked;
@@ -271,7 +256,7 @@ public class HotNetAnalysisTask implements Runnable
         private JLabel selectedClusterLabel;
         
         public ResultDialog() {
-            super(desktopApp.getJFrame());
+            super(PlugInObjectManager.getManager().getCytoscapeDesktop());
             setTitle("HotNet Mutation Analysis Results");
             init();
         }
@@ -484,45 +469,6 @@ public class HotNetAnalysisTask implements Runnable
             }
             return null;
         }
-    }
-    
-    private void initCyServices()
-    {
-        //Get CyNetworkManager
-        Map<ServiceReference,  Object> netManagerRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyNetworkManager.class.getName());
-        ServiceReference servRef = (ServiceReference) netManagerRefToObj.keySet().toArray()[0];
-        CyNetworkManager netManager = (CyNetworkManager) netManagerRefToObj.get(servRef);
-        this.networkManager = netManager;
-        this.networkManagerRef = servRef;
-        
-        //Get CyNetworkViewFactory
-        Map<ServiceReference, Object> viewFactoryRefToObj = PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyNetworkViewFactory.class.getName());
-        servRef = (ServiceReference) viewFactoryRefToObj.keySet().toArray()[0];
-        CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) viewFactoryRefToObj.get(servRef);
-        this.viewFactory = viewFactory;
-        this.viewFactoryRef = servRef;
-        
-        //Get CyNetworkViewManager
-        Map<ServiceReference,  Object> viewManagerRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyNetworkViewManager.class.getName());
-        servRef = (ServiceReference) viewManagerRefToObj.keySet().toArray()[0];
-        CyNetworkViewManager viewManager = (CyNetworkViewManager) viewManagerRefToObj.get(servRef);
-        this.viewManager = viewManager;
-        this.viewManagerRef = servRef;
-       
-        Map<ServiceReference, Object> tableFormatterRefToObj = PlugInScopeObjectManager.getManager().getServiceReferenceObject(TableFormatter.class.getName());
-        servRef = (ServiceReference) tableFormatterRefToObj.keySet().toArray()[0];
-        TableFormatterImpl tableFormatter = (TableFormatterImpl) tableFormatterRefToObj.get(servRef);
-        this.tableFormatter = tableFormatter;
-        this.tableFormatterServRef = servRef;
-    }
-    
-    private void releaseCyServices()
-    {
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-        context.ungetService(networkManagerRef);
-        context.ungetService(viewFactoryRef);
-        context.ungetService(viewManagerRef);
-        context.ungetService(tableFormatterServRef);
     }
 
 }

@@ -30,7 +30,7 @@ public class TableHelper
     public void storeFINetworkVersion(CyNetwork network)
     {
         CyTable netTable = network.getDefaultNetworkTable();
-        String version = PlugInScopeObjectManager.getManager()
+        String version = FIPlugInHelper.getHelper()
                 .getFiNetworkVersion();
         netTable.getRow(network.getSUID()).set(FI_NETWORK_VERSION,
                 version);

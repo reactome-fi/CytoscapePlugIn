@@ -12,11 +12,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.swing.ImageIcon;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -38,7 +36,9 @@ import org.osgi.framework.ServiceReference;
 
 /**
  * Utility methods that can be used by Reactome FI plug-in have been grouped
- * here.
+ * here. There some overlappings between this class and PlugInObjectManager.
+ * Probably a refactoring is needed between this class and that one. Or should
+ * these classes be merged together?
  * 
  * @author gwu
  * 
@@ -217,23 +217,4 @@ public class PlugInUtilities {
             throw new IllegalStateException(method.getResponseBodyAsString());
     }
     
-    /**
-     * Load an ImageIcon based on a file name.
-     * @param src
-     * @param imgFileName
-     * @return
-     */
-    public static ImageIcon createImageIcon(Object src,
-                                            String imgFileName) {
-        String urlName = "org/reactome/cytoscape/" + imgFileName;
-        URL url = src.getClass().getClassLoader().getResource(urlName);
-        ImageIcon icon = null;
-        if (url == null) {
-            icon = new ImageIcon(imgFileName);
-        }
-        else {
-            icon = new ImageIcon(url);
-        }
-        return icon;
-    }
 }

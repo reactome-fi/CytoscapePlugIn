@@ -73,7 +73,7 @@ public class HotNetAnalysisDialog extends FIActionDialog {
         JLabel fileChooseLabel = new JLabel("Choose data file:");
         fileTF = new JTextField();
         JButton browseButton = new JButton("Browse");
-        createFileChooserGui(fileChooseLabel, fileTF, okBtn, browseButton, filePanel, constraints);
+        createFileChooserGui(fileChooseLabel, okBtn, browseButton, filePanel, constraints);
         JLabel fileFormatLabel = new JLabel("Specify file format:");
         constraints.gridy = 1;
         constraints.gridx = 0;

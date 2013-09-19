@@ -12,17 +12,12 @@ package org.reactome.cytoscape3;
  */
 import java.util.Set;
 
-import javax.swing.JOptionPane;
-
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkTableManager;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
-import org.cytoscape.model.SavePolicy;
 import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.TableFormatter;
 
 public class TableFormatterImpl implements TableFormatter

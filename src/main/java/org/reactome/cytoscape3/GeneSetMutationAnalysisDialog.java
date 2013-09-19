@@ -74,7 +74,7 @@ public class GeneSetMutationAnalysisDialog extends FIActionDialog {
         JLabel fileChooseLabel = new JLabel("Choose data file:");
         fileTF = new JTextField();
         JButton browseButton = new JButton("Browse");
-        createFileChooserGui(fileChooseLabel, fileTF, okBtn, browseButton,
+        createFileChooserGui(fileChooseLabel, okBtn, browseButton,
                 loadPanel, constraints);
 
         JLabel fileFormatLabel = new JLabel("Specify file format: ");

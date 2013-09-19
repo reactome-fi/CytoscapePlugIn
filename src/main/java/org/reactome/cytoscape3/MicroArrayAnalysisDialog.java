@@ -74,7 +74,7 @@ public class MicroArrayAnalysisDialog extends FIActionDialog {
         JButton okBtn = controlPane.getOKBtn();
         JButton browseButton = new JButton("Browse");
         fileTF = new JTextField();
-        createFileChooserGui(fileChooseLabel, fileTF, okBtn, browseButton, filePanel, constraints);
+        createFileChooserGui(fileChooseLabel, okBtn, browseButton, filePanel, constraints);
         // Add a note text
         JTextArea noteTA = new JTextArea();
         Font font3 = filePanel.getFont();
@@ -213,13 +213,14 @@ public class MicroArrayAnalysisDialog extends FIActionDialog {
         return true;
     }
     
-    public boolean isSelectedCorBox()
-    {
+    public boolean shouldAbsCorUsed() {
         return corBox.isSelected();
     }
     
-    public String getMclTIFPath()
-    {
-        return mclITF.getText().trim();
+    public double getInflation() {
+        String text = mclITF.getText().trim();
+        if (text.length() == 0)
+            return 5.0d; // Default
+        return new Double(text);
     }
 }

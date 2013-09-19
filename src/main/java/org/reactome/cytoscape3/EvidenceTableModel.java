@@ -10,6 +10,7 @@ import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
 
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.funcInt.Evidence;
 
 public class EvidenceTableModel extends AbstractTableModel {
@@ -28,8 +29,10 @@ public class EvidenceTableModel extends AbstractTableModel {
         // Need to create evidence property to name mapping
         props = new ArrayList<String>();
         propNames = new ArrayList<String>();
-        String prop = PlugInScopeObjectManager.getManager().getProperties().getProperty("evidenceProperties");
-        String names = PlugInScopeObjectManager.getManager().getProperties().getProperty("evidenceNames");
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        String prop = PlugInObjectManager.getManager().getProperties().getProperty("evidenceProperties");
+        FIPlugInHelper r1 = FIPlugInHelper.getHelper();
+        String names = PlugInObjectManager.getManager().getProperties().getProperty("evidenceNames");
         String[] propTokens = prop.split(",");
         String[] nameTokens = names.split(",");
         for (int i = 0; i < propTokens.length; i++) {

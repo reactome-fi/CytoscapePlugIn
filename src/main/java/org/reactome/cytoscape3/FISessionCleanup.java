@@ -14,6 +14,7 @@ import org.cytoscape.view.model.events.NetworkViewDestroyedListener;
 import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 /**
  * A class for cleaning up after the Reactome FI session is
  * ended. Removes CytoPanelComponents from the Cytopanels and
@@ -28,7 +29,8 @@ public class FISessionCleanup implements NetworkViewDestroyedListener, SessionAb
     @Override
     public void handleEvent(SessionAboutToBeSavedEvent e)
     {
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference visMapManRef = context.getServiceReference(VisualMappingManager.class.getName());
         VisualMappingManager visMapMan = (VisualMappingManager) context.getService(visMapManRef); 
       //Remove FI Visual Style (fix for inability to save
@@ -50,8 +52,8 @@ public class FISessionCleanup implements NetworkViewDestroyedListener, SessionAb
         String [] titles = {"MCL Module Browser", "HotNet Module Browser", "Network Module Browser",
                 "Pathways in Modules", "Pathways in Network", "GO CC in Network", "GO BP in Network",
                 "GO MF in Network", "GO CC in Modules", "GO CC in Modules", "GO BP in Modules"};
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager()
-                .getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp
                 .getCytoPanel(CytoPanelName.SOUTH);
         int numComps = tableBrowserPane.getCytoPanelComponentCount();

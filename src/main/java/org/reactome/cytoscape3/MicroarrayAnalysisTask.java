@@ -16,21 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 
-import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.view.model.CyNetworkView;
@@ -45,135 +36,113 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.cancer.CancerGeneExpressionCommon;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.service.FIVisualStyle;
-import org.reactome.cytoscape.service.TableFormatter;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.InteractionUtilities;
 
-public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
-{
+public class MicroarrayAnalysisTask extends FIAnalysisTask {
     private MicroArrayAnalysisDialog gui;
-    private CySwingApplication desktopApp;
-    private CyNetworkManager networkManager;
-    private ServiceReference networkManagerRef;
-    private CyNetworkViewFactory viewFactory;
-    private ServiceReference viewFactoryRef;
-    private CyNetworkViewManager viewManager;
-    private ServiceReference viewManagerRef;
-    private TableFormatterImpl tableFormatter;
-    private ServiceReference tableFormatterServRef;
-
-    public MicroarrayAnalysisTask(MicroArrayAnalysisDialog gui)
-    {
+    
+    public MicroarrayAnalysisTask(MicroArrayAnalysisDialog gui) {
         this.gui = gui;
     }
-
+    
     @Override
-    public void run()
-    {
-        
-        this.desktopApp = PlugInScopeObjectManager.getManager()
-                .getCySwingApp();
+    protected void doAnalysis() {
         ProgressPane progPane = new ProgressPane();
         progPane.setTitle("Microarray Data Analysis");
-        progPane.setText("Loading microarray file");
         progPane.setMinimum(1);
         progPane.setMaximum(100);
-        desktopApp.getJFrame().setGlassPane(progPane);
+        JFrame parentFrame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+        parentFrame.setGlassPane(progPane);
         progPane.setVisible(true);
         progPane.setValue(25);
-        try
-        {
-            getCyServices();
-            progPane.setText("Loading microarray file...");
-            progPane.setIndeterminate(true);
-            CancerGeneExpressionCommon arrayHelper = new CancerGeneExpressionCommon();
+        progPane.setText("Loading microarray file...");
+        progPane.setIndeterminate(true);
+        CancerGeneExpressionCommon arrayHelper = new CancerGeneExpressionCommon();
+        try {
             String fileName = gui.getSelectedFile().getPath().trim();
             Map<String, Map<String, Double>> geneToSampleToValue = arrayHelper
                     .loadGeneExp(fileName);
-            FINetworkService networkService = PlugInScopeObjectManager
-                    .getManager().getNetworkService();
+            FINetworkService networkService = FIPlugInHelper
+                    .getHelper().getNetworkService();
             Set<String> fis = networkService.queryAllFIs();
-            Set<String> fisWithCorrs = arrayHelper.calculateGeneExpCorrForFIs(
-                    geneToSampleToValue, fis, gui.isSelectedCorBox(), null);
+            Set<String> fisWithCorrs = arrayHelper.calculateGeneExpCorrForFIs(geneToSampleToValue,
+                                                                              fis,
+                                                                              gui.shouldAbsCorUsed(),
+                                                                              null);
             progPane.setIndeterminate(true);
             progPane.setText("Clustering FI network...");
             RESTFulFIService fiService = new RESTFulFIService();
             Element resultElm = fiService.doMCLClustering(fisWithCorrs,
-                    new Double(gui.getMclTIFPath()));
+                                                          new Double(gui.getInflation()));
             List<Set<String>> clusters = parseClusterResults(resultElm);
             // Don't want to display any small clusters
             filterSmallClusters(clusters);
             List<Double> correlations = calculateAverageCorrelations(clusters,
-                    fis, fisWithCorrs);
+                                                                     fis, fisWithCorrs);
             final Map<Set<String>, Double> selectedClusterToCorr = displayClusters(
-                    clusters, correlations);
-            if (selectedClusterToCorr != null)
-            {
+                                                                                   clusters, correlations);
+            if (selectedClusterToCorr != null) {
                 List<Set<String>> selectedClusters = new ArrayList<Set<String>>(
                         selectedClusterToCorr.keySet());
                 Collections.sort(selectedClusters,
-                        new Comparator<Set<String>>()
+                                 new Comparator<Set<String>>()
+                                 {
+                    @Override
+                    public int compare(Set<String> set1,
+                                       Set<String> set2)
+                    {
+                        int rtn = set2.size() - set1.size();
+                        if (rtn != 0) return rtn;
+                        // Try to sort based on average correlation
+                        Double value1 = selectedClusterToCorr.get(set1);
+                        if (value1 == null)
                         {
-                            @Override
-                            public int compare(Set<String> set1,
-                                    Set<String> set2)
-                            {
-                                int rtn = set2.size() - set1.size();
-                                if (rtn != 0) return rtn;
-                                // Try to sort based on average correlation
-                                Double value1 = selectedClusterToCorr.get(set1);
-                                if (value1 == null)
-                                {
-                                    value1 = 0.0d;
-                                }
-                                Double value2 = selectedClusterToCorr.get(set2);
-                                if (value2 == null)
-                                {
-                                    value2 = 0.0d;
-                                }
-                                return value2.compareTo(value1);
-                            }
-                        });
+                            value1 = 0.0d;
+                        }
+                        Double value2 = selectedClusterToCorr.get(set2);
+                        if (value2 == null)
+                        {
+                            value2 = 0.0d;
+                        }
+                        return value2.compareTo(value1);
+                    }
+                                 });
                 progPane.setText("Building FI network...");
                 CyNetwork network = buildNetwork(selectedClusters, fis,
-                        geneToSampleToValue);
+                                                 geneToSampleToValue);
+                BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+                CyNetworkManager networkManager = (CyNetworkManager) context.getService(netManagerRef);
                 networkManager.addNetwork(network);
+                CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) context.getService(viewFactoryRef);
                 CyNetworkView view = viewFactory.createNetworkView(network);
+                CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);
                 viewManager.addNetworkView(view);
                 EdgeActionCollection.setEdgeNames(view);
-                try
-                {
-                    BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-                    ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-                    FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
-                    visStyler.setVisualStyle(view);
-                    visStyler.setLayout();
-                    context.ungetService(servRef);
-                }
-                catch (Throwable t)
-                {
-                    PlugInUtilities.showErrorMessage("The visual style could not be applied.", "Visual Style Error");
-                }
+                ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+                FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
+                visStyler.setVisualStyle(view);
+                visStyler.setLayout();
+                context.ungetService(servRef);
                 ResultDisplayHelper.getHelper().showMCLModuleInTab(selectedClusters,
-                        selectedClusterToCorr,
-                        view);
+                                                                   selectedClusterToCorr,
+                                                                   view);
             }
         }
-        catch (Exception e)
-        {
-            JOptionPane.showMessageDialog(null, "Error in MCL clustering: "
-                    + e.getMessage(), "Error in MCL Clustering",
-                    JOptionPane.ERROR_MESSAGE);
+        catch (Exception e) {
+            JOptionPane.showMessageDialog(parentFrame, 
+                                          "Error in MCL clustering: " + e.getMessage(), 
+                                          "Error in MCL Clustering",
+                                          JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
-        desktopApp.getJFrame().getGlassPane().setVisible(false);
-        releaseCyServices();
+        parentFrame.getGlassPane().setVisible(false);
     }
-
+    
     private CyNetwork buildNetwork(List<Set<String>> clusters,
-            Set<String> allFIs,
-            Map<String, Map<String, Double>> geneToSampleToValue)
-    {
+                                   Set<String> allFIs,
+                                   Map<String, Map<String, Double>> geneToSampleToValue) {
         Set<String> allGenes = new HashSet<String>();
         for (Set<String> cluster : clusters)
         {
@@ -192,24 +161,23 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             }
         }
         Map<Integer, Map<String, Double>> moduleToSampleToValue = generateModuleToSampleToValue(
-                clusters, geneToSampleToValue);
-        PlugInScopeObjectManager.getManager().storeMCLModuleToSampleToValue(moduleToSampleToValue);
+                                                                                                clusters, geneToSampleToValue);
+        FIPlugInHelper.getHelper().storeMCLModuleToSampleToValue(moduleToSampleToValue);
         TableHelper tableHelper = new TableHelper();
         network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", "FI Network for MCL Modules");
         tableHelper.loadNodeAttributesByName(network, "module", nodeToCluster);
-        tableHelper.storeClusteringType(network, tableFormatter.getMCLArrayClustering());
+        tableHelper.storeClusteringType(network, 
+                                        TableFormatterImpl.getMCLArrayClustering());
         tableHelper.storeFINetworkVersion(network);
-       // tableHelper.storeMCLModuleToSampleToValue(network,
+        // tableHelper.storeMCLModuleToSampleToValue(network,
         //        moduleToSampleToValue);
         tableHelper.storeDataSetType(network, TableFormatterImpl
-                .getMCLArrayClustering());
+                                     .getMCLArrayClustering());
         return network;
     }
-
-    private Map<Integer, Map<String, Double>> generateModuleToSampleToValue(
-            List<Set<String>> clusters,
-            Map<String, Map<String, Double>> geneToSampleToValue)
-    {
+    
+    private Map<Integer, Map<String, Double>> generateModuleToSampleToValue(List<Set<String>> clusters,
+                                                                            Map<String, Map<String, Double>> geneToSampleToValue) {
         Map<Integer, Map<String, Double>> moduleToSampleToValue = new HashMap<Integer, Map<String, Double>>();
         List<String> samples = new ArrayList<String>();
         Map<String, Double> sampleToValue = geneToSampleToValue.values()
@@ -247,11 +215,11 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             }
         }
         return moduleToSampleToValue;
-    }
-
+                                                                            }
+    
     private Map<Set<String>, Double> displayClusters(
-            List<Set<String>> clusters, List<Double> correlations)
-    {
+                                                     List<Set<String>> clusters, List<Double> correlations)
+                                                     {
         // filterSmallClusters(clusters);
         MCLClusterResultDialog resultDialog = new MCLClusterResultDialog();
         resultDialog.setClusterResults(clusters, correlations);
@@ -262,11 +230,11 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             return resultDialog.getSelectedClusters();
         else
             return null; // has been canceled
-    }
-
+                                                     }
+    
     private void filterSmallClusters(List<Set<String>> clusters)
     {
-
+        
         for (Iterator<Set<String>> it = clusters.iterator(); it.hasNext();)
         {
             Set<String> cluster = it.next();
@@ -276,10 +244,9 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             }
         }
     }
-
+    
     private List<Set<String>> parseClusterResults(Element resultElm)
-            throws JDOMException
-    {
+            throws JDOMException {
         List<Set<String>> clusters = new ArrayList<Set<String>>();
         // // This is for test
         // String error = resultElm.getChildText("error");
@@ -299,11 +266,9 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
         }
         return clusters;
     }
-
-    private List<Double> calculateAverageCorrelations(
-            List<Set<String>> clusters, Set<String> fis,
-            Set<String> fisWithCorrs)
-    {
+    
+    private List<Double> calculateAverageCorrelations(List<Set<String>> clusters, Set<String> fis,
+                                                      Set<String> fisWithCorrs) {
         // Use this map for calculation
         Map<String, Double> fiToCorr = new HashMap<String, Double>();
         int index = 0;
@@ -311,7 +276,7 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
         {
             index = fiWithCorr.lastIndexOf("\t");
             fiToCorr.put(fiWithCorr.substring(0, index), new Double(fiWithCorr
-                    .substring(index + 1)));
+                                                                    .substring(index + 1)));
         }
         List<Double> corrs = new ArrayList<Double>();
         double total = 0.0d;
@@ -343,32 +308,31 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             }
         }
         return corrs;
-    }
-
-    private class MCLClusterResultDialog extends JDialog
-    {
+   }
+    
+    
+    private class MCLClusterResultDialog extends JDialog {
         private boolean isOkClicked;
         private JTable clusterTable;
         private JLabel numberLabel;
         private JLabel selectedClusterLabel;
         private JTextField sizeTF;
         private JTextField corrTF;
-
+        
         public MCLClusterResultDialog()
         {
-            super(desktopApp.getJFrame());
+            super(PlugInObjectManager.getManager().getCytoscapeDesktop());
             init();
         }
-
-        private void init()
-        {
+        
+        private void init() {
             setTitle("MCL Clustering Results");
             // Top panel to show filters
             JPanel northPane = new JPanel();
             northPane.setLayout(new GridBagLayout());
             Border border = BorderFactory.createEmptyBorder(4, 4, 4, 4);
             northPane.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createEtchedBorder(), border));
+                                                                   BorderFactory.createEtchedBorder(), border));
             GridBagConstraints constraints = new GridBagConstraints();
             constraints.insets = new Insets(4, 4, 4, 4);
             constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -412,25 +376,25 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             clusterTable.setModel(model);
             model.addTableModelListener(new TableModelListener()
             {
-
+                
                 @Override
                 public void tableChanged(TableModelEvent e)
                 {
                     int totalRow = clusterTable.getRowCount();
                     int totalGenes = model.getTotalGenesDisplayed();
                     selectedClusterLabel
-                            .setText("Total modules in table: " + totalRow
-                                    + " (" + totalGenes + " genes in total)");
+                    .setText("Total modules in table: " + totalRow
+                             + " (" + totalGenes + " genes in total)");
                 }
             });
             getContentPane().add(new JScrollPane(clusterTable),
-                    BorderLayout.CENTER);
+                                 BorderLayout.CENTER);
             // Control panel
             DialogControlPane controlPane = new DialogControlPane();
             JButton okBtn = controlPane.getOKBtn();
             okBtn.addActionListener(new ActionListener()
             {
-
+                
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
@@ -443,7 +407,7 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             // getRootPane().setDefaultButton(okBtn);
             controlPane.getCancelBtn().addActionListener(new ActionListener()
             {
-
+                
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
@@ -469,9 +433,9 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             setSize(670, 560);
             setLocationRelativeTo(getOwner());
         }
-
+        
         public void setClusterResults(List<Set<String>> clusters,
-                List<Double> correlations)
+                                      List<Double> correlations)
         {
             numberLabel.setText(numberLabel.getText() + "" + clusters.size());
             MCLClusterResultModel model = (MCLClusterResultModel) clusterTable
@@ -479,7 +443,7 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             model.setClusters(clusters, correlations);
             filterClusters();
         }
-
+        
         private void filterClusters()
         {
             MCLClusterResultModel model = (MCLClusterResultModel) clusterTable
@@ -503,8 +467,8 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             catch (NumberFormatException e)
             {
                 JOptionPane.showMessageDialog(this,
-                        "Please make sure you enter numbers in the filters.",
-                        "Error in Filtering", JOptionPane.ERROR_MESSAGE);
+                                              "Please make sure you enter numbers in the filters.",
+                                              "Error in Filtering", JOptionPane.ERROR_MESSAGE);
             }
         }
         
@@ -514,7 +478,7 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             for (int i = 0; i < clusterTable.getRowCount(); i++)
             {
                 String text = (String) clusterTable.getValueAt(i, clusterTable
-                        .getColumnCount() - 1);
+                                                               .getColumnCount() - 1);
                 String[] tokens = text.split(", ");
                 Set<String> cluster = new HashSet<String>();
                 for (String token : tokens)
@@ -527,58 +491,58 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
             return clusterToCorr;
         }
     }
-
+    
     private class MCLClusterResultModel extends AbstractTableModel
     {
         private String[][] data;
         private String[] headers = new String[]
-        { "Module Index", "Size", "Average Correlation", "Genes" };
+                { "Module Index", "Size", "Average Correlation", "Genes" };
         private List<Set<String>> clusters; // Cached for filtering purpose
         private List<Double> correlations;
         // cached value for fast return
         private int totalGenesDisplayed;
-
+        
         public MCLClusterResultModel()
         {
         }
-
+        
         public void setClusters(List<Set<String>> clusters,
-                List<Double> correlations)
+                                List<Double> correlations)
         {
             this.clusters = clusters;
             this.correlations = correlations;
         }
-
+        
         @Override
         public int getRowCount()
         {
             return data.length;
         }
-
+        
         @Override
         public int getColumnCount()
         {
             return headers.length;
         }
-
+        
         @Override
         public Object getValueAt(int rowIndex, int columnIndex)
         {
             return data[rowIndex][columnIndex];
         }
-
+        
         @Override
         public String getColumnName(int column)
         {
             return headers[column];
         }
-
+        
         @Override
         public Class<?> getColumnClass(int columnIndex)
         {
             return String.class;
         }
-
+        
         public void filterAndDisplay(Integer size, Double corr)
         {
             // Do a filtering
@@ -611,54 +575,16 @@ public class MicroarrayAnalysisTask implements Runnable// extends AbstractTask
                 // Format the value a little bit
                 data[i][2] = String.format("%.4f", filterCorrs.get(i));
                 data[i][3] = InteractionUtilities.joinStringElements(", ",
-                        cluster);
+                                                                     cluster);
                 totalGenesDisplayed += cluster.size();
             }
             fireTableDataChanged();
         }
-
+        
         public int getTotalGenesDisplayed()
         {
             return totalGenesDisplayed;
         }
-
-    }
-    private void getCyServices()
-    {
-        //Get CyNetworkManager
-        Map<ServiceReference,  Object> netManagerRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyNetworkManager.class.getName());
-        ServiceReference servRef = (ServiceReference) netManagerRefToObj.keySet().toArray()[0];
-        CyNetworkManager netManager = (CyNetworkManager) netManagerRefToObj.get(servRef);
-        this.networkManager = netManager;
-        this.networkManagerRef = servRef;
         
-        //Get CyNetworkViewFactory
-        Map<ServiceReference, Object> viewFactoryRefToObj = PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyNetworkViewFactory.class.getName());
-        servRef = (ServiceReference) viewFactoryRefToObj.keySet().toArray()[0];
-        CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) viewFactoryRefToObj.get(servRef);
-        this.viewFactory = viewFactory;
-        this.viewFactoryRef = servRef;
-        
-        //Get CyNetworkViewManager
-        Map<ServiceReference,  Object> viewManagerRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyNetworkViewManager.class.getName());
-        servRef = (ServiceReference) viewManagerRefToObj.keySet().toArray()[0];
-        CyNetworkViewManager viewManager = (CyNetworkViewManager) viewManagerRefToObj.get(servRef);
-        this.viewManager = viewManager;
-        this.viewManagerRef = servRef;
-       
-        Map<ServiceReference, Object> tableFormatterRefToObj = PlugInScopeObjectManager.getManager().getServiceReferenceObject(TableFormatter.class.getName());
-        servRef = (ServiceReference) tableFormatterRefToObj.keySet().toArray()[0];
-        TableFormatterImpl tableFormatter = (TableFormatterImpl) tableFormatterRefToObj.get(servRef);
-        this.tableFormatter = tableFormatter;
-        this.tableFormatterServRef = servRef;
-    }
-    
-    private void releaseCyServices()
-    {
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-        context.ungetService(networkManagerRef);
-        context.ungetService(viewFactoryRef);
-        context.ungetService(viewManagerRef);
-        context.ungetService(tableFormatterServRef);
     }
 }

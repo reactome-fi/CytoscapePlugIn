@@ -15,6 +15,8 @@ import javax.swing.JRadioButton;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.reactome.cytoscape.util.PlugInObjectManager;
+
 /**
  * This customized JPanel is used to select a FI network version. Several FI
  * network versions may be provided in the plug-in so that results based on old
@@ -42,9 +44,10 @@ public class FIVersionSelectionPanel extends JPanel
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(4, 4, 4, 4);
         add(choicePane, BorderLayout.CENTER);
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
 
         // Retrieve the list of FI versions from the Reactome server.
-        String versions = PlugInScopeObjectManager.getManager().getProperties()
+        String versions = PlugInObjectManager.getManager().getProperties()
                 .getProperty("FINetworkVersions");
         String[] tokens = versions.split(",");
         // Create JRadioButtons based on tokens
@@ -87,7 +90,7 @@ public class FIVersionSelectionPanel extends JPanel
                 for (JRadioButton btn : buttons)
                     if (btn.isSelected())
                     {
-                        PlugInScopeObjectManager.getManager()
+                        FIPlugInHelper.getHelper()
                                 .setFiNetworkVersion(btn.getText());
                         break;
                     }

@@ -35,6 +35,7 @@ import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 
@@ -196,7 +197,8 @@ public class CyPathwayDiagramHelper {
                 
             });
             diagramFrame.getContentPane().add(pathwayEditor, BorderLayout.CENTER);
-            diagramFrame.setLocationRelativeTo(PlugInScopeObjectManager.getManager().getCytoscapeDesktop());
+            FIPlugInHelper r = FIPlugInHelper.getHelper();
+            diagramFrame.setLocationRelativeTo(PlugInObjectManager.getManager().getCytoscapeDesktop());
             diagramFrame.setSize(800, 600);
             diagramFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             diagramFrame.setVisible(true);
@@ -213,7 +215,7 @@ public class CyPathwayDiagramHelper {
             if (r.getReactomeId() != null) {
                 Action action = new AbstractAction("View Instance") {
                     public void actionPerformed(ActionEvent e) {
-                        String dataSourceURL = PlugInScopeObjectManager.getManager().getDataSourceURL();
+                        String dataSourceURL = FIPlugInHelper.getHelper().getDataSourceURL();
                         PlugInUtilities.openURL(dataSourceURL + r.getReactomeId());
                     }
                 };

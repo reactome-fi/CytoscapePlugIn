@@ -39,6 +39,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
 import org.reactome.cancerindex.model.Sentence;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 public class NodeActionCollection
@@ -144,8 +145,8 @@ public class NodeActionCollection
             final CyNetworkView view)
     {
         FIPartnersDialog dialog = new FIPartnersDialog(name, partners, view);
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager()
-                .getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         dialog.setSize(400, 300);
         dialog.setLocationRelativeTo(desktopApp.getJFrame());
         dialog.setModal(true);
@@ -426,12 +427,14 @@ public class NodeActionCollection
     {
         if (sentences == null || sentences.isEmpty())
         {
-            CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+            FIPlugInHelper r = FIPlugInHelper.getHelper();
+            CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
             JOptionPane.showMessageDialog(desktopApp.getJFrame(), "No cancer gene index annotations were found for \"" + gene + "\".", "No Annotations for Gene", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
-        CancerIndexSentenceDisplayFrame cgiFrame = PlugInScopeObjectManager.getManager().getCancerIndexFrame(desktopApp.getJFrame());
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        CancerIndexSentenceDisplayFrame cgiFrame = FIPlugInHelper.getHelper().getCancerIndexFrame(desktopApp.getJFrame());
         cgiFrame.display(sentences, gene);
     }
 }

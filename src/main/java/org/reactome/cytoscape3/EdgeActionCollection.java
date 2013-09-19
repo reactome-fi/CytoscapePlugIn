@@ -34,6 +34,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.gk.util.ProgressPane;
 
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
@@ -52,7 +53,8 @@ public class EdgeActionCollection
                 ProgressPane progPane = new ProgressPane();
                 progPane.setIndeterminate(true);
                 progPane.setText("Fetching FI Annotations...");
-                final CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+                FIPlugInHelper r = FIPlugInHelper.getHelper();
+                final CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
                 desktopApp.getJFrame().setGlassPane(progPane);
                 desktopApp.getJFrame().getGlassPane().setVisible(true);
                 TableHelper tableHelper = new TableHelper();
@@ -169,7 +171,8 @@ public class EdgeActionCollection
     {
         ProgressPane progPane = new ProgressPane();
         progPane.setText("Fetching FI Annotation(s)");
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         desktopApp.getJFrame().setGlassPane(progPane);
         desktopApp.getJFrame().getGlassPane().setVisible(true);
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
@@ -199,7 +202,8 @@ public class EdgeActionCollection
     }
     private void displayInteraction(View<CyEdge> edgeView, List<Interaction> interactions, String source, String target)
     {
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         JDialog dialog = new JDialog(desktopApp.getJFrame());
         dialog.setTitle("Interaction Info");
         dialog.setSize(400, 300);
@@ -313,7 +317,7 @@ public class EdgeActionCollection
             return;
         ReactomeSourceTableModel tableModel = (ReactomeSourceTableModel) table.getModel();
         Long id = (Long) tableModel.getValueAt(selectedRow, 0);
-        String dataSourceURL = PlugInScopeObjectManager.getManager().getDataSourceURL();
+        String dataSourceURL = FIPlugInHelper.getHelper().getDataSourceURL();
         if (dataSourceURL == null) {
             PlugInUtilities.showErrorMessage("Data source URL has not been set.", 
                     "Error in Opening Source");

@@ -54,6 +54,7 @@ import org.cytoscape.view.model.View;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
 
@@ -86,7 +87,8 @@ public abstract class NetworkModulePanel extends JPanel implements
     public NetworkModulePanel()
     {
         init();
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceRegistration servReg = context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
         //The above returns null. Attempts to cache it have been futile.
         this.servReg = servReg;
@@ -96,7 +98,8 @@ public abstract class NetworkModulePanel extends JPanel implements
     {
         setTitle(title);
         init();
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
         ServiceReference servRef = context.getServiceReference(FileUtil.class.getName());
         if (servRef != null)
@@ -324,7 +327,8 @@ public abstract class NetworkModulePanel extends JPanel implements
         Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
         FileChooserFilter filter = new FileChooserFilter("Annotation File", "txt");
         filters.add(filter);
-        File file = fileUtil.getFile(PlugInScopeObjectManager.getManager().getCytoscapeDesktop(), "Save Annotation File", FileUtil.SAVE, filters);
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), "Save Annotation File", FileUtil.SAVE, filters);
         NetworkModuleTableModel model = (NetworkModuleTableModel) contentTable.getModel();
         FileUtility fu = new FileUtility();
         try {

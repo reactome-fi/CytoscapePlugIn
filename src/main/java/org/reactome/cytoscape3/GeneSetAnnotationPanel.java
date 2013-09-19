@@ -24,6 +24,7 @@ import keggapi.KEGGPortType;
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
@@ -174,12 +175,13 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
             }
             else {
                 Long dbId = service.queryPathwayId(pathway);
-                String dataSourceURL = PlugInScopeObjectManager.getManager().getDataSourceURL();
+                String dataSourceURL = FIPlugInHelper.getHelper().getDataSourceURL();
                 PlugInUtilities.openURL(dataSourceURL + dbId);
             }
         }
         catch(IOException e) {
-            JOptionPane.showMessageDialog(PlugInScopeObjectManager.getManager().getCytoscapeDesktop(),
+            FIPlugInHelper r = FIPlugInHelper.getHelper();
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cannot find the DB_ID for the selected pathway: " + pathway,
                                           "Error in Querying Pathway DB_ID",
                                           JOptionPane.ERROR_MESSAGE);

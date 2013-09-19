@@ -14,6 +14,7 @@ import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape3.HotNetAnalysisTask.HotNetModule;
 
 public class ResultDisplayHelper
@@ -44,8 +45,8 @@ public class ResultDisplayHelper
             CyNetworkView view)
     {
         String title = "Network Module Browser";
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager()
-                .getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp
                 .getCytoPanel(CytoPanelName.SOUTH);
         boolean found = false;
@@ -88,8 +89,8 @@ public class ResultDisplayHelper
             Map<String, Set<String>> sampleToGenes, CyNetworkView view)
     {
         String title = "HotNet Module Browser";
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager()
-                .getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp
                 .getCytoPanel(CytoPanelName.SOUTH);
         boolean found = false;
@@ -132,8 +133,8 @@ public class ResultDisplayHelper
             Map<Set<String>, Double> clusterToCorr, CyNetworkView view)
     {
         String title = "MCL Module Browser";
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager()
-                .getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp
                 .getCytoPanel(CytoPanelName.SOUTH);
         boolean found = false;
@@ -189,8 +190,8 @@ public class ResultDisplayHelper
             else
                 title = "GO " + type + " in Network";
         }
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager()
-                .getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp
                 .getCytoPanel(CytoPanelName.SOUTH);
         boolean found = false;

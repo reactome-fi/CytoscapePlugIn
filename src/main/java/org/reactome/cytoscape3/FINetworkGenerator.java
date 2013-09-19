@@ -33,79 +33,33 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.NetworkGenerator;
 import org.reactome.cytoscape.service.TableFormatter;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 
 public class FINetworkGenerator implements NetworkGenerator
 {
-    private CyNetworkFactory networkFactory;
-//    private CyTableFactory tableFactory;
-//    private CyTableManager tableManager;
     private ServiceReference tableFormatterServRef;
-    private TableFormatterImpl tableFormatter;
     private ServiceReference networkFactoryRef;
     private ServiceReference tableManagerRef;
     private ServiceReference tableFactoryRef;
-
-    public FINetworkGenerator(CyNetworkFactory networkFactory,
-            CyTableFactory tableFactory, CyTableManager tableManager)
-    {
-        this.networkFactory = networkFactory;
-//        this.tableFactory = tableFactory;
-//        this.tableManager = tableManager;
+    
+    public FINetworkGenerator() {
     }
-    public FINetworkGenerator()
-    {
-    }
-    private void getTableFormatter()
-    {
-        try
-        {
-            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-            ServiceReference servRef = context.getServiceReference(TableFormatter.class.getName());
-            if (servRef != null)
-            {
-                this.tableFormatterServRef = servRef;
-                this.tableFormatter = (TableFormatterImpl) context.getService(servRef);
-            }
-            else
-                throw new Exception();
-        }
-        catch (Throwable t)
-        {
-            JOptionPane.showMessageDialog(null, "The table formatter could not be retrieved.", "Table Formatting Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    private void releaseTableFormatter()
-    {
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+    
+    private void releaseTableFormatter() {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         context.ungetService(tableFormatterServRef);
     }
-    private void getCyServices()
-    {
-        Map<ServiceReference,  Object> netFactoryRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyNetworkFactory.class.getName());
-        ServiceReference servRef = (ServiceReference) netFactoryRefToObj.keySet().toArray()[0];
-        CyNetworkFactory netFactory = (CyNetworkFactory) netFactoryRefToObj.get(servRef);
-        this.networkFactory = netFactory;
-        this.networkFactoryRef = servRef;
-
-        Map<ServiceReference,  Object> tableManagerRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyTableManager.class.getName());
-        servRef = (ServiceReference) tableManagerRefToObj.keySet().toArray()[0];
-        CyTableManager tableManager = (CyTableManager) tableManagerRefToObj.get(servRef);
-//        this.tableManager = tableManager;
-        this.tableManagerRef = servRef;
-
-        Map<ServiceReference,  Object> tableFactoryRefToObj =  PlugInScopeObjectManager.getManager().getServiceReferenceObject(CyTableFactory.class.getName());
-        servRef = (ServiceReference) tableFactoryRefToObj.keySet().toArray()[0];
-        CyTableFactory tableFactory = (CyTableFactory) tableFactoryRefToObj.get(servRef);
-//        this.tableFactory = tableFactory;
-        this.tableFactoryRef = servRef;
-
-        getTableFormatter();
+    
+    private void initCyServices() {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        this.networkFactoryRef = context.getServiceReference(CyNetworkFactory.class.getName());
+        this.tableManagerRef = context.getServiceReference(CyTableManager.class.getName());
+        this.tableFactoryRef = context.getServiceReference(CyTableFactory.class.getName());
+        this.tableFormatterServRef = context.getServiceReference(TableFormatter.class.getName());
     }
 
-    private void releaseCyServices()
-    {
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+    private void releaseCyServices() {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         if (networkFactoryRef != null)
             context.ungetService(networkFactoryRef);
         if (tableManagerRef != null)
@@ -115,11 +69,15 @@ public class FINetworkGenerator implements NetworkGenerator
         if (tableFormatterServRef != null)
             releaseTableFormatter();
     }
+    
     public CyNetwork constructFINetwork(Set<String> nodes, Set<String> fis)
     {
-        getCyServices();
+        initCyServices();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         // Construct an empty network.
+        CyNetworkFactory networkFactory = (CyNetworkFactory) context.getService(networkFactoryRef);
         CyNetwork network = networkFactory.createNetwork();
+        TableFormatter tableFormatter = (TableFormatter) context.getService(tableFormatterServRef);
         tableFormatter.makeBasicTableColumns(network);
         // Generate a source, edge and target for each FI interaction
         // retrieved from the Reactome database.
@@ -238,8 +196,8 @@ public class FINetworkGenerator implements NetworkGenerator
         view.updateView();
         try
         {
-            BundleContext context = PlugInScopeObjectManager.getManager()
-                    .getBundleContext();
+            FIPlugInHelper r = FIPlugInHelper.getHelper();
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             ServiceReference servRef = context
                     .getServiceReference(FIVisualStyle.class.getName());
             FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context
@@ -293,7 +251,8 @@ public class FINetworkGenerator implements NetworkGenerator
         double dx = view.getNodeView(anchor).getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION) - coords[0];
         double dy = view.getNodeView(anchor).getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION) - coords[1];
         int i = 0;
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(CyEventHelper.class.getName());
         CyEventHelper eventHelper = (CyEventHelper) context.getService(servRef);
         

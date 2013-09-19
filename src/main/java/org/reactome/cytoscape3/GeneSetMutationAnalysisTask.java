@@ -25,7 +25,7 @@ import org.reactome.cancer.MATFileLoader;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableFormatter;
-import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
 
@@ -36,9 +36,7 @@ import org.reactome.r3.util.InteractionUtilities;
  * @author Eric T. Dawson
  *
  */
-public class GeneSetMutationAnalysisTask implements Runnable
-{
-    private CySwingApplication desktopApp;
+public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
     private String format;
     private File file;
     private boolean chooseHomoGenes;
@@ -47,14 +45,6 @@ public class GeneSetMutationAnalysisTask implements Runnable
     private boolean showUnlinkedEnabled;
     private boolean fetchFIAnnotations;
     private int sampleCutoffValue;
-    private CyNetworkViewFactory viewFactory;
-    private CyNetworkViewManager viewManager;
-    private CyNetworkManager netManager;
-    private ServiceReference tableFormatterServRef;
-    private TableFormatterImpl tableFormatter;
-    private ServiceReference netManagerRef;
-    private ServiceReference viewFactoryRef;
-    private ServiceReference viewManagerRef;
 
     public GeneSetMutationAnalysisTask(GeneSetMutationAnalysisDialog gui)
     {
@@ -69,75 +59,17 @@ public class GeneSetMutationAnalysisTask implements Runnable
         this.fetchFIAnnotations = gui.shouldFIAnnotationsBeFetched();
     }
 
-    private void initializeCyServices()
-    {
-        BundleContext context = PlugInScopeObjectManager.getManager()
-                .getBundleContext();
-        
-        // Get CyNetworkManager
-        Map<ServiceReference, Object> netManagerRefToObj = PlugInScopeObjectManager
-                .getManager().getServiceReferenceObject(
-                        CyNetworkManager.class.getName());
-        ServiceReference servRef = (ServiceReference) netManagerRefToObj.keySet().toArray()[0];
-        CyNetworkManager netManager = (CyNetworkManager) netManagerRefToObj
-                .get(servRef);
-        this.netManager = netManager;
-        this.netManagerRef = servRef;
-
-        // Get CyNetworkViewFactory
-        Map<ServiceReference, Object> viewFactoryRefToObj = PlugInScopeObjectManager
-                .getManager().getServiceReferenceObject(
-                        CyNetworkViewFactory.class.getName());
-        servRef = (ServiceReference) viewFactoryRefToObj.keySet().toArray()[0];
-        CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) viewFactoryRefToObj
-                .get(servRef);
-        this.viewFactory = viewFactory;
-        this.viewFactoryRef = servRef;
-
-        // Get CyNetworkViewManager
-        Map<ServiceReference, Object> viewManagerRefToObj = PlugInScopeObjectManager
-                .getManager().getServiceReferenceObject(
-                        CyNetworkViewManager.class.getName());
-        servRef = (ServiceReference) viewManagerRefToObj.keySet().toArray()[0];
-        CyNetworkViewManager viewManager = (CyNetworkViewManager) viewManagerRefToObj
-                .get(servRef);
-        this.viewManager = viewManager;
-        this.viewManagerRef = servRef;
-
-        //Get CySwingApp
-        this.desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
-        //Get the FI table formatter.
-        getTableFormatter();
-    }
-    
-    private void releaseCyServices()
-    {
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
-        try
-        {
-            context.ungetService(netManagerRef);
-            context.ungetService(viewFactoryRef);
-            context.ungetService(viewManagerRef);
-            releaseTableFormatter();
-        }
-        catch (Throwable t)
-        {
-            PlugInUtilities.showErrorMessage("Error in Releasing Services", "Could not release CyServices\n" + t);
-        }
-    }
     @Override
-    public void run()
-    {
-        initializeCyServices();
+    protected void doAnalysis() {
         ProgressPane progPane = new ProgressPane();
         progPane.setMinimum(1);
         progPane.setMaximum(100);
         progPane.setTitle("Gene Set/Mutation Analysis");
         progPane.setText("Loading file...");
         progPane.setValue(25);
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         desktopApp.getJFrame().setGlassPane(progPane);
         desktopApp.getJFrame().getGlassPane().setVisible(true);
-        getTableFormatter();
         try
         {
             Map<String, Integer> geneToSampleNumber = null;
@@ -170,8 +102,8 @@ public class GeneSetMutationAnalysisTask implements Runnable
             if (useLinkers)
             {
                 progPane.setText("Checking FI Network size...");
-                FINetworkService fiService = PlugInScopeObjectManager
-                        .getManager().getNetworkService();
+                FINetworkService fiService = FIPlugInHelper
+                        .getHelper().getNetworkService();
                 Integer cutoff = fiService.getNetworkBuildSizeCutoff();
                 if (cutoff != null && selectedGenes.size() >= cutoff)
                 {
@@ -191,7 +123,9 @@ public class GeneSetMutationAnalysisTask implements Runnable
             progPane.setText("Constructing FI network...");
             CyNetwork network = constructFINetwork(selectedGenes, file
                     .getName());
-            this.tableFormatter.makeGeneSetMutationAnalysisTables(network);
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            TableFormatter tableFormatter = (TableFormatter) context.getService(tableFormatterServRef);
+            tableFormatter.makeGeneSetMutationAnalysisTables(network);
             network.getDefaultNetworkTable().getRow(network.getSUID()).set(
                     "name", file.getName());
             if (network == null || network.getNodeCount() <= 0)
@@ -204,6 +138,7 @@ public class GeneSetMutationAnalysisTask implements Runnable
                 desktopApp.getJFrame().getGlassPane().setVisible(false);
                 return;
             }
+            CyNetworkManager netManager = (CyNetworkManager) context.getService(netManagerRef);
             netManager.addNetwork(network);
 
             // Fix for broken default value persistence in CyTables
@@ -232,10 +167,12 @@ public class GeneSetMutationAnalysisTask implements Runnable
             }
             progPane.setText("Loading network attributes...");
             TableHelper tableHelper = new TableHelper();
+            CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) context.getService(viewFactoryRef);
             CyNetworkView view = viewFactory.createNetworkView(network);
             tableHelper.storeFINetworkVersion(view);
             tableHelper.storeDataSetType(network, TableFormatterImpl
                     .getSampleMutationData());
+            CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);
             viewManager.addNetworkView(view);
             if (geneToSampleNumber != null && !geneToSampleNumber.isEmpty())
             {
@@ -268,11 +205,9 @@ public class GeneSetMutationAnalysisTask implements Runnable
                 progPane.setText("Fetching FI annotations...");
                 EdgeActionCollection.annotateFIs(view);
             }
+            FIPlugInHelper r = FIPlugInHelper.getHelper();
             
-            BundleContext context = PlugInScopeObjectManager.getManager()
-                    .getBundleContext();
-            ServiceReference visHelperRef = context
-                    .getServiceReference(FIVisualStyle.class.getName());
+            ServiceReference visHelperRef = context.getServiceReference(FIVisualStyle.class.getName());
             if (visHelperRef != null)
             {
                 FIVisualStyleImpl styleHelper = (FIVisualStyleImpl) context
@@ -300,14 +235,11 @@ public class GeneSetMutationAnalysisTask implements Runnable
         }
         desktopApp.getJFrame().getGlassPane().setVisible(false);
         progPane = null;
-        releaseCyServices();
-        releaseTableFormatter();
     }
 
     private void loadGeneSampleFile(File file,
             Map<String, Integer> geneToSampleNumber,
-            Map<String, String> geneToSampleString) throws IOException
-    {
+            Map<String, String> geneToSampleString) throws IOException {
         FileUtility fu = new FileUtility();
         fu.setInput(file.getAbsolutePath());
         // The first line should be a header line
@@ -368,7 +300,7 @@ public class GeneSetMutationAnalysisTask implements Runnable
             throws Exception
     {
         // Check if a local service should be used
-        FINetworkService fiService = PlugInScopeObjectManager.getManager()
+        FINetworkService fiService = FIPlugInHelper.getHelper()
                 .getNetworkService();
         Set<String> fis = fiService.buildFINetwork(selectedGenes, useLinkers);
         CyNetwork network = null;
@@ -390,37 +322,5 @@ public class GeneSetMutationAnalysisTask implements Runnable
         // TableHelper manager = new TableHelper();
         // manager.storeDataSetType(network, "Data Set");
         return network;
-    }
-
-    private void getTableFormatter()
-    {
-        try
-        {
-            BundleContext context = PlugInScopeObjectManager.getManager()
-                    .getBundleContext();
-            ServiceReference servRef = context
-                    .getServiceReference(TableFormatter.class.getName());
-            if (servRef != null)
-            {
-                this.tableFormatterServRef = servRef;
-                this.tableFormatter = (TableFormatterImpl) context
-                        .getService(servRef);
-            }
-            else
-                throw new Exception();
-        }
-        catch (Throwable t)
-        {
-            JOptionPane.showMessageDialog(null,
-                    "The table formatter could not be retrieved.",
-                    "Table Formatting Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void releaseTableFormatter()
-    {
-        BundleContext context = PlugInScopeObjectManager.getManager()
-                .getBundleContext();
-        context.ungetService(tableFormatterServRef);
     }
 }

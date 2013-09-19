@@ -68,7 +68,6 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         
         //Cache the bundlecontext.
         this.context = context;
-        PlugInScopeObjectManager.getManager().setBundleContext(context);
         PlugInObjectManager.getManager().setBundleContext(context);
         
         /* Grab essential Cytoscape Service References */

@@ -31,6 +31,7 @@ import org.gk.util.ProgressPane;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
@@ -57,14 +58,16 @@ public class ModuleBasedSurvivalAnalysisHelper
     private FileUtil fileUtil;
     public ModuleBasedSurvivalAnalysisHelper()
     {
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(FileUtil.class.getName());
         this.fileUtil = (FileUtil) context.getService(servRef);
     }
     public ModuleBasedSurvivalAnalysisHelper(CyNetworkView view)
     {
         //this.view = view;
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(FileUtil.class.getName());
         this.fileUtil = (FileUtil) context.getService(servRef);
     }
@@ -208,7 +211,8 @@ public class ModuleBasedSurvivalAnalysisHelper
             {
                 ProgressPane progressPane = new ProgressPane();
                 progressPane.setIndeterminate(true);
-                JFrame desktop = PlugInScopeObjectManager.getManager().getCytoscapeDesktop();
+                FIPlugInHelper r = FIPlugInHelper.getHelper();
+                JFrame desktop = PlugInObjectManager.getManager().getCytoscapeDesktop();
                 desktop.setGlassPane(progressPane);
                 progressPane.setText("Doing survival analysis. Please wait...");
                 desktop.getGlassPane().setVisible(true);
@@ -290,7 +294,8 @@ public class ModuleBasedSurvivalAnalysisHelper
                                 String error,
                                 File plotFile) throws IOException, BadLocationException {
         String tabTitle = "Survival Analysis";
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         org.cytoscape.application.swing.CytoPanel tabbedPane = desktopApp.getCytoPanel(CytoPanelName.EAST);
         CytoPanelState currentState = tabbedPane.getState();
         if (currentState == CytoPanelState.HIDE || currentState == CytoPanelState.FLOAT)
@@ -383,7 +388,7 @@ public class ModuleBasedSurvivalAnalysisHelper
         private JRadioButton kmBtn;
         
         public SurvivalInfoDialog() {
-            super(PlugInScopeObjectManager.getManager().getCytoscapeDesktop());
+            super(PlugInObjectManager.getManager().getCytoscapeDesktop());
             init();
         }
         
@@ -428,15 +433,17 @@ public class ModuleBasedSurvivalAnalysisHelper
                         Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
                         filters.add(new FileChooserFilter("Survival Information File", "txt"));
                         new FileChooserFilter("Survival Information File", "txt");
-                        File file = fileUtil.getFile(PlugInScopeObjectManager.getManager().getCytoscapeDesktop(),
+                        FIPlugInHelper r = FIPlugInHelper.getHelper();
+                        File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                                      "Select Survival Information File", FileUtil.LOAD, filters);
                         clinFileTF.setText(file.getAbsolutePath());
                     }
                 }
             });
             clinFileTF.setColumns(50);
+            FIPlugInHelper r = FIPlugInHelper.getHelper();
             // Set value
-            Properties prop = PlugInScopeObjectManager.getManager().getProperties();
+            Properties prop = PlugInObjectManager.getManager().getProperties();
             if (prop != null && prop.getProperty(CLINICAL_FILE_PROP_KEY) != null) {
                 String fileName = prop.getProperty(CLINICAL_FILE_PROP_KEY);
                 clinFileTF.setText(fileName);
@@ -510,7 +517,8 @@ public class ModuleBasedSurvivalAnalysisHelper
                         isOkClicked = true;
                         // Need to save the clinical file
                         String fileName = clinFileTF.getText().trim();
-                        Properties prop = PlugInScopeObjectManager.getManager().getProperties();
+                        FIPlugInHelper r = FIPlugInHelper.getHelper();
+                        Properties prop = PlugInObjectManager.getManager().getProperties();
                         if (prop != null) {
                             // Store for temp
                             prop.setProperty(CLINICAL_FILE_PROP_KEY,

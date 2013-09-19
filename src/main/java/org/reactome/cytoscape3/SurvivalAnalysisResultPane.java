@@ -53,6 +53,7 @@ import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
 
@@ -81,7 +82,8 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
     public SurvivalAnalysisResultPane(String title) {
         setTitle(title);
         init();
-        BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceRegistration servReg = context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
         //The above returns null. Attempts to cache it have been futile.
         this.servReg = servReg;
@@ -236,7 +238,8 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
         // Export annotations in a text file
         Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
         filters.add(new FileChooserFilter("Text files", "txt"));
-        File file = fileUtil.getFile(PlugInScopeObjectManager.getManager().getCytoscapeDesktop(), "Export Results", FileUtil.SAVE, filters);
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), "Export Results", FileUtil.SAVE, filters);
         if (file == null)
             return;
         FileUtility fu = new FileUtility();

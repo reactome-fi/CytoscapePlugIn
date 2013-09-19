@@ -23,6 +23,7 @@ import javax.swing.JOptionPane;
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 
 public class GeneSetAnnotationPanelForModules extends GeneSetAnnotationPanel {
     private JComboBox moduleSizeFilter;
@@ -79,7 +80,8 @@ public class GeneSetAnnotationPanelForModules extends GeneSetAnnotationPanel {
             helper.highlightNodes(nodes);
         }
         catch(Exception e) {
-            JOptionPane.showMessageDialog(PlugInScopeObjectManager.getManager().getCytoscapeDesktop(),
+            FIPlugInHelper r = FIPlugInHelper.getHelper();
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cannot show pathway diagram: " + pathway,
                                           "Error in Show Pathway Diagram",
                                           JOptionPane.ERROR_MESSAGE);

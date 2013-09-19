@@ -75,6 +75,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.reactome.cancerindex.data.NCIDiseaseHandler;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.util.NodeUtilitiesImpl;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.cytoscape.application.swing.CytoPanelComponent;
 
 
@@ -99,7 +100,8 @@ public class NCICancerIndexDiseaseHelper
 
     public boolean areDiseasesShown() 
     {
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         org.cytoscape.application.swing.CytoPanel westPanel = desktopApp.getCytoPanel(CytoPanelName.WEST);
         int numComps = westPanel.getCytoPanelComponentCount();
         for (int i = 0; i < numComps; i++)
@@ -113,7 +115,7 @@ public class NCICancerIndexDiseaseHelper
     
     public Map<String, DiseaseData> fetchDiseases() throws IOException
     {
-        String serviceUrl = PlugInScopeObjectManager.getManager().getRestfulURL();
+        String serviceUrl = FIPlugInHelper.getHelper().getRestfulURL();
      // Get the host URL name
         int index = serviceUrl.lastIndexOf("/", serviceUrl.length() - 2);
         String diseaseUrl = serviceUrl.substring(0, index + 1) + "Cytoscape/Disease_Thesaurus_10.05d.txt.zip";
@@ -143,7 +145,8 @@ public class NCICancerIndexDiseaseHelper
         if (displayPane == null)
             displayPane = new DiseaseDisplayPane();
         displayPane.showDiseases(codeToDisease);
-        CySwingApplication desktopApp = PlugInScopeObjectManager.getManager().getCySwingApp();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel westPane = desktopApp.getCytoPanel(CytoPanelName.WEST);
         int numComps = westPane.getCytoPanelComponentCount();
         for (int i = 0; i < numComps; i++)
@@ -186,7 +189,7 @@ public class NCICancerIndexDiseaseHelper
         private JCheckBox wholeNameBox;
         
         public SearchDialog() {
-            super(PlugInScopeObjectManager.getManager().getCytoscapeDesktop());
+            super(PlugInObjectManager.getManager().getCytoscapeDesktop());
             init();
         }
         
@@ -369,7 +372,8 @@ public class NCICancerIndexDiseaseHelper
 
         public DiseaseDisplayPane() {
             init();
-            BundleContext context = PlugInScopeObjectManager.getManager().getBundleContext();
+            FIPlugInHelper r = FIPlugInHelper.getHelper();
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             ServiceRegistration servReg = context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
             //The above returns null. Attempts to cache it have been futile.
 
@@ -399,11 +403,13 @@ public class NCICancerIndexDiseaseHelper
             diseaseTree.putClientProperty("JTree.lineStyle", "Horizontal");
             diseaseTree.setEditable(false);
             DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
-            ImageIcon icon = PlugInScopeObjectManager.getManager().createImageIcon("Bullet1.gif");
+            FIPlugInHelper r = FIPlugInHelper.getHelper();
+            ImageIcon icon = PlugInObjectManager.getManager().createImageIcon("Bullet1.gif");
             // Use same icons for all states
             renderer.setIcon(icon);
             renderer.setLeafIcon(icon);
-            ImageIcon folderIcon = PlugInScopeObjectManager.getManager().createImageIcon("Bullet.gif");
+            FIPlugInHelper r1 = FIPlugInHelper.getHelper();
+            ImageIcon folderIcon = PlugInObjectManager.getManager().createImageIcon("Bullet.gif");
             renderer.setOpenIcon(folderIcon);
             renderer.setClosedIcon(folderIcon);
             diseaseTree.setCellRenderer(renderer);

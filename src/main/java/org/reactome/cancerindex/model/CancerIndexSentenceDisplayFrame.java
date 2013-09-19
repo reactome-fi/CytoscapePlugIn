@@ -33,7 +33,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import org.gk.util.DialogControlPane;
-import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
  * This customized JPanel is used to display a list of Sentence objects.
@@ -514,22 +514,30 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
             JPanel controlPane = new JPanel();
             FlowLayout layout = new FlowLayout(FlowLayout.RIGHT, 2, 2);
             controlPane.setLayout(layout);
-            firstBtn = new JButton("First");
-            ImageIcon icon = PlugInUtilities.createImageIcon(this, "First16.gif");
+//            firstBtn = new JButton("First");
+            firstBtn = new JButton();
+            firstBtn.setToolTipText("Go to first page");
+            ImageIcon icon = PlugInObjectManager.getManager().createImageIcon("First16.gif");
             firstBtn.setIcon(icon);
             controlPane.add(firstBtn);
-            prevBtn = new JButton("Prev");
-            icon = PlugInUtilities.createImageIcon(this, "Back16.gif");
+//            prevBtn = new JButton("Prev");
+            prevBtn = new JButton();
+            prevBtn.setToolTipText("Go to previous page");
+            icon = PlugInObjectManager.getManager().createImageIcon("Back16.gif");
             prevBtn.setIcon(icon);
             controlPane.add(prevBtn);
             pageLabel = new JLabel("Page 1");
             controlPane.add(pageLabel);
-            nextBtn = new JButton("Next");
-            icon = PlugInUtilities.createImageIcon(this, "Forward16.gif");
+//            nextBtn = new JButton("Next");
+            nextBtn = new JButton();
+            nextBtn.setToolTipText("Go to next page");
+            icon = PlugInObjectManager.getManager().createImageIcon("Forward16.gif");
             nextBtn.setIcon(icon);
             controlPane.add(nextBtn);
-            lastBtn = new JButton("Last");
-            icon = PlugInUtilities.createImageIcon(this, "Last16.gif");
+//            lastBtn = new JButton("Last");
+            lastBtn = new JButton();
+            lastBtn.setToolTipText("Go to last page");
+            icon = PlugInObjectManager.getManager().createImageIcon("Last16.gif");
             lastBtn.setIcon(icon);
             controlPane.add(lastBtn);
             add(controlPane, BorderLayout.EAST);

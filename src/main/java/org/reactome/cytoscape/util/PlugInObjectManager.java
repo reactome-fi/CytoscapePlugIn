@@ -6,9 +6,15 @@ package org.reactome.cytoscape.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.swing.CySwingApplication;
@@ -130,6 +136,14 @@ public class PlugInObjectManager {
     }
     
     /**
+     * Get the JFrame used to hold the whole application.
+     * @return
+     */
+    public JFrame getCytoscapeDesktop() {
+        return getCySwingApplication().getJFrame();
+    }
+    
+    /**
      * Get the preset properties.
      * @return
      */
@@ -151,4 +165,21 @@ public class PlugInObjectManager {
         return this.properties;
     }
     
+    /**
+     * Create an ImageIcon using images in this package (org.reactome.cytoscape.util).
+     * @param imgFileName
+     * @return
+     */
+    public ImageIcon createImageIcon(String imgFileName) {
+        String urlName = "org/reactome/cytoscape/util/" + imgFileName;
+        URL url = getClass().getClassLoader().getResource(urlName);
+        ImageIcon icon = null;
+        if (url == null) {
+            icon = new ImageIcon(imgFileName);
+        }
+        else {
+            icon = new ImageIcon(url);
+        }
+        return icon;
+    }
 }
