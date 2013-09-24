@@ -31,23 +31,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.swing.BorderFactory;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JTree;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -60,43 +44,35 @@ import javax.swing.tree.TreePath;
 
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.model.View;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.TreeUtilities;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cancerindex.data.NCIDiseaseHandler;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.util.NodeUtilitiesImpl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.cytoscape.application.swing.CytoPanelComponent;
 
 
 
 public class NCICancerIndexDiseaseHelper
 {
 
-    private CyNetworkViewManager viewManager;
     private DiseaseDisplayPane displayPane;
     private Map<String, DiseaseData> codeToDisease;
     private CyNetworkView view;
-
-
-
-
 
     public NCICancerIndexDiseaseHelper(CyNetworkView view)
     {
         this.view = view;
     }
-
 
     public boolean areDiseasesShown() 
     {
@@ -145,19 +121,21 @@ public class NCICancerIndexDiseaseHelper
         if (displayPane == null)
             displayPane = new DiseaseDisplayPane();
         displayPane.showDiseases(codeToDisease);
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel westPane = desktopApp.getCytoPanel(CytoPanelName.WEST);
         int numComps = westPane.getCytoPanelComponentCount();
         for (int i = 0; i < numComps; i++)
         {
-            if (westPane.getComponentAt(i) instanceof CytoPanelComponent && ((CytoPanelComponent) westPane.getComponentAt(i)).getTitle().equals("NCI Diseases"))
+            if (westPane.getComponentAt(i) instanceof CytoPanelComponent && 
+                ((CytoPanelComponent) westPane.getComponentAt(i)).getTitle().equals("NCI Diseases"))
             {
                 westPane.setSelectedIndex(i);
                 break;
             }
         }
+        this.codeToDisease = codeToDisease;
     }
+    
     private void buildTree(DefaultMutableTreeNode root, List<DiseaseData> subDiseases) {
         for (DiseaseData disease : subDiseases) {
             DefaultMutableTreeNode subNode = new DefaultMutableTreeNode();
@@ -298,6 +276,7 @@ public class NCICancerIndexDiseaseHelper
         for (DiseaseData subDisease : disease.getSubTerms())
             grepDiseaseCodes(subDisease, codes);
     }
+    
     private void searchDiseases() {
         if (codeToDisease == null)
             return;
@@ -366,6 +345,7 @@ public class NCICancerIndexDiseaseHelper
         if (firstPath != null) 
             tree.scrollPathToVisible(firstPath);
     }
+    
     private class DiseaseDisplayPane extends JPanel implements CytoPanelComponent {
         private JTree diseaseTree;
         private JTextArea definitionTA;
