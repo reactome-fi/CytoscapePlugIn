@@ -53,6 +53,7 @@ public class PathwayDiagramLoadTask extends AbstractTask {
         taskMonitor.setStatusMessage("Open pathway diagram...");
 //        System.out.println(text);
         PathwayInternalFrame pathwayFrame = createPathwayFrame(text);
+        pathwayFrame.setPathwayId(pathwayId);
         JDesktopPane desktop = PlugInUtilities.getCytoscapeDesktop();
         desktop.add(pathwayFrame);
         try {

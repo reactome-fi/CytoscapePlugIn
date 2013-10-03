@@ -14,15 +14,23 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JInternalFrame;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.CyNetworkViewFactory;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
@@ -33,8 +41,14 @@ import org.gk.render.HyperEdge;
 import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape3.FINetworkGenerator;
+import org.reactome.cytoscape3.FIVisualStyleImpl;
+import org.reactome.cytoscape3.RESTFulFIService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +60,13 @@ import org.slf4j.LoggerFactory;
 public class PathwayInternalFrame extends JInternalFrame implements EventSelectionListener {
     private final Logger logger = LoggerFactory.getLogger(PathwayInternalFrame.class);
     private CyZoomablePathwayEditor pathwayEditor;
-    private List<Long> pathwayIds;
+    // A PathwayDiagram may be used by multile pathways (e.g. a disease pathway and a 
+    // normal pathway may share a same PathwayDiagram)
+    private List<Long> relatedPathwayIds;
+    // DB_ID that is used to invoke this PathwayInternalFrame.
+    // This may be changed during the life-time of this object (e.g. a PathwayInternalFrame
+    // may be switched to another pathway from a tree selection)
+    private Long pathwayId;
     
     /**
      * Default constructor.
@@ -66,7 +86,7 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
                     return;
                 List<Renderable> selection = pathwayEditor.getPathwayEditor().getSelection();
                 EventSelectionEvent selectionEvent = new EventSelectionEvent();
-                selectionEvent.setParentId(pathwayIds.get(0));
+                selectionEvent.setParentId(relatedPathwayIds.get(0));
                 // Get the first selected event
                 Renderable firstEvent = null;
                 if (selection != null && selection.size() > 0) {
@@ -78,7 +98,7 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
                     }
                 }
                 if (firstEvent == null) {
-                    selectionEvent.setEventId(pathwayIds.get(0));
+                    selectionEvent.setEventId(relatedPathwayIds.get(0));
                     selectionEvent.setIsPathway(true);
                 }
                 else {
@@ -95,8 +115,8 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             @Override
             public void internalFrameActivated(InternalFrameEvent e) {
                 EventSelectionEvent selectionEvent = new EventSelectionEvent();
-                selectionEvent.setParentId(pathwayIds.get(0));
-                selectionEvent.setEventId(pathwayIds.get(0));
+                selectionEvent.setParentId(relatedPathwayIds.get(0));
+                selectionEvent.setEventId(relatedPathwayIds.get(0));
                 selectionEvent.setIsPathway(true);
                 PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(PathwayInternalFrame.this,
                                                                                                             selectionEvent);
@@ -110,13 +130,13 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
      * multiple pathways.
      * @param pathwayIds
      */
-    public void setPathwayIds(List<Long> pathwayIds) {
-        this.pathwayIds = pathwayIds;
+    public void setRelatedPathwayIds(List<Long> pathwayIds) {
+        this.relatedPathwayIds = pathwayIds;
     }
     
     @Override
     public void eventSelected(EventSelectionEvent selectionEvent) {
-        if (!pathwayIds.contains(selectionEvent.getParentId())) {
+        if (!relatedPathwayIds.contains(selectionEvent.getParentId())) {
             // Remove any selection
             PathwayEditor editor = pathwayEditor.getPathwayEditor();
             editor.removeSelection();
@@ -132,7 +152,7 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         Long eventId = selectionEvent.getEventId();
         PathwayEditor editor = pathwayEditor.getPathwayEditor();
         // The top-level should be selected
-        if (pathwayIds.contains(eventId)) {
+        if (relatedPathwayIds.contains(eventId)) {
             editor.removeSelection();
             editor.repaint(editor.getVisibleRect());
             return;
@@ -198,6 +218,14 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         pathwayEditor.getPathwayEditor().setRenderable(pathway);
     }
     
+    public void setPathwayId(Long pathwayId) {
+        this.pathwayId = pathwayId;
+    }
+    
+    public Long getPathwayId() {
+        return this.pathwayId;
+    }
+    
     private class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
         
         public CyZoomablePathwayEditor() {
@@ -210,6 +238,56 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             return new CyPathwayEditor();
         }
 
+    }
+    
+    private void convertAsFINetwork() {
+        //TODO: This class should be refactored and be moved to other package.
+        // Right now it is in the top-level package. Also the version of FI network
+        // Used in this place may needs to be changed. 
+        RESTFulFIService fiService = new RESTFulFIService();
+        try {
+            Map<String, Set<Long>> fIsToSrcIds = fiService.convertPathwayToFIs(getPathwayId());
+            System.out.println("Total interactions: " + fIsToSrcIds.size());
+            // Need to create a new CyNetwork
+            FINetworkGenerator generator = new FINetworkGenerator();
+            CyNetwork network = generator.constructFINetwork(fIsToSrcIds.keySet());
+            network.getDefaultNetworkTable().getRow(network.getSUID()).set("name",
+                                                                           "FI Nework for " + pathwayEditor.getPathwayEditor().getRenderable().getDisplayName());
+            
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            
+            ServiceReference reference = context.getServiceReference(CyNetworkManager.class.getName());
+            CyNetworkManager networkManager = (CyNetworkManager) context.getService(reference);
+            networkManager.addNetwork(network);
+            networkManager = null;
+            context.ungetService(reference);
+            
+            reference = context.getServiceReference(CyNetworkViewFactory.class.getName());
+            CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) context.getService(reference);
+            CyNetworkView view = viewFactory.createNetworkView(network);
+            viewFactory = null;
+            context.ungetService(reference);
+            
+            reference = context.getServiceReference(CyNetworkViewManager.class.getName());
+            CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(reference);
+            viewManager.addNetworkView(view);
+            viewManager = null;
+            context.ungetService(reference);
+            
+            ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+            FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
+            visStyler.setVisualStyle(view);
+            visStyler.setLayout();
+            visStyler = null;
+            context.ungetService(servRef);
+        }
+        catch(Exception e) {
+            logger.error("Error in convertAsFINetwork(): " + e.getMessage(), e);
+            JOptionPane.showMessageDialog(this, 
+                                          "Error in converting a pathway to a FI network: " + e.getMessage(),
+                                          "Error in Converting Pathway to FI Network",
+                                          JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     
@@ -245,24 +323,39 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         
         private void doPopup(MouseEvent e) {
             List<?> selection = getSelection();
-            if (selection.size() != 1)
+            if (selection != null && selection.size() > 1)
                 return;
-            Renderable r = (Renderable) selection.get(0);
-            final Long dbId = r.getReactomeId();
-            if (dbId == null)
-                return;
-            JPopupMenu popup = new JPopupMenu();
-            JMenuItem showDetailed = new JMenuItem("View in Reactome");
-            showDetailed.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
-                    String url = reactomeURL + dbId;
-                    PlugInUtilities.openURL(url);
-                }
-            });
-            popup.add(showDetailed);
+            JPopupMenu popup = null;
+            if (selection == null || selection.size() == 0) {
+                popup = new JPopupMenu();
+                JMenuItem convertToFINetwork = new JMenuItem("Convert as FI Network");
+                convertToFINetwork.addActionListener(new ActionListener() {
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        convertAsFINetwork();
+                    }
+                });
+                popup.add(convertToFINetwork);
+            }
+            else { // There should be only one instance selected
+                Renderable r = (Renderable) selection.get(0);
+                final Long dbId = r.getReactomeId();
+                if (dbId == null)
+                    return;
+                popup = new JPopupMenu();
+                JMenuItem showDetailed = new JMenuItem("View in Reactome");
+                showDetailed.addActionListener(new ActionListener() {
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
+                        String url = reactomeURL + dbId;
+                        PlugInUtilities.openURL(url);
+                    }
+                });
+                popup.add(showDetailed);
+            }
             popup.show(this, e.getX(), e.getY());
         }
         

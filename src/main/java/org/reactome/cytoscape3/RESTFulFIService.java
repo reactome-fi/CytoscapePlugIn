@@ -125,6 +125,35 @@ public class RESTFulFIService implements FINetworkService
         }
         return fis;
     }
+    
+    /**
+     * Convert a Pathway to a set of FIs.
+     * @param pathwayId
+     * @return FIs to DB_IDs of instances that are used to extract FIs.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Set<Long>> convertPathwayToFIs(Long pathwayId) throws Exception {
+        String url = restfulURL + "network/convertPathwayToFIs/" + pathwayId;
+        Element root = PlugInUtilities.callHttpInXML(url,
+                                                     HTTP_GET, 
+                                                     null);
+        List<?> interactions = root.getChildren();
+        Map<String, Set<Long>> fiToSourceIds = new HashMap<String, Set<Long>>();
+        for (Object obj : interactions) {
+            Element elm = (Element) obj;
+            String protein1 = elm.getChild("firstProtein").getChildText("shortName");
+            String protein2 = elm.getChild("secondProtein").getChildText("shortName");
+            List<Element> reactomeSrcs = elm.getChildren("reactomeSources");
+            Set<Long> ids = new HashSet<Long>();
+            for (Element src : reactomeSrcs) {
+                Long dbId = new Long(src.getChildText("reactomeId"));
+                ids.add(dbId);
+            }
+            fiToSourceIds.put(protein1 + "\t" + protein2,
+                              ids);
+        }
+        return fiToSourceIds;
+    }
 
     public List<Long> highlight(List<Long> dbIds, String nodes)
             throws IOException

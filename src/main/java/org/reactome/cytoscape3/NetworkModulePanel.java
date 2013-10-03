@@ -264,6 +264,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
         nodeTable.getRow(nodeSUID).set("selected", value);
     }
+    
     protected abstract NetworkModuleTableModel createTableModel();
 
     public void close()

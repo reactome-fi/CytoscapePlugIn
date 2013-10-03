@@ -15,7 +15,6 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
 
-import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
@@ -193,7 +192,7 @@ public class PathwayDiagramRegistry {
                 pathwayIdToDiagramId.put(dbId, diagramId);
                 pathwayIds.add(dbId);
             }
-            frame.setPathwayIds(pathwayIds);
+            frame.setRelatedPathwayIds(pathwayIds);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -207,7 +206,10 @@ public class PathwayDiagramRegistry {
         Long diagramId = pathwayIdToDiagramId.get(pathwayId);
         if (diagramId == null)
             return null;
-        return diagramIdToFrame.get(diagramId);
+        PathwayInternalFrame pathwayFrame = diagramIdToFrame.get(diagramId);
+        // Make sure pathwayId is used for the returned PathwayInternalFrame object
+        pathwayFrame.setPathwayId(pathwayId);
+        return pathwayFrame;
     }
     
     /**

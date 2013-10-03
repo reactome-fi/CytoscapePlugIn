@@ -219,6 +219,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     /**
      * Load sub-pathways for a selected pathway.
      */
+    @SuppressWarnings("rawtypes")
     private void loadSubPathways() {
         EventObject event = getSelectedEvent();
         if (event == null || event.isLoaded)
