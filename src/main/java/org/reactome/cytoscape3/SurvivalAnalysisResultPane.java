@@ -52,7 +52,6 @@ import org.cytoscape.util.swing.FileUtil;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
@@ -76,21 +75,17 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
     // Used to do single module surival analysis calling back
     private SingleModuleSurvivalActionListener singleModuleAction;
     private String title;
-    private FileUtil fileUtil;
-    private ServiceRegistration servReg;
     
     public SurvivalAnalysisResultPane(String title) {
         setTitle(title);
         init();
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceRegistration servReg = context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
-        //The above returns null. Attempts to cache it have been futile.
-        this.servReg = servReg;
-        ServiceRegistration servReg2 = context.registerService(NetworkAboutToBeDestroyedListener.class.getName(), this, new Properties());
-        ServiceReference fileUtilRef = context.getServiceReference(FileUtil.class.getName());
-        if (fileUtilRef != null)
-            this.fileUtil = (FileUtil) context.getService(fileUtilRef);
+        context.registerService(CytoPanelComponent.class.getName(), 
+                                this, 
+                                new Properties());
+        context.registerService(NetworkAboutToBeDestroyedListener.class.getName(), 
+                                this, 
+                                new Properties());
     }
     
     private void init() {
@@ -235,11 +230,30 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
     }
     
     private void exportResults() {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference fileUtilRef = context.getServiceReference(FileUtil.class.getName());
+        if (fileUtilRef == null) {
+            JOptionPane.showMessageDialog(contentPane,
+                                          "Error in export survival analysis results: cannot find registered FileUtil!",
+                                          "Error in Exporting",
+                                          JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        FileUtil fileUtil = (FileUtil) context.getService(fileUtilRef);
+        if (fileUtil == null) {
+            JOptionPane.showMessageDialog(contentPane,
+                                          "Error in export survival analysis results: cannot find registered FileUtil!",
+                                          "Error in Exporting",
+                                          JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         // Export annotations in a text file
         Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
         filters.add(new FileChooserFilter("Text files", "txt"));
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
-        File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), "Export Results", FileUtil.SAVE, filters);
+        File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                     "Export Results", 
+                                     FileUtil.SAVE, 
+                                     filters);
         if (file == null)
             return;
         FileUtility fu = new FileUtility();

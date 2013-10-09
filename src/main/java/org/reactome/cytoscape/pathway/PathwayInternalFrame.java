@@ -5,8 +5,9 @@
 package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
-import java.awt.Point;
-import java.awt.Rectangle;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -15,17 +16,21 @@ import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.swing.JInternalFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
-import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 
+import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelComponent;
+import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.view.model.CyNetworkView;
@@ -49,6 +54,7 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape3.FINetworkGenerator;
 import org.reactome.cytoscape3.FIVisualStyleImpl;
 import org.reactome.cytoscape3.RESTFulFIService;
+import org.reactome.cytoscape3.SurvivalAnalysisResultPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,6 +129,63 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             }
             
         });
+        // Add popup menu
+        pathwayEditor.getPathwayEditor().addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger())
+                    doPopup(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger())
+                    doPopup(e);
+            }
+            
+        });
+    }
+    
+    private void doPopup(MouseEvent e) {
+        PathwayEditor wrappedEditor = pathwayEditor.getPathwayEditor();
+        List<?> selection = wrappedEditor.getSelection();
+        if (selection != null && selection.size() > 1)
+            return;
+        JPopupMenu popup = null;
+        if (selection == null || selection.size() == 0) {
+            popup = new JPopupMenu();
+            JMenuItem convertToFINetwork = new JMenuItem("Convert as FI Network");
+            convertToFINetwork.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    convertAsFINetwork();
+                }
+            });
+            popup.add(convertToFINetwork);
+        }
+        else { // There should be only one instance selected
+            Renderable r = (Renderable) selection.get(0);
+            final Long dbId = r.getReactomeId();
+            if (dbId == null)
+                return;
+            popup = new JPopupMenu();
+            JMenuItem showDetailed = new JMenuItem("View in Reactome");
+            showDetailed.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
+                    String url = reactomeURL + dbId;
+                    PlugInUtilities.openURL(url);
+                }
+            });
+            popup.add(showDetailed);
+        }
+        popup.show(wrappedEditor,
+                   e.getX(),
+                   e.getY());
     }
     
     /**
@@ -226,22 +289,8 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         return this.pathwayId;
     }
     
-    private class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
-        
-        public CyZoomablePathwayEditor() {
-            // Don't need the title
-            titleLabel.setVisible(false);
-        }
-        
-        @Override
-        protected PathwayEditor createPathwayEditor() {
-            return new CyPathwayEditor();
-        }
-
-    }
-    
     private void convertAsFINetwork() {
-        //TODO: This class should be refactored and be moved to other package.
+        //TODO: The RESTFulFIService class should be refactored and moved to other package.
         // Right now it is in the top-level package. Also the version of FI network
         // Used in this place may needs to be changed. 
         RESTFulFIService fiService = new RESTFulFIService();
@@ -280,6 +329,12 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             visStyler.setLayout();
             visStyler = null;
             context.ungetService(servRef);
+            
+            // Make sure this PathwayInternalFrame should be closed
+            setVisible(false);
+            dispose();
+
+            moveDiagramToResultsPane();
         }
         catch(Exception e) {
             logger.error("Error in convertAsFINetwork(): " + e.getMessage(), e);
@@ -290,94 +345,43 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         }
     }
     
-    
-    /**
-     * Because of the overload of method getBounds() in class BiModalJSplitPane, which is one of JDesktopPane used in Cyotscape,
-     * we have to method getVisibleRect() in this customized PathwayEditor in order to provide correct value.
-     * @author gwu
-     *
-     */
-    private class CyPathwayEditor extends PathwayEditor {
-        
-        public CyPathwayEditor() {
-            init();
-        }
-        
-        private void init() {
-            addMouseListener(new MouseAdapter() {
-
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    if (e.isPopupTrigger())
-                        doPopup(e);
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    if (e.isPopupTrigger())
-                        doPopup(e);
-                }
-                
-            });
-        }
-        
-        private void doPopup(MouseEvent e) {
-            List<?> selection = getSelection();
-            if (selection != null && selection.size() > 1)
-                return;
-            JPopupMenu popup = null;
-            if (selection == null || selection.size() == 0) {
-                popup = new JPopupMenu();
-                JMenuItem convertToFINetwork = new JMenuItem("Convert as FI Network");
-                convertToFINetwork.addActionListener(new ActionListener() {
-                    
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        convertAsFINetwork();
-                    }
-                });
-                popup.add(convertToFINetwork);
+    private void moveDiagramToResultsPane() {
+        //TODO: A big chuck of the following code should be refactored into a common place since
+        // it is shared in other classes (e.g. ModuleBasedSurvivalAnalysisResultHelper).
+        // Check if a PathwayDiagram has been displayed in the results panel
+        // This title is based on class definition of 
+        String tabTitle = "Reactome Pathway";
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        CytoPanel tabbedPane = desktopApp.getCytoPanel(CytoPanelName.EAST);
+        CytoPanelState currentState = tabbedPane.getState();
+        if (currentState == CytoPanelState.HIDE || currentState == CytoPanelState.FLOAT)
+            tabbedPane.setState(CytoPanelState.DOCK);
+        int numComps = tabbedPane.getCytoPanelComponentCount();
+        int componentIndex = -1;
+        for (int i = 0; i < numComps; i++) {
+            Component aComp = (Component) tabbedPane.getComponentAt(i);
+            if ( (aComp instanceof CytoPanelComponent) && ((CytoPanelComponent) aComp).getTitle().equalsIgnoreCase(tabTitle))
+            {
+                componentIndex = i;
+                break;
             }
-            else { // There should be only one instance selected
-                Renderable r = (Renderable) selection.get(0);
-                final Long dbId = r.getReactomeId();
-                if (dbId == null)
-                    return;
-                popup = new JPopupMenu();
-                JMenuItem showDetailed = new JMenuItem("View in Reactome");
-                showDetailed.addActionListener(new ActionListener() {
-                    
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
-                        String url = reactomeURL + dbId;
-                        PlugInUtilities.openURL(url);
-                    }
-                });
-                popup.add(showDetailed);
-            }
-            popup.show(this, e.getX(), e.getY());
         }
-        
-        @Override
-        public Rectangle getVisibleRect() {
-            if (getParent() instanceof JViewport) {
-                JViewport viewport = (JViewport) getParent();
-                Rectangle parentBounds = viewport.getBounds();
-                Rectangle visibleRect = new Rectangle();
-                Point position = SwingUtilities.convertPoint(viewport.getParent(),
-                                                             parentBounds.x,
-                                                             parentBounds.y,
-                                                             this);
-                visibleRect.x = position.x;
-                visibleRect.y = position.y;
-                visibleRect.width = parentBounds.width;
-                visibleRect.height = parentBounds.height;
-                return visibleRect;
-            }
-            return super.getVisibleRect();
+        if (componentIndex == -1) {
+         // Display PathwayDiagram in the results Panel
+            CyZoomablePathwayEditor pathwayEditor = new CyZoomablePathwayEditor();
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            context.registerService(CytoPanelComponent.class.getName(),
+                                    pathwayEditor,
+                                    new Properties());
+            int index = tabbedPane.indexOfComponent(pathwayEditor);
+            if (index == -1) 
+                return; // Most likely there is something wrong if index == -1. This should not occur.
+            componentIndex = index;
         }
-        
+ 
+        // Display PathwayDiagram in the results Panel
+        CyZoomablePathwayEditor pathwayEditor = (CyZoomablePathwayEditor) tabbedPane.getComponentAt(componentIndex);
+        pathwayEditor.getPathwayEditor().setRenderable(this.pathwayEditor.getPathwayEditor().getRenderable());
     }
     
 }

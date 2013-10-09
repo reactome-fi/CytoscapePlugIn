@@ -4,12 +4,16 @@
  */
 package org.reactome.cytoscape.pathway;
 
+import java.awt.Component;
 import java.awt.Point;
 import java.awt.Rectangle;
 
+import javax.swing.Icon;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 
+import org.cytoscape.application.swing.CytoPanelComponent;
+import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.PathwayEditor;
 
@@ -19,14 +23,36 @@ import org.gk.graphEditor.PathwayEditor;
  * @author gwu
  *
  */
-public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
+public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements CytoPanelComponent {
     
     public CyZoomablePathwayEditor() {
+        // Don't need the title
+        titleLabel.setVisible(false);
     }
 
     @Override
     protected PathwayEditor createPathwayEditor() {
         return new CyPathwayEditor();
+    }
+
+    @Override
+    public Component getComponent() {
+        return this;
+    }
+
+    @Override
+    public String getTitle() {
+        return "Reactome Pathway";
+    }
+
+    @Override
+    public CytoPanelName getCytoPanelName() {
+        return CytoPanelName.EAST;
+    }
+
+    @Override
+    public Icon getIcon() {
+        return null;
     }
 
     private class CyPathwayEditor extends PathwayEditor {
@@ -52,8 +78,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
             }
             return super.getVisibleRect();
         }
-        
-        
     }
 
     

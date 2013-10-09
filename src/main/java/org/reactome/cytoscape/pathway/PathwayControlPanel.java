@@ -94,6 +94,4 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent {
         return null;
     }
     
-    
-    
 }

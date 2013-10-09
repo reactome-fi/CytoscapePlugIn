@@ -20,6 +20,7 @@ import javax.swing.*;
 import javax.swing.text.BadLocationException;
 
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
@@ -294,9 +295,8 @@ public class ModuleBasedSurvivalAnalysisHelper
                                 String error,
                                 File plotFile) throws IOException, BadLocationException {
         String tabTitle = "Survival Analysis";
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        org.cytoscape.application.swing.CytoPanel tabbedPane = desktopApp.getCytoPanel(CytoPanelName.EAST);
+        CytoPanel tabbedPane = desktopApp.getCytoPanel(CytoPanelName.EAST);
         CytoPanelState currentState = tabbedPane.getState();
         if (currentState == CytoPanelState.HIDE || currentState == CytoPanelState.FLOAT)
             tabbedPane.setState(CytoPanelState.DOCK);
@@ -310,7 +310,7 @@ public class ModuleBasedSurvivalAnalysisHelper
                 componentIndex = i;
 //                break;
             }
-            // There are some annoying behavior related to this tabbed pabel. Just remove all
+            // There are some annoying behavior related to this tabbed panel. Just remove all
             // other tabs, and hope it helps.
             else
             {
@@ -324,7 +324,7 @@ public class ModuleBasedSurvivalAnalysisHelper
             // into the tabbedPane since it is implemented as a CytoPanelComponent.
             int index = tabbedPane.indexOfComponent(resultPane);
             if (index == -1) 
-                return;
+                return; // Most likely there is something wrong if index == -1. This should not occur.
             componentIndex = index;
             addSingleModuleAnalysisAction(resultPane);
         }
@@ -334,7 +334,6 @@ public class ModuleBasedSurvivalAnalysisHelper
         // problem.
 //        tabbedPane.setSelectedIndex(componentIndex);
         resultPane.setContainer(tabbedPane);
-        // Use whatever size that has been set by the user
 //        resultPane.setSize(400, 235);
         String[] results = new String[3];
         results[0] = output;
