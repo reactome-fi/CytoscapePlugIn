@@ -4,6 +4,9 @@
  */
 package org.reactome.cytoscape.pathway;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,6 +47,8 @@ public class PathwayDiagramRegistry {
     private EventSelectionMediator selectionMediator;
     // A flag to avoid a ConcurrentModficationException
     private boolean isFromCloseAll;
+    // Used to catch some property change
+    private PropertyChangeSupport propertyChangeSupport;
     
     /**
      * Default private constructor.
@@ -52,6 +57,7 @@ public class PathwayDiagramRegistry {
         diagramIdToFrame = new HashMap<Long, PathwayInternalFrame>();
         pathwayIdToDiagramId = new HashMap<Long, Long>();
         selectionMediator = new EventSelectionMediator();
+        propertyChangeSupport = new PropertyChangeSupport(this);
     }
     
     public static PathwayDiagramRegistry getRegistry() {
@@ -69,6 +75,18 @@ public class PathwayDiagramRegistry {
             });
         }
         return registry;
+    }
+    
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+    
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(listener);
+    }
+    
+    public void firePropertyChange(PropertyChangeEvent e) {
+        propertyChangeSupport.firePropertyChange(e);
     }
     
     public EventSelectionMediator getEventSelectionMediator() {

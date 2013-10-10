@@ -23,7 +23,7 @@ import org.gk.graphEditor.PathwayEditor;
  * @author gwu
  *
  */
-public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements CytoPanelComponent {
+public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
     
     public CyZoomablePathwayEditor() {
         // Don't need the title
@@ -35,29 +35,10 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Cy
         return new CyPathwayEditor();
     }
 
-    @Override
-    public Component getComponent() {
-        return this;
-    }
-
-    @Override
-    public String getTitle() {
-        return "Reactome Pathway";
-    }
-
-    @Override
-    public CytoPanelName getCytoPanelName() {
-        return CytoPanelName.EAST;
-    }
-
-    @Override
-    public Icon getIcon() {
-        return null;
-    }
-
     private class CyPathwayEditor extends PathwayEditor {
         
         public CyPathwayEditor() {
+            setEditable(false); // Only used as a pathway diagram view and not for editing
         }
 
         @Override

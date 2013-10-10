@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,7 +84,6 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
     
     private void init() {
         pathwayEditor = new CyZoomablePathwayEditor();
-        pathwayEditor.getPathwayEditor().setEditable(false);
         getContentPane().add(pathwayEditor, BorderLayout.CENTER);
         pathwayEditor.getPathwayEditor().getSelectionModel().addGraphEditorActionListener(new GraphEditorActionListener() {
             @Override
@@ -296,7 +296,6 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         RESTFulFIService fiService = new RESTFulFIService();
         try {
             Map<String, Set<Long>> fIsToSrcIds = fiService.convertPathwayToFIs(getPathwayId());
-            System.out.println("Total interactions: " + fIsToSrcIds.size());
             // Need to create a new CyNetwork
             FINetworkGenerator generator = new FINetworkGenerator();
             CyNetwork network = generator.constructFINetwork(fIsToSrcIds.keySet());
@@ -333,8 +332,14 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             // Make sure this PathwayInternalFrame should be closed
             setVisible(false);
             dispose();
+            
+            PropertyChangeEvent event = new PropertyChangeEvent(this, 
+                                                                "ConvertDiagramToFIView",
+                                                                pathwayEditor.getPathwayEditor().getRenderable(),
+                                                                null);
+            PathwayDiagramRegistry.getRegistry().firePropertyChange(event);
 
-            moveDiagramToResultsPane();
+//            moveDiagramToResultsPane();
         }
         catch(Exception e) {
             logger.error("Error in convertAsFINetwork(): " + e.getMessage(), e);
