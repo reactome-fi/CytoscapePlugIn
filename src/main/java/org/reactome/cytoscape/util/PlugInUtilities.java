@@ -27,7 +27,14 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkFactory;
+import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTable;
 import org.cytoscape.util.swing.OpenBrowser;
+import org.cytoscape.view.model.View;
+import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
@@ -48,6 +55,67 @@ public class PlugInUtilities {
     public final static String HTTP_POST = "Post";
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * A convenience method to show a node in the current network view.
+     * 
+     * @param nodeView
+     *            The View object for the node to show.
+     */
+    public static void showNode(View<CyNode> nodeView)
+    {
+        nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, true);
+    }
+
+    /**
+     * A convenience method to hide a node in the current network view.
+     * 
+     * @param nodeView
+     *            The View object for the node to be hidden.
+     */
+    public static void hideNode(View<CyNode> nodeView)
+    {
+        nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, false);
+    }
+
+    public static void showEdge(View<CyEdge> edgeView)
+    {
+        edgeView.setLockedValue(BasicVisualLexicon.EDGE_VISIBLE, true);
+    }
+
+    public static void hideEdge(View<CyEdge> edgeView)
+    {
+        edgeView.setLockedValue(BasicVisualLexicon.EDGE_VISIBLE, false);
+    }
+    
+    /**
+     * A handy method to select or unselect a node in a network.
+     * @param network
+     * @param node
+     * @param isSelected
+     */
+    public static void setNodeSelected(CyNetwork network,
+                                       CyNode node,
+                                       boolean isSelected) {
+        Long nodeSUID = node.getSUID();
+        CyTable nodeTable = network.getDefaultNodeTable();
+        nodeTable.getRow(nodeSUID).set("selected", 
+                                       isSelected);
+    }
+    
+    /**
+     * Create an empty CyNetwork using registered OGSi service.
+     * @return
+     */
+    public static CyNetwork createNetwork() {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference reference = context.getServiceReference(CyNetworkFactory.class.getName());
+        CyNetworkFactory networkFactory = (CyNetworkFactory) context.getService(reference);
+        CyNetwork network = networkFactory.createNetwork();
+        networkFactory = null;
+        context.ungetService(reference);
+        return network;
     }
 
     /**

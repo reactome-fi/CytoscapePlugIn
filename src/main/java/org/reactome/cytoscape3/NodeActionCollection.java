@@ -12,19 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.ListSelectionModel;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -32,39 +20,19 @@ import javax.swing.event.ListSelectionListener;
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
 import org.reactome.cancerindex.model.Sentence;
+import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 public class NodeActionCollection
 {
 
-    public static Long getNodeSUIDByName(String name, CyNetwork network)
-    {
-        CyTable nodeTable = network.getDefaultNodeTable();
-        for (CyNode node : network.getNodeList())
-        {
-            if (name.equals(nodeTable.getRow(node.getSUID()).get("name", String.class)));
-            return node.getSUID();
-        }
-        return null;
-    }
-    public static CyNode getNodeByName(String name, CyNetwork network)
-    {
-        CyTable nodeTable = network.getDefaultNodeTable();
-        for (CyNode node : network.getNodeList())
-        {
-            if(name.equals(nodeTable.getRow(node.getSUID()).get("name", String.class)))
-                return node;
-        }
-        return null;
-    }
     class GeneCardMenu implements CyNodeViewContextMenuFactory
     {
         @Override

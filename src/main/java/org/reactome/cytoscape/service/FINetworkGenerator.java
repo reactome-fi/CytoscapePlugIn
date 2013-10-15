@@ -1,10 +1,10 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 /**
  * This class generates a network based upon
  * FI interactions from a given input file
  * and the Reactome database.
- * @author Eric T Dawson
+ * @author Eric T Dawson & Guanming Wu
  */
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,83 +20,44 @@ import jiggle.*;
 import org.cytoscape.event.CyEventHelper;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
-import org.cytoscape.model.CyTableFactory;
-import org.cytoscape.model.CyTableManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.reactome.cytoscape.service.FIVisualStyle;
-import org.reactome.cytoscape.service.NetworkGenerator;
-import org.reactome.cytoscape.service.TableFormatter;
-import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
-public class FINetworkGenerator implements NetworkGenerator
-{
-    private ServiceReference tableFormatterServRef;
-    private ServiceReference networkFactoryRef;
-    private ServiceReference tableManagerRef;
-    private ServiceReference tableFactoryRef;
+public class FINetworkGenerator implements NetworkGenerator {
     
     public FINetworkGenerator() {
     }
     
-    private void releaseTableFormatter() {
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        context.ungetService(tableFormatterServRef);
-    }
-    
-    private void initCyServices() {
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        this.networkFactoryRef = context.getServiceReference(CyNetworkFactory.class.getName());
-        this.tableManagerRef = context.getServiceReference(CyTableManager.class.getName());
-        this.tableFactoryRef = context.getServiceReference(CyTableFactory.class.getName());
-        this.tableFormatterServRef = context.getServiceReference(TableFormatter.class.getName());
-    }
-
-    private void releaseCyServices() {
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        if (networkFactoryRef != null)
-            context.ungetService(networkFactoryRef);
-        if (tableManagerRef != null)
-            context.ungetService(tableManagerRef);
-        if (tableFactoryRef != null)
-            context.ungetService(tableFactoryRef);
-        if (tableFormatterServRef != null)
-            releaseTableFormatter();
-    }
-    
-    public CyNetwork constructFINetwork(Set<String> nodes, Set<String> fis)
-    {
-        initCyServices();
+    public CyNetwork constructFINetwork(Set<String> nodes, Set<String> fis) {
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         // Construct an empty network.
-        CyNetworkFactory networkFactory = (CyNetworkFactory) context.getService(networkFactoryRef);
-        CyNetwork network = networkFactory.createNetwork();
-        TableFormatter tableFormatter = (TableFormatter) context.getService(tableFormatterServRef);
+        CyNetwork network = PlugInUtilities.createNetwork();
+        ServiceReference reference = context.getServiceReference(TableFormatter.class.getName());
+        TableFormatter tableFormatter = (TableFormatter) context.getService(reference);
         tableFormatter.makeBasicTableColumns(network);
+        tableFormatter = null;
+        context.ungetService(reference);
         // Generate a source, edge and target for each FI interaction
         // retrieved from the Reactome database.
         int index = 0;
         Map<String, CyNode> name2Node = new HashMap<String, CyNode>();
-        for (String fi : fis)
-        {
+        for (String fi : fis) {
             index = fi.indexOf("\t");
             String name1 = fi.substring(0, index);
             String name2 = fi.substring(index + 1);
             CyNode node1 = getNode(name1, name2Node, network);
             CyNode node2 = getNode(name2, name2Node, network);
-            // CyEdge edge =
             createEdge(network, node1, node2, "FI");
         }
         // Put nodes that are not linked to other genes in the network.
-        if (nodes != null)
-        {
+        if (nodes != null) {
             Set<String> copy = new HashSet<String>(nodes);
             copy.removeAll(name2Node.keySet());
             for (String name : copy)
@@ -104,7 +65,6 @@ public class FINetworkGenerator implements NetworkGenerator
                 CyNode node = getNode(name, name2Node, network);
             }
         }
-        releaseCyServices();
         return network;
     }
 
@@ -122,6 +82,7 @@ public class FINetworkGenerator implements NetworkGenerator
         edgeTable.getRow(edge.getSUID()).set("EDGE_TYPE", type);
         return edge;
     }
+    
     /**
      * Grabs a node from the hashmap based on its name and creates a new node if one doesn't exist.
      * @param name The name of the node to be returned.
@@ -129,9 +90,9 @@ public class FINetworkGenerator implements NetworkGenerator
      * @param network The CyNetwork to which the node belongs.
      * @return node The node with the given string name.
      */
-    private CyNode getNode(String name, Map<String, CyNode> nameToNode,
-            CyNetwork network)
-    {
+    private CyNode getNode(String name, 
+                           Map<String, CyNode> nameToNode,
+                           CyNetwork network) {
         // Retrieve a node's name from the hashmap.
         // If it exists, return it. Otherwise, create
         // the node.
@@ -144,10 +105,20 @@ public class FINetworkGenerator implements NetworkGenerator
         nameToNode.put(name, node);
         return node;
     }
+    
+    private CyNode getNodeByName(String name, CyNetwork network) {
+        CyTable nodeTable = network.getDefaultNodeTable();
+        for (CyNode node : network.getNodeList()) {
+            if(name.equals(nodeTable.getRow(node.getSUID()).get("name", String.class)))
+                return node;
+        }
+        return null;
+    }
 
-    private CyNode createNode(CyNetwork network, String label, String type,
-            String tooltip)
-    {
+    private CyNode createNode(CyNetwork network, 
+                              String label,
+                              String type,
+                              String tooltip) {
         CyNode node = network.addNode();
         Long nodeSUID = node.getSUID();
         // Add node labels, tooltips, common names, etc.
@@ -158,58 +129,62 @@ public class FINetworkGenerator implements NetworkGenerator
         nodeTable.getRow(nodeSUID).set("commonName", label);
         nodeTable.getRow(nodeSUID).set("nodeToolTip", tooltip);
         return node;
-
     }
 
-    public CyNetwork constructFINetwork(Set<String> fis)
-    {
+    public CyNetwork constructFINetwork(Set<String> fis) {
         // This method is just a convenience method which
         // overloads constructFINetwork.
         return constructFINetwork(null, fis);
     }
     
-    public void addFIPartners(CyNode targetNode, Set<String> partners, CyNetworkView view)
-    {
+    private void addFIPartners(CyNode targetNode, 
+                              Set<String> partners,
+                              CyNetworkView view) {
         CyNetwork network = view.getModel();
         Map<CyNode, Set<CyNode>> oldToNew = new HashMap<CyNode, Set<CyNode>>();
         int index = 0;
         Set<CyNode> partnerNodes = new HashSet<CyNode>();
         for (String partner : partners)
         {
-            CyNode partnerNode = NodeActionCollection.getNodeByName(partner, network);
+            CyNode partnerNode = getNodeByName(partner, network);
             if (partnerNode == null)
             {
                 partnerNode = createNode(network, partner, "Gene", partner);
                 CyTable nodeTable = network.getDefaultNodeTable();
                 nodeTable.getRow(partnerNode.getSUID()).set("isLinker", true);
                 partnerNodes.add(partnerNode);
+                PlugInUtilities.setNodeSelected(network, 
+                                                partnerNode,
+                                                true);
             }
             createEdge(network, targetNode, partnerNode, "FI");
         }
-        jiggleLayout(targetNode, partnerNodes, view);
-        NetworkActionCollection.selectNodesFromList(network, partnerNodes, true);
-
+        jiggleLayout(targetNode, 
+                     partnerNodes,
+                     view);
     }
     
     public void addFIPartners(String target, Set<String> partners, CyNetworkView view)
     {
-        addFIPartners(NodeActionCollection.getNodeByName(target, view.getModel()), partners, view);
+        addFIPartners(getNodeByName(target, view.getModel()),
+                      partners, 
+                      view);
         view.updateView();
         try
         {
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             ServiceReference servRef = context
                     .getServiceReference(FIVisualStyle.class.getName());
-            FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context
-                    .getService(servRef);
+            FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
             visStyler.setVisualStyle(view);
+            context.ungetService(servRef);
         }
-        catch (Throwable t)
+        catch (Exception e)
         {
-            JOptionPane.showMessageDialog(null,
-                    "The visual style could not be applied.",
-                    "Visual Style Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
+                                          "The visual style could not be applied.",
+                                          "Visual Style Error", 
+                                          JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -252,7 +227,6 @@ public class FINetworkGenerator implements NetworkGenerator
         double dx = view.getNodeView(anchor).getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION) - coords[0];
         double dy = view.getNodeView(anchor).getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION) - coords[1];
         int i = 0;
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(CyEventHelper.class.getName());
         CyEventHelper eventHelper = (CyEventHelper) context.getService(servRef);
@@ -268,9 +242,11 @@ public class FINetworkGenerator implements NetworkGenerator
             nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, x);
             nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, y);
         }
+        
+        context.ungetService(servRef);
     }
-    protected void initializeJiggleVertex(Vertex v)
-    {
+    
+    private void initializeJiggleVertex(Vertex v) {
         // Assign a random position
         double[] pos = v.getCoords();
         pos[0] = 500 * Math.random();
@@ -281,8 +257,7 @@ public class FINetworkGenerator implements NetworkGenerator
         size[1] = (int) 50;
     }
 
-    private void addFIs(Set<String> fis, CyNetwork network)
-    {
+    private void addFIs(Set<String> fis, CyNetwork network) {
         CyTable nodeTable = network.getDefaultNodeTable();
         List<CyNode> oldNodes = new ArrayList<CyNode>();
         //Copy all of the nodes in the network in to the list (deep copy).
@@ -327,11 +302,13 @@ public class FINetworkGenerator implements NetworkGenerator
             }
         }
     }
+    
     public void addFIs(Set<String> fis, CyNetworkView view)
     {
         addFIs(fis, view.getModel());
         view.updateView();
     }
+    
     private CyNode addFINode(String name, CyNetwork network)
     {
         CyTable nodeTable = network.getDefaultNodeTable();

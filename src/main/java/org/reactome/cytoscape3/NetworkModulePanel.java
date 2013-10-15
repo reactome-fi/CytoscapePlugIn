@@ -45,6 +45,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
 
@@ -191,7 +192,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         {
             for (View<CyEdge> edgeView : view.getEdgeViews())
             {
-                NetworkActionCollection.showEdge(edgeView);
+                PlugInUtilities.showEdge(edgeView);
             }
         }
     }
@@ -202,7 +203,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         {
             for (View<CyNode> nodeView : view.getNodeViews())
             {
-                NetworkActionCollection.showNode(nodeView);
+                PlugInUtilities.showNode(nodeView);
             }
         }
     }
@@ -235,9 +236,9 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
                     Long nodeSUID = nodeView.getModel().getSUID();
                     String nodeName = nodeTable.getRow(nodeSUID).get("name", String.class);
                     if (selectedNodes.contains(nodeName))
-                        NetworkActionCollection.showNode(nodeView);
+                        PlugInUtilities.showNode(nodeView);
                     else
-                        NetworkActionCollection.hideNode(nodeView);
+                        PlugInUtilities.hideNode(nodeView);
                 }
             }
             //Redraw edges. Otherwise, the edges don't appear if nodes

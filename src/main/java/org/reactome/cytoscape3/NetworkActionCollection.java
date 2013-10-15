@@ -3,7 +3,6 @@ package org.reactome.cytoscape3;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,12 +18,9 @@ import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyEdge;
-import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.View;
-import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -101,73 +97,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         FIPlugInHelper r = FIPlugInHelper.getHelper();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         context.ungetService(tableFormatterServRef);
-    }
-
-    /**
-     * A convenience method to show a node in the current network view.
-     * 
-     * @param nodeView
-     *            The View object for the node to show.
-     */
-    public static void showNode(View<CyNode> nodeView)
-    {
-        nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, true);
-    }
-
-    /**
-     * A convenience method to hide a node in the current network view.
-     * 
-     * @param nodeView
-     *            The View object for the node to be hidden.
-     */
-    public static void hideNode(View<CyNode> nodeView)
-    {
-        nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, false);
-    }
-
-    public static void showEdge(View<CyEdge> edgeView)
-    {
-        edgeView.setLockedValue(BasicVisualLexicon.EDGE_VISIBLE, true);
-    }
-
-    public static void hideEdge(View<CyEdge> edgeView)
-    {
-        edgeView.setLockedValue(BasicVisualLexicon.EDGE_VISIBLE, false);
-    }
-
-    public static void setSelectedOrUnselected(CyNetwork network, CyNode node,
-            boolean value)
-    {
-        Long nodeSUID = node.getSUID();
-        CyTable nodeTable = network.getDefaultNodeTable();
-        nodeTable.getRow(nodeSUID).set("selected", value);
-    }
-
-    private static void setSelectedOrUnselected(CyNetworkView view,
-            View<CyNode> nodeView, boolean value)
-    {
-        setSelectedOrUnselected(view.getModel(), nodeView.getModel(), value);
-    }
-
-    public static void selectNodesFromList(CyNetwork network,
-            Collection<CyNode> nodes, boolean value)
-    {
-        for (CyNode node : nodes)
-        {
-            setSelectedOrUnselected(network, node, value);
-        }
-    }
-
-    public static boolean nodeNameInNetwork(String name, CyNetwork network)
-    {
-        CyTable nodeTable = network.getDefaultNodeTable();
-        for (CyNode node : network.getNodeList())
-        {
-            Long tmpSUID = node.getSUID();
-            String tmp = nodeTable.getRow(tmpSUID).get("name", String.class);
-            if (name.equals(tmp)) return true;
-        }
-        return false;
     }
 
     /**
