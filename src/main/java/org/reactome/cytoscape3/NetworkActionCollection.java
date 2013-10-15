@@ -32,6 +32,8 @@ import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableFormatter;
+import org.reactome.cytoscape.service.TableFormatterImpl;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.graph.GeneClusterPair;

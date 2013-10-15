@@ -36,6 +36,8 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.cancer.CancerGeneExpressionCommon;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.TableFormatterImpl;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.InteractionUtilities;
@@ -168,11 +170,13 @@ public class MicroarrayAnalysisTask extends FIAnalysisTask {
         tableHelper.loadNodeAttributesByName(network, "module", nodeToCluster);
         tableHelper.storeClusteringType(network, 
                                         TableFormatterImpl.getMCLArrayClustering());
-        tableHelper.storeFINetworkVersion(network);
+        tableHelper.storeFINetworkVersion(network,
+                                          FIPlugInHelper.getHelper().getFiNetworkVersion());
         // tableHelper.storeMCLModuleToSampleToValue(network,
         //        moduleToSampleToValue);
         tableHelper.storeDataSetType(network, TableFormatterImpl
                                      .getMCLArrayClustering());
+        tableHelper.markAsFINetwork(network);
         return network;
     }
     

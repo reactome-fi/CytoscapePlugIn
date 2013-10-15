@@ -6,8 +6,6 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -34,6 +32,7 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.CyRow;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
@@ -50,12 +49,12 @@ import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape3.FINetworkGenerator;
 import org.reactome.cytoscape3.FIVisualStyleImpl;
 import org.reactome.cytoscape3.RESTFulFIService;
-import org.reactome.cytoscape3.SurvivalAnalysisResultPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -299,8 +298,17 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             // Need to create a new CyNetwork
             FINetworkGenerator generator = new FINetworkGenerator();
             CyNetwork network = generator.constructFINetwork(fIsToSrcIds.keySet());
-            network.getDefaultNetworkTable().getRow(network.getSUID()).set("name",
-                                                                           "FI Nework for " + pathwayEditor.getPathwayEditor().getRenderable().getDisplayName());
+            // Add some meta information
+            CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
+            row.set("name",
+                    "FI Nework for " + pathwayEditor.getPathwayEditor().getRenderable().getDisplayName());
+            TableHelper tableHelper = new TableHelper();
+            tableHelper.markAsFINetwork(network);
+            tableHelper.storeDataSetType(network, 
+                                         "PathwayDiagram");
+            tableHelper.storeNetworkAttribute(network,
+                                              "PathwayId", 
+                                              pathwayId);
             
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             

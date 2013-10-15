@@ -41,6 +41,8 @@ import org.reactome.cancer.MATFileLoader;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableFormatter;
+import org.reactome.cytoscape.service.TableFormatterImpl;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.r3.util.InteractionUtilities;
 
@@ -133,7 +135,9 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
             CyNetworkView view = viewFactory.createNetworkView(network);
             tableHelper.storeClusteringType(view, TableFormatterImpl.getHotNetModule());
             tableHelper.storeDataSetType(network, TableFormatterImpl.getSampleMutationData());
-            tableHelper.storeFINetworkVersion(view);
+            tableHelper.markAsFINetwork(network);
+            tableHelper.storeFINetworkVersion(network,
+                                              FIPlugInHelper.getHelper().getFiNetworkVersion());
             CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);
             viewManager.addNetworkView(view);
             EdgeActionCollection.setEdgeNames(view);

@@ -23,15 +23,19 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
 
+import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
+import org.cytoscape.application.events.SetCurrentNetworkViewListener;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.events.CytoPanelComponentSelectedEvent;
 import org.cytoscape.application.swing.events.CytoPanelComponentSelectedListener;
+import org.cytoscape.view.model.CyNetworkView;
 import org.gk.gkEditor.PathwayOverviewPane;
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.render.Renderable;
 import org.osgi.framework.BundleContext;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
@@ -92,6 +96,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                     overview.setParentEditor(pathwayEditor.getPathwayEditor());
                     overview.syncrhonizeScroll(pathwayEditor);
                     overview.setRenderable(pathwayFrame.getDisplayedPathway());
+                    switchToOverview(pathwayFrame);
                 }
             }
             
@@ -104,7 +109,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             public void propertyChange(PropertyChangeEvent evt) {
                 String propName = evt.getPropertyName();
                 if (propName.equals("ConvertDiagramToFIView")) {
-                    handleDiagramToFIViewConversion((Renderable)evt.getOldValue());
+                    switchToFullPathwayView((Renderable)evt.getOldValue());
                 }
             }
         };
@@ -114,15 +119,66 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         context.registerService(CytoPanelComponentSelectedListener.class.getName(),
                                 this, 
                                 null);
+        
+        // Catch network view selection event
+        SetCurrentNetworkViewListener currentNetworkViewListener = new SetCurrentNetworkViewListener() {
+            
+            @Override
+            public void handleEvent(SetCurrentNetworkViewEvent event) {
+                if (event.getNetworkView() == null)
+                    return; // This is more like a Pathway view
+                doNetworkViewIsSelected(event.getNetworkView());
+            }
+        };
+        context.registerService(SetCurrentNetworkViewListener.class.getName(),
+                                currentNetworkViewListener,
+                                null);
     }
     
-    private void handleDiagramToFIViewConversion(Renderable pathway) {
+    private void doNetworkViewIsSelected(CyNetworkView networkView) {
+        TableHelper tableHelper = new TableHelper();
+        if (!tableHelper.isFINetwork(networkView))
+            return;
+        // Check if this is a PathwayDiagram view
+        String dataSetType = tableHelper.getDataSetType(networkView);
+        if (!dataSetType.equals("PathwayDiagram"))
+            return;
+        // Choose Pathway
+        Long pathwayId = tableHelper.getStoredNetworkAttribute(networkView.getModel(),
+                                                               "PathwayId",
+                                                               Long.class);
+        // Have to manually select the event for the tree.
+        EventSelectionEvent selectionEvent = new EventSelectionEvent();
+        selectionEvent.setEventId(pathwayId);
+        selectionEvent.setParentId(pathwayId);
+        selectionEvent.setIsPathway(true);
+        eventPane.eventSelected(selectionEvent);
+    }
+    
+    private void switchToFullPathwayView(Renderable pathway) {
         if (pathwayView == null) {
             pathwayView = new CyZoomablePathwayEditor();
-            // Make sure pathwayView take the original size of overview
-            // Note: only preferred size works
-            pathwayView.setPreferredSize(overview.getSize());
+            // Make sure the overview is at the correct place
+            pathwayView.addComponentListener(new ComponentAdapter() {
+                
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    Component parentComp = overviewContainer.getParent();
+                    Point location = SwingUtilities.convertPoint(pathwayView, 
+                                                                 3, 
+                                                                 3, 
+                                                                 parentComp);
+                    overviewContainer.setLocation(location);
+                }
+                
+            });
         }
+        // Check if pathwayView has been set already
+        if (jsp.getBottomComponent() == pathwayView)
+            return; // Don't need to do anything
+        // Make sure pathwayView take the original size of overview
+        // Note: only preferred size works
+        pathwayView.setPreferredSize(overview.getSize());
         pathwayView.getPathwayEditor().setRenderable(pathway);
         overview.syncrhonizeScroll(pathwayView);
         overview.setParentEditor(pathwayView.getPathwayEditor());
@@ -135,25 +191,25 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         JLayeredPane layeredPane = frame.getLayeredPane();
         layeredPane.add(overviewContainer, JLayeredPane.PALETTE_LAYER);
         overviewContainer.setSize(100, 65);
-        // Make sure the overview is at the correct place
-        pathwayView.addComponentListener(new ComponentAdapter() {
-
-            @Override
-            public void componentResized(ComponentEvent e) {
-                Component parentComp = overviewContainer.getParent();
-                Point location = SwingUtilities.convertPoint(pathwayView, 
-                                                             3, 
-                                                             3, 
-                                                             parentComp);
-                overviewContainer.setLocation(location);
-            }
-
-        });
+    }
+    
+    private void switchToOverview(PathwayInternalFrame pathwayFrame) {
+        // Overview is the default view and should be set already
+        if (jsp.getBottomComponent() == overviewContainer)
+            return; // It has been set.
+        // Remove from the original container
+        overviewContainer.getParent().remove(overviewContainer);
+        overviewContainer.setPreferredSize(pathwayView.getSize());
+        jsp.setBottomComponent(overviewContainer);
+        ZoomablePathwayEditor pathwayEditor = pathwayFrame.getZoomablePathwayEditor();
+        overview.syncrhonizeScroll(pathwayEditor);
+        overview.setParentEditor(pathwayEditor.getPathwayEditor());
+        overview.setRenderable(pathwayEditor.getPathwayEditor().getRenderable());
     }
     
     public void setFloatedOverviewVisible(boolean visiable) {
         // Overview is not afloat
-        if (!pathwayView.isVisible())
+        if (pathwayView == null || !pathwayView.isVisible())
             return;
         overviewContainer.setVisible(visiable);
     }

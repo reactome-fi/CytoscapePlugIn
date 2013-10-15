@@ -1,4 +1,4 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 /**
  * This class creates the necessary CyTable columns
@@ -18,7 +18,6 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
 import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
-import org.reactome.cytoscape.service.TableFormatter;
 
 public class TableFormatterImpl implements TableFormatter
 {

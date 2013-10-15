@@ -33,6 +33,7 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.NetworkGenerator;
 import org.reactome.cytoscape.service.TableFormatter;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 public class FINetworkGenerator implements NetworkGenerator

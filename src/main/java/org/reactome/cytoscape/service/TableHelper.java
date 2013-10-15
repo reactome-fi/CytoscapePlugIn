@@ -1,4 +1,4 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -7,11 +7,11 @@ import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 
-public class TableHelper
-{
+public class TableHelper {
     private final String FI_NETWORK_VERSION = TableFormatterImpl
             .getFINetworkVersion();
     private final String MCL_ARRAY_CLUSTERING = TableFormatterImpl
@@ -19,25 +19,19 @@ public class TableHelper
     private final String SAMPLE_MUTATION_DATA = TableFormatterImpl
             .getSampleMutationData();
 
-    public TableHelper()
-    {
+    public TableHelper() {
     }
 
     public void createNewColumn(CyTable table, String columnName, Class<?> type)
     {
         table.createColumn(columnName, type, Boolean.FALSE);
     }
-    public void storeFINetworkVersion(CyNetwork network)
+    
+    public void storeFINetworkVersion(CyNetwork network, String version)
     {
         CyTable netTable = network.getDefaultNetworkTable();
-        String version = FIPlugInHelper.getHelper()
-                .getFiNetworkVersion();
         netTable.getRow(network.getSUID()).set(FI_NETWORK_VERSION,
                 version);
-    }
-    public void storeFINetworkVersion(CyNetworkView view)
-    {
-        storeFINetworkVersion(view.getModel());
     }
     
     public String getStoredFINetworkVersion(CyNetworkView view)
@@ -69,6 +63,55 @@ public class TableHelper
     {
         CyTable netTable = network.getDefaultNetworkTable();
         netTable.getRow(network.getSUID()).set("dataSetType", dataSetType);
+    }
+    
+    /**
+     * Set a network attribute value.
+     * @param network
+     * @param attName
+     * @param value
+     */
+    public <T> void storeNetworkAttribute(CyNetwork network,
+                                          String attName,
+                                          T value) {
+        CyTable networkTable = network.getDefaultNetworkTable();
+        // Make sure networkTable has the attName column
+        if (networkTable.getColumn(attName) == null) {
+            networkTable.createColumn(attName, 
+                                      value.getClass(), 
+                                      true);
+        }
+        CyRow row = networkTable.getRow(network.getSUID());
+        row.set(attName,
+                value);
+    }
+    
+    /**
+     * Get a stored attribute value for a CyNetwork.
+     * @param network
+     * @param attName
+     * @param type
+     * @return
+     */
+    public <T> T getStoredNetworkAttribute(CyNetwork network,
+                                           String attName,
+                                           Class<T> type) {
+        CyTable networkTable = network.getDefaultNetworkTable();
+        // Make sure networkTable has the attName column
+        if (networkTable.getColumn(attName) == null) {
+            return null;
+        }
+        CyRow row = networkTable.getRow(network.getSUID());
+        return row.get(attName, type);
+    }
+    
+    
+    /**
+     * Mark a Network as a FINetwork. 
+     * @param network
+     */
+    public void markAsFINetwork(CyNetwork network) {
+        CyTable netTable = network.getDefaultNetworkTable();
         netTable.getRow(network.getSUID()).set("isReactomeFINetwork", true);
     }
 
@@ -92,6 +135,7 @@ public class TableHelper
         Long netSUID = network.getSUID();
         netTable.getRow(netSUID).set("clustering_Type", clusteringType);
     }
+    
     public void storeClusteringType(CyNetworkView view, String clusteringType)
     {
         storeClusteringType(view.getModel(), clusteringType);

@@ -34,6 +34,7 @@ import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.pathway.ReactomePathwayAction;
+import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape3.EdgeActionCollection.EdgeQueryFIMenuItem;
 import org.reactome.cytoscape3.NetworkActionCollection.ClusterFINetworkMenu;

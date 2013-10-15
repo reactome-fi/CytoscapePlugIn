@@ -25,6 +25,8 @@ import org.reactome.cancer.MATFileLoader;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableFormatter;
+import org.reactome.cytoscape.service.TableFormatterImpl;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
@@ -169,9 +171,11 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             TableHelper tableHelper = new TableHelper();
             CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) context.getService(viewFactoryRef);
             CyNetworkView view = viewFactory.createNetworkView(network);
-            tableHelper.storeFINetworkVersion(view);
+            tableHelper.storeFINetworkVersion(network,
+                                              FIPlugInHelper.getHelper().getFiNetworkVersion());
             tableHelper.storeDataSetType(network, TableFormatterImpl
                     .getSampleMutationData());
+            tableHelper.markAsFINetwork(network);
             CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);
             viewManager.addNetworkView(view);
             if (geneToSampleNumber != null && !geneToSampleNumber.isEmpty())
