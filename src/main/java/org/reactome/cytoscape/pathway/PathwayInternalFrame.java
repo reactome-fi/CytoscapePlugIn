@@ -309,6 +309,9 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             tableHelper.storeNetworkAttribute(network,
                                               "PathwayId", 
                                               pathwayId);
+            // Cache the fetched pathway diagram to avoid another slow query
+            PathwayDiagramRegistry.getRegistry().registerNetworkToDiagram(network,
+                                                                          pathwayEditor.getPathwayEditor().getRenderable());
             
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             

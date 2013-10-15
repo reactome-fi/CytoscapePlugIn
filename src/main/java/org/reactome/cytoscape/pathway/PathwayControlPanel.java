@@ -30,6 +30,7 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.events.CytoPanelComponentSelectedEvent;
 import org.cytoscape.application.swing.events.CytoPanelComponentSelectedListener;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
 import org.gk.gkEditor.PathwayOverviewPane;
 import org.gk.gkEditor.ZoomablePathwayEditor;
@@ -144,7 +145,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         if (!dataSetType.equals("PathwayDiagram"))
             return;
         // Choose Pathway
-        Long pathwayId = tableHelper.getStoredNetworkAttribute(networkView.getModel(),
+        CyNetwork network = networkView.getModel();
+        Long pathwayId = tableHelper.getStoredNetworkAttribute(network,
                                                                "PathwayId",
                                                                Long.class);
         // Have to manually select the event for the tree.
@@ -153,6 +155,9 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         selectionEvent.setParentId(pathwayId);
         selectionEvent.setIsPathway(true);
         eventPane.eventSelected(selectionEvent);
+        // Need to switch to pathway view
+        Renderable diagram = PathwayDiagramRegistry.getRegistry().getDiagramForNetwork(network);
+        switchToFullPathwayView(diagram);
     }
     
     private void switchToFullPathwayView(Renderable pathway) {
@@ -163,12 +168,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                 
                 @Override
                 public void componentResized(ComponentEvent e) {
-                    Component parentComp = overviewContainer.getParent();
-                    Point location = SwingUtilities.convertPoint(pathwayView, 
-                                                                 3, 
-                                                                 3, 
-                                                                 parentComp);
-                    overviewContainer.setLocation(location);
+                    setOverviewPositionInPathwayView();
                 }
                 
             });
@@ -191,6 +191,17 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         JLayeredPane layeredPane = frame.getLayeredPane();
         layeredPane.add(overviewContainer, JLayeredPane.PALETTE_LAYER);
         overviewContainer.setSize(100, 65);
+        // Hope to repaint layeredPane
+        layeredPane.invalidate();
+        layeredPane.validate();
+        // Make sure overview has correct location
+        SwingUtilities.invokeLater(new Runnable() {
+            
+            @Override
+            public void run() {
+                setOverviewPositionInPathwayView();
+            }
+        });
     }
     
     private void switchToOverview(PathwayInternalFrame pathwayFrame) {
@@ -238,6 +249,15 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     public void handleEvent(CytoPanelComponentSelectedEvent e) {
         CytoPanel container = e.getCytoPanel();
         setFloatedOverviewVisible(container.getSelectedComponent() == this);
+    }
+
+    private void setOverviewPositionInPathwayView() {
+        Component parentComp = overviewContainer.getParent();
+        Point location = SwingUtilities.convertPoint(pathwayView, 
+                                                     3, 
+                                                     3, 
+                                                     parentComp);
+        overviewContainer.setLocation(location);
     }
     
 }

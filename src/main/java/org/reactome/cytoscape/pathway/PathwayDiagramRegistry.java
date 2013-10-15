@@ -18,6 +18,7 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
 
+import org.cytoscape.model.CyNetwork;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
@@ -49,6 +50,8 @@ public class PathwayDiagramRegistry {
     private boolean isFromCloseAll;
     // Used to catch some property change
     private PropertyChangeSupport propertyChangeSupport;
+    // This map is used to map a converted FI network to its original PathwayDiagram
+    private Map<CyNetwork, Renderable> networkToDiagram;
     
     /**
      * Default private constructor.
@@ -56,6 +59,7 @@ public class PathwayDiagramRegistry {
     private PathwayDiagramRegistry() {
         diagramIdToFrame = new HashMap<Long, PathwayInternalFrame>();
         pathwayIdToDiagramId = new HashMap<Long, Long>();
+        networkToDiagram = new HashMap<CyNetwork, Renderable>();
         selectionMediator = new EventSelectionMediator();
         propertyChangeSupport = new PropertyChangeSupport(this);
     }
@@ -87,6 +91,25 @@ public class PathwayDiagramRegistry {
     
     public void firePropertyChange(PropertyChangeEvent e) {
         propertyChangeSupport.firePropertyChange(e);
+    }
+    
+    /**
+     * Store the mapping from network to pathway.
+     * @param network
+     * @param pathway
+     */
+    public void registerNetworkToDiagram(CyNetwork network, 
+                                          Renderable pathway) {
+        networkToDiagram.put(network, pathway);
+    }
+    
+    /**
+     * Get the original pathway diagram for a converted FI network.
+     * @param network
+     * @return
+     */
+    public Renderable getDiagramForNetwork(CyNetwork network) {
+        return networkToDiagram.get(network);
     }
     
     public EventSelectionMediator getEventSelectionMediator() {
@@ -242,6 +265,7 @@ public class PathwayDiagramRegistry {
         isFromCloseAll = false;
         diagramIdToFrame.clear(); // Empty the opened diagrams
         pathwayIdToDiagramId.clear();
+        networkToDiagram.clear();
     }
     
 }
