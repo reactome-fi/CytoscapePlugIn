@@ -138,8 +138,8 @@ public class FINetworkGenerator implements NetworkGenerator {
     }
     
     private void addFIPartners(CyNode targetNode, 
-                              Set<String> partners,
-                              CyNetworkView view) {
+                               Set<String> partners,
+                               CyNetworkView view) {
         CyNetwork network = view.getModel();
         Map<CyNode, Set<CyNode>> oldToNew = new HashMap<CyNode, Set<CyNode>>();
         int index = 0;

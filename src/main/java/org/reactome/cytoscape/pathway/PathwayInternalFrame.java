@@ -13,6 +13,7 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -46,6 +47,8 @@ import org.gk.render.HyperEdge;
 import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
+import org.gk.util.GKApplicationUtilities;
+import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FINetworkGenerator;
@@ -308,6 +311,16 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             tableHelper.storeNetworkAttribute(network,
                                               "PathwayId", 
                                               pathwayId);
+            // Store Instance ids information
+            Map<String, String> edgeToIds = new HashMap<String, String>();
+            for (String fi : fIsToSrcIds.keySet()) {
+                int index= fi.indexOf("\t");
+                String node1 = fi.substring(0, index);
+                String node2 = fi.substring(index + 1);
+                edgeToIds.put(node1 + " FI " + node2, 
+                              StringUtils.join(",", new ArrayList<Long>(fIsToSrcIds.get(fi))));
+            }
+            tableHelper.storeEdgeAttributesByName(network, "SourceIds", edgeToIds);
             // Cache the fetched pathway diagram to avoid another slow query
             PathwayDiagramRegistry.getRegistry().registerNetworkToDiagram(network,
                                                                           pathwayEditor.getPathwayEditor().getRenderable());

@@ -182,12 +182,12 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             viewManager.addNetworkView(view);
             if (geneToSampleNumber != null && !geneToSampleNumber.isEmpty())
             {
-                tableHelper.loadNodeAttributesByName(view, "sampleNumber",
+                tableHelper.storeNodeAttributesByName(view, "sampleNumber",
                         geneToSampleNumber);
             }
             if (geneToSampleString != null && !geneToSampleString.isEmpty())
             {
-                tableHelper.loadNodeAttributesByName(view, "samples",
+                tableHelper.storeNodeAttributesByName(view, "samples",
                         geneToSampleString);
             }
             // Check if linker genes are to be used.
@@ -203,7 +203,7 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
                     geneToIsLinker.put(nodeName, !selectedGenes
                             .contains(nodeName));
                 }
-                tableHelper.loadNodeAttributesByName(view, "isLinker",
+                tableHelper.storeNodeAttributesByName(view, "isLinker",
                         geneToIsLinker);
             }
             if (fetchFIAnnotations)

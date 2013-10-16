@@ -248,6 +248,9 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     @Override
     public void handleEvent(CytoPanelComponentSelectedEvent e) {
         CytoPanel container = e.getCytoPanel();
+        // Target to the control panel only
+        if(container.getCytoPanelName() != CytoPanelName.WEST)
+            return; 
         setFloatedOverviewVisible(container.getSelectedComponent() == this);
     }
 

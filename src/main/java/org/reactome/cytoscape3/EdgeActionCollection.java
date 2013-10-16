@@ -13,16 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.BorderFactory;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JTable;
+import javax.swing.*;
 import javax.swing.border.Border;
 
 import org.cytoscape.application.swing.CyEdgeViewContextMenuFactory;
@@ -46,94 +37,89 @@ import org.reactome.funcInt.ReactomeSource;
  * @author Eric T. Dawson
  *
  */
-public class EdgeActionCollection
-{
-
-    public static void annotateFIs(final CyNetworkView view)
-    {
-                ProgressPane progPane = new ProgressPane();
-                progPane.setIndeterminate(true);
-                progPane.setText("Fetching FI Annotations...");
-                FIPlugInHelper r = FIPlugInHelper.getHelper();
-                final CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-                desktopApp.getJFrame().setGlassPane(progPane);
-                desktopApp.getJFrame().getGlassPane().setVisible(true);
-                TableHelper tableHelper = new TableHelper();
-                List<CyEdge> edges = null;
-                List<CyEdge> annotatedEdges = new ArrayList<CyEdge>();
-                List<CyEdge> unannotatedEdges = new ArrayList<CyEdge>();
-                for (View<CyEdge> edgeView : view.getEdgeViews())
-                {
-                    CyEdge edge = edgeView.getModel();
-
-                    if (tableHelper.hasEdgeAttribute(view, edge, "FI Direction", String.class))
-                        annotatedEdges.add(edge);
-                    else
-                        unannotatedEdges.add(edge);
-                }
-                if (!annotatedEdges.isEmpty() && !unannotatedEdges.isEmpty())
-                {
-                    int reply = JOptionPane.showConfirmDialog(desktopApp.getJFrame(), "Some FIs have already been annotated. Would you like to annotate\n" +
-                            "only those FIs without annotations? Choosing \"No\" will annotate all FIs.",
-                            "FI Annotation", JOptionPane.YES_NO_CANCEL_OPTION);
-                    if (reply == JOptionPane.CANCEL_OPTION)
-                        return;
-                    if (reply == JOptionPane.YES_OPTION)
-                        edges = unannotatedEdges;
-                    else
-                    {
-                        edges = unannotatedEdges;
-                        edges.addAll(annotatedEdges);
-                    }
-                }
-                else if (annotatedEdges.size() > 0)
-                {
-                    int reply = JOptionPane.showConfirmDialog(desktopApp.getJFrame(), "All FIs have been annotated. Would you like to re-annotate them?",
-                            "FI Annotation", JOptionPane.YES_NO_OPTION);
-                    if (reply == JOptionPane.NO_OPTION)
-                    { 
-                        desktopApp.getJFrame().getGlassPane().setVisible(false); 
-                        return;
-                    }
-                    edges = annotatedEdges;
-                }
-                else if (unannotatedEdges.size() > 0)
-                    edges = unannotatedEdges;
-                if (edges == null || edges.size() == 0)
-                {
-                    JOptionPane.showMessageDialog(desktopApp.getJFrame(),
-                            "No FIs need to be annotated.",
-                            "FI Annotation", 
-                            JOptionPane.INFORMATION_MESSAGE);
-                    desktopApp.getJFrame().getGlassPane().setVisible(false);
-                    return;
-                }
-                try{
-                    Map<String, String> edgeToAnnotation = new HashMap<String, String>();
-                    Map<String, String> edgeToDirection = new HashMap<String, String>();
-                    Map<String, Double> edgeToScore = new HashMap<String, Double>();
-                    RESTFulFIService service = new RESTFulFIService(view);
-                    Map<String, FIAnnotation> edgeIdToAnnotation = service.annotate(edges, view);
-                    for (String edgeId : edgeIdToAnnotation.keySet())
-                    {
-                        FIAnnotation annotation = edgeIdToAnnotation.get(edgeId);
-                        edgeToAnnotation.put(edgeId, annotation.getAnnotation());
-                        edgeToDirection.put(edgeId, annotation.getDirection());
-                        edgeToScore.put(edgeId, annotation.getScore());
-                    }
-                    tableHelper.loadEdgeAttributesByName(view, "FI Annotation", edgeToAnnotation);
-                    tableHelper.loadEdgeAttributesByName(view, "FI Direction", edgeToDirection);
-                    tableHelper.loadEdgeAttributesByName(view, "FI Score", edgeToScore);
-                } 
-                catch (Throwable t)
-                {
-                    PlugInUtilities.showErrorMessage("Error in annotating FIs", "FI Annotation failed. Please try again.");
-                    t.printStackTrace();
-                }
-                desktopApp.getJFrame().getGlassPane().setVisible(false);
-                progPane = null;
+public class EdgeActionCollection {
+    
+    public static void annotateFIs(final CyNetworkView view) {
+        ProgressPane progPane = new ProgressPane();
+        progPane.setIndeterminate(true);
+        progPane.setText("Fetching FI Annotations...");
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        JFrame parentFrame = desktopApp.getJFrame();
+        parentFrame.setGlassPane(progPane);
+        parentFrame.getGlassPane().setVisible(true);
+        TableHelper tableHelper = new TableHelper();
+        List<CyEdge> edges = null;
+        List<CyEdge> annotatedEdges = new ArrayList<CyEdge>();
+        List<CyEdge> unannotatedEdges = new ArrayList<CyEdge>();
+        for (View<CyEdge> edgeView : view.getEdgeViews()) {
+            CyEdge edge = edgeView.getModel();
+            
+            if (tableHelper.hasEdgeAttribute(view, edge, "FI Direction", String.class))
+                annotatedEdges.add(edge);
+            else
+                unannotatedEdges.add(edge);
+        }
+        if (!annotatedEdges.isEmpty() && !unannotatedEdges.isEmpty()) {
+            int reply = JOptionPane.showConfirmDialog(parentFrame, "Some FIs have already been annotated. Would you like to annotate\n" +
+                    "only those FIs without annotations? Choosing \"No\" will annotate all FIs.",
+                    "FI Annotation", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (reply == JOptionPane.CANCEL_OPTION) {
+                parentFrame.getGlassPane().setVisible(false); 
+                return;
+            }
+            if (reply == JOptionPane.YES_OPTION)
+                edges = unannotatedEdges;
+            else {
+                edges = unannotatedEdges;
+                edges.addAll(annotatedEdges);
+            }
+        }
+        else if (annotatedEdges.size() > 0) {
+            int reply = JOptionPane.showConfirmDialog(parentFrame, "All FIs have been annotated. Would you like to re-annotate them?",
+                                                      "FI Annotation", JOptionPane.YES_NO_OPTION);
+            if (reply == JOptionPane.NO_OPTION) { 
+                parentFrame.getGlassPane().setVisible(false); 
+                return;
+            }
+            edges = annotatedEdges;
+        }
+        else if (unannotatedEdges.size() > 0)
+            edges = unannotatedEdges;
+        
+        if (edges == null || edges.size() == 0) {
+            JOptionPane.showMessageDialog(parentFrame,
+                                          "No FIs need to be annotated.",
+                                          "FI Annotation", 
+                                          JOptionPane.INFORMATION_MESSAGE);
+            parentFrame.setVisible(false);
+            return;
+        }
+        
+        try {
+            Map<String, String> edgeToAnnotation = new HashMap<String, String>();
+            Map<String, String> edgeToDirection = new HashMap<String, String>();
+            Map<String, Double> edgeToScore = new HashMap<String, Double>();
+            RESTFulFIService service = new RESTFulFIService(view);
+            Map<String, FIAnnotation> edgeIdToAnnotation = service.annotate(edges, view);
+            for (String edgeId : edgeIdToAnnotation.keySet()) {
+                FIAnnotation annotation = edgeIdToAnnotation.get(edgeId);
+                edgeToAnnotation.put(edgeId, annotation.getAnnotation());
+                edgeToDirection.put(edgeId, annotation.getDirection());
+                edgeToScore.put(edgeId, annotation.getScore());
+            }
+            tableHelper.storeEdgeAttributesByName(view, "FI Annotation", edgeToAnnotation);
+            tableHelper.storeEdgeAttributesByName(view, "FI Direction", edgeToDirection);
+            tableHelper.storeEdgeAttributesByName(view, "FI Score", edgeToScore);
+        } 
+        catch (Exception t) {
+            PlugInUtilities.showErrorMessage("Error in annotating FIs",
+                                             "FI Annotation failed. Please try again.");
+            t.printStackTrace();
+        }
+        parentFrame.getGlassPane().setVisible(false);
+        progPane = null;
     }
-
+    
     public static void setEdgeNames(CyNetworkView view)
     {
         TableHelper tableHelper = new TableHelper();
@@ -146,29 +132,30 @@ public class EdgeActionCollection
         }
         tableHelper = null;
     }
-
+    
     class EdgeQueryFIMenuItem implements CyEdgeViewContextMenuFactory
     {
-
+        
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView view, final View<CyEdge> edgeView)
         {
             JMenuItem edgeQueryFIItem = new JMenuItem("Query FI Source");
             edgeQueryFIItem.addActionListener(new ActionListener(){
-
+                
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
                     fetchInteraction(view, edgeView);
                 }
-
+                
             });
             return new CyMenuItem(edgeQueryFIItem, 1.0f);
         }
-
+        
     }
+    
     private void fetchInteraction(CyNetworkView view,
-            View<CyEdge> edgeView)
+                                  View<CyEdge> edgeView)
     {
         ProgressPane progPane = new ProgressPane();
         progPane.setText("Fetching FI Annotation(s)");
@@ -179,12 +166,12 @@ public class EdgeActionCollection
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
         Long sourceSUID =  edgeView.getModel().getSource().getSUID();
         String source = nodeTable.getRow(sourceSUID).get("name", String.class);
-
+        
         Long targetSUID = edgeView.getModel().getTarget().getSUID();
         String target = nodeTable.getRow(targetSUID).get("name", String.class);
         try
         {
-
+            
             RESTFulFIService fiService = new RESTFulFIService(view);
             List<Interaction> interactions = fiService.queryEdge(source, target);
             //There should be exactly one reaction
@@ -201,6 +188,7 @@ public class EdgeActionCollection
         }
         desktopApp.getJFrame().getGlassPane().setVisible(false);
     }
+    
     private void displayInteraction(View<CyEdge> edgeView, List<Interaction> interactions, String source, String target)
     {
         FIPlugInHelper r = FIPlugInHelper.getHelper();
@@ -222,6 +210,7 @@ public class EdgeActionCollection
         dialog.getContentPane().add(label, BorderLayout.NORTH);
         dialog.setVisible(true);
     }
+    
     private JPanel createSupportPane(List<Interaction> interactions)
     {
         JPanel supportPane = new JPanel();
@@ -258,7 +247,7 @@ public class EdgeActionCollection
             evidenceModel.setEvidence(highest.getEvidence());
             evidenceTable.setModel(evidenceModel);
             supportTabbedPane.addTab("Support Evidence",
-                    new JScrollPane(evidenceTable));
+                                     new JScrollPane(evidenceTable));
         }
         else
         {
@@ -271,8 +260,9 @@ public class EdgeActionCollection
         supportPane.add(supportTabbedPane, BorderLayout.CENTER);
         return supportPane;
     }
+    
     private void setReactomeSourceTab(JTabbedPane supportTabbedPane,
-            Set<ReactomeSource> sources) {
+                                      Set<ReactomeSource> sources) {
         final JTable sourceTable = new JTable();
         sourceTable.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
@@ -292,10 +282,11 @@ public class EdgeActionCollection
         sourceModel.setReactomeSources(sources);
         sourceTable.setModel(sourceModel);
         supportTabbedPane.addTab("Reactome Sources",
-                new JScrollPane(sourceTable));
+                                 new JScrollPane(sourceTable));
     }
+    
     private void doSourceTablePopup(final JTable table, 
-            MouseEvent e) 
+                                    MouseEvent e) 
     {
         // Work for one selection only
         final int selectedRow = table.getSelectedRow();
@@ -311,6 +302,7 @@ public class EdgeActionCollection
         popup.add(goToReactome);
         popup.show(table, e.getX(), e.getY());
     }
+    
     private void showReactomeSource(final JTable table) {
         // Work for one selection only
         int selectedRow = table.getSelectedRow();
@@ -326,4 +318,5 @@ public class EdgeActionCollection
         }
         PlugInUtilities.openURL(dataSourceURL + id);
     }
+    
 }

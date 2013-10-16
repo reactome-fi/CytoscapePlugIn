@@ -466,7 +466,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                         tableHelper.createNewColumn(nodeTable, "diseases",
                                 String.class);
                     }
-                    tableHelper.loadNodeAttributesByName(view.getModel(),
+                    tableHelper.storeNodeAttributesByName(view.getModel(),
                             "diseases", geneToDiseases);
                 }
                 catch (Exception e)
@@ -612,7 +612,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                 }
             }
             
-            tableHelper.loadNodeAttributesByName(view, "module", nodeToCluster);
+            tableHelper.storeNodeAttributesByName(view, "module", nodeToCluster);
             
             progPane.setText("Storing clustering results...");
             tableHelper.storeClusteringType(view,

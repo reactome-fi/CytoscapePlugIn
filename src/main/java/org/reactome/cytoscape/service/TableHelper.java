@@ -12,8 +12,6 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 
 public class TableHelper {
-    private final String FI_NETWORK_VERSION = TableFormatterImpl
-            .getFINetworkVersion();
     private final String MCL_ARRAY_CLUSTERING = TableFormatterImpl
             .getMCLArrayClustering();
     private final String SAMPLE_MUTATION_DATA = TableFormatterImpl
@@ -22,27 +20,24 @@ public class TableHelper {
     public TableHelper() {
     }
 
-    public void createNewColumn(CyTable table, String columnName, Class<?> type)
-    {
+    public void createNewColumn(CyTable table, String columnName, Class<?> type) {
         table.createColumn(columnName, type, Boolean.FALSE);
     }
     
-    public void storeFINetworkVersion(CyNetwork network, String version)
-    {
+    public void storeFINetworkVersion(CyNetwork network, String version) {
         CyTable netTable = network.getDefaultNetworkTable();
-        netTable.getRow(network.getSUID()).set(FI_NETWORK_VERSION,
+        netTable.getRow(network.getSUID()).set(TableFormatterImpl.getFINetworkVersion(),
                 version);
     }
     
-    public String getStoredFINetworkVersion(CyNetworkView view)
-    {
+    public String getStoredFINetworkVersion(CyNetworkView view) {
         CyTable netTable = view.getModel().getDefaultNetworkTable();
         Long netSUID = view.getModel().getSUID();
-        return netTable.getRow(netSUID).get(FI_NETWORK_VERSION, String.class);
+        return netTable.getRow(netSUID).get(TableFormatterImpl.getFINetworkVersion(), 
+                                            String.class);
     }
 
-    public boolean isFINetwork(CyNetworkView view)
-    {
+    public boolean isFINetwork(CyNetworkView view) {
         CyTable netTable = view.getModel().getDefaultNetworkTable();
         Long netSUID = view.getModel().getSUID();
         Boolean isFINetwork = netTable.getRow(netSUID).get(
@@ -111,29 +106,14 @@ public class TableHelper {
      * @param network
      */
     public void markAsFINetwork(CyNetwork network) {
-        CyTable netTable = network.getDefaultNetworkTable();
-        netTable.getRow(network.getSUID()).set("isReactomeFINetwork", true);
-    }
-
-    private Class<?> guessAttributeType(Map<?, ?> idToValue)
-    {
-        for (Object key : idToValue.keySet())
-        {
-            Object obj = idToValue.get(key);
-            if (obj == null)
-            {
-                continue;
-            }
-            return obj.getClass();
-        }
-        return null;
+        storeNetworkAttribute(network,
+                              "isReactomeFINetwork",
+                              Boolean.TRUE);
     }
 
     public void storeClusteringType(CyNetwork network, String clusteringType)
     {
-        CyTable netTable = network.getDefaultNetworkTable();
-        Long netSUID = network.getSUID();
-        netTable.getRow(netSUID).set("clustering_Type", clusteringType);
+        storeNetworkAttribute(network, "clusteringType", clusteringType);
     }
     
     public void storeClusteringType(CyNetworkView view, String clusteringType)
@@ -143,103 +123,64 @@ public class TableHelper {
 
     public String getClusteringType(CyNetwork network)
     {
-        CyTable netTable = network.getDefaultNetworkTable();
-        String clusteringType = netTable.getRow(network.getSUID()).get(
-                "clusteringType", String.class);
-        return clusteringType;
+        return getStoredNetworkAttribute(network, "clusteringType", String.class);
     }
 
-    private void setAttributeValueBySUID(String attributeName,
-            Map<Long, ?> idToValue, CyTable cyIdenTable, Long cyIdenSUID,
-            Class<?> type)
-    {
-        Object value = idToValue.get(cyIdenSUID);
-        if (type == Integer.class)
-        {
-            cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Integer) value);
-        }
-        else if (type == Double.class)
-        {
-            cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Double) value);
-        }
-        else if (type == String.class)
-        {
-            cyIdenTable.getRow(cyIdenSUID).set(attributeName, (String) value);
-        }
-        else if (type == Boolean.class)
-        {
-            cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Boolean) value);
-        }
+    private <V, T> void storeAttributeValue(CyTable cyIdenTable, 
+                                            String attributeName,
+                                            Map<V, T> idToValue, 
+                                            V key,
+                                            Long suid) {
+        T value = idToValue.get(key);
+        cyIdenTable.getRow(suid).set(attributeName, value);
     }
 
-    public void loadNodeAttributesBySUID(CyNetwork network,
-            String attributeName, Map<Long, ?> idToValue)
-    {
+    public void storeNodeAttributesBySUID(CyNetwork network,
+                                         String attributeName, 
+                                         Map<Long, ?> suIdToValue) {
         CyTable nodeTable = network.getDefaultNodeTable();
-        Class<?> type = guessAttributeType(idToValue);
-        for (Object name : network.getNodeList())
-        {
+        for (Object name : network.getNodeList())  {
             CyNode node = (CyNode) name;
             Long nodeSUID = node.getSUID();
-            setAttributeValueBySUID(attributeName, idToValue, nodeTable,
-                    nodeSUID, type);
+            storeAttributeValue(nodeTable,
+                                attributeName,
+                                suIdToValue,
+                                nodeSUID,
+                                nodeSUID);
         }
     }
 
-    private void setAttributeValueByName(String attributeName,
-            Map<String, ?> idToValue, CyTable cyIdenTable, Long cyIdenSUID,
-            String idenName, Class<?> type)
-    {
-        Object value = idToValue.get(idenName);
-        if (type == Integer.class)
-        {
-            cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Integer) value);
-        }
-        else if (type == Double.class)
-        {
-            cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Double) value);
-        }
-        else if (type == String.class)
-        {
-            cyIdenTable.getRow(cyIdenSUID).set(attributeName, (String) value);
-        }
-        else if (type == Boolean.class)
-        {
-            cyIdenTable.getRow(cyIdenSUID).set(attributeName, (Boolean) value);
-        }
-    }
-
-    public void loadNodeAttributesByName(CyNetwork network,
-            String attributeName, Map<String, ?> idToValue)
-    {
+    public void storeNodeAttributesByName(CyNetwork network,
+                                         String attributeName, 
+                                         Map<String, ?> nameToValue) {
         CyTable nodeTable = network.getDefaultNodeTable();
-        Class<?> type = guessAttributeType(idToValue);
-        for (CyNode node : network.getNodeList())
-        {
+        for (CyNode node : network.getNodeList()) {
             //CyNode node = (CyNode) name2;
             Long nodeSUID = node.getSUID();
             String name = nodeTable.getRow(nodeSUID).get("name", String.class);
-            setAttributeValueByName(attributeName, idToValue, nodeTable,
-                    nodeSUID, name, type);
+            storeAttributeValue(nodeTable,
+                                attributeName, 
+                                nameToValue, 
+                                name,
+                                nodeSUID);
         }
     }
 
-    public void loadNodeAttributesByName(CyNetworkView view, String string,
-            Map<String, ?> idToValue)
-    {
-        loadNodeAttributesByName(view.getModel(), string, idToValue);
+    public void storeNodeAttributesByName(CyNetworkView view, String string,
+            Map<String, ?> nameToValue) {
+        storeNodeAttributesByName(view.getModel(), string, nameToValue);
     }
 
-    public void loadNodeAttributesBySUID(CyNetworkView view, String attr,
-            Map<Long, ?> idToValue)
-    {
-        loadNodeAttributesBySUID(view.getModel(), attr, idToValue);
+    public void storeNodeAttributesBySUID(CyNetworkView view, String attr,
+            Map<Long, ?> suIdToValue) {
+        storeNodeAttributesBySUID(view.getModel(), 
+                                  attr, 
+                                  suIdToValue);
     }
 
     public Map<Long, Object> getNodeTableValuesBySUID(CyNetwork model,
-            String attr, Class<?> type)
-    {
-
+                                                      String attr,
+                                                      Class<?> type) {
         CyTable nodeTable = model.getDefaultNodeTable();
         boolean isFound = false;
         for (Object name : nodeTable.getColumns())
@@ -317,21 +258,41 @@ public class TableHelper {
         edgeTable.getRow(edge.getSUID()).set("name", edgeName);
     }
 
-    public void loadEdgeAttributesByName(CyNetwork network, String attr, Map<String, ?> idToValue)
-    {
+    public <T> void storeEdgeAttributesByName(CyNetwork network, 
+                                          String attr, 
+                                          Map<String, T> nameToValue) {
+        // Get a value
+        T value = null;
+        for (T t : nameToValue.values()) {
+            if (t != null) {
+                value = t;
+                break;
+            }
+        }
         CyTable edgeTable = network.getDefaultEdgeTable();
-        Class<?> type = guessAttributeType(idToValue);
-        for (CyEdge edge : network.getEdgeList())
-        {
+        // Make sure networkTable has the attName column
+        if (edgeTable.getColumn(attr) == null) {
+            edgeTable.createColumn(attr, 
+                                   value.getClass(), 
+                                   true);
+        }
+        for (CyEdge edge : network.getEdgeList()) {
             Long edgeSUID = edge.getSUID();
             String name = edgeTable.getRow(edgeSUID).get("name", String.class);
-            setAttributeValueByName(attr, idToValue, edgeTable, edgeSUID, name, type);
+            storeAttributeValue(edgeTable,
+                                attr,
+                                nameToValue,
+                                name, 
+                                edgeSUID);
         }
     }
-    public void loadEdgeAttributesByName(CyNetworkView view, String attr, Map<String, ?> idToValue)
-    {
-        loadEdgeAttributesByName(view.getModel(), attr, idToValue);
+    
+    public void storeEdgeAttributesByName(CyNetworkView view, String attr, Map<String, ?> nameToValue) {
+        storeEdgeAttributesByName(view.getModel(), 
+                                  attr,
+                                  nameToValue);
     }
+    
     public boolean hasEdgeAttribute(CyNetworkView view, CyEdge edge, String attr, Class<?> t)
     {
         CyTable edgeTable = view.getModel().getDefaultEdgeTable();

@@ -168,7 +168,7 @@ public class MicroarrayAnalysisTask extends FIAnalysisTask {
         FIPlugInHelper.getHelper().storeMCLModuleToSampleToValue(moduleToSampleToValue);
         TableHelper tableHelper = new TableHelper();
         network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", "FI Network for MCL Modules");
-        tableHelper.loadNodeAttributesByName(network, "module", nodeToCluster);
+        tableHelper.storeNodeAttributesByName(network, "module", nodeToCluster);
         tableHelper.storeClusteringType(network, 
                                         TableFormatterImpl.getMCLArrayClustering());
         FIPlugInHelper r = FIPlugInHelper.getHelper();

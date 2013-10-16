@@ -123,14 +123,14 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
                 for (String gene : module.genes)
                     nodeToModule.put(gene, i);
             }
-            tableHelper.loadNodeAttributesByName(network, "module", nodeToModule);
+            tableHelper.storeNodeAttributesByName(network, "module", nodeToModule);
             Map<String, String> geneToSampleString = new HashMap<String, String>();
             Map<String, Set<String>> geneToSamples = InteractionUtilities.switchKeyValues(sampleToGenes);
             for (String gene : geneToSamples.keySet()) {
                 Set<String> samples = geneToSamples.get(gene);
                 geneToSampleString.put(gene, InteractionUtilities.joinStringElements(";", samples));
             }
-            tableHelper.loadNodeAttributesByName(network, "samples", geneToSampleString);
+            tableHelper.storeNodeAttributesByName(network, "samples", geneToSampleString);
             CyNetworkManager networkManager = (CyNetworkManager) context.getService(netManagerRef);
             networkManager.addNetwork(network);
             CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) context.getService(viewFactoryRef);
