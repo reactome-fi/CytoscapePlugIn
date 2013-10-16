@@ -27,6 +27,7 @@ import org.cytoscape.view.model.View;
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
 import org.reactome.cancerindex.model.Sentence;
 import org.reactome.cytoscape.service.FINetworkGenerator;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 

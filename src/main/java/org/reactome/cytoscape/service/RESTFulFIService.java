@@ -1,4 +1,4 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 /**
  * This class provides most of the functionality for
@@ -37,8 +37,7 @@ import org.jdom.output.DOMOutputter;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.Sentence;
-import org.reactome.cytoscape.service.FINetworkService;
-import org.reactome.cytoscape.service.TableHelper;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
@@ -64,26 +63,25 @@ public class RESTFulFIService implements FINetworkService
 
     private void init(CyNetworkView view)
     {
-        String fiVersion = FIPlugInHelper.getHelper().getFiNetworkVersion();
+        String fiVersion = PlugInObjectManager.getManager().getFiNetworkVersion();
         TableHelper tableManager = new TableHelper();
         
-        if (fiVersion == null || fiVersion.length() <= 0)
+        if (fiVersion == null || fiVersion.length() == 0)
         {
-          fiVersion = tableManager.getStoredFINetworkVersion(view);
-          if (fiVersion == null || fiVersion.length() <= 0)
-              restfulURL = FIPlugInHelper.getHelper().getRestfulURL(FIPlugInHelper.getHelper().getDefaultFINeworkVersion());
-          restfulURL = FIPlugInHelper.getHelper().getRestfulURL(fiVersion);
+            fiVersion = tableManager.getStoredFINetworkVersion(view);
+            if (fiVersion == null || fiVersion.length() == 0) {
+                restfulURL = PlugInObjectManager.getManager().getRestfulURL();
+            }
+            else
+                restfulURL = PlugInObjectManager.getManager().getRestfulURL(fiVersion);
         }
-        else
-            restfulURL = FIPlugInHelper.getHelper().getRestfulURL();
+        else {
+            restfulURL = PlugInObjectManager.getManager().getRestfulURL();
+        }
     }
 
-    private void init()
-    {
-        // Properties prop =
-        // PlugInScopeObjectManager.getManager().getProperties();
-        // restfulURL = prop.getProperty("restfulURL");
-        restfulURL = FIPlugInHelper.getHelper().getRestfulURL();
+    private void init() {
+        restfulURL = PlugInObjectManager.getManager().getRestfulURL();
     }
 
     @Override

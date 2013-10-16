@@ -25,8 +25,6 @@ public class FIPlugInHelper {
     private static FIPlugInHelper helper;
     // Try to track CancerIndexSentenceDisplayFrame
     private CancerIndexSentenceDisplayFrame cgiFrame;
-    // Currently selected FI network version
-    private String fiNetworkVersion;
     private Map<Integer, Map<String, Double>> moduleToSampleToValue;
 
     private FIPlugInHelper() {
@@ -41,31 +39,6 @@ public class FIPlugInHelper {
         return helper;
     }
 
-    public String getFiNetworkVersion()
-    {
-        if (this.fiNetworkVersion != null)
-            return this.fiNetworkVersion;
-        else
-            return getDefaultFINeworkVersion();
-    }
-
-    public String getDefaultFINeworkVersion()
-    {
-        Properties prop = PlugInObjectManager.getManager().getProperties();
-        String fiVersions = prop.getProperty("FINetworkVersions");
-        String[] tokens = fiVersions.split(",");
-        for (String token : tokens)
-        {
-            token = token.trim();
-            if (token.toLowerCase().contains("default")) return token;
-        }
-        return null;
-    }
-
-    public void setFiNetworkVersion(String fiNetworkVersion) {
-        this.fiNetworkVersion = fiNetworkVersion;
-    }
-    
     public CancerIndexSentenceDisplayFrame getCancerIndexFrame(JFrame jFrame) {
         if (cgiFrame == null)
         {
@@ -96,45 +69,11 @@ public class FIPlugInHelper {
     {
         Properties prop = PlugInObjectManager.getManager().getProperties();
         String clsName = prop.getProperty("networkService",
-                "org.reactome.cytoscape3.LocalService");
+                "org.reactome.cytoscape.service.LocalService");
         FINetworkService networkService = (FINetworkService) Class.forName(
                 clsName).newInstance();
         return networkService;
     }
-
-    /**
-     * Get the RESTful URL
-     * 
-     * @param fiVersion
-     * @return
-     */
-    public String getRestfulURL(String fiVersion)
-    {
-        fiVersion = fiVersion.replaceAll(" ", "_");
-        String key = fiVersion + "_restfulURL";
-        Properties prop = PlugInObjectManager.getManager().getProperties();
-        return prop.getProperty(key);
-    }
-
-    public String getRestfulURL()
-    {
-        return getRestfulURL(getFiNetworkVersion());
-    }
-
-    public String getDataSourceURL(String fiVersion)
-    {
-        String dataSourceURL = PlugInObjectManager.getManager().getProperties().getProperty("dataSourceURL");
-        fiVersion = fiVersion.replaceAll(" ", "_");
-        String dbName = PlugInObjectManager.getManager().getProperties().getProperty(fiVersion + "_sourceDb");
-        String rtn = dataSourceURL.replace("${DB_NAME}", dbName);
-        return rtn;
-    }
-
-    public String getDataSourceURL()
-    {
-        return getDataSourceURL(getFiNetworkVersion());
-    }
-   
 
     public void storeMCLModuleToSampleToValue(Map<Integer, Map<String, Double>> moduleToSampleToValue)
     {

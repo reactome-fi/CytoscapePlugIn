@@ -91,7 +91,8 @@ public class NCICancerIndexDiseaseHelper
     
     public Map<String, DiseaseData> fetchDiseases() throws IOException
     {
-        String serviceUrl = FIPlugInHelper.getHelper().getRestfulURL();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        String serviceUrl = PlugInObjectManager.getManager().getRestfulURL();
      // Get the host URL name
         int index = serviceUrl.lastIndexOf("/", serviceUrl.length() - 2);
         String diseaseUrl = serviceUrl.substring(0, index + 1) + "Cytoscape/Disease_Thesaurus_10.05d.txt.zip";

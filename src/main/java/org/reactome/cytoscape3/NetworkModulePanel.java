@@ -96,12 +96,14 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     
     @Override
     public void handleEvent(RowsSetEvent event) {
-        if (view == null)
-            return;
-        if (isFromTable) { // Split these two checks for debugging purpose
+        if (!event.containsColumn(CyNetwork.SELECTED)) {
             return;
         }
-        if (!event.containsColumn(CyNetwork.SELECTED)) {
+        // This method may be called during a network destroy when its default node table has been
+        // destroyed. The default table is used in the selection.
+        if (view == null || view.getModel() == null || view.getModel().getDefaultNodeTable() == null)
+            return;
+        if (isFromTable) { // Split these two checks for debugging purpose
             return;
         }
         CyNetwork network = view.getModel();

@@ -35,6 +35,7 @@ import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -215,7 +216,8 @@ public class CyPathwayDiagramHelper {
             if (r.getReactomeId() != null) {
                 Action action = new AbstractAction("View Instance") {
                     public void actionPerformed(ActionEvent e) {
-                        String dataSourceURL = FIPlugInHelper.getHelper().getDataSourceURL();
+                        FIPlugInHelper r1 = FIPlugInHelper.getHelper();
+                        String dataSourceURL = PlugInObjectManager.getManager().getDataSourceURL();
                         PlugInUtilities.openURL(dataSourceURL + r.getReactomeId());
                     }
                 };

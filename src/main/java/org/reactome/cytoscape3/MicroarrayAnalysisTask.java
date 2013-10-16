@@ -37,10 +37,10 @@ import org.reactome.cancer.CancerGeneExpressionCommon;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.InteractionUtilities;
 
 public class MicroarrayAnalysisTask extends FIAnalysisTask {
@@ -171,8 +171,9 @@ public class MicroarrayAnalysisTask extends FIAnalysisTask {
         tableHelper.loadNodeAttributesByName(network, "module", nodeToCluster);
         tableHelper.storeClusteringType(network, 
                                         TableFormatterImpl.getMCLArrayClustering());
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
         tableHelper.storeFINetworkVersion(network,
-                                          FIPlugInHelper.getHelper().getFiNetworkVersion());
+                                          PlugInObjectManager.getManager().getFiNetworkVersion());
         // tableHelper.storeMCLModuleToSampleToValue(network,
         //        moduleToSampleToValue);
         tableHelper.storeDataSetType(network, TableFormatterImpl

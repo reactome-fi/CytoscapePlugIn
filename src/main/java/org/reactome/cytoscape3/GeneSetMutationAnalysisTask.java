@@ -172,8 +172,9 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             TableHelper tableHelper = new TableHelper();
             CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) context.getService(viewFactoryRef);
             CyNetworkView view = viewFactory.createNetworkView(network);
+            FIPlugInHelper r1 = FIPlugInHelper.getHelper();
             tableHelper.storeFINetworkVersion(network,
-                                              FIPlugInHelper.getHelper().getFiNetworkVersion());
+                                              PlugInObjectManager.getManager().getFiNetworkVersion());
             tableHelper.storeDataSetType(network, TableFormatterImpl
                     .getSampleMutationData());
             tableHelper.markAsFINetwork(network);

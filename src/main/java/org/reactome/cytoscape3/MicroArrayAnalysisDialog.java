@@ -41,7 +41,6 @@ public class MicroArrayAnalysisDialog extends FIActionDialog {
      * Default constructor
      */
     public MicroArrayAnalysisDialog() {
-        // TODO Auto-generated constructor stub
     }
     
     /* (non-Javadoc)
@@ -180,8 +179,7 @@ public class MicroArrayAnalysisDialog extends FIActionDialog {
      */
     @Override
     protected String getTabTitle() {
-        
-        return null;
+        return "Microarray Data Analysis";
     }
     
     /**

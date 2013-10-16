@@ -47,6 +47,8 @@ public class PlugInObjectManager {
     // Cache TaskManager since it will be used multiple times
     @SuppressWarnings("rawtypes")
     private TaskManager taskManager;
+    // Currently selected FI network version
+    private String fiNetworkVersion;
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
@@ -59,6 +61,31 @@ public class PlugInObjectManager {
         if (manager == null)
             manager = new PlugInObjectManager();
         return manager;
+    }
+    
+    public String getFiNetworkVersion()
+    {
+        if (this.fiNetworkVersion != null)
+            return this.fiNetworkVersion;
+        else
+            return getDefaultFINeworkVersion();
+    }
+
+    public String getDefaultFINeworkVersion()
+    {
+        Properties prop = PlugInObjectManager.getManager().getProperties();
+        String fiVersions = prop.getProperty("FINetworkVersions");
+        String[] tokens = fiVersions.split(",");
+        for (String token : tokens)
+        {
+            token = token.trim();
+            if (token.toLowerCase().contains("default")) return token;
+        }
+        return null;
+    }
+
+    public void setFiNetworkVersion(String fiNetworkVersion) {
+        this.fiNetworkVersion = fiNetworkVersion;
     }
     
     public void setBundleContext(final BundleContext context) {
@@ -180,4 +207,37 @@ public class PlugInObjectManager {
         }
         return icon;
     }
+    
+    /**
+     * Get the RESTful URL
+     * 
+     * @param fiVersion
+     * @return
+     */
+    public String getRestfulURL(String fiVersion)
+    {
+        fiVersion = fiVersion.replaceAll(" ", "_");
+        String key = fiVersion + "_restfulURL";
+        Properties prop = getProperties();
+        return prop.getProperty(key);
+    }
+
+    public String getRestfulURL() {
+        return getRestfulURL(getFiNetworkVersion());
+    }
+    
+    public String getDataSourceURL(String fiVersion)
+    {
+        String dataSourceURL = getProperties().getProperty("dataSourceURL");
+        fiVersion = fiVersion.replaceAll(" ", "_");
+        String dbName = getProperties().getProperty(fiVersion + "_sourceDb");
+        String rtn = dataSourceURL.replace("${DB_NAME}", dbName);
+        return rtn;
+    }
+
+    public String getDataSourceURL()
+    {
+        return getDataSourceURL(getFiNetworkVersion());
+    }
+    
 }

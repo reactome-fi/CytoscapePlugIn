@@ -33,6 +33,7 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -317,7 +318,8 @@ public class EdgeActionCollection
             return;
         ReactomeSourceTableModel tableModel = (ReactomeSourceTableModel) table.getModel();
         Long id = (Long) tableModel.getValueAt(selectedRow, 0);
-        String dataSourceURL = FIPlugInHelper.getHelper().getDataSourceURL();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        String dataSourceURL = PlugInObjectManager.getManager().getDataSourceURL();
         if (dataSourceURL == null) {
             PlugInUtilities.showErrorMessage("Data source URL has not been set.", 
                     "Error in Opening Source");

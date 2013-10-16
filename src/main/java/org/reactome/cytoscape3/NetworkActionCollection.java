@@ -27,6 +27,7 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableFormatter;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.service.TableHelper;

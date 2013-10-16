@@ -24,6 +24,7 @@ import keggapi.KEGGPortType;
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -175,7 +176,8 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
             }
             else {
                 Long dbId = service.queryPathwayId(pathway);
-                String dataSourceURL = FIPlugInHelper.getHelper().getDataSourceURL();
+                FIPlugInHelper r = FIPlugInHelper.getHelper();
+                String dataSourceURL = PlugInObjectManager.getManager().getDataSourceURL();
                 PlugInUtilities.openURL(dataSourceURL + dbId);
             }
         }

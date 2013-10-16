@@ -50,11 +50,10 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.cytoscape3.FIVisualStyleImpl;
-import org.reactome.cytoscape3.RESTFulFIService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -334,7 +333,7 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             context.ungetService(reference);
             
             ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-            FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
+            FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
             visStyler.setVisualStyle(view);
             visStyler.setLayout();
             visStyler = null;

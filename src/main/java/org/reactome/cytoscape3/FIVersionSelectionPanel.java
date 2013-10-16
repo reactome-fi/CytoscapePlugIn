@@ -90,8 +90,8 @@ public class FIVersionSelectionPanel extends JPanel
                 for (JRadioButton btn : buttons)
                     if (btn.isSelected())
                     {
-                        FIPlugInHelper.getHelper()
-                                .setFiNetworkVersion(btn.getText());
+                        FIPlugInHelper r = FIPlugInHelper.getHelper();
+                        PlugInObjectManager.getManager().setFiNetworkVersion(btn.getText());
                         break;
                     }
             }
