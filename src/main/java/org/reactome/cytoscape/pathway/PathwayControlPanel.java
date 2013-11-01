@@ -11,6 +11,10 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -30,10 +34,18 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.events.CytoPanelComponentSelectedEvent;
 import org.cytoscape.application.swing.events.CytoPanelComponentSelectedListener;
+import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyTableUtil;
+import org.cytoscape.model.events.RowsSetEvent;
+import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
 import org.gk.gkEditor.PathwayOverviewPane;
 import org.gk.gkEditor.ZoomablePathwayEditor;
+import org.gk.graphEditor.GraphEditorActionEvent;
+import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
+import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.render.Renderable;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.service.TableHelper;
@@ -55,6 +67,10 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     private EventTreePane eventPane;
     // Used to hold two parts of views
     private JSplitPane jsp;
+    // Have to record this network view in order to do selection
+    private CyNetworkView networkView;
+    // For synchronize selection
+    private boolean isFromPathway;
     
     /** 
      * Default constructor.
@@ -134,6 +150,93 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         context.registerService(SetCurrentNetworkViewListener.class.getName(),
                                 currentNetworkViewListener,
                                 null);
+        
+        // Synchronize selection from network to pathway overview
+        RowsSetListener selectionListener = new RowsSetListener() {
+            
+            @Override
+            public void handleEvent(RowsSetEvent event) {
+                if (!event.containsColumn(CyNetwork.SELECTED) || networkView == null) {
+                    return;
+                }
+                List<CyEdge> edges = CyTableUtil.getEdgesInState(networkView.getModel(),
+                                                                 CyNetwork.SELECTED,
+                                                                 true);
+                handleNetworkEdgeSelection(edges);
+            }
+
+        };
+        context.registerService(RowsSetListener.class.getName(),
+                                selectionListener, 
+                                null);
+    }
+    
+    /**
+     * A helper method to handle edge selection from a FI network.
+     * @param edges
+     */
+    private void handleNetworkEdgeSelection(List<CyEdge> edges) {
+        if (isFromPathway)
+            return; // Don't do anything
+        Collection<Long> dbIds = new HashSet<Long>();
+        if (edges != null && edges.size() > 0) {
+            TableHelper tableHelper = new TableHelper();
+            String att = "SourceIds";
+            for (CyEdge edge : edges) {
+                String sourceIds = tableHelper.getStoredEdgeAttribute(networkView.getModel(),
+                                                                      edge, 
+                                                                      att, 
+                                                                      String.class);
+                if (sourceIds == null)
+                    continue;
+                String[] tokens = sourceIds.split(",");
+                for (String token : tokens)
+                    dbIds.add(new Long(token));
+            }
+        }
+        pathwayView.selectBySourceIds(dbIds);
+    }
+    
+    /**
+     * A helper method to handle selection generated from the pathway view.
+     */
+    @SuppressWarnings("unchecked")
+    private void handlePathwayViewSelection() {
+        if (networkView == null)
+            return;
+        isFromPathway = true;
+        List<Renderable> selection = pathwayView.getPathwayEditor().getSelection();
+        Set<String> dbIds = new HashSet<String>();
+        for (Renderable r : selection) {
+            if (r.getReactomeId() != null)
+                dbIds.add(r.getReactomeId().toString());
+        }
+        TableHelper tableHelper = new TableHelper();
+        for (View<CyEdge> edgeView : networkView.getEdgeViews())
+        {
+            Long nodeSUID = edgeView.getModel().getSUID();
+            // De-select first
+            tableHelper.setEdgeSelected(networkView.getModel(),
+                                        edgeView.getModel(),
+                                        false);
+            String sourceIds = tableHelper.getStoredEdgeAttribute(networkView.getModel(),
+                                                                  edgeView.getModel(),
+                                                                  "SourceIds", 
+                                                                  String.class);
+            if (sourceIds == null)
+                continue;
+            for (String token : sourceIds.split(",")) {
+                if (dbIds.contains(token)) {
+                    // Select it
+                    tableHelper.setEdgeSelected(networkView.getModel(),
+                                                edgeView.getModel(),
+                                                true);
+                    break;
+                }
+            }
+        }
+        networkView.updateView();
+        isFromPathway = false;
     }
     
     private void doNetworkViewIsSelected(CyNetworkView networkView) {
@@ -158,6 +261,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         // Need to switch to pathway view
         Renderable diagram = PathwayDiagramRegistry.getRegistry().getDiagramForNetwork(network);
         switchToFullPathwayView(diagram);
+        this.networkView = networkView;
     }
     
     private void switchToFullPathwayView(Renderable pathway) {
@@ -171,6 +275,16 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                     setOverviewPositionInPathwayView();
                 }
                 
+            });
+            
+            // Synchronize selection
+            pathwayView.getPathwayEditor().getSelectionModel().addGraphEditorActionListener(new GraphEditorActionListener() {
+                
+                @Override
+                public void graphEditorAction(GraphEditorActionEvent e) {
+                    if (e.getID() == ActionType.SELECTION)
+                        handlePathwayViewSelection();
+                }
             });
         }
         // Check if pathwayView has been set already

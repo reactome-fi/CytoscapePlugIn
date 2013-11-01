@@ -100,6 +100,19 @@ public class TableHelper {
         return row.get(attName, type);
     }
     
+    /**
+     * A simple method to select a CyEdge in a CyNetwork
+     * @param network
+     * @param edge
+     * @param isSelected
+     */
+    public void setEdgeSelected(CyNetwork network,
+                                CyEdge edge,
+                                boolean isSelected) {
+        CyTable edgeTable = network.getDefaultEdgeTable();
+        CyRow row = edgeTable.getRow(edge.getSUID());
+        row.set(CyNetwork.SELECTED, isSelected);
+    }
     
     /**
      * Mark a Network as a FINetwork. 
@@ -256,6 +269,25 @@ public class TableHelper {
 
         String edgeName = sourceName + " (FI) " + targetName;
         edgeTable.getRow(edge.getSUID()).set("name", edgeName);
+    }
+    
+    /**
+     * Get a stored attribute for a passed CyEdge.
+     * @param network
+     * @param edge
+     * @param att
+     * @param type
+     * @return
+     */
+    public <T> T getStoredEdgeAttribute(CyNetwork network,
+                                        CyEdge edge,
+                                        String att,
+                                        Class<T> type) {
+        CyTable table = network.getDefaultEdgeTable();
+        if (table.getColumn(att) == null)
+            return null;
+        CyRow row = table.getRow(edge.getSUID());
+        return row.get(att, type);
     }
 
     public <T> void storeEdgeAttributesByName(CyNetwork network, 
