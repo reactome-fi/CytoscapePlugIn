@@ -69,8 +69,10 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     private JSplitPane jsp;
     // Have to record this network view in order to do selection
     private CyNetworkView networkView;
-    // For synchronize selection
-    private boolean isFromPathway;
+    // To set selection direction in order to synchronize
+    // selection in two views
+    private boolean selectFromPathway;
+    private boolean selectFromNetwork;
     
     /** 
      * Default constructor.
@@ -176,8 +178,9 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
      * @param edges
      */
     private void handleNetworkEdgeSelection(List<CyEdge> edges) {
-        if (isFromPathway)
+        if (selectFromPathway)
             return; // Don't do anything
+        selectFromNetwork = true;
         Collection<Long> dbIds = new HashSet<Long>();
         if (edges != null && edges.size() > 0) {
             TableHelper tableHelper = new TableHelper();
@@ -195,6 +198,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             }
         }
         pathwayView.selectBySourceIds(dbIds);
+        selectFromNetwork = false;
     }
     
     /**
@@ -202,9 +206,9 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
      */
     @SuppressWarnings("unchecked")
     private void handlePathwayViewSelection() {
-        if (networkView == null)
+        if (networkView == null || selectFromNetwork)
             return;
-        isFromPathway = true;
+        selectFromPathway = true;
         List<Renderable> selection = pathwayView.getPathwayEditor().getSelection();
         Set<String> dbIds = new HashSet<String>();
         for (Renderable r : selection) {
@@ -236,7 +240,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             }
         }
         networkView.updateView();
-        isFromPathway = false;
+        selectFromPathway = false;
     }
     
     private void doNetworkViewIsSelected(CyNetworkView networkView) {

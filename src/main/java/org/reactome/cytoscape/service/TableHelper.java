@@ -287,6 +287,8 @@ public class TableHelper {
         if (table.getColumn(att) == null)
             return null;
         CyRow row = table.getRow(edge.getSUID());
+        if (row == null)
+            return null;
         return row.get(att, type);
     }
 

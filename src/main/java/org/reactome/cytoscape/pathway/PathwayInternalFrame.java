@@ -317,7 +317,7 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
                 int index= fi.indexOf("\t");
                 String node1 = fi.substring(0, index);
                 String node2 = fi.substring(index + 1);
-                edgeToIds.put(node1 + " FI " + node2, 
+                edgeToIds.put(node1 + " (FI) " + node2, // Code like this way
                               StringUtils.join(",", new ArrayList<Long>(fIsToSrcIds.get(fi))));
             }
             tableHelper.storeEdgeAttributesByName(network, "SourceIds", edgeToIds);

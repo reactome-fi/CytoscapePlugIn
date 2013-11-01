@@ -68,17 +68,36 @@ public class FINetworkGenerator implements NetworkGenerator {
         return network;
     }
 
-    private CyEdge createEdge(CyNetwork network, CyNode node1, CyNode node2,
-            String type)
-    {
-        // Add the edge to the network
-        CyEdge edge = network.addEdge(node1, node2, true);
-        //Add the node attributes.
-        CyTable edgeTable = network.getDefaultEdgeTable();
+    /**
+     * A helper method to create a CyEdge for two nodes. The two nodes
+     * are arranged as source and target alphabetically for annotations.
+     * @param network
+     * @param node1
+     * @param node2
+     * @param type
+     * @return
+     */
+    private CyEdge createEdge(CyNetwork network, 
+                              CyNode node1, 
+                              CyNode node2,
+                              String type) {
         CyTable nodeTable = network.getDefaultNodeTable();
+        CyTable edgeTable = network.getDefaultEdgeTable();
+        
         String node1Name = nodeTable.getRow(node1.getSUID()).get("name", String.class);
         String node2Name = nodeTable.getRow(node2.getSUID()).get("name", String.class);
-        edgeTable.getRow(edge.getSUID()).set("name", node1Name + " " + type + " " + node2Name);
+        CyNode sourceNode = null;
+        CyNode targetNode = null;
+        CyEdge edge = null;
+        if (node1Name.compareTo(node2Name) < 0) {
+            // Add the edge to the network
+            edge = network.addEdge(node1, node2, true);
+            edgeTable.getRow(edge.getSUID()).set("name", node1Name + " (" + type + ") " + node2Name);
+        }
+        else {
+            edge = network.addEdge(node2, node1, true);
+            edgeTable.getRow(edge.getSUID()).set("name", node2Name + " (" + type + ") " + node1Name);
+        }
         edgeTable.getRow(edge.getSUID()).set("EDGE_TYPE", type);
         return edge;
     }

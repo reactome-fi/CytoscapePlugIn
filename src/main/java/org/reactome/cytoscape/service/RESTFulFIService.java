@@ -148,8 +148,13 @@ public class RESTFulFIService implements FINetworkService
                 Long dbId = new Long(src.getChildText("reactomeId"));
                 ids.add(dbId);
             }
-            fiToSourceIds.put(protein1 + "\t" + protein2,
-                              ids);
+            // Make sure protein1 and protein2 are sorted correctly
+            if (protein1.compareTo(protein2) < 0)
+                fiToSourceIds.put(protein1 + "\t" + protein2,
+                                  ids);
+            else
+                fiToSourceIds.put(protein2 + "\t" + protein1,
+                                  ids);
         }
         return fiToSourceIds;
     }
