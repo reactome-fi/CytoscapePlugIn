@@ -48,6 +48,8 @@ import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.render.Renderable;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleEvent;
+import org.osgi.framework.SynchronousBundleListener;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
@@ -138,6 +140,22 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         context.registerService(CytoPanelComponentSelectedListener.class.getName(),
                                 this, 
                                 null);
+        
+        // Delete PathwayOver if this OSGi plug-in is down
+        SynchronousBundleListener bundleListener = new SynchronousBundleListener() {
+            
+            @Override
+            public void bundleChanged(BundleEvent event) {
+                if (event.getType() == BundleEvent.STOPPING) {
+//                    System.out.println("This bundle is stopping! A pathway overview is being removed!");
+                    if (overviewContainer.getParent() != null && 
+                        overviewContainer.getParent() instanceof JLayeredPane) {
+                        overviewContainer.getParent().remove(overviewContainer);
+                    }
+                }
+            }
+        };
+        context.addBundleListener(bundleListener);
         
         // Catch network view selection event
         SetCurrentNetworkViewListener currentNetworkViewListener = new SetCurrentNetworkViewListener() {

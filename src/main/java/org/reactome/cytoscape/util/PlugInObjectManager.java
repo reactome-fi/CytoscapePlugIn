@@ -95,7 +95,7 @@ public class PlugInObjectManager {
             @Override
             public void bundleChanged(BundleEvent event) {
                 if (event.getType() == BundleEvent.STOPPING) {
-//                    System.out.println("Bundle is stopped!");
+//                    System.out.println("Bundle is stopping!");
                     if (serviceReferences.size() > 0) {
                         for (ServiceReference reference : serviceReferences) {
                             if (reference != null)
