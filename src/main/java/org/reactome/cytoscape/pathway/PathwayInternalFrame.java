@@ -47,8 +47,6 @@ import org.gk.render.HyperEdge;
 import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
-import org.gk.util.GKApplicationUtilities;
-import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FINetworkGenerator;
@@ -57,6 +55,9 @@ import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.funcInt.FIAnnotation;
+import org.reactome.funcInt.Interaction;
+import org.reactome.funcInt.ReactomeSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -296,10 +297,10 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         // Used in this place may needs to be changed. 
         RESTFulFIService fiService = new RESTFulFIService();
         try {
-            Map<String, Set<Long>> fIsToSrcIds = fiService.convertPathwayToFIs(getPathwayId());
+            List<Interaction> interactions = fiService.convertPathwayToFIs(getPathwayId());
             // Need to create a new CyNetwork
             FINetworkGenerator generator = new FINetworkGenerator();
-            CyNetwork network = generator.constructFINetwork(fIsToSrcIds.keySet());
+            CyNetwork network = generator.constructFINetwork(interactions);
             // Add some meta information
             CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
             row.set("name",
@@ -313,14 +314,30 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
                                               pathwayId);
             // Store Instance ids information
             Map<String, String> edgeToIds = new HashMap<String, String>();
-            for (String fi : fIsToSrcIds.keySet()) {
-                int index= fi.indexOf("\t");
-                String node1 = fi.substring(0, index);
-                String node2 = fi.substring(index + 1);
-                edgeToIds.put(node1 + " (FI) " + node2, // Code like this way
-                              StringUtils.join(",", new ArrayList<Long>(fIsToSrcIds.get(fi))));
+            // Keep annotation information
+            Map<String, String> edgeToAnnotation = new HashMap<String, String>();
+            Map<String, String> edgeToDirection = new HashMap<String, String>();
+            StringBuilder builder = new StringBuilder();
+            for (Interaction interaction : interactions) {
+                String node1 = interaction.getFirstProtein().getShortName();
+                String node2 = interaction.getSecondProtein().getShortName();
+                Set<ReactomeSource> sources = interaction.getReactomeSources();
+                builder.setLength(0);
+                for (ReactomeSource src : sources) {
+                    if (builder.length() > 0)
+                        builder.append(",");
+                    builder.append(src.getReactomeId());
+                }
+                String edgeName = node1 + " (FI) " + node2;
+                edgeToIds.put(edgeName,
+                              builder.toString());
+                FIAnnotation annotation = interaction.getAnnotation();
+                edgeToAnnotation.put(edgeName, annotation.getAnnotation());
+                edgeToDirection.put(edgeName, annotation.getDirection());
             }
             tableHelper.storeEdgeAttributesByName(network, "SourceIds", edgeToIds);
+            tableHelper.storeEdgeAttributesByName(network, "FI Annotation", edgeToAnnotation);
+            tableHelper.storeEdgeAttributesByName(network, "FI Direction", edgeToDirection);
             // Cache the fetched pathway diagram to avoid another slow query
             PathwayDiagramRegistry.getRegistry().registerNetworkToDiagram(network,
                                                                           pathwayEditor.getPathwayEditor().getRenderable());

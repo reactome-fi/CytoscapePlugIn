@@ -34,6 +34,8 @@ import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.RenderablePathway;
 import org.jdom.Element;
 import org.jdom.output.DOMOutputter;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.Sentence;
@@ -41,6 +43,8 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
+import org.reactome.funcInt.Protein;
+import org.reactome.funcInt.ReactomeSource;
 import org.reactome.r3.graph.NetworkClusterResult;
 import org.reactome.r3.util.InteractionUtilities;
 import org.w3c.dom.NodeList;
@@ -128,35 +132,56 @@ public class RESTFulFIService implements FINetworkService
     /**
      * Convert a Pathway to a set of FIs.
      * @param pathwayId
-     * @return FIs to DB_IDs of instances that are used to extract FIs.
+     * @return a list of Interaction objects converted from a Pathway specified by its DB_ID.
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Set<Long>> convertPathwayToFIs(Long pathwayId) throws Exception {
+    public List<Interaction> convertPathwayToFIs(Long pathwayId) throws Exception {
         String url = restfulURL + "network/convertPathwayToFIs/" + pathwayId;
         Element root = PlugInUtilities.callHttpInXML(url,
                                                      HTTP_GET, 
                                                      null);
+//        checkXMLElement(root);
         List<?> interactions = root.getChildren();
-        Map<String, Set<Long>> fiToSourceIds = new HashMap<String, Set<Long>>();
+        List<Interaction> rtn = new ArrayList<Interaction>();
         for (Object obj : interactions) {
             Element elm = (Element) obj;
-            String protein1 = elm.getChild("firstProtein").getChildText("shortName");
-            String protein2 = elm.getChild("secondProtein").getChildText("shortName");
-            List<Element> reactomeSrcs = elm.getChildren("reactomeSources");
-            Set<Long> ids = new HashSet<Long>();
-            for (Element src : reactomeSrcs) {
-                Long dbId = new Long(src.getChildText("reactomeId"));
-                ids.add(dbId);
-            }
-            // Make sure protein1 and protein2 are sorted correctly
-            if (protein1.compareTo(protein2) < 0)
-                fiToSourceIds.put(protein1 + "\t" + protein2,
-                                  ids);
-            else
-                fiToSourceIds.put(protein2 + "\t" + protein1,
-                                  ids);
+            List<Element> children = elm.getChildren();
+            Interaction interaction = parseInteractionElement(children);
+            rtn.add(interaction);
         }
-        return fiToSourceIds;
+        return rtn;
+    }
+
+    private Interaction parseInteractionElement(List<Element> children) throws Exception {
+        Interaction interaction = new Interaction();
+        for (Element child : children) {
+            String name = child.getName();
+            if (name.equals("annotation")) {
+                FIAnnotation annotation = generateSimpleObjectFromElement(child, FIAnnotation.class);
+                interaction.setAnnotation(annotation);
+            }
+            else if (name.equals("firstProtein")) {
+                Protein firstProtein = new Protein();
+                firstProtein.setShortName(child.getChildText("shortName"));
+                interaction.setFirstProtein(firstProtein);
+            }
+            else if (name.equals("secondProtein")) {
+                Protein secondProtein = new Protein();
+                secondProtein.setShortName(child.getChildText("shortName"));
+                interaction.setSecondProtein(secondProtein);
+            }
+            else if (name.equals("reactomeSources")) {
+                ReactomeSource source = new ReactomeSource();
+                source.setReactomeId(new Long(child.getChildText("reactomeId")));
+                interaction.addReactomeSource(source);
+            }
+        }
+        return interaction;
+    }
+    
+    private void checkXMLElement(Element elm) throws Exception {
+        XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+        outputter.output(elm, System.out);
     }
 
     public List<Long> highlight(List<Long> dbIds, String nodes)
@@ -399,8 +424,8 @@ public class RESTFulFIService implements FINetworkService
                 String name = childElm.getName();
                 if (name.equals("annotations"))
                 {
-                    GeneSetAnnotation annotation = generateSimpleObjectFromElement(
-                            childElm, GeneSetAnnotation.class);
+                    GeneSetAnnotation annotation = generateSimpleObjectFromElement(childElm, 
+                                                                                   GeneSetAnnotation.class);
                     annotations.add(annotation);
                 }
                 else if (name.equals("ids"))
@@ -497,30 +522,26 @@ public class RESTFulFIService implements FINetworkService
     }
 
     public Map<String, FIAnnotation> annotate(List<CyEdge> edges,
-            CyNetworkView view) throws Exception
-    {
+                                              CyNetworkView view) throws Exception {
         String url = restfulURL + "network/annotate";
         // Create a query
         String query = convertEdgesToString(edges, view);
         Element root = callInXML(url, query);
         List<?> annotations = root.getChildren();
         Map<String, FIAnnotation> edgeIdToAnnotation = new HashMap<String, FIAnnotation>();
-        for (Object name : annotations)
-        {
+        for (Object name : annotations) {
             Element element = (Element) name;
             FIAnnotation annotation = generateSimpleObjectFromElement(element,
-                    FIAnnotation.class);
+                                                                      FIAnnotation.class);
             edgeIdToAnnotation.put(annotation.getInteractionId(), annotation);
         }
         return edgeIdToAnnotation;
     }
 
-    private String convertEdgesToString(List<CyEdge> edges, CyNetworkView view)
-    {
+    private String convertEdgesToString(List<CyEdge> edges, CyNetworkView view) {
         StringBuilder queryBuilder = new StringBuilder();
         int compare = 0;
-        for (CyEdge edge : edges)
-        {
+        for (CyEdge edge : edges) {
             CyNode start = edge.getSource();
             CyNode end = edge.getTarget();
             // The view must be passed in because a call to getNetworkPointer()
@@ -554,50 +575,54 @@ public class RESTFulFIService implements FINetworkService
         return query;
     }
 
-    private <T> T generateSimpleObjectFromElement(Element elm, Class<T> cls)
-            throws Exception
-    {
+    private <T> T generateSimpleObjectFromElement(Element elm, Class<T> cls) throws Exception {
         T rtn = cls.newInstance();
         List<?> children = elm.getChildren();
-        for (Object name2 : children)
-        {
+        for (Object name2 : children) {
             Element child = (Element) name2;
             String name = child.getName();
-            String fieldName = name.substring(0, 1).toLowerCase()
-                    + name.substring(1);
-            Field field = cls.getDeclaredField(fieldName);
+            String fieldName = name.substring(0, 1).toLowerCase() + name.substring(1);
+            Field field = getField(cls, fieldName);
+            if (field == null)
+                continue; // This may not exist
             String methodName = null;
             Constructor<?> valueConstructor = null;
-            if (field.getType() == List.class)
-            {
+            if (field.getType() == List.class) {
                 methodName = "add" + name.substring(0, 1).toUpperCase()
                         + name.substring(1);
                 Method method = getMethod(cls, methodName);
-                if (method != null)
-                {
-                    valueConstructor = method.getParameterTypes()[0]
-                            .getConstructor(String.class);
+                if (method != null) {
+                    valueConstructor = method.getParameterTypes()[0].getConstructor(String.class);
                 }
             }
-            else
-            {
+            else {
                 // Need to call method
-                methodName = "set" + name.substring(0, 1).toUpperCase()
-                        + name.substring(1);
+                methodName = "set" + name.substring(0, 1).toUpperCase() + name.substring(1);
                 valueConstructor = field.getType().getConstructor(String.class);
             }
             Method method = getMethod(cls, methodName);
-            if (valueConstructor != null && method != null)
-            {
-                method.invoke(rtn, valueConstructor
-                        .newInstance(child.getText()));
+            if (valueConstructor != null && method != null) {
+                method.invoke(rtn, valueConstructor.newInstance(child.getText()));
             }
         }
         return rtn;
     }
+    
+    /**
+     * The original method in Class cannot return a null if a Field doesn't exist.
+     * @param cls
+     * @param fieldName
+     * @return
+     */
+    private <T> Field getField(Class<T> cls, String fieldName) {
+        for (Field field : cls.getDeclaredFields()) {
+            if (field.getName().equals(fieldName))
+                return field;
+        }
+        return null;
+    }
 
-    private Method getMethod(Class<?> cls, String methodName)
-    {
+    private Method getMethod(Class<?> cls, String methodName) {
         for (Method method : cls.getMethods())
             if (method.getName().equals(methodName)) return method;
         return null;

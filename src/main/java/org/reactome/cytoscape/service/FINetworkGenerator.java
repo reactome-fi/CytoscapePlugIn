@@ -7,6 +7,7 @@ package org.reactome.cytoscape.service;
  * @author Eric T Dawson & Guanming Wu
  */
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.funcInt.Interaction;
 
 public class FINetworkGenerator implements NetworkGenerator {
     
@@ -154,6 +156,21 @@ public class FINetworkGenerator implements NetworkGenerator {
         // This method is just a convenience method which
         // overloads constructFINetwork.
         return constructFINetwork(null, fis);
+    }
+    
+    /**
+     * Construct a CyNetwork from a collection of Interaction objects.
+     * @param fis
+     * @return
+     */
+    public CyNetwork constructFINetwork(Collection<Interaction> interactions) {
+        Set<String> fis = new HashSet<String>();
+        for (Interaction interaction : interactions) {
+            String name1 = interaction.getFirstProtein().getShortName();
+            String name2 = interaction.getSecondProtein().getShortName();
+            fis.add(name1 + "\t" + name2);
+        }
+        return constructFINetwork(fis);
     }
     
     private void addFIPartners(CyNode targetNode, 
