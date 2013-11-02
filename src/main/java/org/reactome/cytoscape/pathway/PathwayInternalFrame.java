@@ -92,6 +92,7 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             public void graphEditorAction(GraphEditorActionEvent e) {
                 if (e.getID() != ActionType.SELECTION)
                     return;
+                @SuppressWarnings("unchecked")
                 List<Renderable> selection = pathwayEditor.getPathwayEditor().getSelection();
                 EventSelectionEvent selectionEvent = new EventSelectionEvent();
                 selectionEvent.setParentId(relatedPathwayIds.get(0));
@@ -166,28 +167,10 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
                 }
             });
             popup.add(convertToFINetwork);
+            popup.show(wrappedEditor,
+                       e.getX(),
+                       e.getY());
         }
-        else { // There should be only one instance selected
-            Renderable r = (Renderable) selection.get(0);
-            final Long dbId = r.getReactomeId();
-            if (dbId == null)
-                return;
-            popup = new JPopupMenu();
-            JMenuItem showDetailed = new JMenuItem("View in Reactome");
-            showDetailed.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
-                    String url = reactomeURL + dbId;
-                    PlugInUtilities.openURL(url);
-                }
-            });
-            popup.add(showDetailed);
-        }
-        popup.show(wrappedEditor,
-                   e.getX(),
-                   e.getY());
     }
     
     /**
