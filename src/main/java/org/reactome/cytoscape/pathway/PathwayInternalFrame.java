@@ -54,7 +54,6 @@ import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.funcInt.ReactomeSource;

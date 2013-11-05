@@ -15,11 +15,17 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
 import org.cytoscape.app.CyAppAdapter;
+import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
+import org.cytoscape.application.events.SetCurrentNetworkViewListener;
+import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyRow;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +55,9 @@ public class PlugInObjectManager {
     private TaskManager taskManager;
     // Currently selected FI network version
     private String fiNetworkVersion;
+    // Keep this registration in order to turn off
+    private ServiceRegistration fiAnnotRegistration;
+    private CyNetworkViewContextMenuFactory fiAnnotMenu;
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
@@ -63,6 +72,68 @@ public class PlugInObjectManager {
         return manager;
     }
     
+    public CyNetworkViewContextMenuFactory getFiAnnotMenu() {
+        return fiAnnotMenu;
+    }
+
+    public void setFiAnnotMenu(CyNetworkViewContextMenuFactory fiAnnotMenu) {
+        this.fiAnnotMenu = fiAnnotMenu;
+        // Add a listener for NewtorkView selection
+        SetCurrentNetworkViewListener currentNetworkViewListener = new SetCurrentNetworkViewListener() {
+            
+            @Override
+            public void handleEvent(SetCurrentNetworkViewEvent event) {
+                if (event.getNetworkView() == null)
+                    return; // This is more like a Pathway view
+                CyNetwork network = event.getNetworkView().getModel();
+                // Check if this network is a converted
+                CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
+                String dataSetType = row.get("dataSetType",
+                                             String.class);
+                if ("PathwayDiagram".equals(dataSetType)) {
+                    // Don't need this annotation
+                    uninstallFIAnnotMenu();
+                }
+                else
+                    installFIAnnotMenu();
+            }
+        };
+        context.registerService(SetCurrentNetworkViewListener.class.getName(),
+                                currentNetworkViewListener,
+                                null);
+    }
+    
+    /**
+     * Install a "Fetch FI Annotations" menu
+     */
+    private void installFIAnnotMenu() {
+        if (fiAnnotMenu == null || fiAnnotRegistration != null)
+            return;
+        Properties fiFetcherProps = new Properties();
+        fiFetcherProps.setProperty("title", "Fetch FI Annotations");
+        fiFetcherProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        // Want to keep the registration of this menu in order to turn it off
+        ServiceRegistration registration = context.registerService(CyNetworkViewContextMenuFactory.class.getName(), 
+                                                                   fiAnnotMenu, 
+                                                                   fiFetcherProps);
+        this.fiAnnotRegistration = registration;
+    }
+    
+    private void uninstallFIAnnotMenu() {
+        if (fiAnnotRegistration == null)
+            return;
+        fiAnnotRegistration.unregister();
+        fiAnnotRegistration = null;
+    }
+
+    public ServiceRegistration getFiAnnotRegistration() {
+        return fiAnnotRegistration;
+    }
+
+    public void setFiAnnotRegistration(ServiceRegistration fiAnnotRegistration) {
+        this.fiAnnotRegistration = fiAnnotRegistration;
+    }
+
     public String getFiNetworkVersion()
     {
         if (this.fiNetworkVersion != null)

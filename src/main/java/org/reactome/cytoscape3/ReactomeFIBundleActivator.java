@@ -33,6 +33,7 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.pathway.ReactomePathwayAction;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -56,8 +57,6 @@ import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
 public class ReactomeFIBundleActivator extends AbstractCyActivator
 {
 
-    public BundleContext context;
-
     public ReactomeFIBundleActivator()
     {
         super();
@@ -66,9 +65,6 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
     @Override
     public void start(BundleContext context) throws Exception
     {
-        
-        //Cache the bundlecontext.
-        this.context = context;
         PlugInObjectManager.getManager().setBundleContext(context);
         
         /* Grab essential Cytoscape Service References */
@@ -149,10 +145,13 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
                 CyNetworkViewContextMenuFactory.class, clusterProps);
         
         FIAnnotationFetcherMenu fiFetcherMenu = networkMenu.new FIAnnotationFetcherMenu();
-        Properties fiFetcherProps = new Properties();
-        fiFetcherProps.setProperty("title", "Fetch FI Annotations");
-        fiFetcherProps.setProperty("preferredMenu", "Apps.Reactome FI");
-        registerService(context, fiFetcherMenu, CyNetworkViewContextMenuFactory.class, fiFetcherProps);
+        PlugInObjectManager manager = PlugInObjectManager.getManager();
+        manager.setFiAnnotMenu(fiFetcherMenu);
+//        manager.installFIAnnotMenu();
+//        registerService(context, 
+//                        fiFetcherMenu, 
+//                        CyNetworkViewContextMenuFactory.class, 
+//                        fiFetcherProps);
         
         NetworkPathwayEnrichmentMenu netPathMenu = networkMenu.new NetworkPathwayEnrichmentMenu();
         Properties netPathProps = new Properties();
