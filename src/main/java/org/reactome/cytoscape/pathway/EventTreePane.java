@@ -12,7 +12,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyVetoException;
 import java.util.List;
 
 import javax.swing.Icon;
@@ -287,27 +286,11 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     /**
      * Open a new pathway diagram for the selected pathway in the tree.
      */
-    @SuppressWarnings("rawtypes")
     private void showPathwayDiagram() {
         EventObject event = getSelectedEvent();
         if (event == null)
             return; // In case there is nothing selected
-        // See if we have a diagram opened already
-        PathwayInternalFrame frame = PathwayDiagramRegistry.getRegistry().getPathwayFrame(event.dbId);
-        if (frame != null) {
-            try {
-                frame.setSelected(true);
-                frame.toFront();
-            }
-            catch(PropertyVetoException e) {
-                e.printStackTrace();
-            }
-            return; 
-        }
-        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
-        PathwayDiagramLoadTask task = new PathwayDiagramLoadTask();
-        task.setPathwayId(event.dbId);
-        taskManager.execute(new TaskIterator(task));
+        PathwayDiagramRegistry.getRegistry().showPathwayDiagram(event.dbId);
     }
 
     private EventObject getSelectedEvent() {

@@ -148,29 +148,24 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                     "Fetch FI Annotations");
             fetchFIAnnotationsMenu.addActionListener(new ActionListener()
             {
-
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
                     Thread t = new Thread()
                     {
                         @Override
-                        public void run()
-                        {
-                            EdgeActionCollection.annotateFIs(view);
-                            try
-                            {
-                                FIPlugInHelper r = FIPlugInHelper.getHelper();
+                        public void run() {
+                            try {
+                                EdgeActionCollection.annotateFIs(view);
                                 BundleContext context = PlugInObjectManager.getManager().getBundleContext();
                                 ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
                                 FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
                                 visStyler.setVisualStyle(view);
                                 context.ungetService(servRef);
                             }
-                            catch (Throwable t)
-                            {
+                            catch (Exception t) {
                                 JOptionPane.showMessageDialog(
-                                        null,
+                                        PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                         "The visual style could not be applied.",
                                         "Visual Style Error",
                                         JOptionPane.ERROR_MESSAGE);

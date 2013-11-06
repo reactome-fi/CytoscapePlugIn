@@ -7,6 +7,7 @@ package org.reactome.cytoscape.pathway;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,6 +20,8 @@ import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
 
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
@@ -266,6 +269,30 @@ public class PathwayDiagramRegistry {
         diagramIdToFrame.clear(); // Empty the opened diagrams
         pathwayIdToDiagramId.clear();
         networkToDiagram.clear();
+    }
+    
+    /**
+     * Show a diagram for a pathway. If it is not loaded, this method will load it using
+     * a task.
+     * @param pathwayId
+     */
+    public void showPathwayDiagram(Long pathwayId) {
+        PathwayInternalFrame frame = getPathwayFrame(pathwayId);
+        if (frame != null) {
+            try {
+                frame.setSelected(true);
+                frame.toFront();
+            }
+            catch(PropertyVetoException e) {
+                e.printStackTrace();
+            }
+            return; 
+        }
+        @SuppressWarnings("rawtypes")
+        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
+        PathwayDiagramLoadTask task = new PathwayDiagramLoadTask();
+        task.setPathwayId(pathwayId);
+        taskManager.execute(new TaskIterator(task));
     }
     
 }
