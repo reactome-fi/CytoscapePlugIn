@@ -169,7 +169,7 @@ public abstract class FIActionDialog extends JDialog {
      * Creates the graphical user interfaces for each of the Reactome FI analyses.
      * @param actionType A string indicating the type of action to be performed (GeneSetMutationAnalysis, UserGuide, Microarray, Hotnet).
      */
-    public void init() {
+    private void init() {
         // Main dialog pane. A tabbed pane is used
         // to mimic the Cytoscape GUI and provide room
         // for future tabbed user interfaces.

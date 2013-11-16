@@ -6,23 +6,23 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTree;
-import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -32,15 +32,22 @@ import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import org.cytoscape.util.swing.FileChooserFilter;
+import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
 import org.gk.model.ReactomeJavaConstants;
+import org.gk.util.DialogControlPane;
+import org.gk.util.GKApplicationUtilities;
 import org.jdom.Element;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.r3.util.FileUtility;
 
 /**
  * A customized JPanel that is used to display an event tree loaded via RESTful API.
@@ -280,7 +287,58 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             });
             popup.add(showDiagramMenu);
         }
+        popup.addSeparator();
+        JMenuItem enrichmentAnalysis = new JMenuItem("Analyze Pathway Enrichment");
+        enrichmentAnalysis.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doPathwayEnrichment();
+            }
+        });
+        popup.add(enrichmentAnalysis);
         popup.show(eventTree, e.getX(), e.getY());
+    }
+    
+    /**
+     * A helper method for performing pathway enrichment analysis.
+     */
+    private void doPathwayEnrichment() {
+        GeneSetLoadingPane loadingPane = new GeneSetLoadingPane();
+        if (!loadingPane.isOkClicked() || loadingPane.getSelectedFile() == null)
+            return;
+        String fileName = loadingPane.getSelectedFile();
+        String format = loadingPane.getFileFormat();
+        try {
+            // Need to parse the genes to create a list of genes in a line delimited format
+            FileUtility fu = new FileUtility();
+            fu.setInput(fileName);
+            StringBuilder builder = new StringBuilder();
+            String line = null;
+            if (format.equals("line")) {
+                while ((line = fu.readLine()) != null) {
+                    builder.append(line.trim()).append("\n");
+                }
+            }
+            else {
+                line = fu.readLine();
+                String[] tokens = null;
+                if (format.equals("comma"))
+                    tokens = line.split(",( )?");
+                else
+                    tokens = line.split("\t");
+                for (String token : tokens)
+                    builder.append(token).append("\n");
+            }
+            fu.close();
+            System.out.println("Total genes:\n" + builder.toString());
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(this, 
+                                          "Error in Pathway Enrichment Analysis",
+                                          "Error in pathway enrichment analysis: " + e,
+                                          JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     /**
@@ -424,6 +482,168 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             taskMonitor.setProgress(1.0d);
             taskMonitor.setStatusMessage("Done!");
         }
+    }
+    
+    /**
+     * A customized JPanel for loading a gene set from a file.
+     * @author gwu
+     *
+     */
+    private class GeneSetLoadingPane extends JPanel {
+        boolean isOkClicked;
+        JTextField fileNameTF;
+        JRadioButton commaDelimitedBtn;
+        JRadioButton tabDelimitedBtn;
+        JRadioButton lineDelimitedBtn;
+        DialogControlPane controlPane;
+        JDialog parentDialog;
+        
+        public GeneSetLoadingPane() {
+            init();
+        }
+        
+        public boolean isOkClicked() {
+            return this.isOkClicked;
+        }
+        
+        public String getSelectedFile() {
+            String file = this.fileNameTF.getText().trim();
+            if (file.length() == 0)
+                return null;
+            return file;
+        }
+        
+        public String getFileFormat() {
+            if (commaDelimitedBtn.isSelected())
+                return "comma";
+            if (tabDelimitedBtn.isSelected())
+                return "tab";
+            return "line";
+        }
+        
+        private void validateOkButton() {
+            if (getSelectedFile() != null)
+                controlPane.getOKBtn().setEnabled(true);
+            else
+                controlPane.getOKBtn().setEnabled(false);
+        }
+        
+        private void browseFile() {
+            Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
+            FileChooserFilter mafFilter = new FileChooserFilter("Gene Set File", ".txt");
+            filters.add(mafFilter);
+            
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            ServiceReference fileUtilRef = context.getServiceReference(FileUtil.class.getName());
+            FileUtil fileUtil = (FileUtil) context.getService(fileUtilRef);
+            File dataFile = fileUtil.getFile(parentDialog,
+                                             "Select a Gene Set File", 
+                                             FileUtil.LOAD, 
+                                             filters);
+            if (dataFile == null)
+                fileNameTF.setText("");
+            else
+                fileNameTF.setText(dataFile.getAbsolutePath());
+            context.ungetService(fileUtilRef);
+        }
+        
+        private void init() {
+            this.setBorder(BorderFactory.createEtchedBorder());
+            this.setLayout(new GridBagLayout());;
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(4, 4, 8, 4);
+            JLabel label = new JLabel("<html><b><u>Gene Set Loading</u></b></html>");
+            this.add(label, constraints);
+            constraints.insets = new Insets(0, 0, 0, 0);
+            JPanel filePanel = new JPanel();
+            filePanel.setAlignmentX(JPanel.LEFT_ALIGNMENT);
+            label = new JLabel("Choose a gene set file:");
+            filePanel.add(label);
+            fileNameTF = new JTextField();
+            fileNameTF.setEnabled(false);
+            fileNameTF.setColumns(10);
+            fileNameTF.getDocument().addDocumentListener(new DocumentListener() {
+                
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    validateOkButton();
+                }
+                
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    validateOkButton();
+                }
+                
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    validateOkButton();
+                }
+            });
+            filePanel.add(fileNameTF);
+            JButton browseFileBtn = new JButton("Browse");
+            browseFileBtn.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    browseFile();
+                }
+            });
+            filePanel.add(browseFileBtn);
+            constraints.gridy = 1;
+            constraints.anchor = GridBagConstraints.CENTER;
+            this.add(filePanel, constraints);
+            JPanel formatPane = new JPanel();
+            formatPane.setLayout(new GridBagLayout());
+            label = new JLabel("Specify file format:");
+            constraints.gridx = 0;
+            constraints.gridy = 0;
+            constraints.anchor = GridBagConstraints.WEST;
+            formatPane.add(label, constraints);
+            commaDelimitedBtn = new JRadioButton("Comma delimited (e.g. TP53, EGFR)");
+            tabDelimitedBtn = new JRadioButton("Tab delimited (e.g. TP53   EGFR)");
+            lineDelimitedBtn = new JRadioButton("One gene per line");
+            lineDelimitedBtn.setSelected(true); // The default file format
+            ButtonGroup buttonGroup = new ButtonGroup();
+            buttonGroup.add(commaDelimitedBtn);
+            buttonGroup.add(tabDelimitedBtn);
+            buttonGroup.add(lineDelimitedBtn);
+            constraints.gridx = 1;
+            formatPane.add(lineDelimitedBtn, constraints);
+            constraints.gridy = 1;
+            formatPane.add(commaDelimitedBtn, constraints);
+            constraints.gridy = 2;
+            formatPane.add(tabDelimitedBtn, constraints);
+            constraints.gridx = 0;
+            constraints.anchor = GridBagConstraints.CENTER;
+            this.add(formatPane, constraints);
+            
+            parentDialog = GKApplicationUtilities.createDialog(EventTreePane.this,
+                                                                 "Reactome Pathway Enrichment Analysis");
+            parentDialog.getContentPane().add(this, BorderLayout.CENTER);
+            controlPane = new DialogControlPane();
+            controlPane.getOKBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    isOkClicked = true;
+                    parentDialog.dispose();
+                }
+            });
+            controlPane.getCancelBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    parentDialog.dispose();
+                }
+            });
+            validateOkButton();
+            parentDialog.getContentPane().add(controlPane, BorderLayout.SOUTH);
+            parentDialog.setLocationRelativeTo(EventTreePane.this);
+            parentDialog.setSize(480, 280);
+            parentDialog.setModal(true);
+            parentDialog.setVisible(true);
+        }
+        
         
     }
     
