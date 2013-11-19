@@ -5,6 +5,7 @@
 package org.reactome.cytoscape.pathway;
 
 import java.awt.Component;
+import java.io.StringReader;
 import java.util.Properties;
 
 import org.cytoscape.application.swing.CySwingApplication;
@@ -14,6 +15,9 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.input.SAXBuilder;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.slf4j.Logger;
@@ -37,10 +41,10 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
     
     @Override
     public void run(TaskMonitor taskMonitor) throws Exception {
-        displayPathwayHierarchy(taskMonitor);
+        displayReactomePathways(taskMonitor);
     }
 
-    private void displayPathwayHierarchy(TaskMonitor monitor) {
+    private void displayReactomePathways(TaskMonitor monitor) {
         CySwingApplication application = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel panel = application.getCytoPanel(CytoPanelName.WEST);
         if (panel.getState() == CytoPanelState.HIDE)
@@ -58,7 +62,12 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
             monitor.setStatusMessage("Loading pathways...");
             monitor.setTitle("Pathway Loading");
             monitor.setProgress(0.2d);
-            controlPane.loadEventTree();
+            String text = ReactomeRESTfulService.getService().pathwayHierarchy();
+            StringReader reader = new StringReader(text);
+            SAXBuilder builder = new SAXBuilder();
+            Document document = builder.build(reader);
+            Element root = document.getRootElement();
+            controlPane.setAllPathwaysInElement(root);
             monitor.setProgress(1.0d);
         }
         catch(Exception e) {
@@ -77,7 +86,7 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
     }
     
     /**
-     * It seems that a simple CytoPanel.indexOf
+     * A helper method to get the PathwayControlPanel panel.
      * @param cytoPanel
      * @return
      */

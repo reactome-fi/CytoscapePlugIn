@@ -179,7 +179,7 @@ public class RESTFulFIService implements FINetworkService
         return interaction;
     }
     
-    private void checkXMLElement(Element elm) throws Exception {
+    private void outputXMLElement(Element elm) throws Exception {
         XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
         outputter.output(elm, System.out);
     }
@@ -360,6 +360,11 @@ public class RESTFulFIService implements FINetworkService
         }
         return annotateGeneSets(url, builder.toString());
     }
+    
+    public List<ModuleGeneSetAnnotation> annotateGeneSetWithReactomePathways(String geneSet) throws Exception {
+        String url = restfulURL + "network/annotateGeneSetWithReactomePathways";
+        return annotateGeneSets(url, geneSet);
+    }
 
     public Map<String, String> queryGeneToDisease(Set<String> genes)
             throws Exception
@@ -407,6 +412,7 @@ public class RESTFulFIService implements FINetworkService
             String query) throws Exception
     {
         Element root = callInXML(url, query);
+//        checkXMLElement(root);
         List<?> children = root.getChildren();
         // Need to create ModuleGeneSetAnnotation from XML
         List<ModuleGeneSetAnnotation> rtn = new ArrayList<ModuleGeneSetAnnotation>();

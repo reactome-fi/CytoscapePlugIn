@@ -52,6 +52,7 @@ import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.render.Renderable;
+import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.SynchronousBundleListener;
@@ -107,8 +108,12 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     /**
      * Call to load the actual event tree from a RESTful API. This method should be called in order to see the tree.
      */
-    public void loadEventTree() throws Exception {
-        eventPane.loadEventTree();
+    public void loadFrontPageItems() throws Exception {
+        eventPane.loadFrontPageItems();
+    }
+    
+    public void setAllPathwaysInElement(Element root) throws Exception {
+        eventPane.setAllPathwaysInElement(root);
     }
     
     private void installListeners() {

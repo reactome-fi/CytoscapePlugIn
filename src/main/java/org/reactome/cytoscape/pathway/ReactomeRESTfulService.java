@@ -45,6 +45,12 @@ public class ReactomeRESTfulService {
         return root;
     }
     
+    public String pathwayHierarchy() throws Exception {
+        String url = restfulAPIUrl + "pathwayHierarchy/Homo+sapiens";
+        String text = PlugInUtilities.callHttpInText(url, PlugInUtilities.HTTP_GET, null);
+        return text;
+    }
+    
     /**
      * Get the PathwayDiagram in XML for a pathway specified by its DB_ID.
      */

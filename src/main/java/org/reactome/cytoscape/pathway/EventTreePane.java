@@ -16,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -29,13 +30,13 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.work.AbstractTask;
-import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
@@ -45,6 +46,7 @@ import org.gk.util.GKApplicationUtilities;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
@@ -92,8 +94,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         };
         eventTree.setShowsRootHandles(true);
         eventTree.setRootVisible(false);
+        eventTree.setExpandsSelectedPaths(true);
         // Only single selection
-        eventTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+//        eventTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         DefaultMutableTreeNode root = new DefaultMutableTreeNode();
         DefaultTreeModel model = new DefaultTreeModel(root);
         eventTree.setModel(model);
@@ -106,11 +109,11 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     private void installListners() {
         eventTree.addMouseListener(new MouseAdapter() {
             
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2)
-                    loadSubPathways();
-            }
+//            @Override
+//            public void mouseClicked(MouseEvent e) {
+//                if (e.getClickCount() == 2)
+//                    loadSubPathways();
+//            }
 
             @Override
             public void mousePressed(MouseEvent e) {
@@ -222,19 +225,19 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         }
     }
     
-    /**
-     * Load sub-pathways for a selected pathway.
-     */
-    @SuppressWarnings("rawtypes")
-    private void loadSubPathways() {
-        EventObject event = getSelectedEvent();
-        if (event == null || event.isLoaded)
-            return;
-        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
-        Task task = new LoadSubPathwayTask(event.dbId);
-        taskManager.execute(new TaskIterator(task));
-        event.isLoaded = true;
-    }
+//    /**
+//     * Load sub-pathways for a selected pathway.
+//     */
+//    @SuppressWarnings("rawtypes")
+//    private void loadSubPathways() {
+//        EventObject event = getSelectedEvent();
+//        if (event == null || event.isLoaded)
+//            return;
+//        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
+//        Task task = new LoadSubPathwayTask(event.dbId);
+//        taskManager.execute(new TaskIterator(task));
+//        event.isLoaded = true;
+//    }
     
     /**
      * Add sub-pathways from a JDOM Element returned from a RESTful API call to a
@@ -249,7 +252,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         List<?> children = root.getChildren(ReactomeJavaConstants.hasEvent);
         for (Object obj : children) {
             Element child = (Element) obj;
-            EventObject event = createEventObject(child);
+            EventObject event = parseFrontPageEvent(child);
             DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(event);
             treeNode.add(childNode);
         }
@@ -331,7 +334,12 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                     builder.append(token).append("\n");
             }
             fu.close();
-            System.out.println("Total genes:\n" + builder.toString());
+            @SuppressWarnings("rawtypes")
+            TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
+            PathwayEnrichmentAnalysisTask task = new PathwayEnrichmentAnalysisTask();
+            task.setGeneList(builder.toString());
+            task.setEventPane(this);
+            taskManager.execute(new TaskIterator(task));
         }
         catch(Exception e) {
             JOptionPane.showMessageDialog(this, 
@@ -362,7 +370,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     /**
      * Load the top-level pathways from the Reactome RESTful API.
      */
-    public void loadEventTree() throws Exception {
+    public void loadFrontPageItems() throws Exception {
         Element root = ReactomeRESTfulService.getService().frontPageItems();
         List<?> children = root.getChildren();
         DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
@@ -370,7 +378,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         treeRoot.removeAllChildren(); // Just in case there is anything there.
         for (Object obj : children) {
             Element elm = (Element) obj;
-            EventObject event = createEventObject(elm);
+            EventObject event = parseFrontPageEvent(elm);
             DefaultMutableTreeNode treeNode = new DefaultMutableTreeNode();
             treeNode.setUserObject(event);
             treeRoot.add(treeNode);
@@ -378,13 +386,83 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         // Needs an update
         model.nodeStructureChanged(treeRoot);
     }
+    
+    /**
+     * Set all pathways encoded in an JDOM Element.
+     * @param root
+     * @throws Exception
+     */
+    public void setAllPathwaysInElement(Element root) throws Exception {
+        DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
+        DefaultMutableTreeNode treeRoot = (DefaultMutableTreeNode) model.getRoot();
+        treeRoot.removeAllChildren(); // Just in case there is anything there.
+        List<?> children = root.getChildren();
+        for (Object obj : children) {
+            Element elm = (Element) obj;
+            addEvent(treeRoot, elm);
+        }
+        model.nodeStructureChanged(treeRoot);
+    }
+    
+    /**
+     * Display pathway enrichment analysis in the pathway tree.
+     * @param annotations
+     */
+    public void showPathwayEnrichments(List<GeneSetAnnotation> annotations) {
+        DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) eventTree.getModel().getRoot();
+        List<TreePath> paths = new ArrayList<TreePath>();
+        for (GeneSetAnnotation annotation : annotations) {
+            String pathway = annotation.getTopic();
+            searchPathway(root, pathway, model, paths);
+        }
+        eventTree.clearSelection();
+        TreePath[] selection = new TreePath[paths.size()];
+        for (int i = 0; i < paths.size(); i++) {
+            selection[i] = paths.get(i);
+        }
+        eventTree.setSelectionPaths(selection);
+        // Scroll to the first path
+        eventTree.scrollPathToVisible(paths.get(0));
+    }
+    
+    private void searchPathway(DefaultMutableTreeNode treeNode,
+                               String pathway,
+                               DefaultTreeModel model,
+                               List<TreePath> selectedPaths) {
+        if (treeNode.getUserObject() != null && treeNode.getUserObject() instanceof EventObject) {
+            EventObject event = (EventObject) treeNode.getUserObject();
+            if (event.name.equals(pathway)) {
+                selectedPaths.add(new TreePath(model.getPathToRoot(treeNode)));
+            }
+        }
+        for (int i = 0; i < treeNode.getChildCount(); i++) {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode) treeNode.getChildAt(i);
+            searchPathway(child, pathway, model, selectedPaths);
+        }
+    }
+    
+    private void addEvent(DefaultMutableTreeNode parentNode,
+                          Element eventElm) {
+        EventObject event = parseEvent(eventElm);
+        DefaultMutableTreeNode treeNode = new DefaultMutableTreeNode();
+        treeNode.setUserObject(event);
+        parentNode.add(treeNode);
+        List<?> children = eventElm.getChildren();
+        if (children == null || children.size() == 0)
+            return;
+        for (Object obj : children) {
+            Element childElm = (Element) obj;
+            addEvent(treeNode, childElm);
+        }
+    }
 
     /**
      * Parse an XML element for an EventObject object.
      * @param elm
      * @return
      */
-    private EventObject createEventObject(Element elm) {
+    private EventObject parseFrontPageEvent(Element elm) {
         String dbId = elm.getChildText("dbId");
         String name = elm.getChildText("displayName");
         EventObject event = new EventObject();
@@ -396,6 +474,24 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         else
             event.isPathway = false;
         String hasDiagram = elm.getChildText("hasDiagram");
+        if (hasDiagram != null)
+            event.hasDiagram = hasDiagram.equals("true") ? true : false;
+        return event;
+    }
+    
+    private EventObject parseEvent(Element elm) {
+        String dbId = elm.getAttributeValue("dbId");
+        String name = elm.getAttributeValue("displayName");
+        EventObject event = new EventObject();
+        event.isLoaded = true; // Everything via this route is loaded
+        event.dbId = new Long(dbId);
+        event.name = name;
+        String clsName = elm.getName();
+        if (clsName.equals(ReactomeJavaConstants.Pathway))
+            event.isPathway = true;
+        else
+            event.isPathway = false;
+        String hasDiagram = elm.getAttributeValue("hasDiagram");
         if (hasDiagram != null)
             event.hasDiagram = hasDiagram.equals("true") ? true : false;
         return event;

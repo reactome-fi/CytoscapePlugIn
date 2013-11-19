@@ -234,7 +234,7 @@ public class PlugInUtilities {
         return callHttp(url, 
                         type, 
                         query, 
-                        "text/plain");
+                        "text/plain, application/xml"); // A String may be wrapped in an XML element.
     }
     
     /**
