@@ -30,7 +30,6 @@ public class UserGuideAction extends AbstractCyAction
     {
         // Pop open a browser window pointing to the
         // online Reactome FI app user guide.
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         String url = PlugInObjectManager.getManager().getProperties()
                 .getProperty("userGuideURL");
         if (url == null)

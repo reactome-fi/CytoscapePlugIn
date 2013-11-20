@@ -159,7 +159,6 @@ public class EdgeActionCollection {
     {
         ProgressPane progPane = new ProgressPane();
         progPane.setText("Fetching FI Annotation(s)");
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         desktopApp.getJFrame().setGlassPane(progPane);
         desktopApp.getJFrame().getGlassPane().setVisible(true);
@@ -191,7 +190,6 @@ public class EdgeActionCollection {
     
     private void displayInteraction(View<CyEdge> edgeView, List<Interaction> interactions, String source, String target)
     {
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         JDialog dialog = new JDialog(desktopApp.getJFrame());
         dialog.setTitle("Interaction Info");
@@ -310,7 +308,6 @@ public class EdgeActionCollection {
             return;
         ReactomeSourceTableModel tableModel = (ReactomeSourceTableModel) table.getModel();
         Long id = (Long) tableModel.getValueAt(selectedRow, 0);
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         String dataSourceURL = PlugInObjectManager.getManager().getDataSourceURL();
         if (dataSourceURL == null) {
             PlugInUtilities.showErrorMessage("Data source URL has not been set.", 

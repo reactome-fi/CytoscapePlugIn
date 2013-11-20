@@ -138,7 +138,6 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
             tableHelper.storeClusteringType(view, TableFormatterImpl.getHotNetModule());
             tableHelper.storeDataSetType(network, TableFormatterImpl.getSampleMutationData());
             tableHelper.markAsFINetwork(network);
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             tableHelper.storeFINetworkVersion(network,
                                               PlugInObjectManager.getManager().getFiNetworkVersion());
             CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);

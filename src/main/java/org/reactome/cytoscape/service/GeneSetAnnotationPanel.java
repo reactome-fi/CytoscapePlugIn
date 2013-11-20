@@ -2,7 +2,7 @@
  * Created on Jun 23, 2010
  *
  */
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 import java.awt.Font;
 import java.awt.Point;
@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JComboBox;
@@ -18,13 +19,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 
-import keggapi.KEGGLocator;
-import keggapi.KEGGPortType;
-
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
-import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -37,14 +34,11 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
     protected List<ModuleGeneSetAnnotation> annotations;
     protected JComboBox fdrFilter;
 
-    public GeneSetAnnotationPanel() {
-        init();
-    }
     public GeneSetAnnotationPanel(String title){
         super(title);
         init();
     }
-        
+    
     private void init() {
         // Remove closeBtn 
         controlToolBar.remove(closeGlue);
@@ -56,11 +50,11 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
         controlToolBar.addSeparator();
         controlToolBar.add(filterLabel);
         Double fdrValues[] = new Double[] {
-                0.001d, 0.005d, 0.01d, 0.05d, 0.25d, 0.50d, 1.00d
+                0.001d, 0.005d, 0.01d, 0.05d, 0.10d, 0.25d, 0.50d, 1.00d
         };
         fdrFilter = new JComboBox(fdrValues);
         fdrFilter.setFont(font);
-        fdrFilter.setSelectedItem(1.0d);
+        fdrFilter.setSelectedItem(0.25d); // Default
         JLabel fdrLabel = new JLabel(" FDR");
         fdrLabel.setFont(font);
         controlToolBar.add(fdrLabel);
@@ -176,13 +170,11 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
             }
             else {
                 Long dbId = service.queryPathwayId(pathway);
-                FIPlugInHelper r = FIPlugInHelper.getHelper();
                 String dataSourceURL = PlugInObjectManager.getManager().getDataSourceURL();
                 PlugInUtilities.openURL(dataSourceURL + dbId);
             }
         }
         catch(IOException e) {
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cannot find the DB_ID for the selected pathway: " + pathway,
                                           "Error in Querying Pathway DB_ID",
@@ -195,6 +187,18 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
     public void setAnnotations(List<ModuleGeneSetAnnotation> annotations) {
         this.annotations = annotations;
         resetAnnotations();
+    }
+    
+    /**
+     * Set the displayed content for a gene set.
+     * @param annotations
+     */
+    public void setGeneSetAnnotations(List<GeneSetAnnotation> annotations) {
+        List<ModuleGeneSetAnnotation> list = new ArrayList<ModuleGeneSetAnnotation>();
+        ModuleGeneSetAnnotation tmpAnnot = new ModuleGeneSetAnnotation();
+        tmpAnnot.setAnnotations(annotations);
+        list.add(tmpAnnot);
+        setAnnotations(list);
     }
 
     protected void resetAnnotations() {
@@ -210,7 +214,7 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
 
     protected class AnnotationTableModel extends NetworkModuleTableModel {
 
-        protected String[] geneSetHeaders = new String[] {
+        private String[] geneSetHeaders = new String[] {
                 "GeneSet",
                 "RatioOfProteinInGeneSet",
                 "NumberOfProteinInGeneSet",

@@ -114,7 +114,6 @@ public class NodeActionCollection
             final CyNetworkView view)
     {
         FIPartnersDialog dialog = new FIPartnersDialog(name, partners, view);
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         dialog.setSize(400, 300);
         dialog.setLocationRelativeTo(desktopApp.getJFrame());
@@ -396,12 +395,10 @@ public class NodeActionCollection
     {
         if (sentences == null || sentences.isEmpty())
         {
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
             JOptionPane.showMessageDialog(desktopApp.getJFrame(), "No cancer gene index annotations were found for \"" + gene + "\".", "No Annotations for Gene", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CancerIndexSentenceDisplayFrame cgiFrame = FIPlugInHelper.getHelper().getCancerIndexFrame(desktopApp.getJFrame());
         cgiFrame.display(sentences, gene);

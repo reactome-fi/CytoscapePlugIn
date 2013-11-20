@@ -18,20 +18,15 @@ import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
-import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.service.GeneSetAnnotationPanel;
 
 public class GeneSetAnnotationPanelForModules extends GeneSetAnnotationPanel {
     private JComboBox moduleSizeFilter;
 
-    public GeneSetAnnotationPanelForModules() {
-        init();
-    }
-    
     public GeneSetAnnotationPanelForModules(String title){
         super(title);
         init();
@@ -67,27 +62,6 @@ public class GeneSetAnnotationPanelForModules extends GeneSetAnnotationPanel {
     protected String getSelectedPathway() {
         return (String) contentTable.getValueAt(contentTable.getSelectedRow(),
                                                 1);
-    }
-    
-    
-    private void showPathwayDiagram(String pathway) {
-        CyPathwayDiagramHelper helper = CyPathwayDiagramHelper.getHelper();
-        try {
-            helper.showPathwayDiagram(pathway);
-            // Highlite
-            String nodes = (String) contentTable.getValueAt(contentTable.getSelectedRow(),
-                                                            contentTable.getColumnCount() - 1);
-            helper.highlightNodes(nodes);
-        }
-        catch(Exception e) {
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Cannot show pathway diagram: " + pathway,
-                                          "Error in Show Pathway Diagram",
-                                          JOptionPane.ERROR_MESSAGE);
-            System.err.println("GeneSetAnnotationPanel.showPathwayDiagram(): " + e);
-            e.printStackTrace();
-        }
     }
     
     public void setAnnotations(List<ModuleGeneSetAnnotation> annotations) {

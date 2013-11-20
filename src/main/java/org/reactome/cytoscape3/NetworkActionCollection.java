@@ -69,7 +69,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
     {
         try
         {
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             ServiceReference servRef = context.getServiceReference(TableFormatter.class.getName());
             if (servRef != null)
@@ -95,7 +94,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
      */
     private void releaseTableFormatter()
     {
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         context.ungetService(tableFormatterServRef);
     }
@@ -553,7 +551,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
      * clustering.
      */
     private void clusterFINetwork(CyNetworkView view) {
-        FIPlugInHelper r1 = FIPlugInHelper.getHelper();
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         CyTable netTable = view.getModel().getDefaultNetworkTable();
         String clustering = netTable.getRow(view.getModel().getSUID()).get("clustering_Type",
@@ -561,7 +558,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         if ( clustering != null && 
             !(clustering.length() <=0) && 
             !clustering.equals(TableFormatterImpl.getSpectralPartitionCluster())) {
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
             int reply = JOptionPane.showConfirmDialog(frame,
                                                       "The displayed network has been clustered before using a different algorithm.\n"
@@ -625,8 +621,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                                           JOptionPane.ERROR_MESSAGE);
             frame.getGlassPane().setVisible(false);
         }
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
-        
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
         FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
@@ -688,7 +682,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         }
         if (!linkers.isEmpty())
         {
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
             int reply = JOptionPane.showConfirmDialog(
                     desktopApp.getJFrame(),
@@ -709,10 +702,8 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                 ProgressPane progPane = new ProgressPane();
                 progPane.setIndeterminate(true);
                 progPane.setText("Annotating network...");
-                FIPlugInHelper r = FIPlugInHelper.getHelper();
                 PlugInObjectManager.getManager().getCytoscapeDesktop().setGlassPane(
                         progPane);
-                FIPlugInHelper r1 = FIPlugInHelper.getHelper();
                 PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(
                         true);
                 try
@@ -729,7 +720,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                             "Could not annotate network. Please see the logs for details.");
                 }
                 progPane.setIndeterminate(false);
-                FIPlugInHelper r2 = FIPlugInHelper.getHelper();
                 PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(
                         false);
             }
@@ -750,10 +740,8 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                 ProgressPane progPane = new ProgressPane();
                 progPane.setIndeterminate(true);
                 progPane.setText("Annotating modules...");
-                FIPlugInHelper r = FIPlugInHelper.getHelper();
                 PlugInObjectManager.getManager().getCytoscapeDesktop().setGlassPane(
                         progPane);
-                FIPlugInHelper r1 = FIPlugInHelper.getHelper();
                 PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(
                         true);
                 try
@@ -771,7 +759,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                     e.printStackTrace();
                 }
                 progPane.setIndeterminate(false);
-                FIPlugInHelper r2 = FIPlugInHelper.getHelper();
                 PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(
                         false);
             }
@@ -826,7 +813,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         if (cutoff == null) return null; // Equivalent to canceling the task.
         if (!linkers.isEmpty())
         {
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
             int reply = JOptionPane.showConfirmDialog(
                     desktopApp.getJFrame(),
@@ -868,7 +854,6 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         }
         List<Integer> sizeList = new ArrayList<Integer>(values);
         Collections.sort(sizeList);
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         Integer input = (Integer) JOptionPane.showInputDialog(
                 PlugInObjectManager.getManager().getCytoscapeDesktop(),
                 "Please choose a size cutoff for modules. Modules with sizes equal\n"

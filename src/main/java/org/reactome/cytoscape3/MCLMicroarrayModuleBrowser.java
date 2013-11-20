@@ -11,6 +11,8 @@ import java.util.Set;
 
 import javax.swing.JPopupMenu;
 
+import org.reactome.cytoscape.service.NetworkModulePanel;
+
 /**
  * This NetworkModuleBrowser is specially designed for MCL network modules
  * generated for microarray data sets.

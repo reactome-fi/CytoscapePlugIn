@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.cytoscape3.HotNetAnalysisTask.HotNetModule;
 import org.reactome.r3.util.InteractionUtilities;
 

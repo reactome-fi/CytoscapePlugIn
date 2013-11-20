@@ -119,7 +119,6 @@ public class FIVisualStyleImpl implements FIVisualStyle
         // Set the node color based on module
         DiscreteMapping colorToModuleFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
                 "module", Integer.class, BasicVisualLexicon.NODE_FILL_COLOR);
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         String moduleColors = PlugInObjectManager.getManager().getProperties().getProperty(
                 "moduleColors");
         String[] tokens = moduleColors.split(";");

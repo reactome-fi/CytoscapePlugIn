@@ -5,9 +5,11 @@
 package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -18,8 +20,10 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -30,16 +34,15 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellRenderer;
-import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
 
+import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
-import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
-import org.cytoscape.work.TaskMonitor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
@@ -47,6 +50,7 @@ import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.GeneSetAnnotation;
+import org.reactome.cytoscape.service.GeneSetAnnotationPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
@@ -57,9 +61,17 @@ import org.reactome.r3.util.FileUtility;
  *
  */
 public class EventTreePane extends JPanel implements EventSelectionListener {
+    // TODO: The following class should be moved to another package
+    private GeneSetAnnotationPanel annotationPanel;
     private JTree eventTree;
     // To control tree selection event firing
     private TreeSelectionListener selectionListener;
+    // For Pathway Enrichment results
+    private Map<String, GeneSetAnnotation> pathwayToAnnotation;
+    // Cached red colors for FDRs
+    private List<Color> fdrColors;
+    // A color bar to show FDR values
+    private JPanel fdrColorBar;
     
     /**
      * Default constructor
@@ -104,6 +116,41 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         eventTree.setCellRenderer(renderer);
         add(new JScrollPane(eventTree), BorderLayout.CENTER);
         installListners();
+        initPathwayEnrichmments();
+    }
+
+    private void initPathwayEnrichmments() {
+        // For easy processing
+        pathwayToAnnotation = new HashMap<String, GeneSetAnnotation>();
+        fdrColors = new ArrayList<Color>();
+        int count = 4;
+        double step = 255.0d / count;
+        for (int i = 0; i < count; i++) {
+            Color c = new Color((int)(step * (1 + i)), 185, 185);
+            fdrColors.add(c);
+        }
+        fdrColorBar = new JPanel();
+        fdrColorBar.setBorder(BorderFactory.createEtchedBorder());
+        fdrColorBar.setLayout(new GridLayout(1, 5));
+        JLabel label = new JLabel("FDR: ");
+        fdrColorBar.add(label);
+        String[] labels = new String[] {
+                " >=0.1",
+                " >=0.01",
+                " >=0.001",
+                " <0.001"
+        };
+        int i = 0;
+        for (String text : labels) {
+            label = new JLabel(text);
+            label.setOpaque(true);
+            label.setBackground(fdrColors.get(i ++));
+            label.setHorizontalTextPosition(JLabel.CENTER);
+            fdrColorBar.add(label);
+        }
+        add(fdrColorBar, BorderLayout.NORTH);
+        // Default should be disable
+        fdrColorBar.setVisible(false);
     }
     
     private void installListners() {
@@ -223,43 +270,6 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                                                                                                             selectionEvent);
             }
         }
-    }
-    
-//    /**
-//     * Load sub-pathways for a selected pathway.
-//     */
-//    @SuppressWarnings("rawtypes")
-//    private void loadSubPathways() {
-//        EventObject event = getSelectedEvent();
-//        if (event == null || event.isLoaded)
-//            return;
-//        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
-//        Task task = new LoadSubPathwayTask(event.dbId);
-//        taskManager.execute(new TaskIterator(task));
-//        event.isLoaded = true;
-//    }
-    
-    /**
-     * Add sub-pathways from a JDOM Element returned from a RESTful API call to a
-     * selected TreeNode.
-     * @param root
-     */
-    private void addSubPathways(Element root) {
-        if (eventTree.getSelectionCount() == 0)
-            return;
-        TreePath treePath = eventTree.getSelectionPath();
-        DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) treePath.getLastPathComponent();
-        List<?> children = root.getChildren(ReactomeJavaConstants.hasEvent);
-        for (Object obj : children) {
-            Element child = (Element) obj;
-            EventObject event = parseFrontPageEvent(child);
-            DefaultMutableTreeNode childNode = new DefaultMutableTreeNode(event);
-            treeNode.add(childNode);
-        }
-        DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
-        model.nodeChanged(treeNode);
-        // Expand newly expanded pathway node
-        eventTree.expandPath(treePath);
     }
     
     private void showTreePopup(MouseEvent e) {
@@ -409,21 +419,33 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
      * @param annotations
      */
     public void showPathwayEnrichments(List<GeneSetAnnotation> annotations) {
+        pathwayToAnnotation.clear();
         DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
         DefaultMutableTreeNode root = (DefaultMutableTreeNode) eventTree.getModel().getRoot();
         List<TreePath> paths = new ArrayList<TreePath>();
         for (GeneSetAnnotation annotation : annotations) {
             String pathway = annotation.getTopic();
+            pathwayToAnnotation.put(pathway, annotation);
             searchPathway(root, pathway, model, paths);
         }
         eventTree.clearSelection();
-        TreePath[] selection = new TreePath[paths.size()];
-        for (int i = 0; i < paths.size(); i++) {
-            selection[i] = paths.get(i);
-        }
-        eventTree.setSelectionPaths(selection);
+        for (TreePath path : paths)
+            eventTree.expandPath(path);
         // Scroll to the first path
+        eventTree.setSelectionPath(paths.get(0));
         eventTree.scrollPathToVisible(paths.get(0));
+        fdrColorBar.setVisible(true);
+        // Show annotations in a list
+        if (annotationPanel == null) {
+            annotationPanel = new PathwayEnrichmentResultPane("Reactome Pathway Enrichment");
+        }
+        annotationPanel.setGeneSetAnnotations(annotations);
+        // Need to select it
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
+        int index = tableBrowserPane.indexOfComponent(annotationPanel);
+        if (index >= 0)
+            tableBrowserPane.setSelectedIndex(index);
     }
     
     private void searchPathway(DefaultMutableTreeNode treeNode,
@@ -483,7 +505,6 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         String dbId = elm.getAttributeValue("dbId");
         String name = elm.getAttributeValue("displayName");
         EventObject event = new EventObject();
-        event.isLoaded = true; // Everything via this route is loaded
         event.dbId = new Long(dbId);
         event.name = name;
         String clsName = elm.getName();
@@ -501,7 +522,6 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         String name;
         Long dbId;
         boolean isPathway;
-        boolean isLoaded; // A flag indicating if a pathway's sub-pathways have been loaded or not.
         boolean hasDiagram;
         
         @Override
@@ -547,36 +567,31 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 setIcon(pathwayIcon);
             else
                 setIcon(reactionIcon);
-            // Have to call this method to make paint correctly.
+            // Show Reactome pathway enrichment results
+            GeneSetAnnotation annotation = pathwayToAnnotation.get(event.name);
+            if (annotation == null) {
+                setBackgroundNonSelectionColor(tree.getBackground());
+                setText(event.name);
+            }
+            else {
+                setBackgroundNonSelectionColor(getFDRColor(annotation));
+                setText(event.name + " (FDR: " + annotation.getFdr() + ")");
+            }
+            comp.invalidate(); // For validating the layout
             return comp;
         }
-    }
-    
-    /**
-     * A customized Task for loading a selected pathway's sub-pathways.
-     * @author gwu
-     *
-     */
-    private class LoadSubPathwayTask extends AbstractTask {
         
-        private Long pathwayId;
-        
-        LoadSubPathwayTask(Long pathwayId) {
-            this.pathwayId = pathwayId;
-        }
-
-        @Override
-        public void run(TaskMonitor taskMonitor) throws Exception {
-            taskMonitor.setTitle("Load Pathway Components");
-            taskMonitor.setProgress(0.0d);
-            taskMonitor.setStatusMessage("Loading pathway components...");
-            Element root = ReactomeRESTfulService.getService().queryById(pathwayId,
-                                                                         ReactomeJavaConstants.Event);
-            taskMonitor.setProgress(0.50d);
-            taskMonitor.setStatusMessage("Rebuilding tree...");
-            addSubPathways(root);
-            taskMonitor.setProgress(1.0d);
-            taskMonitor.setStatusMessage("Done!");
+        private Color getFDRColor(GeneSetAnnotation annotation) {
+            if (annotation.getFdr().startsWith("<"))
+                return fdrColors.get(3);
+            else {
+                Double value = new Double(annotation.getFdr());
+                if (value >= 0.1d)
+                    return fdrColors.get(0);
+                if (value >= 0.01d)
+                    return fdrColors.get(1);
+                return fdrColors.get(2);
+            }
         }
     }
     
@@ -739,8 +754,35 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             parentDialog.setModal(true);
             parentDialog.setVisible(true);
         }
-        
-        
     }
     
+    private class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
+        
+        public PathwayEnrichmentResultPane(String title) {
+            super(title);
+            hideOtherNodesBox.setVisible(false);
+        }
+        
+        @Override
+        protected NetworkModuleTableModel createTableModel() {
+            return new PathwayEnrichmentTableModel();
+        }
+
+        private class PathwayEnrichmentTableModel extends AnnotationTableModel {
+            private String[] geneSetHeaders = new String[] {
+                    "ReactomePathway",
+                    "RatioOfProteinInPathway",
+                    "NumberOfProteinInPathway",
+                    "ProteinFromGeneSet",
+                    "P-value",
+                    "FDR",
+                    "HitGenes"
+            };
+            
+            public PathwayEnrichmentTableModel() {
+                columnHeaders = geneSetHeaders;
+            }
+        }
+        
+    }
 }

@@ -1,10 +1,9 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -18,7 +17,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 
 import javax.swing.*;
@@ -27,7 +25,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 
-import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyEdge;
@@ -43,7 +40,6 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
@@ -52,7 +48,7 @@ import org.reactome.r3.util.InteractionUtilities;
 
 @SuppressWarnings("serial")
 public abstract class NetworkModulePanel extends JPanel implements CytoPanelComponent, RowsSetListener {
-    private String title = "";
+    private String title;
     // Used to control view
     protected JCheckBox hideOtherNodesBox;
     // Table for display detailed information on modules
@@ -60,8 +56,6 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     protected CyNetworkView view;
     // Used for control
     protected JToolBar controlToolBar;
-    // The CytoPanel container used to hold this Panel.
-    protected CytoPanel container;
     // Used to control selection
     private boolean isFromTable;
     // Used to link to table selection
@@ -69,24 +63,16 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     // To control its position
     protected JButton closeBtn;
     protected Component closeGlue;
-    protected FileUtil fileUtil;
 
-    public NetworkModulePanel()
-    {
-        init();
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceRegistration servReg = context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
+    protected NetworkModulePanel() {
+        this(null);
     }
     
-    public NetworkModulePanel(String title)
-    {
+    protected NetworkModulePanel(String title) {
         setTitle(title);
         init();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
-        ServiceReference servRef = context.getServiceReference(FileUtil.class.getName());
-        if (servRef != null)
-            this.fileUtil = (FileUtil) context.getService(servRef);
+        context.registerService(CytoPanelComponent.class.getName(), this, null);
     }
     
     public void setNetworkView(CyNetworkView view)
@@ -122,7 +108,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         // Register selection listener
         PlugInObjectManager.getManager().getBundleContext().registerService(RowsSetListener.class.getName(), 
                                                                             this, 
-                                                                            new Properties());
+                                                                            null);
         setLayout(new BorderLayout());
         contentTable = new JTable();
         TableModel moduleModel = createTableModel();
@@ -188,6 +174,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         }
         doTableSelection();
     }
+    
     private void showAllEdges()
     {
         if (this.view != null)
@@ -269,26 +256,20 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     }
     
     protected abstract NetworkModuleTableModel createTableModel();
-
-    public void close()
-    {
-        if (container == null)
+    
+    private void close() {
+        if (getParent() == null)
             return;
         //To have the rest of the network reappear after
         //closing the browser panel, uncomment the next two lines.
         //this.hideOtherNodesBox.setSelected(false);
         //showAllEdges();
-        ((Container) container).remove(this);
-
+        getParent().remove(this);
     }
+    
     public void setTitle(String title)
     {
         this.title = title;
-    }
-    
-    public void setContainer(CytoPanel container)
-    {
-        this.container = container;
     }
     
     @Override
@@ -335,8 +316,13 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
         FileChooserFilter filter = new FileChooserFilter("Annotation File", "txt");
         filters.add(filter);
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
-        File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), "Save Annotation File", FileUtil.SAVE, filters);
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference reference = context.getServiceReference(FileUtil.class.getName());
+        FileUtil fileUtil = (FileUtil) context.getService(reference);
+        File file = fileUtil.getFile(this, 
+                                     "Save Annotation File", 
+                                     FileUtil.SAVE,
+                                     filters);
         NetworkModuleTableModel model = (NetworkModuleTableModel) contentTable.getModel();
         FileUtility fu = new FileUtility();
         try {
@@ -363,13 +349,13 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
             fu.close();
         }
         catch(IOException e) {
-            System.err.println("NetworkModulePanel.exportAnnotations(): " + e);
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, 
                                           "Error in exporting annotations: " + e.getMessage(),
                                           "Error in Exporting",
                                           JOptionPane.ERROR_MESSAGE);
         }
+        context.ungetService(reference);
     }
     
     protected JPopupMenu createExportAnnotationPopup() {

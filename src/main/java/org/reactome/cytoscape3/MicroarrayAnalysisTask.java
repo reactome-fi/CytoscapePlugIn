@@ -171,7 +171,6 @@ public class MicroarrayAnalysisTask extends FIAnalysisTask {
         tableHelper.storeNodeAttributesByName(network, "module", nodeToCluster);
         tableHelper.storeClusteringType(network, 
                                         TableFormatterImpl.getMCLArrayClustering());
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         tableHelper.storeFINetworkVersion(network,
                                           PlugInObjectManager.getManager().getFiNetworkVersion());
         // tableHelper.storeMCLModuleToSampleToValue(network,

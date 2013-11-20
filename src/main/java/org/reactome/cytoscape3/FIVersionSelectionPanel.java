@@ -44,7 +44,6 @@ public class FIVersionSelectionPanel extends JPanel
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(4, 4, 4, 4);
         add(choicePane, BorderLayout.CENTER);
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
 
         // Retrieve the list of FI versions from the Reactome server.
         String versions = PlugInObjectManager.getManager().getProperties()
@@ -90,7 +89,6 @@ public class FIVersionSelectionPanel extends JPanel
                 for (JRadioButton btn : buttons)
                     if (btn.isSelected())
                     {
-                        FIPlugInHelper r = FIPlugInHelper.getHelper();
                         PlugInObjectManager.getManager().setFiNetworkVersion(btn.getText());
                         break;
                     }

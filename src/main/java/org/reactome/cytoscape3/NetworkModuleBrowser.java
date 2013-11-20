@@ -9,6 +9,7 @@ import java.util.Set;
 
 import javax.swing.JLabel;
 
+import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.r3.util.InteractionUtilities;
 
 @SuppressWarnings("serial")

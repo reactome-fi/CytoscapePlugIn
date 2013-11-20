@@ -1,7 +1,5 @@
 package org.reactome.cytoscape3;
 
-import java.awt.Component;
-import java.awt.Container;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -11,9 +9,9 @@ import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
-import org.cytoscape.model.CyNetwork;
 import org.cytoscape.view.model.CyNetworkView;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
+import org.reactome.cytoscape.service.GeneSetAnnotationPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape3.HotNetAnalysisTask.HotNetModule;
 
@@ -45,7 +43,6 @@ public class ResultDisplayHelper
             CyNetworkView view)
     {
         String title = "Network Module Browser";
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp
                 .getCytoPanel(CytoPanelName.SOUTH);
@@ -79,7 +76,6 @@ public class ResultDisplayHelper
         NetworkModuleBrowser moduleBrowser = (NetworkModuleBrowser) tableBrowserPane
                 .getComponentAt(componentIndex);
         tableBrowserPane.setSelectedIndex(componentIndex);
-        moduleBrowser.setContainer(tableBrowserPane);
         moduleBrowser.setNetworkView(view);
         moduleBrowser.showModules(nodeToCluster, nodeToSampleSet);
         moduleBrowser.showModularity(modularity);
@@ -89,7 +85,6 @@ public class ResultDisplayHelper
             Map<String, Set<String>> sampleToGenes, CyNetworkView view)
     {
         String title = "HotNet Module Browser";
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp
                 .getCytoPanel(CytoPanelName.SOUTH);
@@ -123,7 +118,6 @@ public class ResultDisplayHelper
         HotNetModuleBrowser moduleBrowser = (HotNetModuleBrowser) tableBrowserPane
                 .getComponentAt(componentIndex);
         tableBrowserPane.setSelectedIndex(componentIndex);
-        moduleBrowser.setContainer(tableBrowserPane);
         moduleBrowser.setNetworkView(view);
         moduleBrowser.showHotNetModules(modules, sampleToGenes);
 
@@ -133,7 +127,6 @@ public class ResultDisplayHelper
             Map<Set<String>, Double> clusterToCorr, CyNetworkView view)
     {
         String title = "MCL Module Browser";
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp
                 .getCytoPanel(CytoPanelName.SOUTH);
@@ -168,7 +161,6 @@ public class ResultDisplayHelper
                 .getComponentAt(componentIndex);
         tableBrowserPane.setSelectedIndex(componentIndex);
         moduleBrowser.setNetworkView(view);
-        moduleBrowser.setContainer(tableBrowserPane);
         moduleBrowser.showModules(clusters, clusterToCorr);
     }
  
@@ -190,7 +182,6 @@ public class ResultDisplayHelper
             else
                 title = "GO " + type + " in Network";
         }
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp
                 .getCytoPanel(CytoPanelName.SOUTH);
@@ -224,7 +215,6 @@ public class ResultDisplayHelper
             componentIndex = index;
             tableBrowserPane.setSelectedIndex(index);
             tableBrowserPane.setSelectedIndex(componentIndex);
-            annotationPane.setContainer(tableBrowserPane);
         }
         GeneSetAnnotationPanel annotationPanel = (GeneSetAnnotationPanel) tableBrowserPane.getComponentAt(componentIndex);
         annotationPanel.setNetworkView(view);

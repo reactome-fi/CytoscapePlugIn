@@ -172,7 +172,6 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             TableHelper tableHelper = new TableHelper();
             CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) context.getService(viewFactoryRef);
             CyNetworkView view = viewFactory.createNetworkView(network);
-            FIPlugInHelper r1 = FIPlugInHelper.getHelper();
             tableHelper.storeFINetworkVersion(network,
                                               PlugInObjectManager.getManager().getFiNetworkVersion());
             tableHelper.storeDataSetType(network, TableFormatterImpl
@@ -211,8 +210,6 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
                 progPane.setText("Fetching FI annotations...");
                 EdgeActionCollection.annotateFIs(view);
             }
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
-            
             ServiceReference visHelperRef = context.getServiceReference(FIVisualStyle.class.getName());
             if (visHelperRef != null)
             {

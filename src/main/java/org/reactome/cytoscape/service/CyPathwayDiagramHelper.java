@@ -2,7 +2,7 @@
  * Created on Jul 28, 2010
  *
  */
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -35,10 +35,8 @@ import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.gk.util.ProgressPane;
-import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-
 
 /**
  * A helper class to handle pathway diagram. This class is designed to be used as a singleton only.
@@ -198,7 +196,6 @@ public class CyPathwayDiagramHelper {
                 
             });
             diagramFrame.getContentPane().add(pathwayEditor, BorderLayout.CENTER);
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             diagramFrame.setLocationRelativeTo(PlugInObjectManager.getManager().getCytoscapeDesktop());
             diagramFrame.setSize(800, 600);
             diagramFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -216,7 +213,6 @@ public class CyPathwayDiagramHelper {
             if (r.getReactomeId() != null) {
                 Action action = new AbstractAction("View Instance") {
                     public void actionPerformed(ActionEvent e) {
-                        FIPlugInHelper r1 = FIPlugInHelper.getHelper();
                         String dataSourceURL = PlugInObjectManager.getManager().getDataSourceURL();
                         PlugInUtilities.openURL(dataSourceURL + r.getReactomeId());
                     }

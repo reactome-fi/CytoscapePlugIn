@@ -60,7 +60,6 @@ public class ModuleBasedSurvivalAnalysisHelper
     private FileUtil fileUtil;
     public ModuleBasedSurvivalAnalysisHelper()
     {
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(FileUtil.class.getName());
         this.fileUtil = (FileUtil) context.getService(servRef);
@@ -68,7 +67,6 @@ public class ModuleBasedSurvivalAnalysisHelper
     public ModuleBasedSurvivalAnalysisHelper(CyNetworkView view)
     {
         //this.view = view;
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(FileUtil.class.getName());
         this.fileUtil = (FileUtil) context.getService(servRef);
@@ -213,7 +211,6 @@ public class ModuleBasedSurvivalAnalysisHelper
             {
                 ProgressPane progressPane = new ProgressPane();
                 progressPane.setIndeterminate(true);
-                FIPlugInHelper r = FIPlugInHelper.getHelper();
                 JFrame desktop = PlugInObjectManager.getManager().getCytoscapeDesktop();
                 desktop.setGlassPane(progressPane);
                 progressPane.setText("Doing survival analysis. Please wait...");
@@ -433,7 +430,6 @@ public class ModuleBasedSurvivalAnalysisHelper
                         Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
                         filters.add(new FileChooserFilter("Survival Information File", "txt"));
                         new FileChooserFilter("Survival Information File", "txt");
-                        FIPlugInHelper r = FIPlugInHelper.getHelper();
                         File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                                      "Select Survival Information File", FileUtil.LOAD, filters);
                         clinFileTF.setText(file.getAbsolutePath());
@@ -441,7 +437,6 @@ public class ModuleBasedSurvivalAnalysisHelper
                 }
             });
             clinFileTF.setColumns(50);
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             // Set value
             Properties prop = PlugInObjectManager.getManager().getProperties();
             if (prop != null && prop.getProperty(CLINICAL_FILE_PROP_KEY) != null) {
@@ -517,7 +512,6 @@ public class ModuleBasedSurvivalAnalysisHelper
                         isOkClicked = true;
                         // Need to save the clinical file
                         String fileName = clinFileTF.getText().trim();
-                        FIPlugInHelper r = FIPlugInHelper.getHelper();
                         Properties prop = PlugInObjectManager.getManager().getProperties();
                         if (prop != null) {
                             // Store for temp

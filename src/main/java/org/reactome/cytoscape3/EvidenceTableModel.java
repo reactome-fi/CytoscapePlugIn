@@ -29,9 +29,7 @@ public class EvidenceTableModel extends AbstractTableModel {
         // Need to create evidence property to name mapping
         props = new ArrayList<String>();
         propNames = new ArrayList<String>();
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         String prop = PlugInObjectManager.getManager().getProperties().getProperty("evidenceProperties");
-        FIPlugInHelper r1 = FIPlugInHelper.getHelper();
         String names = PlugInObjectManager.getManager().getProperties().getProperty("evidenceNames");
         String[] propTokens = prop.split(",");
         String[] nameTokens = names.split(",");

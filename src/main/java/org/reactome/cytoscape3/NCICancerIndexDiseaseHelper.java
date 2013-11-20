@@ -76,7 +76,6 @@ public class NCICancerIndexDiseaseHelper
 
     public boolean areDiseasesShown() 
     {
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         org.cytoscape.application.swing.CytoPanel westPanel = desktopApp.getCytoPanel(CytoPanelName.WEST);
         int numComps = westPanel.getCytoPanelComponentCount();
@@ -91,7 +90,6 @@ public class NCICancerIndexDiseaseHelper
     
     public Map<String, DiseaseData> fetchDiseases() throws IOException
     {
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         String serviceUrl = PlugInObjectManager.getManager().getRestfulURL();
      // Get the host URL name
         int index = serviceUrl.lastIndexOf("/", serviceUrl.length() - 2);
@@ -353,7 +351,6 @@ public class NCICancerIndexDiseaseHelper
 
         public DiseaseDisplayPane() {
             init();
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             ServiceRegistration servReg = context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
             //The above returns null. Attempts to cache it have been futile.
@@ -384,12 +381,10 @@ public class NCICancerIndexDiseaseHelper
             diseaseTree.putClientProperty("JTree.lineStyle", "Horizontal");
             diseaseTree.setEditable(false);
             DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
-            FIPlugInHelper r = FIPlugInHelper.getHelper();
             ImageIcon icon = PlugInObjectManager.getManager().createImageIcon("Bullet1.gif");
             // Use same icons for all states
             renderer.setIcon(icon);
             renderer.setLeafIcon(icon);
-            FIPlugInHelper r1 = FIPlugInHelper.getHelper();
             ImageIcon folderIcon = PlugInObjectManager.getManager().createImageIcon("Bullet.gif");
             renderer.setOpenIcon(folderIcon);
             renderer.setClosedIcon(folderIcon);
