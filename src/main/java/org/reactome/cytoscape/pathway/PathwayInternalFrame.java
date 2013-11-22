@@ -30,7 +30,6 @@ import org.gk.render.HyperEdge;
 import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
-import org.reactome.cytoscape.service.RESTFulFIService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +48,8 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
     // This may be changed during the life-time of this object (e.g. a PathwayInternalFrame
     // may be switched to another pathway from a tree selection)
     private Long pathwayId;
+    // A list of genes should be highlighted
+    private List<String> hitGenes;
     
     /**
      * Default constructor.
@@ -121,6 +122,15 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             }
             
         });
+    }
+    
+    /**
+     * Set a list of genes as hit genes that should be highlighted after converting into a
+     * FI network view.
+     * @param genes
+     */
+    public void setHitGenes(List<String> genes) {
+        this.hitGenes = genes;
     }
     
     private void doPopup(MouseEvent e) {
@@ -254,7 +264,8 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         try {
             DiagramAndNetworkSwitchHelper helper = new DiagramAndNetworkSwitchHelper();
             helper.convertToFINetwork(getPathwayId(),
-                                      pathwayEditor.getPathwayEditor().getRenderable());
+                                      pathwayEditor.getPathwayEditor().getRenderable(),
+                                      hitGenes);
             
             // Make sure this PathwayInternalFrame should be closed
             setVisible(false);

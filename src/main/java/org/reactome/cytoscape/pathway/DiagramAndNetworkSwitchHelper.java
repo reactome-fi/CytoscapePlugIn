@@ -70,7 +70,8 @@ public class DiagramAndNetworkSwitchHelper {
     }
     
     public void convertToFINetwork(Long pathwayId,
-                                   Renderable pathway) throws Exception {
+                                   Renderable pathway,
+                                   List<String> hitGenes) throws Exception {
         //TODO: The RESTFulFIService class should be refactored and moved to other package.
         // Right now it is in the top-level package. Also the version of FI network
         // Used in this place may needs to be changed. 
@@ -90,6 +91,15 @@ public class DiagramAndNetworkSwitchHelper {
         tableHelper.storeNetworkAttribute(network,
                                           "PathwayId", 
                                           pathwayId);
+        // Set up hit genes
+        if (hitGenes != null && hitGenes.size() > 0) {
+            Map<String, Boolean> map = new HashMap<String, Boolean>();
+            for (String gene : hitGenes)
+                map.put(gene, Boolean.TRUE);
+            tableHelper.storeNodeAttributesByName(network, 
+                                                  "isHitGene",
+                                                  map);
+        }
         // Store Instance ids information
         Map<String, String> edgeToIds = new HashMap<String, String>();
         // Keep annotation information

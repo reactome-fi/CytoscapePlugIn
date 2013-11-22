@@ -66,7 +66,6 @@ import org.reactome.r3.util.FileUtility;
  *
  */
 public class EventTreePane extends JPanel implements EventSelectionListener {
-    // TODO: The following class should be moved to another package
     private PathwayEnrichmentResultPane annotationPanel;
     JTree eventTree;
     // To control tree selection event firing
@@ -474,8 +473,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 PathwayEditor editor = pathwayEditor.getPathwayEditor();
                 editor.repaint(editor.getVisibleRect());
                 firePropertyChange("pathwayRepaint", null, null);
-                //TODO: Need to call overview for repaint!
                 taskMonitor.setProgress(1.0d);
+                pathwayFrame.setHitGenes(annotation.getHitIds());
             }
         };
         @SuppressWarnings("rawtypes")

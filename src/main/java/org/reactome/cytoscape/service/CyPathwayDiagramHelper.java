@@ -44,7 +44,6 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  *
  */
 public class CyPathwayDiagramHelper {
-    private final Color HIGHLIGHT_COLOR = new Color(138, 43, 126); // A kind of purple
     private static CyPathwayDiagramHelper helper;
     // Cache these GUIs to avoid duplication
     private JFrame diagramFrame;
@@ -117,7 +116,7 @@ public class CyPathwayDiagramHelper {
 //                    r.setForegroundColor(Color.BLUE);
 //                  r.setLineColor(Color.BLUE);
                     // As of Sept 28, change the following highlight colors
-                    r.setBackgroundColor(HIGHLIGHT_COLOR); // A kind of purple
+                    r.setBackgroundColor(FIVisualStyle.NODE_HIGHLIGHT_COLOR); // A kind of purple
                     r.setForegroundColor(Color.WHITE);
                 }
             }

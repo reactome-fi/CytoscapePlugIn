@@ -104,10 +104,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
 
         //Initialize and register the FI VIsual Style with the framework,
         //allowing it to be used by all Reactome FI classes.
-        FIVisualStyleImpl styleHelper = new FIVisualStyleImpl(
-                visMapManager, visStyleFactory, vmfFactoryC,
-                vmfFactoryD, vmfFactoryP, layoutManager,
-                taskManager, desktopApp);
+        FIVisualStyleImpl styleHelper = new FIVisualStyleImpl(visMapManager, visStyleFactory, vmfFactoryC,
+                                                              vmfFactoryD, vmfFactoryP);
         Properties visStyleHelperProps = new Properties();
         visStyleHelperProps.setProperty("title", "FIVisualStyleImpl");
         registerAllServices(context, styleHelper, visStyleHelperProps);

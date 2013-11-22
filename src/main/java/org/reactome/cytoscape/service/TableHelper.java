@@ -164,9 +164,18 @@ public class TableHelper {
     }
 
     public void storeNodeAttributesByName(CyNetwork network,
-                                         String attributeName, 
-                                         Map<String, ?> nameToValue) {
+                                          String attributeName, 
+                                          Map<String, ?> nameToValue) {
+        if (nameToValue == null || nameToValue.size() == 0)
+            return;
         CyTable nodeTable = network.getDefaultNodeTable();
+        // Make sure it has the attribute
+        if (nodeTable.getColumn(attributeName) == null) {
+            Object value = nameToValue.values().iterator().next();
+            // This type check may not be reliable enough if a hierarchy of class
+            // is used.
+            createNewColumn(nodeTable, attributeName, value.getClass());
+        }
         for (CyNode node : network.getNodeList()) {
             //CyNode node = (CyNode) name2;
             Long nodeSUID = node.getSUID();

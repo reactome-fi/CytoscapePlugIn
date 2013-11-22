@@ -15,7 +15,6 @@ import javax.swing.JMenuItem;
 
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyTable;
-import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.property.ArrowShapeVisualProperty;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
@@ -29,7 +28,6 @@ import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.view.vizmap.mappings.PassthroughMapping;
-import org.cytoscape.work.TaskManager;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -42,34 +40,26 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  * @author Eric T. Dawson
  * @date July 2013
  */
-public class FIVisualStyleImpl implements FIVisualStyle
-{
+@SuppressWarnings({"rawtypes", "unchecked"})
+public class FIVisualStyleImpl implements FIVisualStyle {
     private final String FI_VISUAL_STYLE = "FI Network";
     private VisualMappingManager visMapManager;
     private VisualStyleFactory visStyleFactory;
     private VisualMappingFunctionFactory visMapFuncFactoryP;
     private VisualMappingFunctionFactory visMapFuncFactoryD;
-    private CyLayoutAlgorithmManager layoutAlgManager;
-    private TaskManager taskManager;
-    private CySwingApplication desktopApp;
     private VisualMappingFunctionFactory visMapFuncFactoryC;
 
     public FIVisualStyleImpl(VisualMappingManager visMapManager,
             VisualStyleFactory visStyleFactory,
             VisualMappingFunctionFactory visMapFuncFactoryC,
             VisualMappingFunctionFactory visMapFuncFactoryD,
-            VisualMappingFunctionFactory visMapFuncFactoryP,
-            CyLayoutAlgorithmManager layoutAlgManager, TaskManager taskManager,
-            CySwingApplication desktopApp)
+            VisualMappingFunctionFactory visMapFuncFactoryP)
     {
         this.visMapManager = visMapManager;
         this.visStyleFactory = visStyleFactory;
         this.visMapFuncFactoryC = visMapFuncFactoryC;
         this.visMapFuncFactoryD = visMapFuncFactoryD;
         this.visMapFuncFactoryP = visMapFuncFactoryP;
-        this.layoutAlgManager = layoutAlgManager;
-        this.taskManager = taskManager;
-        this.desktopApp = desktopApp;
     }
 
     @Override
@@ -135,10 +125,24 @@ public class FIVisualStyleImpl implements FIVisualStyle
         // to diamond if the gene is a linker.
         DiscreteMapping linkerGeneShapeFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
                 "isLinker", Boolean.class, BasicVisualLexicon.NODE_SHAPE);
-        boolean key = true;
-        linkerGeneShapeFunction.putMapValue(key,
-                NodeShapeVisualProperty.DIAMOND);
+        linkerGeneShapeFunction.putMapValue(true,
+                                            NodeShapeVisualProperty.DIAMOND);
         fiVisualStyle.addVisualMappingFunction(linkerGeneShapeFunction);
+        // Set shape for hit genes
+        DiscreteMapping hitGeneShapeFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("isHitGene", 
+                                                                                                                     Boolean.class,
+                                                                                                                     BasicVisualLexicon.NODE_SHAPE);
+        hitGeneShapeFunction.putMapValue(true,
+                                         NodeShapeVisualProperty.OCTAGON);
+        fiVisualStyle.addVisualMappingFunction(hitGeneShapeFunction);
+        // Also a color for hit genes
+        DiscreteMapping hitGeneColorFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
+                                                                                                                     Boolean.class,
+                                                                                                                     BasicVisualLexicon.NODE_FILL_COLOR);
+        hitGeneColorFunction.putMapValue(true,
+                                         NODE_HIGHLIGHT_COLOR);
+        fiVisualStyle.addVisualMappingFunction(hitGeneColorFunction);
+        
         // Set default edge color and width
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_UNSELECTED_PAINT,
                 Color.BLUE);
@@ -223,9 +227,9 @@ public class FIVisualStyleImpl implements FIVisualStyle
     }
 
     @Override
-    public JMenuItem getyFilesOrganic()
-    {
+    public JMenuItem getyFilesOrganic() {
         JMenu yFilesMenu = null;
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         for (Component item : desktopApp.getJMenu("Layout").getMenuComponents())
             if (item instanceof JMenu
                     && ((JMenu) item).getText().equals("yFiles Layouts"))
