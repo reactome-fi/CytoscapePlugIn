@@ -41,16 +41,21 @@ import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
+import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
+import org.cytoscape.work.TaskMonitor;
+import org.gk.gkEditor.ZoomablePathwayEditor;
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
+import org.gk.util.StringUtils;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.GeneSetAnnotation;
-import org.reactome.cytoscape.service.GeneSetAnnotationPanel;
+import org.reactome.cytoscape.service.CyPathwayDiagramHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
@@ -62,8 +67,8 @@ import org.reactome.r3.util.FileUtility;
  */
 public class EventTreePane extends JPanel implements EventSelectionListener {
     // TODO: The following class should be moved to another package
-    private GeneSetAnnotationPanel annotationPanel;
-    private JTree eventTree;
+    private PathwayEnrichmentResultPane annotationPanel;
+    JTree eventTree;
     // To control tree selection event firing
     private TreeSelectionListener selectionListener;
     // For Pathway Enrichment results
@@ -270,6 +275,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                                                                                                             selectionEvent);
             }
         }
+        if (annotationPanel != null)
+            annotationPanel.doTreeSelection();
     }
     
     private void showTreePopup(MouseEvent e) {
@@ -300,6 +307,17 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             });
             popup.add(showDiagramMenu);
         }
+        else {
+            JMenuItem viewInDiagramMenu = new JMenuItem("View in Diagram");
+            viewInDiagramMenu.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    viewEventInDiagram();
+                }
+            });
+            popup.add(viewInDiagramMenu);
+        }
         popup.addSeparator();
         JMenuItem enrichmentAnalysis = new JMenuItem("Analyze Pathway Enrichment");
         enrichmentAnalysis.addActionListener(new ActionListener() {
@@ -310,6 +328,18 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             }
         });
         popup.add(enrichmentAnalysis);
+        // If there is any annotation
+        if (pathwayToAnnotation.size() > 0 || annotationPanel != null) {
+            JMenuItem removeEnrichmentAnalysis = new JMenuItem("Remove Enrichment Results");
+            removeEnrichmentAnalysis.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    hideEnrichmentResults();
+                }
+            });
+            popup.add(removeEnrichmentAnalysis);
+        }
         popup.show(eventTree, e.getX(), e.getY());
     }
     
@@ -344,6 +374,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                     builder.append(token).append("\n");
             }
             fu.close();
+            
+            // Use a Task will make some text in the tree truncated for displaying
+            // the enrichment result. This is more like a GUI threading issue.
             @SuppressWarnings("rawtypes")
             TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
             PathwayEnrichmentAnalysisTask task = new PathwayEnrichmentAnalysisTask();
@@ -367,6 +400,87 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         if (event == null)
             return; // In case there is nothing selected
         PathwayDiagramRegistry.getRegistry().showPathwayDiagram(event.dbId);
+        PathwayInternalFrame pathwayFrame = getPathwayFrameWithWait(event);
+        highlightPathways(pathwayFrame, event);
+    }
+    
+    void viewEventInDiagram() {
+        if (eventTree.getSelectionCount() == 0)
+            return;
+        final TreePath path = eventTree.getSelectionPath();
+        PathwayInternalFrame pathwayFrame = null;
+        EventObject event = null;
+        // Find the pathway with its hasDiagram true
+        for (int i = path.getPathCount(); i > 0; i--) {
+            DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) path.getPathComponent(i - 1);
+            event = (EventObject) treeNode.getUserObject();
+            if (event.hasDiagram) {
+                // Don't want to make any change in the tree's selection
+                EventSelectionMediator mediator = PathwayDiagramRegistry.getRegistry().getEventSelectionMediator();
+                mediator.removeEventSelectionListener(this);
+                PathwayDiagramRegistry.getRegistry().showPathwayDiagram(event.dbId);
+                // Have to make sure PathwayInternalFrame has been selected
+                // Give it 10 seconds to avoid dead lock here
+                pathwayFrame = getPathwayFrameWithWait(event);
+                mediator.addEventSelectionListener(this);
+                // Fire a new selection event for selecting selected events
+                doTreeSelection();
+                break; // Break it to avoid multiple showing pathway diagrams.
+            }
+        }
+        highlightPathways(pathwayFrame, event);
+    }
+
+    private PathwayInternalFrame getPathwayFrameWithWait(EventObject event) {
+        long time1 = System.currentTimeMillis();
+        long diff = 0;
+        PathwayInternalFrame rtn = null;
+        while (diff < 10000) { // This is a dangerous code
+            PathwayInternalFrame frame = PathwayDiagramRegistry.getRegistry().getPathwayFrame(event.dbId);
+            if (frame != null && frame.isSelected()) {
+                rtn = frame;
+                break;
+            }
+            try {
+                Thread.sleep(100); // Sleep for 0.1 second
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            long time2 = System.currentTimeMillis();
+            diff = time2 - time1; 
+        }
+        return rtn;
+    }
+    
+    private void highlightPathways(final PathwayInternalFrame pathwayFrame,
+                                   EventObject event) {
+        if (pathwayFrame == null || event == null)
+            return;
+        final GeneSetAnnotation annotation = pathwayToAnnotation.get(event.name);
+        if (annotation == null)
+            return;
+        AbstractTask task = new AbstractTask() {
+            
+            @Override
+            public void run(TaskMonitor taskMonitor) throws Exception {
+                taskMonitor.setTitle("Pathway Highlighting");
+                taskMonitor.setStatusMessage("Highlight pathway...");
+                CyPathwayDiagramHelper helper = CyPathwayDiagramHelper.getHelper();
+                String genes = StringUtils.join(",", annotation.getHitIds());
+                ZoomablePathwayEditor pathwayEditor = pathwayFrame.getZoomablePathwayEditor();
+                helper.highlightPathwayDiagram(pathwayEditor, 
+                                               genes);
+                PathwayEditor editor = pathwayEditor.getPathwayEditor();
+                editor.repaint(editor.getVisibleRect());
+                firePropertyChange("pathwayRepaint", null, null);
+                //TODO: Need to call overview for repaint!
+                taskMonitor.setProgress(1.0d);
+            }
+        };
+        @SuppressWarnings("rawtypes")
+        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
+        taskManager.execute(new TaskIterator(task));
     }
 
     private EventObject getSelectedEvent() {
@@ -414,13 +528,23 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         model.nodeStructureChanged(treeRoot);
     }
     
+    private void hideEnrichmentResults() {
+        annotationPanel.close();
+        annotationPanel = null;
+        pathwayToAnnotation.clear();
+        eventTree.repaint(eventTree.getVisibleRect());
+        fdrColorBar.setVisible(false);
+    }
+    
     /**
      * Display pathway enrichment analysis in the pathway tree.
      * @param annotations
      */
-    public void showPathwayEnrichments(List<GeneSetAnnotation> annotations) {
+    public void showPathwayEnrichments(List<GeneSetAnnotation> annotations) {      
+        // Call this method first so that scrollPathToVisible may work correctly.
+        fdrColorBar.setVisible(true);
         pathwayToAnnotation.clear();
-        DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
+        final DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
         DefaultMutableTreeNode root = (DefaultMutableTreeNode) eventTree.getModel().getRoot();
         List<TreePath> paths = new ArrayList<TreePath>();
         for (GeneSetAnnotation annotation : annotations) {
@@ -429,15 +553,31 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             searchPathway(root, pathway, model, paths);
         }
         eventTree.clearSelection();
-        for (TreePath path : paths)
-            eventTree.expandPath(path);
+        for (TreePath path : paths) {
+            // Actually we only need to expand the parent TreeNode only
+            DefaultMutableTreeNode last = (DefaultMutableTreeNode) path.getLastPathComponent();
+            DefaultMutableTreeNode parent = (DefaultMutableTreeNode) last.getParent();
+            if (parent == null)
+                eventTree.expandPath(path);
+            else {
+                TreePath parentPath = new TreePath(model.getPathToRoot(parent));
+                eventTree.expandPath(parentPath);
+            }
+        }
         // Scroll to the first path
-        eventTree.setSelectionPath(paths.get(0));
-        eventTree.scrollPathToVisible(paths.get(0));
-        fdrColorBar.setVisible(true);
+        final TreePath firstPath = paths.get(0);
+        SwingUtilities.invokeLater(new Runnable() {
+            
+            @Override
+            public void run() {
+                eventTree.setSelectionPath(firstPath);
+                eventTree.scrollPathToVisible(firstPath);
+            }
+        });
+        
         // Show annotations in a list
         if (annotationPanel == null) {
-            annotationPanel = new PathwayEnrichmentResultPane("Reactome Pathway Enrichment");
+            annotationPanel = new PathwayEnrichmentResultPane(this, "Reactome Pathway Enrichment");
         }
         annotationPanel.setGeneSetAnnotations(annotations);
         // Need to select it
@@ -448,7 +588,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             tableBrowserPane.setSelectedIndex(index);
     }
     
-    private void searchPathway(DefaultMutableTreeNode treeNode,
+    void searchPathway(DefaultMutableTreeNode treeNode,
                                String pathway,
                                DefaultTreeModel model,
                                List<TreePath> selectedPaths) {
@@ -518,7 +658,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         return event;
     }
     
-    private class EventObject {
+    class EventObject {
         String name;
         Long dbId;
         boolean isPathway;
@@ -563,21 +703,20 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             EventObject event = (EventObject) treeNode.getUserObject();
             if (event == null)
                 return comp; // For the default root?
-            if (event.isPathway)
-                setIcon(pathwayIcon);
-            else
-                setIcon(reactionIcon);
             // Show Reactome pathway enrichment results
             GeneSetAnnotation annotation = pathwayToAnnotation.get(event.name);
             if (annotation == null) {
-                setBackgroundNonSelectionColor(tree.getBackground());
                 setText(event.name);
+                setBackgroundNonSelectionColor(eventTree.getBackground());
             }
             else {
                 setBackgroundNonSelectionColor(getFDRColor(annotation));
                 setText(event.name + " (FDR: " + annotation.getFdr() + ")");
             }
-            comp.invalidate(); // For validating the layout
+            if (event.isPathway)
+                setIcon(pathwayIcon);
+            else
+                setIcon(reactionIcon);
             return comp;
         }
         
@@ -754,35 +893,5 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             parentDialog.setModal(true);
             parentDialog.setVisible(true);
         }
-    }
-    
-    private class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
-        
-        public PathwayEnrichmentResultPane(String title) {
-            super(title);
-            hideOtherNodesBox.setVisible(false);
-        }
-        
-        @Override
-        protected NetworkModuleTableModel createTableModel() {
-            return new PathwayEnrichmentTableModel();
-        }
-
-        private class PathwayEnrichmentTableModel extends AnnotationTableModel {
-            private String[] geneSetHeaders = new String[] {
-                    "ReactomePathway",
-                    "RatioOfProteinInPathway",
-                    "NumberOfProteinInPathway",
-                    "ProteinFromGeneSet",
-                    "P-value",
-                    "FDR",
-                    "HitGenes"
-            };
-            
-            public PathwayEnrichmentTableModel() {
-                columnHeaders = geneSetHeaders;
-            }
-        }
-        
     }
 }

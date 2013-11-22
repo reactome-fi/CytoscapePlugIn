@@ -44,6 +44,7 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  *
  */
 public class CyPathwayDiagramHelper {
+    private final Color HIGHLIGHT_COLOR = new Color(138, 43, 126); // A kind of purple
     private static CyPathwayDiagramHelper helper;
     // Cache these GUIs to avoid duplication
     private JFrame diagramFrame;
@@ -76,52 +77,60 @@ public class CyPathwayDiagramHelper {
                 diagramFrame.setGlassPane(progressPane);
                 progressPane.setText("Highlighting proteins...");
                 diagramFrame.getGlassPane().setVisible(true);
-                try {
-                    // Get the list of reactome ids from the display diagrams
-                    List<Long> dbIds = new ArrayList<Long>();
-                    List<Renderable> renderables = pathwayEditor.getPathwayEditor().getDisplayedObjects();
-                    for (Renderable r : renderables) {
-                        if (r.getReactomeId() == null)
-                            continue;
-                        if (r instanceof Node) {
-                            dbIds.add(r.getReactomeId());
-                        }
-                    }
-                    // Ask the server what ids should be highlight
-                    RESTFulFIService service = new RESTFulFIService();
-                    List<Long> hitIds = service.highlight(dbIds,
-                                                          highlightNodes);
-                    if (hitIds == null || hitIds.size() == 0) {
-                        diagramFrame.getGlassPane().setVisible(false);
-                        return;
-                    }
-                    // Highlight these nodes
-                    for (Renderable r : renderables) {
-                        if (r.getReactomeId() == null)
-                            continue;
-                        if (r instanceof Node &&
-                            hitIds.contains(r.getReactomeId())) {
-//                            r.setForegroundColor(Color.BLUE);
-//                          r.setLineColor(Color.BLUE);
-                            // As of Sept 28, change the following highlight colors
-                            r.setBackgroundColor(Color.BLUE);
-                            r.setForegroundColor(Color.WHITE);
-                        }
-                    }
+                if (highlightPathwayDiagram(pathwayEditor, highlightNodes)) {
                     pathwayEditor.getPathwayEditor().repaint(pathwayEditor.getPathwayEditor().getVisibleRect());
                     overviewPane.repaint();
-                }
-                catch(Exception e) {
-                    JOptionPane.showMessageDialog(diagramFrame,
-                                                  "Cannot highlight nodes: please see log for errors.", 
-                                                  "Error in Highlighting",
-                                                  JOptionPane.ERROR_MESSAGE);
-                    e.printStackTrace();
                 }
                 diagramFrame.getGlassPane().setVisible(false);
             }
         };
         t.start();
+    }
+    
+    public boolean highlightPathwayDiagram(ZoomablePathwayEditor pathwayEditor,
+                                           String genes) {
+        try {
+            // Get the list of reactome ids from the display diagrams
+            List<Long> dbIds = new ArrayList<Long>();
+            @SuppressWarnings("unchecked")
+            List<Renderable> renderables = pathwayEditor.getPathwayEditor().getDisplayedObjects();
+            for (Renderable r : renderables) {
+                if (r.getReactomeId() == null)
+                    continue;
+                if (r instanceof Node) {
+                    dbIds.add(r.getReactomeId());
+                }
+            }
+            // Ask the server what ids should be highlight
+            RESTFulFIService service = new RESTFulFIService();
+            List<Long> hitIds = service.highlight(dbIds,
+                                                  genes);
+            if (hitIds == null || hitIds.size() == 0) {
+                return false;
+            }
+            // Highlight these nodes
+            for (Renderable r : renderables) {
+                if (r.getReactomeId() == null)
+                    continue;
+                if (r instanceof Node &&
+                    hitIds.contains(r.getReactomeId())) {
+//                    r.setForegroundColor(Color.BLUE);
+//                  r.setLineColor(Color.BLUE);
+                    // As of Sept 28, change the following highlight colors
+                    r.setBackgroundColor(HIGHLIGHT_COLOR); // A kind of purple
+                    r.setForegroundColor(Color.WHITE);
+                }
+            }
+            return true;
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(pathwayEditor,
+                                          "Cannot highlight nodes: please see log for errors.", 
+                                          "Error in Highlighting",
+                                          JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+            return false;
+        }
     }
     
     public void showPathwayDiagram(String pathway) throws Exception {

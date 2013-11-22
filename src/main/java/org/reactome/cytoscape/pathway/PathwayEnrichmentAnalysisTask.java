@@ -7,6 +7,8 @@ package org.reactome.cytoscape.pathway;
 import java.io.StringReader;
 import java.util.List;
 
+import javax.swing.SwingUtilities;
+
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 import org.jdom.Document;
@@ -52,8 +54,15 @@ public class PathwayEnrichmentAnalysisTask extends AbstractTask {
         List<ModuleGeneSetAnnotation> annotations = service.annotateGeneSetWithReactomePathways(geneList);
         taskMonitor.setProgress(0.75d);
         taskMonitor.setStatusMessage("Show enrichment results...");
-        ModuleGeneSetAnnotation annotation = annotations.get(0); // There should be only one annotation here
-        eventPane.showPathwayEnrichments(annotation.getAnnotations());
+        final ModuleGeneSetAnnotation annotation = annotations.get(0); // There should be only one annotation here
+        // Need to use a new thread to make sure all text in the tree can be displayed without truncation.
+        SwingUtilities.invokeLater(new Runnable() {
+            
+            @Override
+            public void run() {
+                eventPane.showPathwayEnrichments(annotation.getAnnotations());
+            }
+        });
         taskMonitor.setProgress(1.0d);
     }
     

@@ -146,6 +146,17 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         };
         PathwayDiagramRegistry.getRegistry().addPropertyChangeListener(propListener);
         
+        // Synchronize repaint invoked by methods not related to PathwayEditor.
+        propListener = new PropertyChangeListener() {
+            
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getPropertyName().equals("pathwayRepaint"))
+                    overview.repaint();
+            }
+        };
+        eventPane.addPropertyChangeListener(propListener);
+        
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         context.registerService(CytoPanelComponentSelectedListener.class.getName(),
                                 this, 

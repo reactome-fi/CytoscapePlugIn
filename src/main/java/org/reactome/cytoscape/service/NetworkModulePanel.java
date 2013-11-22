@@ -24,6 +24,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
@@ -111,8 +112,9 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
                                                                             null);
         setLayout(new BorderLayout());
         contentTable = new JTable();
-        TableModel moduleModel = createTableModel();
+        NetworkModuleTableModel moduleModel = createTableModel();
         contentTable.setModel(moduleModel);
+        contentTable.setRowSorter(createTableRowSorter(moduleModel));
         add(new JScrollPane(contentTable), BorderLayout.CENTER);
         tableSelectionListener = new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
@@ -257,7 +259,11 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     
     protected abstract NetworkModuleTableModel createTableModel();
     
-    private void close() {
+    protected TableRowSorter<NetworkModuleTableModel> createTableRowSorter(NetworkModuleTableModel model) {
+        return new TableRowSorter<NetworkModuleTableModel>(model);
+    }
+    
+    public void close() {
         if (getParent() == null)
             return;
         //To have the rest of the network reappear after
