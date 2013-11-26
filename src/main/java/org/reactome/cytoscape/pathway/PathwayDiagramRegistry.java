@@ -295,4 +295,35 @@ public class PathwayDiagramRegistry {
         taskManager.execute(new TaskIterator(task));
     }
     
+    /**
+     * Get a PathwayInternalFrame showing a pathway specificed by its DB_ID. If the pathway
+     * has not been displayed, the method will wait for 10 seconds until it is displayed. 
+     * After 10 seconds, if the pathway is still not displayed, a null object will be returned.
+     * @param eventId
+     * @return
+     * @TODO: This method may have returned null return in a very slow Internet connection!!!
+     * So probably a time-out configuration that can be configured by the user?
+     */
+    public PathwayInternalFrame getPathwayFrameWithWait(Long eventId) {
+        long time1 = System.currentTimeMillis();
+        long diff = 0;
+        PathwayInternalFrame rtn = null;
+        while (diff < 10000) { // This is a dangerous code
+            PathwayInternalFrame frame = PathwayDiagramRegistry.getRegistry().getPathwayFrame(eventId);
+            if (frame != null && frame.isSelected()) {
+                rtn = frame;
+                break;
+            }
+            try {
+                Thread.sleep(100); // Sleep for 0.1 second
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            long time2 = System.currentTimeMillis();
+            diff = time2 - time1; 
+        }
+        return rtn;
+    }
+    
 }

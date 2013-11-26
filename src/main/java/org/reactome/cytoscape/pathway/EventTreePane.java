@@ -17,6 +17,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,6 +73,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     // To control tree selection event firing
     private TreeSelectionListener selectionListener;
     // For Pathway Enrichment results
+    private PathwayEnrichmentHighlighter enrichmentHighlighter;
     private Map<String, GeneSetAnnotation> pathwayToAnnotation;
     // Cached red colors for FDRs
     private List<Color> fdrColors;
@@ -122,6 +125,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         installListners();
         initPathwayEnrichmments();
     }
+    
+    public PathwayEnrichmentHighlighter getPathwayEnrichmentHighlighter() {
+        return this.enrichmentHighlighter;
+    }
 
     private void initPathwayEnrichmments() {
         // For easy processing
@@ -155,6 +162,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         add(fdrColorBar, BorderLayout.NORTH);
         // Default should be disable
         fdrColorBar.setVisible(false);
+        enrichmentHighlighter = new PathwayEnrichmentHighlighter();
+        enrichmentHighlighter.setPathwayToAnnotation(pathwayToAnnotation);
     }
     
     private void installListners() {
@@ -399,7 +408,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         if (event == null)
             return; // In case there is nothing selected
         PathwayDiagramRegistry.getRegistry().showPathwayDiagram(event.dbId);
-        PathwayInternalFrame pathwayFrame = getPathwayFrameWithWait(event);
+        PathwayInternalFrame pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(event.dbId);
         highlightPathways(pathwayFrame, event);
     }
     
@@ -420,7 +429,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 PathwayDiagramRegistry.getRegistry().showPathwayDiagram(event.dbId);
                 // Have to make sure PathwayInternalFrame has been selected
                 // Give it 10 seconds to avoid dead lock here
-                pathwayFrame = getPathwayFrameWithWait(event);
+                pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(event.dbId);
                 mediator.addEventSelectionListener(this);
                 // Fire a new selection event for selecting selected events
                 doTreeSelection();
@@ -430,28 +439,6 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         highlightPathways(pathwayFrame, event);
     }
 
-    private PathwayInternalFrame getPathwayFrameWithWait(EventObject event) {
-        long time1 = System.currentTimeMillis();
-        long diff = 0;
-        PathwayInternalFrame rtn = null;
-        while (diff < 10000) { // This is a dangerous code
-            PathwayInternalFrame frame = PathwayDiagramRegistry.getRegistry().getPathwayFrame(event.dbId);
-            if (frame != null && frame.isSelected()) {
-                rtn = frame;
-                break;
-            }
-            try {
-                Thread.sleep(100); // Sleep for 0.1 second
-            }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            long time2 = System.currentTimeMillis();
-            diff = time2 - time1; 
-        }
-        return rtn;
-    }
-    
     private void highlightPathways(final PathwayInternalFrame pathwayFrame,
                                    EventObject event) {
         if (pathwayFrame == null || event == null)
@@ -459,27 +446,18 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         final GeneSetAnnotation annotation = pathwayToAnnotation.get(event.name);
         if (annotation == null)
             return;
-        AbstractTask task = new AbstractTask() {
-            
-            @Override
-            public void run(TaskMonitor taskMonitor) throws Exception {
-                taskMonitor.setTitle("Pathway Highlighting");
-                taskMonitor.setStatusMessage("Highlight pathway...");
-                CyPathwayDiagramHelper helper = CyPathwayDiagramHelper.getHelper();
-                String genes = StringUtils.join(",", annotation.getHitIds());
-                ZoomablePathwayEditor pathwayEditor = pathwayFrame.getZoomablePathwayEditor();
-                helper.highlightPathwayDiagram(pathwayEditor, 
-                                               genes);
-                PathwayEditor editor = pathwayEditor.getPathwayEditor();
-                editor.repaint(editor.getVisibleRect());
-                firePropertyChange("pathwayRepaint", null, null);
-                taskMonitor.setProgress(1.0d);
-                pathwayFrame.setHitGenes(annotation.getHitIds());
-            }
-        };
-        @SuppressWarnings("rawtypes")
-        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
-        taskManager.execute(new TaskIterator(task));
+        CyZoomablePathwayEditor pathwayEditor = pathwayFrame.getZoomablePathwayEditor();
+        if (pathwayEditor.getPathwayEnrichmentHighlighter() != enrichmentHighlighter) {
+            pathwayEditor.setPathwayEnrichmentHighlighter(enrichmentHighlighter);
+            pathwayEditor.addPropertyChangeListener(new PropertyChangeListener() {
+                
+                @Override
+                public void propertyChange(PropertyChangeEvent evt) {
+                    
+                }
+            });
+        }
+        enrichmentHighlighter.highlightPathways(pathwayFrame, event.name);
     }
 
     private EventObject getSelectedEvent() {

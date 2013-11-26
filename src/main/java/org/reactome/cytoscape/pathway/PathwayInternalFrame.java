@@ -219,7 +219,7 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         return pathwayEditor.getPathwayEditor();
     }
     
-    public ZoomablePathwayEditor getZoomablePathwayEditor() {
+    public CyZoomablePathwayEditor getZoomablePathwayEditor() {
         return this.pathwayEditor;
     }
     

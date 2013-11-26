@@ -21,6 +21,7 @@ import javax.swing.SwingUtilities;
 
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -32,11 +33,21 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  *
  */
 public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
+    // For pathway enrichment result highlight
+    private PathwayEnrichmentHighlighter pathwayHighlighter;
     
     public CyZoomablePathwayEditor() {
         // Don't need the title
         titleLabel.setVisible(false);
         init();
+    }
+    
+    public void setPathwayEnrichmentHighlighter(PathwayEnrichmentHighlighter highlighter) {
+        this.pathwayHighlighter = highlighter;
+    }
+    
+    public PathwayEnrichmentHighlighter getPathwayEnrichmentHighlighter() {
+        return this.pathwayHighlighter;
     }
     
     private void init() {
@@ -67,6 +78,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
         if (r.getReactomeId() == null)
             return;
         final Long dbId = r.getReactomeId();
+        final String name = r.getDisplayName();
         JPopupMenu popup = new JPopupMenu();
         JMenuItem showDetailed = new JMenuItem("View in Reactome");
         showDetailed.addActionListener(new ActionListener() {
@@ -78,9 +90,31 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
             }
         });
         popup.add(showDetailed);
+        // If it is a Pathway, add a menu item
+        if (r instanceof ProcessNode) {
+            JMenuItem openInDiagram = new JMenuItem("Show Diagram");
+            openInDiagram.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    showPathwayDiagram(dbId, name);
+                }
+            });
+            popup.add(openInDiagram);
+        }
         popup.show(getPathwayEditor(), 
                    event.getX(),
                    event.getY());
+    }
+    
+    private void showPathwayDiagram(Long pathwayId,
+                                    String pathwayName) {
+        PathwayDiagramRegistry.getRegistry().showPathwayDiagram(pathwayId);
+        if (pathwayHighlighter != null) {
+            PathwayInternalFrame pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(pathwayId);
+            pathwayHighlighter.highlightPathways(pathwayFrame, 
+                                                 pathwayName);
+        }
     }
     
     /**
