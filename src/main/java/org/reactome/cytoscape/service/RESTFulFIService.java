@@ -96,7 +96,18 @@ public class RESTFulFIService implements FINetworkService
         return new Integer(text);
     }
 
-    //
+    /**
+     * List genes contained by a PE, which may be an EntitySet, Complex, or just EWAS.
+     * @param peId
+     * @return
+     * @throws Exception
+     */
+    public String listGenes(Long peId) throws Exception {
+        String url = restfulURL + "network/getGenesInPE/" + peId;
+        String genes = callHttp(url, HTTP_GET, null);
+        return genes;
+    }
+    
     @Override
     public Set<String> buildFINetwork(Set<String> genes, boolean useLinkers)
             throws Exception

@@ -71,7 +71,7 @@ public class DiagramAndNetworkSwitchHelper {
     
     public void convertToFINetwork(Long pathwayId,
                                    Renderable pathway,
-                                   List<String> hitGenes) throws Exception {
+                                   Set<String> hitGenes) throws Exception {
         //TODO: The RESTFulFIService class should be refactored and moved to other package.
         // Right now it is in the top-level package. Also the version of FI network
         // Used in this place may needs to be changed. 

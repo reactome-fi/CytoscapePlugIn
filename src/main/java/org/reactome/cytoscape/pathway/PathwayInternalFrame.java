@@ -12,6 +12,7 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.JInternalFrame;
 import javax.swing.JMenuItem;
@@ -20,7 +21,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 
-import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
@@ -48,8 +48,6 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
     // This may be changed during the life-time of this object (e.g. a PathwayInternalFrame
     // may be switched to another pathway from a tree selection)
     private Long pathwayId;
-    // A list of genes should be highlighted
-    private List<String> hitGenes;
     
     /**
      * Default constructor.
@@ -122,15 +120,6 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             }
             
         });
-    }
-    
-    /**
-     * Set a list of genes as hit genes that should be highlighted after converting into a
-     * FI network view.
-     * @param genes
-     */
-    public void setHitGenes(List<String> genes) {
-        this.hitGenes = genes;
     }
     
     private void doPopup(MouseEvent e) {
@@ -263,6 +252,7 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         // Used in this place may needs to be changed. 
         try {
             DiagramAndNetworkSwitchHelper helper = new DiagramAndNetworkSwitchHelper();
+            Set<String> hitGenes = pathwayEditor.getHitGenes();
             helper.convertToFINetwork(getPathwayId(),
                                       pathwayEditor.getPathwayEditor().getRenderable(),
                                       hitGenes);

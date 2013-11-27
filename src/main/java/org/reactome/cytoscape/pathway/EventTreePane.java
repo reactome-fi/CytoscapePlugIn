@@ -447,16 +447,6 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         if (annotation == null)
             return;
         CyZoomablePathwayEditor pathwayEditor = pathwayFrame.getZoomablePathwayEditor();
-        if (pathwayEditor.getPathwayEnrichmentHighlighter() != enrichmentHighlighter) {
-            pathwayEditor.setPathwayEnrichmentHighlighter(enrichmentHighlighter);
-            pathwayEditor.addPropertyChangeListener(new PropertyChangeListener() {
-                
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    
-                }
-            });
-        }
         enrichmentHighlighter.highlightPathways(pathwayFrame, event.name);
     }
 

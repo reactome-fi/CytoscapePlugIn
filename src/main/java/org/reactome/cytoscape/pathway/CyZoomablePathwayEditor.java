@@ -4,6 +4,7 @@
  */
 package org.reactome.cytoscape.pathway;
 
+import java.awt.BorderLayout;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -12,17 +13,31 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import javax.swing.BorderFactory;
+import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
+import org.gk.render.RenderableComplex;
+import org.gk.render.RenderableProtein;
+import org.gk.util.DialogControlPane;
+import org.gk.util.GKApplicationUtilities;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -48,6 +63,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
     
     public PathwayEnrichmentHighlighter getPathwayEnrichmentHighlighter() {
         return this.pathwayHighlighter;
+    }
+    
+    /**
+     * Get a set of genes that should be highlighted.
+     * @return
+     */
+    public Set<String> getHitGenes() {
+        if (pathwayHighlighter != null)
+            return pathwayHighlighter.getHitGenes();
+        return new HashSet<String>();
     }
     
     private void init() {
@@ -102,9 +127,116 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
             });
             popup.add(openInDiagram);
         }
+        else if (r instanceof RenderableProtein || r instanceof RenderableComplex) {
+            JMenuItem listGenesItem = new JMenuItem("List Genes");
+            listGenesItem.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    listGenes(dbId, name);
+                }
+            });
+            popup.add(listGenesItem);
+        }
         popup.show(getPathwayEditor(), 
                    event.getX(),
                    event.getY());
+    }
+    
+    /**
+     * Get a gene list
+     * @param entityId
+     */
+    private void listGenes(Long entityId,
+                           String name) {
+        try {
+            RESTFulFIService service = new RESTFulFIService();
+            String genes = service.listGenes(entityId);
+            
+            JEditorPane pane = new JEditorPane();
+            pane.setEditable(false);
+            pane.setContentType("text/html");
+            pane.setBorder(BorderFactory.createEtchedBorder());
+            // Using HTML so that genes can be clicked
+            StringBuilder builder = new StringBuilder();
+            builder.append("<html><body><br /><br /><b><center><u>");
+            // Generate a label
+            String text = null;
+            if (genes.contains(",") && genes.contains("|")) {
+                text = "Genes contained by " + name + " (\",\" for complex subunit, and \"|\" for member in a protein set)";
+            }
+            else if (genes.contains(",")) {
+                text = "Genes contained by " + name + " (\",\" for complex subunit)";
+            }
+            else if (genes.contains("|")) {
+                text = "Genes contained by " + name + " (\"|\" for member in a protein set)";
+            }
+            else
+                text = "Corresponded gene for protein " + name;
+            builder.append(text).append("</u></center></b>");
+            builder.append("<br /><br />");
+            
+            builder.append(formatGenesText(genes)).append("</body></html>");
+            
+            pane.setText(builder.toString());
+            pane.addHyperlinkListener(new HyperlinkListener() {
+                
+                @Override
+                public void hyperlinkUpdate(HyperlinkEvent e) {
+                    if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                        String gene = e.getDescription();
+                        String url = "http://www.genecards.org/cgi-bin/carddisp.pl?gene=" + gene;
+                        PlugInUtilities.openURL(url);
+                    }
+                }
+            });
+            
+            final JDialog dialog = GKApplicationUtilities.createDialog(this, "Gene List");
+            dialog.getContentPane().add(new JScrollPane(pane), BorderLayout.CENTER);
+            DialogControlPane controlPane = new DialogControlPane();
+            controlPane.getCancelBtn().setVisible(false);
+            controlPane.getOKBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dialog.dispose();
+                }
+            });
+            dialog.getContentPane().add(controlPane, BorderLayout.SOUTH);
+            
+            dialog.setSize(400, 300);
+            dialog.setModal(true);
+            dialog.setLocationRelativeTo(this);
+            dialog.setVisible(true);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(this,
+                                          "Error in listing genes in a selected object: " + e,
+                                          "Error in Listing Geens",
+                                          JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+    
+    private String formatGenesText(String genes) {
+        Set<String> hitGenes = getHitGenes();
+        // Add an extra space before delimit , and |
+        StringBuilder builder = new StringBuilder();
+        String gene = "";
+        builder.append("<a href=\">");
+        for (char c : genes.toCharArray()) {
+            if (c == '|' || c == ',') {
+                builder.append(gene).append("\">").append(gene).append("</a>").append(c).append(" <a ");
+                if (hitGenes.contains(gene))
+                    builder.append("style=\"background-color:purple;color:white;\" ");
+                builder.append(" href=\""); 
+                gene = "";
+            }
+            else
+                gene += c;
+        }
+        builder.append(gene).append("\">").append(gene).append("</a>");
+        return builder.toString();
     }
     
     private void showPathwayDiagram(Long pathwayId,
