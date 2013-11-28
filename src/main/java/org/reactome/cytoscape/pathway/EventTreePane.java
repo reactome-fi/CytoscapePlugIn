@@ -46,6 +46,7 @@ import org.cytoscape.work.TaskManager;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
+import org.gk.util.TreeUtilities;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -71,6 +72,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     private List<Color> fdrColors;
     // A color bar to show FDR values
     private JPanel fdrColorBar;
+    // Use to display selected tree branch
+    private JPanel selectionPane;
+    private JTree selectionTree;
     
     /**
      * Default constructor
@@ -114,8 +118,56 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         TreeCellRenderer renderer = new EventCellRenderer();
         eventTree.setCellRenderer(renderer);
         add(new JScrollPane(eventTree), BorderLayout.CENTER);
+        
+        initSelectionPane(renderer);
+        
         installListners();
         initPathwayEnrichmments();
+    }
+
+    private void initSelectionPane(TreeCellRenderer renderer) {
+        selectionPane = new JPanel();
+        selectionPane.setBorder(BorderFactory.createEtchedBorder());
+        selectionPane.setLayout(new BorderLayout());
+        JLabel label = new JLabel("Selected Event Branch");
+        selectionPane.add(label, BorderLayout.NORTH);
+        // Make sure tree nodes cannot be collapsed. This is just a view.
+        selectionTree = new JTree() {
+            protected void setExpandedState(TreePath path, boolean state) {
+                // Ignore all collapse requests; collapse events will not be fired
+                if (state) {
+                    super.setExpandedState(path, state);
+                }
+            }
+        };
+        selectionTree.setBorder(BorderFactory.createEtchedBorder());
+        selectionTree.setRootVisible(false);
+        DefaultTreeModel model1 = new DefaultTreeModel(new DefaultMutableTreeNode());
+        selectionTree.setModel(model1);
+        selectionTree.setCellRenderer(renderer);
+        selectionTree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
+            
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
+                // Just do a search for find the selected pathway in the eventTree
+                TreePath path = selectionTree.getSelectionPath();
+                if (path == null)
+                    return;
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+                EventObject event = (EventObject) node.getUserObject();
+                DefaultMutableTreeNode foundNode = TreeUtilities.searchNode(event, eventTree);
+                if (foundNode != null) {
+                    DefaultTreeModel eventModel = (DefaultTreeModel) eventTree.getModel();
+                    TreePath eventPath = new TreePath(eventModel.getPathToRoot(foundNode));
+                    eventTree.scrollPathToVisible(eventPath);
+                }
+            }
+        });
+        
+        selectionPane.add(selectionTree, BorderLayout.CENTER);
+        
+        add(selectionPane, BorderLayout.SOUTH);
+        selectionPane.setVisible(false);
     }
     
     public PathwayEnrichmentHighlighter getPathwayEnrichmentHighlighter() {
@@ -240,6 +292,33 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         }
         return false;
     }
+    
+    private void showSelectionBranch() {
+        TreePath path = eventTree.getSelectionPath();
+        DefaultTreeModel model = (DefaultTreeModel) selectionTree.getModel();
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+        if (path == null) {
+            root.removeAllChildren();
+            model.nodeStructureChanged(root);
+            selectionPane.setVisible(false);
+            return;
+        }
+        // Create a new tree branch
+        DefaultMutableTreeNode preNode = root;
+        root.removeAllChildren();
+        for (int i = 1; i < path.getPathCount(); i++) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getPathComponent(i);
+            DefaultMutableTreeNode copy = new DefaultMutableTreeNode();
+            copy.setUserObject(node.getUserObject());
+            preNode.add(copy);
+            preNode = copy;
+        }
+        model.nodeStructureChanged(root);
+        TreePath branch = new TreePath(model.getPathToRoot(preNode));
+        selectionTree.setSelectionPath(branch);
+        selectionTree.expandPath(branch);
+        selectionPane.setVisible(true);
+    }
 
     /**
      * Highlight pathway diagram for a selected event in the tree. The highlight (aka selection) is 
@@ -251,6 +330,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
      * will be checked. However, only the parent pathway diagram for the selected event will be checked.
      */
     private void doTreeSelection() {
+        showSelectionBranch();
         TreePath treePath = eventTree.getSelectionPath();
         if (treePath == null)
             return;
