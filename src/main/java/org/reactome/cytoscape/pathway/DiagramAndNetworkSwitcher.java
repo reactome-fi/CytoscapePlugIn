@@ -4,26 +4,25 @@
  */
 package org.reactome.cytoscape.pathway;
 
-import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
-import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.application.swing.CytoPanel;
-import org.cytoscape.application.swing.CytoPanelComponent;
-import org.cytoscape.application.swing.CytoPanelName;
-import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.Task;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
+import org.cytoscape.work.TaskMonitor;
 import org.gk.render.Renderable;
+import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FINetworkGenerator;
@@ -40,9 +39,9 @@ import org.reactome.funcInt.ReactomeSource;
  * @author gwu
  *
  */
-public class DiagramAndNetworkSwitchHelper {
+public class DiagramAndNetworkSwitcher {
     
-    public DiagramAndNetworkSwitchHelper() {
+    public DiagramAndNetworkSwitcher() {
     }
     
     /**
@@ -69,14 +68,34 @@ public class DiagramAndNetworkSwitchHelper {
         context.ungetService(reference);
     }
     
-    public void convertToFINetwork(Long pathwayId,
-                                   Renderable pathway,
-                                   Set<String> hitGenes) throws Exception {
-        //TODO: The RESTFulFIService class should be refactored and moved to other package.
-        // Right now it is in the top-level package. Also the version of FI network
-        // Used in this place may needs to be changed. 
+    public void convertToFINetwork(final Long pathwayId,
+                                   final Renderable pathway,
+                                   final Set<String> hitGenes) throws Exception {
+        Task task = new AbstractTask() {
+            
+            @Override
+            public void run(TaskMonitor taskMonitor) throws Exception {
+                convertPathwayToFINetwork(pathwayId,
+                                          pathway, 
+                                          hitGenes,
+                                          taskMonitor);
+            }
+        }; 
+        @SuppressWarnings("rawtypes")
+        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
+        taskManager.execute(new TaskIterator(task));
+    }
+
+    private void convertPathwayToFINetwork(final Long pathwayId,
+                                           final Renderable pathway,
+                                           final Set<String> hitGenes,
+                                           TaskMonitor taskMonitor) throws Exception {
+        taskMonitor.setTitle("Convert Pathway to FI Network");
+        taskMonitor.setStatusMessage("Converting to FI network...");
+        taskMonitor.setProgress(0.0d);
         RESTFulFIService fiService = new RESTFulFIService();
         List<Interaction> interactions = fiService.convertPathwayToFIs(pathwayId);
+        taskMonitor.setProgress(0.50d);
         // Need to create a new CyNetwork
         FINetworkGenerator generator = new FINetworkGenerator();
         CyNetwork network = generator.constructFINetwork(interactions);
@@ -126,6 +145,18 @@ public class DiagramAndNetworkSwitchHelper {
         tableHelper.storeEdgeAttributesByName(network, "SourceIds", edgeToIds);
         tableHelper.storeEdgeAttributesByName(network, "FI Annotation", edgeToAnnotation);
         tableHelper.storeEdgeAttributesByName(network, "FI Direction", edgeToDirection);
+        
+        // Need to query sourceIds for displayed genes
+        taskMonitor.setStatusMessage("Fetch genes to ids mapping...");
+        Map<String, List<Long>> geneToDBIds = fiService.getGeneToPEDbIDs(pathwayId);
+        // Need to a little format to avoid storing a list
+        Map<String, String> geneToIdsAtt = new HashMap<String, String>();
+        for (String gene : geneToDBIds.keySet()) {
+            List<Long> list = geneToDBIds.get(gene);
+            geneToIdsAtt.put(gene, StringUtils.join(",", list));
+        }
+        tableHelper.storeNodeAttributesByName(network, "SourceIds", geneToIdsAtt);
+        
         // Cache the fetched pathway diagram to avoid another slow query
         PathwayDiagramRegistry.getRegistry().registerNetworkToDiagram(network,
                                                                       pathway);
@@ -157,52 +188,12 @@ public class DiagramAndNetworkSwitchHelper {
         visStyler = null;
         context.ungetService(servRef);
         
+        taskMonitor.setProgress(1.0d);
         PropertyChangeEvent event = new PropertyChangeEvent(this, 
                                                             "ConvertDiagramToFIView",
                                                             pathway,
                                                             null);
         PathwayDiagramRegistry.getRegistry().firePropertyChange(event);
-        
-        //            moveDiagramToResultsPane();
-    }
-    
-    private void moveDiagramToResultsPane(Renderable pathway) {
-        //TODO: A big chuck of the following code should be refactored into a common place since
-        // it is shared in other classes (e.g. ModuleBasedSurvivalAnalysisResultHelper).
-        // Check if a PathwayDiagram has been displayed in the results panel
-        // This title is based on class definition of 
-        String tabTitle = "Reactome Pathway";
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        CytoPanel tabbedPane = desktopApp.getCytoPanel(CytoPanelName.EAST);
-        CytoPanelState currentState = tabbedPane.getState();
-        if (currentState == CytoPanelState.HIDE || currentState == CytoPanelState.FLOAT)
-            tabbedPane.setState(CytoPanelState.DOCK);
-        int numComps = tabbedPane.getCytoPanelComponentCount();
-        int componentIndex = -1;
-        for (int i = 0; i < numComps; i++) {
-            Component aComp = (Component) tabbedPane.getComponentAt(i);
-            if ( (aComp instanceof CytoPanelComponent) && ((CytoPanelComponent) aComp).getTitle().equalsIgnoreCase(tabTitle))
-            {
-                componentIndex = i;
-                break;
-            }
-        }
-        if (componentIndex == -1) {
-         // Display PathwayDiagram in the results Panel
-            CyZoomablePathwayEditor pathwayEditor = new CyZoomablePathwayEditor();
-            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-            context.registerService(CytoPanelComponent.class.getName(),
-                                    pathwayEditor,
-                                    new Properties());
-            int index = tabbedPane.indexOfComponent(pathwayEditor);
-            if (index == -1) 
-                return; // Most likely there is something wrong if index == -1. This should not occur.
-            componentIndex = index;
-        }
- 
-        // Display PathwayDiagram in the results Panel
-        CyZoomablePathwayEditor pathwayEditor = (CyZoomablePathwayEditor) tabbedPane.getComponentAt(componentIndex);
-        pathwayEditor.getPathwayEditor().setRenderable(pathway);
     }
     
 }

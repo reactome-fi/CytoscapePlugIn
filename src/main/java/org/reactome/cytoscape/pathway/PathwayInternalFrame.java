@@ -251,7 +251,7 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         // Right now it is in the top-level package. Also the version of FI network
         // Used in this place may needs to be changed. 
         try {
-            DiagramAndNetworkSwitchHelper helper = new DiagramAndNetworkSwitchHelper();
+            DiagramAndNetworkSwitcher helper = new DiagramAndNetworkSwitcher();
             Set<String> hitGenes = pathwayEditor.getHitGenes();
             helper.convertToFINetwork(getPathwayId(),
                                       pathwayEditor.getPathwayEditor().getRenderable(),

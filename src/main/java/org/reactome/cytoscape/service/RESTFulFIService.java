@@ -162,6 +162,29 @@ public class RESTFulFIService implements FINetworkService
         }
         return rtn;
     }
+    
+    /**
+     * Get the map from a gene name to a list of PE DB_IDs. 
+     * @param pathwayId
+     * @return
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, List<Long>> getGeneToPEDbIDs(Long pathwayId) throws Exception {
+        String url = restfulURL + "network/getGeneToPEIdsInPathway/" + pathwayId;
+        Element root = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
+        List<Element> geneToPEIds = root.getChildren("geneToPEIds");
+        Map<String, List<Long>> rtn = new HashMap<String, List<Long>>();
+        for (Element elm : geneToPEIds) {
+            String gene = elm.getChildText("gene");
+            List<Long> dbIds = new ArrayList<Long>();
+            List<Element> list = elm.getChildren("peDbIds");
+            for (Element dbIdElm : list)
+                dbIds.add(new Long(dbIdElm.getText()));
+            rtn.put(gene, dbIds);
+        }
+        return rtn;
+    }
 
     private Interaction parseInteractionElement(List<Element> children) throws Exception {
         Interaction interaction = new Interaction();

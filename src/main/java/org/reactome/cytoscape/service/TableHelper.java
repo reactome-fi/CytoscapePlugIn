@@ -114,6 +114,14 @@ public class TableHelper {
         row.set(CyNetwork.SELECTED, isSelected);
     }
     
+    public void setNodeSelected(CyNetwork network,
+                                CyNode node,
+                                boolean isSelected) {
+        CyTable nodeTable = network.getDefaultNodeTable();
+        CyRow row = nodeTable.getRow(node.getSUID());
+        row.set(CyNetwork.SELECTED, isSelected);
+    }
+    
     /**
      * Mark a Network as a FINetwork. 
      * @param network
@@ -296,6 +304,19 @@ public class TableHelper {
         if (table.getColumn(att) == null)
             return null;
         CyRow row = table.getRow(edge.getSUID());
+        if (row == null)
+            return null;
+        return row.get(att, type);
+    }
+    
+    public <T> T getStoredNodeAttribute(CyNetwork network,
+                                       CyNode node,
+                                       String att,
+                                       Class<T> type) {
+        CyTable table = network.getDefaultNodeTable();
+        if (table.getColumn(att) == null)
+            return null;
+        CyRow row = table.getRow(node.getSUID());
         if (row == null)
             return null;
         return row.get(att, type);

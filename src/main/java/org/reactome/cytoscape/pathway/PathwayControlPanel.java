@@ -41,6 +41,7 @@ import org.cytoscape.application.swing.events.CytoPanelComponentSelectedEvent;
 import org.cytoscape.application.swing.events.CytoPanelComponentSelectedListener;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
@@ -186,14 +187,20 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             
             @Override
             public void handleEvent(RowsSetEvent event) {
-                if (!event.containsColumn(CyNetwork.SELECTED) || networkView == null ||
-                    networkView.getModel() == null || networkView.getModel().getDefaultEdgeTable() == null) {
+                if (!event.containsColumn(CyNetwork.SELECTED) || 
+                    networkView == null ||
+                    networkView.getModel() == null || 
+                    networkView.getModel().getDefaultEdgeTable() == null ||
+                    networkView.getModel().getDefaultNodeTable() == null) {
                     return;
                 }
                 List<CyEdge> edges = CyTableUtil.getEdgesInState(networkView.getModel(),
                                                                  CyNetwork.SELECTED,
                                                                  true);
-                handleNetworkEdgeSelection(edges);
+                List<CyNode> nodes = CyTableUtil.getNodesInState(networkView.getModel(),
+                                                                 CyNetwork.SELECTED,
+                                                                 true);
+                handleNetworkSelection(edges, nodes);
             }
 
         };
@@ -211,7 +218,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                     
                     @Override
                     public void actionPerformed(ActionEvent arg0) {
-                        DiagramAndNetworkSwitchHelper helper = new DiagramAndNetworkSwitchHelper();
+                        DiagramAndNetworkSwitcher helper = new DiagramAndNetworkSwitcher();
                         helper.convertToDiagram(networkView);
                     }
                 });
@@ -226,19 +233,39 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
      * A helper method to handle edge selection from a FI network.
      * @param edges
      */
-    private void handleNetworkEdgeSelection(List<CyEdge> edges) {
+    private void handleNetworkSelection(List<CyEdge> edges,
+                                        List<CyNode> nodes) {
         if (selectFromPathway)
             return; // Don't do anything
         selectFromNetwork = true;
         Collection<Long> dbIds = new HashSet<Long>();
+        TableHelper tableHelper = null;
+        String att = null;
         if (edges != null && edges.size() > 0) {
-            TableHelper tableHelper = new TableHelper();
-            String att = "SourceIds";
+            tableHelper = new TableHelper();
+            att = "SourceIds";
             for (CyEdge edge : edges) {
                 String sourceIds = tableHelper.getStoredEdgeAttribute(networkView.getModel(),
                                                                       edge, 
                                                                       att, 
                                                                       String.class);
+                if (sourceIds == null)
+                    continue;
+                String[] tokens = sourceIds.split(",");
+                for (String token : tokens)
+                    dbIds.add(new Long(token));
+            }
+        }
+        if (nodes != null && nodes.size() > 0) {
+            if (tableHelper == null)
+                tableHelper = new TableHelper();
+            if (att == null)
+                att = "SourceIds";
+            for (CyNode node : nodes) {
+                String sourceIds = tableHelper.getStoredNodeAttribute(networkView.getModel(),
+                                                                     node, 
+                                                                     att, 
+                                                                     String.class);
                 if (sourceIds == null)
                     continue;
                 String[] tokens = sourceIds.split(",");
@@ -265,9 +292,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                 dbIds.add(r.getReactomeId().toString());
         }
         TableHelper tableHelper = new TableHelper();
-        for (View<CyEdge> edgeView : networkView.getEdgeViews())
-        {
-            Long nodeSUID = edgeView.getModel().getSUID();
+        // Do selection for edges
+        for (View<CyEdge> edgeView : networkView.getEdgeViews()) {
             // De-select first
             tableHelper.setEdgeSelected(networkView.getModel(),
                                         edgeView.getModel(),
@@ -283,6 +309,26 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                     // Select it
                     tableHelper.setEdgeSelected(networkView.getModel(),
                                                 edgeView.getModel(),
+                                                true);
+                    break;
+                }
+            }
+        }
+        // Do selection for nodes
+        for (View<CyNode> nodeView : networkView.getNodeViews()) {
+            tableHelper.setNodeSelected(networkView.getModel(),
+                                        nodeView.getModel(), 
+                                        false);
+            String sourceIds = tableHelper.getStoredNodeAttribute(networkView.getModel(),
+                                                                  nodeView.getModel(),
+                                                                  "SourceIds",
+                                                                  String.class);
+            if (sourceIds == null)
+                continue;
+            for (String token : sourceIds.split(",")) {
+                if (dbIds.contains(token)) {
+                    tableHelper.setNodeSelected(networkView.getModel(),
+                                                nodeView.getModel(), 
                                                 true);
                     break;
                 }
