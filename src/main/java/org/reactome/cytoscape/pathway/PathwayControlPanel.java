@@ -387,8 +387,12 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             });
         }
         // Check if pathwayView has been set already
-        if (jsp.getBottomComponent() == pathwayView)
+        if (jsp.getBottomComponent() == pathwayView) {
+            // Just in case a new pathway is passed on
+            pathwayView.getPathwayEditor().setRenderable(pathway);
+            overview.setRenderable(pathway);
             return; // Don't need to do anything
+        }
         // Make sure pathwayView take the original size of overview
         // Note: only preferred size works
         pathwayView.setPreferredSize(overview.getSize());
@@ -397,7 +401,10 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         overview.setParentEditor(pathwayView.getPathwayEditor());
         overview.setRenderable(pathway);
         // Replace the overview with the whole pathway diagram view
+        // For some reason the divider position changed 
+        int dividerPos = jsp.getDividerLocation();
         jsp.setBottomComponent(pathwayView);
+        jsp.setDividerLocation(dividerPos);
         // Want to keep the original overview still
         // Get the JFrame
         JFrame frame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, jsp);
@@ -424,7 +431,9 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         // Remove from the original container
         overviewContainer.getParent().remove(overviewContainer);
         overviewContainer.setPreferredSize(pathwayView.getSize());
+        int dividerPos = jsp.getDividerLocation();
         jsp.setBottomComponent(overviewContainer);
+        jsp.setDividerLocation(dividerPos);
         ZoomablePathwayEditor pathwayEditor = pathwayFrame.getZoomablePathwayEditor();
         overview.syncrhonizeScroll(pathwayEditor);
         overview.setParentEditor(pathwayEditor.getPathwayEditor());

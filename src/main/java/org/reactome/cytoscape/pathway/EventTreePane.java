@@ -36,11 +36,16 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 
+import org.cytoscape.app.CyAppAdapter;
+import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
+import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.gk.model.ReactomeJavaConstants;
@@ -51,6 +56,7 @@ import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.GeneSetAnnotation;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
@@ -272,6 +278,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                     break;
             }
         }
+        showSelectionBranch();
+        if (annotationPanel != null)
+            annotationPanel.doTreeSelection();
         eventTree.addTreeSelectionListener(selectionListener);
     }
     
@@ -336,13 +345,17 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             return;
         DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) treePath.getLastPathComponent();
         EventObject selectedEvent = (EventObject) treeNode.getUserObject();
+        // Have to unselect all diagram first
+        PathwayDiagramRegistry registry = PathwayDiagramRegistry.getRegistry();
+        registry.unSelectAllFrames();
         // Find a pathway diagram and select it
+        EventObject event = null;
         for (Object obj : treePath.getPath()) {
             treeNode = (DefaultMutableTreeNode) obj;
             if (treeNode.getUserObject() == null)
                 continue; // This should be the root
             // Don't need to check the last event
-            EventObject event = (EventObject) treeNode.getUserObject();
+            event = (EventObject) treeNode.getUserObject();
             // The last event may be displayed directly 
 //            if (event == selectedEvent)
 //                continue;
@@ -351,12 +364,48 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 selectionEvent.setParentId(event.dbId);
                 selectionEvent.setEventId(selectedEvent.dbId);
                 selectionEvent.setIsPathway(selectedEvent.isPathway);
-                PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(this,
+                registry.getEventSelectionMediator().propageEventSelectionEvent(this,
                                                                                                             selectionEvent);
             }
         }
+        if (registry.getSelectedPathwayFrame() == null) {
+            // Need to check if a FI network view has been displayed for the event
+            selectFINetworkView(event);
+        }
         if (annotationPanel != null)
             annotationPanel.doTreeSelection();
+    }
+    
+    /**
+     * Select a FI network view for the specified id.
+     */
+    private void selectFINetworkView(EventObject event) {
+        if (event == null)
+            return;
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference reference = context.getServiceReference(CyNetworkViewManager.class.getName());
+        CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(reference);
+        ServiceReference appRef = context.getServiceReference(CyApplicationManager.class.getName());
+        CyApplicationManager manager = (CyApplicationManager) context.getService(appRef);
+        if (viewManager.getNetworkViewSet() != null) {
+            TableHelper tableHelper = new TableHelper();
+            for (CyNetworkView view : viewManager.getNetworkViewSet()) {
+                String dataSetType = tableHelper.getDataSetType(view);
+                if (!"PathwayDiagram".equals(dataSetType))
+                    continue;
+                Long storedId = tableHelper.getStoredNetworkAttribute(view.getModel(),
+                                                                      "PathwayId",
+                                                                      Long.class);
+                if (event.dbId.equals(storedId)) {
+//                    tableHelper.setNetworkSelected(view.getModel(),
+//                                                   true);
+                    manager.setCurrentNetworkView(view);
+                    break;
+                }
+            }
+        }
+        context.ungetService(reference);
+        context.ungetService(appRef);
     }
     
     private void showTreePopup(MouseEvent e) {

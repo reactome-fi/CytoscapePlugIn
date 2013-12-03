@@ -81,6 +81,12 @@ public class TableHelper {
                 value);
     }
     
+    public void setNetworkSelected(CyNetwork network, boolean isSelected) {
+        CyTable table = network.getDefaultNetworkTable();
+        CyRow row = table.getRow(network.getSUID());
+        row.set(CyNetwork.SELECTED, isSelected);
+    }
+    
     /**
      * Get a stored attribute value for a CyNetwork.
      * @param network

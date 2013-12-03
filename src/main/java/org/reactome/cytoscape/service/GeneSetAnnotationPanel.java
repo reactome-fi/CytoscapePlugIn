@@ -231,24 +231,26 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
         public void setContent(List<ModuleGeneSetAnnotation> annotations,
                                Double fdrCutoff) {
             tableData.clear();
-            for (ModuleGeneSetAnnotation moduleAnnot : annotations) {
-                // This should be sorted already
-                List<GeneSetAnnotation> annots = moduleAnnot.getAnnotations();
-                for (GeneSetAnnotation annot : annots) {
-                    if (fdrCutoff != null &&
-                        !annot.getFdr().startsWith("<") &&
-                        (new Double(annot.getFdr()) > fdrCutoff)) // Filter based on FDR
-                        continue; 
-                    String[] row = new String[columnHeaders.length];
-                    int start = 0;
-                    row[start ++] = annot.getTopic();
-                    row[start ++] = String.format("%.4f", annot.getRatioOfTopic());
-                    row[start ++] = annot.getNumberInTopic() + "";
-                    row[start ++] = annot.getHitNumber() + "";
-                    row[start ++] = String.format("%.4f", annot.getPValue());
-                    row[start ++] = annot.getFdr() + "";
-                    row[start] = StringUtils.join(",", annot.getHitIds());
-                    tableData.add(row);
+            if (annotations != null && annotations.size() > 0) {
+                for (ModuleGeneSetAnnotation moduleAnnot : annotations) {
+                    // This should be sorted already
+                    List<GeneSetAnnotation> annots = moduleAnnot.getAnnotations();
+                    for (GeneSetAnnotation annot : annots) {
+                        if (fdrCutoff != null &&
+                                !annot.getFdr().startsWith("<") &&
+                                (new Double(annot.getFdr()) > fdrCutoff)) // Filter based on FDR
+                            continue; 
+                        String[] row = new String[columnHeaders.length];
+                        int start = 0;
+                        row[start ++] = annot.getTopic();
+                        row[start ++] = String.format("%.4f", annot.getRatioOfTopic());
+                        row[start ++] = annot.getNumberInTopic() + "";
+                        row[start ++] = annot.getHitNumber() + "";
+                        row[start ++] = String.format("%.4f", annot.getPValue());
+                        row[start ++] = annot.getFdr() + "";
+                        row[start] = StringUtils.join(",", annot.getHitIds());
+                        tableData.add(row);
+                    }
                 }
             }
             fireTableDataChanged();

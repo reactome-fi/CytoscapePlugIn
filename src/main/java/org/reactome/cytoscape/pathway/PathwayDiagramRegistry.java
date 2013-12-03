@@ -257,6 +257,28 @@ public class PathwayDiagramRegistry {
     }
     
     /**
+     * Get the PathwayInternalFrame currently selected
+     */
+    public PathwayInternalFrame getSelectedPathwayFrame() {
+        for (PathwayInternalFrame frame : diagramIdToFrame.values()) {
+            if (frame.isSelected())
+                return frame;
+        }
+        return null;
+    }
+    
+    public void unSelectAllFrames() {
+        try {
+            for (PathwayInternalFrame frame : diagramIdToFrame.values()) {
+                frame.setSelected(false);
+            }
+        }
+        catch(PropertyVetoException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
      * Close all opened JInternalFrames for pathways.
      */
     private void closeAllFrames() {
