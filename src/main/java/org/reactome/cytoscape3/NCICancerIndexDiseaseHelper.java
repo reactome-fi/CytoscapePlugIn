@@ -4,10 +4,6 @@ package org.reactome.cytoscape3;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -32,8 +28,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -50,7 +44,6 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
-import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.TreeUtilities;
 import org.osgi.framework.BundleContext;
@@ -59,6 +52,7 @@ import org.reactome.cancerindex.data.NCIDiseaseHandler;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.util.NodeUtilitiesImpl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.SearchDialog;
 
 
 
@@ -158,80 +152,6 @@ public class NCICancerIndexDiseaseHelper
         });
     }
     
-    private class SearchDialog extends JDialog {
-        private boolean isOkClicked;
-        private JTextField textField;
-        private JButton okBtn;
-        private JButton cancelBtn;
-        private JCheckBox wholeNameBox;
-        
-        public SearchDialog() {
-            super(PlugInObjectManager.getManager().getCytoscapeDesktop());
-            init();
-        }
-        
-        private void init() {
-            JPanel contentPane = new JPanel();
-            contentPane.setBorder(BorderFactory.createEtchedBorder());
-            contentPane.setLayout(new GridBagLayout());
-            GridBagConstraints constraints = new GridBagConstraints();
-            constraints.insets = new Insets(4, 4, 4, 4);
-            constraints.anchor = GridBagConstraints.WEST;
-            JLabel searchLabel = new JLabel("Search diseases:");
-            contentPane.add(searchLabel, constraints);
-            textField = new JTextField();
-            constraints.gridy = 1;
-            textField.setPreferredSize(new Dimension(250, 25));
-            contentPane.add(textField, constraints);
-            wholeNameBox = new JCheckBox("Match whole name only");
-            constraints.gridy = 2;
-            contentPane.add(wholeNameBox, constraints);
-            DialogControlPane controlBox = new DialogControlPane();
-            okBtn = controlBox.getOKBtn();
-            cancelBtn = controlBox.getCancelBtn();
-            getContentPane().add(contentPane, BorderLayout.CENTER);
-            getContentPane().add(controlBox, BorderLayout.SOUTH);
-            setSize(370, 220);
-            setLocationRelativeTo(getOwner());
-            installListeners();
-        }
-        
-        private void installListeners() {
-            okBtn.setEnabled(false);
-            textField.getDocument().addDocumentListener(new DocumentListener() {
-                public void removeUpdate(DocumentEvent e) {
-                    validateOkBtn();
-                }
-                
-                public void insertUpdate(DocumentEvent e) {
-                    validateOkBtn();
-                }
-                
-                public void changedUpdate(DocumentEvent e) {
-                    validateOkBtn();
-                }
-            });
-            
-            okBtn.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    isOkClicked = true;
-                    dispose();
-                }
-            });
-            
-            cancelBtn.addActionListener(new ActionListener() {
-                
-                public void actionPerformed(ActionEvent e) {
-                    dispose();
-                }
-            });
-        }
-        
-        private void validateOkBtn() {
-            String text = textField.getText().trim();
-            okBtn.setEnabled(text.length() > 0);
-        }
-    }
     private void selectGenesForDisease(final DiseaseData disease, final CyNetworkView view)
     {
         if (view == null)
@@ -279,14 +199,16 @@ public class NCICancerIndexDiseaseHelper
     private void searchDiseases() {
         if (codeToDisease == null)
             return;
-        SearchDialog dialog = new SearchDialog();
+        JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+        SearchDialog dialog = new SearchDialog(frame);
+        dialog.setLabel("Search diseases:");
         dialog.setModal(true);
         dialog.setVisible(true);
-        if (!dialog.isOkClicked)
+        if (!dialog.isOKClicked())
             return;
         List<DiseaseData> found = new ArrayList<DiseaseData>();
-        String key = dialog.textField.getText().trim().toLowerCase();
-        if (dialog.wholeNameBox.isSelected()) {
+        String key = dialog.getSearchKey().toLowerCase();
+        if (dialog.isWholeNameNeeded()) {
             for (DiseaseData disease : codeToDisease.values()) {
                 if (disease.getMatchedDiseaseTerm().toLowerCase().equals(key)) {
                     found.add(disease);
@@ -301,7 +223,7 @@ public class NCICancerIndexDiseaseHelper
         }
         if (found.size() == 0) {
             JOptionPane.showMessageDialog(null,
-                                          "Cannot find any disease for: " + dialog.textField.getText().trim() + ".",
+                                          "Cannot find any disease for: " + dialog.getSearchKey() + ".",
                                           "Search Diseases",
                                           JOptionPane.INFORMATION_MESSAGE);
             return;

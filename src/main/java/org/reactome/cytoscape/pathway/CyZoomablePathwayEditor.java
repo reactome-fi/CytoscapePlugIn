@@ -11,35 +11,32 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.swing.BorderFactory;
-import javax.swing.JDialog;
-import javax.swing.JEditorPane;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JViewport;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.render.HyperEdge;
 import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
+import org.gk.render.RenderableCompartment;
 import org.gk.render.RenderableComplex;
+import org.gk.render.RenderableEntitySet;
 import org.gk.render.RenderableProtein;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape.util.SearchDialog;
 
 /**
  * Because of the overload of method getBounds() in class BiModalJSplitPane, which is one of JDesktopPane used in Cyotscape,
@@ -94,9 +91,97 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
         });
     }
     
+    private void doPathwayPopup(MouseEvent e) {
+        JPopupMenu popup = new JPopupMenu();
+        JMenuItem convertToFINetwork = new JMenuItem("Convert as FI Network");
+        convertToFINetwork.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // A kind of hack
+                CyZoomablePathwayEditor.this.firePropertyChange("convertAsFINetwork", false, true);
+            }
+        });
+        popup.add(convertToFINetwork);
+        JMenuItem searchDiagram = new JMenuItem("Search Diagram");
+        searchDiagram.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                searchDiagrams();
+            }
+        });
+        popup.add(searchDiagram);
+        
+        JMenuItem exportDiagram = new JMenuItem("Export Diagram");
+        exportDiagram.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    pathwayEditor.exportDiagram();
+                }
+                catch(IOException e1) {
+                    e1.printStackTrace();
+                    JOptionPane.showMessageDialog(pathwayEditor,
+                                                  "Pathway diagram cannot be exported: " + e1,
+                                                  "Error in Diagram Export",
+                                                  JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        popup.add(exportDiagram);
+        
+        popup.show(getPathwayEditor(),
+                   e.getX(),
+                   e.getY());
+    }
+    
+    private void searchDiagrams() {
+        JFrame frame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        SearchDialog dialog = new SearchDialog(frame);
+        dialog.setLabel("Search objects:");
+        dialog.setModal(true);
+        dialog.setVisible(true);
+        if (!dialog.isOKClicked())
+            return;
+        String key = dialog.getSearchKey();
+        List<Renderable> selected = new ArrayList<Renderable>();
+        boolean isWholeNameNeeded = dialog.isWholeNameNeeded();
+        String lowKey = key.toLowerCase();
+        for (Object obj : getPathwayEditor().getDisplayedObjects()) {
+            Renderable r = (Renderable) obj;
+            if (r instanceof RenderableCompartment ||
+                r instanceof HyperEdge)
+                continue; // Escape compartments and reactions
+            String name = r.getDisplayName();
+            if (name == null || name.length() == 0)
+                continue; // Just in case
+            name = name.toLowerCase();
+            if (isWholeNameNeeded) { // Don't merge this check with the next enclosed one.
+                if (name.equals(lowKey))
+                    selected.add(r);
+            }
+            else if (name.contains(lowKey))
+                selected.add(r);
+        }
+        if (selected.size() == 0) {
+            JOptionPane.showMessageDialog(this, 
+                                          "Cannot find any object displayed for \"" + key + "\"", 
+                                          "Search Result", 
+                                          JOptionPane.INFORMATION_MESSAGE);
+        }
+        else
+            getPathwayEditor().setSelection(selected);
+    }
+    
     private void doPopup(MouseEvent event) {
         @SuppressWarnings("unchecked")
         List<Renderable> selection = getPathwayEditor().getSelection();
+        if (selection == null || selection.size() == 0) {
+            doPathwayPopup(event);
+            return;
+        }
         if (selection.size() != 1)
             return;
         Renderable r = selection.get(0);
@@ -127,7 +212,9 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
             });
             popup.add(openInDiagram);
         }
-        else if (r instanceof RenderableProtein || r instanceof RenderableComplex) {
+        else if (r instanceof RenderableProtein || 
+                 r instanceof RenderableEntitySet || // This may be an EntitySet of SimpleEntity, which contains no gene
+                 r instanceof RenderableComplex) {
             JMenuItem listGenesItem = new JMenuItem("List Genes");
             listGenesItem.addActionListener(new ActionListener() {
                 
@@ -162,21 +249,25 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
             builder.append("<html><body><br /><br /><b><center><u>");
             // Generate a label
             String text = null;
-            if (genes.contains(",") && genes.contains("|")) {
-                text = "Genes contained by " + name + " (\",\" for complex subunit, and \"|\" for member in a protein set)";
-            }
-            else if (genes.contains(",")) {
-                text = "Genes contained by " + name + " (\",\" for complex subunit)";
-            }
-            else if (genes.contains("|")) {
-                text = "Genes contained by " + name + " (\"|\" for member in a protein set)";
+           if (genes.contains(",")) {
+                text = "Genes contained by " + name;
             }
             else
                 text = "Corresponded gene for protein " + name;
             builder.append(text).append("</u></center></b>");
             builder.append("<br /><br />");
+
+            builder.append(formatGenesText(genes));
             
-            builder.append(formatGenesText(genes)).append("</body></html>");
+            if (genes.contains(",")) {
+                builder.append("<hr />");
+                String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
+                String url = reactomeURL + entityId;
+                builder.append("* Genes may be linked via complex subunits or entity set members. "
+                        + "For details, click <a href=\"" + url + "\">View in Reactome</a>.");
+            }
+            
+            builder.append("</body></html>");
             
             pane.setText(builder.toString());
             pane.addHyperlinkListener(new HyperlinkListener() {
@@ -184,9 +275,14 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
                 @Override
                 public void hyperlinkUpdate(HyperlinkEvent e) {
                     if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-                        String gene = e.getDescription();
-                        String url = "http://www.genecards.org/cgi-bin/carddisp.pl?gene=" + gene;
-                        PlugInUtilities.openURL(url);
+                        String desc = e.getDescription();
+                        if (desc.startsWith("http")) {
+                            PlugInUtilities.openURL(desc);
+                        }
+                        else { // Just a gene
+                            String url = "http://www.genecards.org/cgi-bin/carddisp.pl?gene=" + desc;
+                            PlugInUtilities.openURL(url);
+                        }
                     }
                 }
             });
@@ -223,7 +319,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
         // Add an extra space before delimit , and |
         StringBuilder builder = new StringBuilder();
         String gene = "";
-        builder.append("<a href=\">");
+        builder.append("<center><a href=\">");
         for (char c : genes.toCharArray()) {
             if (c == '|' || c == ',') {
                 builder.append(gene).append("\">").append(gene).append("</a>").append(c).append(" <a ");
@@ -235,7 +331,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
             else
                 gene += c;
         }
-        builder.append(gene).append("\">").append(gene).append("</a>");
+        builder.append(gene).append("\">").append(gene).append("</a></center>");
         return builder.toString();
     }
     

@@ -36,12 +36,10 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 
-import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
-import org.cytoscape.model.CyNetwork;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.model.CyNetworkView;
@@ -59,6 +57,7 @@ import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape.util.SearchDialog;
 import org.reactome.r3.util.FileUtility;
 
 /**
@@ -448,6 +447,15 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             popup.add(viewInDiagramMenu);
         }
         popup.addSeparator();
+        // Add a search function
+        JMenuItem searchTree = new JMenuItem("Search");
+        searchTree.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                searchTree();
+            }
+        });
+        popup.add(searchTree);
         JMenuItem enrichmentAnalysis = new JMenuItem("Analyze Pathway Enrichment");
         enrichmentAnalysis.addActionListener(new ActionListener() {
             
@@ -469,6 +477,36 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             });
             popup.add(removeEnrichmentAnalysis);
         }
+        // Add two new items for expanding/closing nodes
+        popup.addSeparator();
+        JMenuItem expandNode = new JMenuItem("Expand Pathway");
+        expandNode.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (eventTree.getSelectionPaths() == null)
+                    return;
+                for (TreePath path : eventTree.getSelectionPaths()) {
+                    TreeUtilities.expandAllNodes((DefaultMutableTreeNode) path.getLastPathComponent(),
+                                                 eventTree);
+                }
+            }
+        });
+        popup.add(expandNode);
+        JMenuItem collapseNode = new JMenuItem("Collapse Pathway");
+        collapseNode.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (eventTree.getSelectionPaths() == null)
+                    return;
+                for (TreePath path : eventTree.getSelectionPaths()) {
+                    TreeUtilities.collapseAllNodes((DefaultMutableTreeNode)path.getLastPathComponent(),
+                                                   eventTree);
+                }
+            }
+        });
+        popup.add(collapseNode);
         popup.show(eventTree, e.getX(), e.getY());
     }
     
@@ -640,6 +678,24 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             pathwayToAnnotation.put(pathway, annotation);
             searchPathway(root, pathway, model, paths);
         }
+        showSearchResults(paths, true);
+        
+        // Show annotations in a list
+        if (annotationPanel == null) {
+            annotationPanel = new PathwayEnrichmentResultPane(this, "Reactome Pathway Enrichment");
+        }
+        annotationPanel.setGeneSetAnnotations(annotations);
+        // Need to select it
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
+        int index = tableBrowserPane.indexOfComponent(annotationPanel);
+        if (index >= 0)
+            tableBrowserPane.setSelectedIndex(index);
+    }
+
+    private void showSearchResults(List<TreePath> paths,
+                                   boolean selectFirstPathOnly) {
+        DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
         eventTree.clearSelection();
         for (TreePath path : paths) {
             // Actually we only need to expand the parent TreeNode only
@@ -654,42 +710,106 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         }
         // Scroll to the first path
         final TreePath firstPath = paths.get(0);
-        SwingUtilities.invokeLater(new Runnable() {
-            
-            @Override
-            public void run() {
-                eventTree.setSelectionPath(firstPath);
-                eventTree.scrollPathToVisible(firstPath);
-            }
-        });
-        
-        // Show annotations in a list
-        if (annotationPanel == null) {
-            annotationPanel = new PathwayEnrichmentResultPane(this, "Reactome Pathway Enrichment");
+        if (selectFirstPathOnly) {
+            SwingUtilities.invokeLater(new Runnable() {
+                
+                @Override
+                public void run() {
+                    eventTree.setSelectionPath(firstPath);
+                    eventTree.scrollPathToVisible(firstPath);
+                }
+            });
         }
-        annotationPanel.setGeneSetAnnotations(annotations);
-        // Need to select it
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
-        int index = tableBrowserPane.indexOfComponent(annotationPanel);
-        if (index >= 0)
-            tableBrowserPane.setSelectedIndex(index);
+        else {
+            for (TreePath path : paths)
+                eventTree.addSelectionPath(path);
+            SwingUtilities.invokeLater(new Runnable() {
+                
+                @Override
+                public void run() {
+                    eventTree.scrollPathToVisible(firstPath);
+                }
+            });
+        }
     }
     
     void searchPathway(DefaultMutableTreeNode treeNode,
+                       String pathway,
+                       DefaultTreeModel model,
+                       List<TreePath> selectedPaths) {
+        searchPathway(treeNode, 
+                      pathway,
+                      false,
+                      true,
+                      model, 
+                      selectedPaths);
+    }
+    
+    private void searchPathway(DefaultMutableTreeNode treeNode,
                                String pathway,
+                               boolean ignoreCase,
+                               boolean needWholeName,
                                DefaultTreeModel model,
                                List<TreePath> selectedPaths) {
         if (treeNode.getUserObject() != null && treeNode.getUserObject() instanceof EventObject) {
             EventObject event = (EventObject) treeNode.getUserObject();
-            if (event.name.equals(pathway)) {
-                selectedPaths.add(new TreePath(model.getPathToRoot(treeNode)));
+            if (needWholeName) {
+                if (ignoreCase) {
+                    if (event.name.equalsIgnoreCase(pathway))
+                        selectedPaths.add(new TreePath(model.getPathToRoot(treeNode)));
+                }
+                else if (event.name.equals(pathway)) {
+                    selectedPaths.add(new TreePath(model.getPathToRoot(treeNode)));
+                }
+            }
+            else {
+                if (ignoreCase) {
+                    if (event.name.toLowerCase().contains(pathway.toLowerCase()))
+                        selectedPaths.add(new TreePath(model.getPathToRoot(treeNode)));
+                }
+                else if (event.name.contains(pathway)) {
+                    selectedPaths.add(new TreePath(model.getPathToRoot(treeNode)));
+                }
             }
         }
         for (int i = 0; i < treeNode.getChildCount(); i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode) treeNode.getChildAt(i);
-            searchPathway(child, pathway, model, selectedPaths);
+            searchPathway(child,
+                          pathway,
+                          ignoreCase,
+                          needWholeName,
+                          model,
+                          selectedPaths);
         }
+    }
+    
+    private void searchTree() {
+        JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        SearchDialog dialog = new SearchDialog(parentFrame);
+        dialog.setLabel("Search pathways and reactions:");
+        dialog.setModal(true);
+        dialog.setVisible(true);
+        if (!dialog.isOKClicked())
+            return;
+        String key = dialog.getSearchKey();
+        boolean needWholeName = dialog.isWholeNameNeeded();
+        List<TreePath> results = new ArrayList<TreePath>();
+        DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+        searchPathway(root,
+                      key, 
+                      true,
+                      needWholeName,
+                      model, 
+                      results);
+        if (results.size() == 0) {
+            JOptionPane.showMessageDialog(this,
+                                          "Cannot find any pathway or reaction for \"" + key + "\".",
+                                          "Result Result", 
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        showSearchResults(results, false);
     }
     
     private void addEvent(DefaultMutableTreeNode parentNode,

@@ -47,7 +47,6 @@ public class PathwayDiagramLoadTask extends AbstractTask {
         }
         taskMonitor.setProgress(0);
         taskMonitor.setStatusMessage("Loading pathway diagram...");
-        // This is just for test by query pathway diagram for Cell Cycle Checkpoints 
         String text = ReactomeRESTfulService.getService().pathwayDiagram(pathwayId);
         taskMonitor.setProgress(0.50d);
         taskMonitor.setStatusMessage("Open pathway diagram...");

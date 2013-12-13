@@ -5,19 +5,15 @@
 package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import javax.swing.JInternalFrame;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JPopupMenu;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 
@@ -104,45 +100,14 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
             }
             
         });
-        // Add popup menu
-        pathwayEditor.getPathwayEditor().addMouseListener(new MouseAdapter() {
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (e.isPopupTrigger())
-                    doPopup(e);
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                if (e.isPopupTrigger())
-                    doPopup(e);
-            }
+        pathwayEditor.addPropertyChangeListener(new PropertyChangeListener() {
             
-        });
-    }
-    
-    private void doPopup(MouseEvent e) {
-        PathwayEditor wrappedEditor = pathwayEditor.getPathwayEditor();
-        List<?> selection = wrappedEditor.getSelection();
-        if (selection != null && selection.size() > 1)
-            return;
-        JPopupMenu popup = null;
-        if (selection == null || selection.size() == 0) {
-            popup = new JPopupMenu();
-            JMenuItem convertToFINetwork = new JMenuItem("Convert as FI Network");
-            convertToFINetwork.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getPropertyName().equals("convertAsFINetwork"))
                     convertAsFINetwork();
-                }
-            });
-            popup.add(convertToFINetwork);
-            popup.show(wrappedEditor,
-                       e.getX(),
-                       e.getY());
-        }
+            }
+        });
     }
     
     /**
