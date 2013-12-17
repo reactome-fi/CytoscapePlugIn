@@ -198,7 +198,7 @@ public class PathwayDiagramRegistry {
 
             @Override
             public void internalFrameClosed(InternalFrameEvent e) {
-                selectionMediator.removeEventSelectionListener(frame);
+                selectionMediator.removeEventSelectionListener(frame.getZoomablePathwayEditor());
                 if (isFromCloseAll)
                     return; // Don't do anything
                 diagramIdToFrame.remove(diagramId);
@@ -218,7 +218,7 @@ public class PathwayDiagramRegistry {
             for (InternalFrameListener listener : frameListeners)
                 frame.addInternalFrameListener(listener);
         }
-        selectionMediator.addEventSelectionListener(frame);
+        selectionMediator.addEventSelectionListener(frame.getZoomablePathwayEditor());
         fetchPathwaysForDiagram(frame,
                                 diagramId);
     }

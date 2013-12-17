@@ -34,16 +34,9 @@ import org.slf4j.LoggerFactory;
  * @author gwu
  *
  */
-public class PathwayInternalFrame extends JInternalFrame implements EventSelectionListener {
+public class PathwayInternalFrame extends JInternalFrame {
     private final Logger logger = LoggerFactory.getLogger(PathwayInternalFrame.class);
     private CyZoomablePathwayEditor pathwayEditor;
-    // A PathwayDiagram may be used by multile pathways (e.g. a disease pathway and a 
-    // normal pathway may share a same PathwayDiagram)
-    private List<Long> relatedPathwayIds;
-    // DB_ID that is used to invoke this PathwayInternalFrame.
-    // This may be changed during the life-time of this object (e.g. a PathwayInternalFrame
-    // may be switched to another pathway from a tree selection)
-    private Long pathwayId;
     
     /**
      * Default constructor.
@@ -55,47 +48,19 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
     private void init() {
         pathwayEditor = new CyZoomablePathwayEditor();
         getContentPane().add(pathwayEditor, BorderLayout.CENTER);
-        pathwayEditor.getPathwayEditor().getSelectionModel().addGraphEditorActionListener(new GraphEditorActionListener() {
-            @Override
-            public void graphEditorAction(GraphEditorActionEvent e) {
-                if (e.getID() != ActionType.SELECTION)
-                    return;
-                @SuppressWarnings("unchecked")
-                List<Renderable> selection = pathwayEditor.getPathwayEditor().getSelection();
-                EventSelectionEvent selectionEvent = new EventSelectionEvent();
-                selectionEvent.setParentId(relatedPathwayIds.get(0));
-                // Get the first selected event
-                Renderable firstEvent = null;
-                if (selection != null && selection.size() > 0) {
-                    for (Renderable r : selection) {
-                        if (r.getReactomeId() != null && (r instanceof HyperEdge || r instanceof ProcessNode)) {
-                            firstEvent = r;
-                            break;
-                        }
-                    }
-                }
-                if (firstEvent == null) {
-                    selectionEvent.setEventId(relatedPathwayIds.get(0));
-                    selectionEvent.setIsPathway(true);
-                }
-                else {
-                    selectionEvent.setEventId(firstEvent.getReactomeId());
-                    selectionEvent.setIsPathway(firstEvent instanceof ProcessNode);
-                }
-                PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(PathwayInternalFrame.this,
-                                                                                                            selectionEvent);
-            }
-        });
         // Fire an event selection
         addInternalFrameListener(new InternalFrameAdapter() {
 
             @Override
             public void internalFrameActivated(InternalFrameEvent e) {
                 EventSelectionEvent selectionEvent = new EventSelectionEvent();
-                selectionEvent.setParentId(relatedPathwayIds.get(0));
-                selectionEvent.setEventId(relatedPathwayIds.get(0));
+                List<Long> relatedIds = pathwayEditor.getRelatedPathwaysIds();
+                if (relatedIds.size() > 0) {
+                    selectionEvent.setParentId(relatedIds.get(0));
+                    selectionEvent.setEventId(relatedIds.get(0));
+                }
                 selectionEvent.setIsPathway(true);
-                PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(PathwayInternalFrame.this,
+                PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(pathwayEditor,
                                                                                                             selectionEvent);
             }
             
@@ -110,65 +75,6 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         });
     }
     
-    /**
-     * Set the ids of pathways displayed in this PathwayInternalFrame. A pathway diagram may represent
-     * multiple pathways.
-     * @param pathwayIds
-     */
-    public void setRelatedPathwayIds(List<Long> pathwayIds) {
-        this.relatedPathwayIds = pathwayIds;
-    }
-    
-    @Override
-    public void eventSelected(EventSelectionEvent selectionEvent) {
-        if (!relatedPathwayIds.contains(selectionEvent.getParentId())) {
-            // Remove any selection
-            PathwayEditor editor = pathwayEditor.getPathwayEditor();
-            editor.removeSelection();
-            editor.repaint(editor.getVisibleRect());
-            return;
-        }
-        try {
-            setSelected(true); // Select this PathwayInternalFrame too!
-        }
-        catch(PropertyVetoException e) {
-            logger.error("Error in eventSelected: " + e, e);
-        }
-        Long eventId = selectionEvent.getEventId();
-        PathwayEditor editor = pathwayEditor.getPathwayEditor();
-        // The top-level should be selected
-        if (relatedPathwayIds.contains(eventId)) {
-            editor.removeSelection();
-            editor.repaint(editor.getVisibleRect());
-            return;
-        }
-        List<Renderable> selection = new ArrayList<Renderable>();
-        for (Object obj : editor.getDisplayedObjects()) {
-            Renderable r = (Renderable) obj;
-            if (eventId.equals(r.getReactomeId()))
-                selection.add(r);
-        }
-        if (selection.size() > 0 || !selectionEvent.isPathway()) {
-            editor.setSelection(selection);
-            return;
-        }
-        // Need to check if any contained events should be highlighted since the selected event cannot
-        // be highlighted
-        try {
-            List<Long> dbIds = ReactomeRESTfulService.getService().getContainedEventIds(eventId);
-            for (Object obj : editor.getDisplayedObjects()) {
-                Renderable r = (Renderable) obj;
-                if (dbIds.contains(r.getReactomeId()))
-                    selection.add(r);
-            }
-            if (selection.size() > 0)
-                editor.setSelection(selection);
-        }
-        catch(Exception e) {
-            logger.error("Error in eventSelected: " + e, e);
-        }
-    }
-
     public PathwayEditor getPathwayEditor() {
         return pathwayEditor.getPathwayEditor();
     }
@@ -203,12 +109,32 @@ public class PathwayInternalFrame extends JInternalFrame implements EventSelecti
         pathwayEditor.getPathwayEditor().setRenderable(pathway);
     }
     
+    /**
+     * DB_ID that is used to invoke this PathwayInternalFrame. This may be changed during the life-time 
+     * of this object (e.g. a PathwayInternalFrame may be switched to another pathway from a tree 
+     * selection)
+     * @param pathwayId
+     */
     public void setPathwayId(Long pathwayId) {
-        this.pathwayId = pathwayId;
+        Renderable pathway = pathwayEditor.getPathwayEditor().getRenderable();
+        if (pathway != null)
+            pathway.setReactomeId(pathwayId);
     }
     
     public Long getPathwayId() {
-        return this.pathwayId;
+        Renderable pathway = pathwayEditor.getPathwayEditor().getRenderable();
+        if (pathway != null)
+            return pathway.getReactomeId();
+        return null;
+    }
+    
+    /**
+     * Set the ids of pathways displayed in this PathwayInternalFrame. A pathway diagram may represent
+     * multiple pathways.
+     * @param pathwayIds
+     */
+    public void setRelatedPathwayIds(List<Long> pathwayIds) {
+        pathwayEditor.setRelatedPathwayIds(pathwayIds);
     }
     
     private void convertAsFINetwork() {

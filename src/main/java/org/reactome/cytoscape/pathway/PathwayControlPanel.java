@@ -52,6 +52,8 @@ import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
+import org.gk.render.HyperEdge;
+import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
@@ -280,11 +282,11 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     /**
      * A helper method to handle selection generated from the pathway view.
      */
-    @SuppressWarnings("unchecked")
     private void handlePathwayViewSelection() {
         if (networkView == null || selectFromNetwork)
             return;
         selectFromPathway = true;
+        @SuppressWarnings("unchecked")
         List<Renderable> selection = pathwayView.getPathwayEditor().getSelection();
         Set<String> dbIds = new HashSet<String>();
         for (Renderable r : selection) {
@@ -398,6 +400,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         pathwayView.setPreferredSize(overview.getSize());
         pathwayView.getPathwayEditor().setRenderable(pathway);
         overview.syncrhonizeScroll(pathwayView);
+        PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().addEventSelectionListener(pathwayView);
         overview.setParentEditor(pathwayView.getPathwayEditor());
         overview.setRenderable(pathway);
         // Replace the overview with the whole pathway diagram view
@@ -430,6 +433,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             return; // It has been set.
         // Remove from the original container
         overviewContainer.getParent().remove(overviewContainer);
+        // Don't listen to selection
+        PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().removeEventSelectionListener(pathwayView);
         overviewContainer.setPreferredSize(pathwayView.getSize());
         int dividerPos = jsp.getDividerLocation();
         jsp.setBottomComponent(overviewContainer);

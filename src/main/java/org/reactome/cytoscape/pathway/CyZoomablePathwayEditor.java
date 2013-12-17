@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,7 +23,10 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import org.gk.gkEditor.ZoomablePathwayEditor;
+import org.gk.graphEditor.GraphEditorActionEvent;
+import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.render.HyperEdge;
 import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
@@ -36,6 +40,8 @@ import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape.util.SearchDialog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Because of the overload of method getBounds() in class BiModalJSplitPane, which is one of JDesktopPane used in Cyotscape,
@@ -43,7 +49,11 @@ import org.reactome.cytoscape.util.SearchDialog;
  * @author gwu
  *
  */
-public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
+public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements EventSelectionListener {
+    private final Logger logger = LoggerFactory.getLogger(CyZoomablePathwayEditor.class);
+    // A PathwayDiagram may be used by multile pathways (e.g. a disease pathway and a 
+    // normal pathway may share a same PathwayDiagram)
+    private List<Long> relatedPathwayIds;
     
     public CyZoomablePathwayEditor() {
         // Don't need the title
@@ -52,15 +62,51 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
     }
     
     private void init() {
+        getPathwayEditor().getSelectionModel().addGraphEditorActionListener(new GraphEditorActionListener() {
+            @Override
+            public void graphEditorAction(GraphEditorActionEvent e) {
+                if (e.getID() != ActionType.SELECTION)
+                    return;
+                @SuppressWarnings("unchecked")
+                List<Renderable> selection = getPathwayEditor().getSelection();
+                EventSelectionEvent selectionEvent = new EventSelectionEvent();
+                List<Long> relatedIds = getRelatedPathwaysIds();
+                Long pathwayId = null;
+                if (relatedIds.size() > 0)
+                    pathwayId = relatedIds.get(0);
+                selectionEvent.setParentId(pathwayId);
+                // Get the first selected event
+                Renderable firstEvent = null;
+                if (selection != null && selection.size() > 0) {
+                    for (Renderable r : selection) {
+                        if (r.getReactomeId() != null && (r instanceof HyperEdge || r instanceof ProcessNode)) {
+                            firstEvent = r;
+                            break;
+                        }
+                    }
+                }
+                if (firstEvent == null) {
+                    selectionEvent.setEventId(pathwayId);
+                    selectionEvent.setIsPathway(true);
+                }
+                else {
+                    selectionEvent.setEventId(firstEvent.getReactomeId());
+                    selectionEvent.setIsPathway(firstEvent instanceof ProcessNode);
+                }
+                PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(CyZoomablePathwayEditor.this,
+                                                                                                            selectionEvent);
+            }
+        });
+        
         // Add a popup listener
         getPathwayEditor().addMouseListener(new MouseAdapter() {
-
+            
             @Override
             public void mousePressed(MouseEvent e) {
                 if (e.isPopupTrigger())
                     doPopup(e);
             }
-
+            
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.isPopupTrigger())
@@ -68,6 +114,80 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
             }
             
         });
+    }
+    
+    @Override
+    public void eventSelected(EventSelectionEvent selectionEvent) {
+        List<Long> relatedIds = getRelatedPathwaysIds();
+        if (!relatedIds.contains(selectionEvent.getParentId())) {
+            // Remove any selection
+            PathwayEditor editor = getPathwayEditor();
+            editor.removeSelection();
+            editor.repaint(editor.getVisibleRect());
+            return;
+        }
+        // If this is contained by a JInternalFrame, select it
+        JInternalFrame frame = (JInternalFrame) SwingUtilities.getAncestorOfClass(JInternalFrame.class,
+                                                                                  this);
+        if (frame != null) {
+            try {
+                frame.setSelected(true); // Select this PathwayInternalFrame too!
+            }
+            catch(PropertyVetoException e) {
+                logger.error("Error in eventSelected: " + e, e);
+            }
+        }
+        Long eventId = selectionEvent.getEventId();
+        PathwayEditor editor = getPathwayEditor();
+        // The top-level should be selected
+        if (relatedIds.contains(eventId)) {
+            editor.removeSelection();
+            editor.repaint(editor.getVisibleRect());
+            return;
+        }
+        List<Renderable> selection = new ArrayList<Renderable>();
+        for (Object obj : editor.getDisplayedObjects()) {
+            Renderable r = (Renderable) obj;
+            if (eventId.equals(r.getReactomeId()))
+                selection.add(r);
+        }
+        if (selection.size() > 0 || !selectionEvent.isPathway()) {
+            editor.setSelection(selection);
+            return;
+        }
+        // Need to check if any contained events should be highlighted since the selected event cannot
+        // be highlighted
+        try {
+            List<Long> dbIds = ReactomeRESTfulService.getService().getContainedEventIds(eventId);
+            for (Object obj : editor.getDisplayedObjects()) {
+                Renderable r = (Renderable) obj;
+                if (dbIds.contains(r.getReactomeId()))
+                    selection.add(r);
+            }
+            if (selection.size() > 0)
+                editor.setSelection(selection);
+        }
+        catch(Exception e) {
+            logger.error("Error in eventSelected: " + e, e);
+        }
+    }
+    
+    /**
+     * Set the ids of pathways displayed in this PathwayInternalFrame. A pathway diagram may represent
+     * multiple pathways.
+     * @param pathwayIds
+     */
+    public void setRelatedPathwayIds(List<Long> pathwayIds) {
+        this.relatedPathwayIds = pathwayIds;
+    }
+    
+    public List<Long> getRelatedPathwaysIds() {
+        if (relatedPathwayIds != null && relatedPathwayIds.size() > 0)
+            return relatedPathwayIds;
+        List<Long> rtn = new ArrayList<Long>();
+        if (getPathwayEditor().getRenderable().getReactomeId() != null)
+            rtn.add(getPathwayEditor().getRenderable().getReactomeId());
+        return rtn;
     }
     
     private void doPathwayPopup(MouseEvent e) {
