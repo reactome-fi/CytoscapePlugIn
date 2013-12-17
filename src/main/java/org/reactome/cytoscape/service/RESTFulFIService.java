@@ -170,8 +170,8 @@ public class RESTFulFIService implements FINetworkService
      * @throws Exception
      */
     @SuppressWarnings("unchecked")
-    public Map<String, List<Long>> getGeneToPEDbIDs(Long pathwayId) throws Exception {
-        String url = restfulURL + "network/getGeneToPEIdsInPathway/" + pathwayId;
+    public Map<String, List<Long>> getGeneToDbIDs(Long pathwayDiagramId) throws Exception {
+        String url = restfulURL + "network/getGeneToIdsInPathwayDiagram/" + pathwayDiagramId;
         Element root = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
         List<Element> geneToPEIds = root.getChildren("geneToPEIds");
         Map<String, List<Long>> rtn = new HashMap<String, List<Long>>();

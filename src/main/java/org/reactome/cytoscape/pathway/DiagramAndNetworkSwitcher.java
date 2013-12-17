@@ -26,7 +26,7 @@ import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
-import org.gk.render.Renderable;
+import org.gk.render.RenderablePathway;
 import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -105,7 +105,7 @@ public class DiagramAndNetworkSwitcher {
     }
     
     public void convertToFINetwork(final Long pathwayId,
-                                   final Renderable pathway,
+                                   final RenderablePathway pathway,
                                    final Set<String> hitGenes) throws Exception {
         Task task = new AbstractTask() {
             
@@ -123,7 +123,7 @@ public class DiagramAndNetworkSwitcher {
     }
 
     private void convertPathwayToFINetwork(final Long pathwayId,
-                                           final Renderable pathway,
+                                           final RenderablePathway pathway,
                                            final Set<String> hitGenes,
                                            TaskMonitor taskMonitor) throws Exception {
         taskMonitor.setTitle("Convert Pathway to FI Network");
@@ -184,7 +184,7 @@ public class DiagramAndNetworkSwitcher {
         
         // Need to query sourceIds for displayed genes
         taskMonitor.setStatusMessage("Fetch genes to ids mapping...");
-        Map<String, List<Long>> geneToDBIds = fiService.getGeneToPEDbIDs(pathwayId);
+        Map<String, List<Long>> geneToDBIds = fiService.getGeneToDbIDs(pathway.getReactomeDiagramId());
         // Need to a little format to avoid storing a list
         Map<String, String> geneToIdsAtt = new HashMap<String, String>();
         for (String gene : geneToDBIds.keySet()) {
