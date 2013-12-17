@@ -5,6 +5,7 @@
 package org.reactome.cytoscape.pathway;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,12 +29,20 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 public class PathwayEnrichmentHighlighter {
     // Pathway Enrichment results cached for display
     private Map<String, GeneSetAnnotation> pathwayToAnnotation;
+    // The singleton
+    private static PathwayEnrichmentHighlighter highlighter;
     
     /**
      * Default constructor. Usually there should be only one shared instance in the whole
-     * app. However, singleton pattern is not used here.
+     * app. 
      */
-    public PathwayEnrichmentHighlighter() {
+    private PathwayEnrichmentHighlighter() {
+    }
+    
+    public static PathwayEnrichmentHighlighter getHighlighter() {
+        if (highlighter == null)
+            highlighter = new PathwayEnrichmentHighlighter();
+        return highlighter;
     }
     
     public void setPathwayToAnnotation(Map<String, GeneSetAnnotation> annotations) {
@@ -59,6 +68,12 @@ public class PathwayEnrichmentHighlighter {
         return set;
     }
     
+    /**
+     * Since a RESTful API is needed to be called for this method, eventName is used in order to get
+     * a short list of genes for performance consideration.
+     * @param pathwayFrame
+     * @param eventName
+     */
     public void highlightPathways(final PathwayInternalFrame pathwayFrame,
                                   String eventName) {
         if (pathwayFrame == null || eventName == null)
@@ -66,6 +81,12 @@ public class PathwayEnrichmentHighlighter {
         final GeneSetAnnotation annotation = pathwayToAnnotation.get(eventName);
         if (annotation == null)
             return;
+        List<String> hitGenes = annotation.getHitIds();
+        highlightPathways(pathwayFrame, hitGenes);
+    }
+
+    public void highlightPathways(final PathwayInternalFrame pathwayFrame,
+                                   final List<String> hitGenes) {
         AbstractTask task = new AbstractTask() {
             
             @Override
@@ -73,7 +94,7 @@ public class PathwayEnrichmentHighlighter {
                 taskMonitor.setTitle("Pathway Highlighting");
                 taskMonitor.setStatusMessage("Highlight pathway...");
                 CyPathwayDiagramHelper helper = CyPathwayDiagramHelper.getHelper();
-                String genes = StringUtils.join(",", annotation.getHitIds());
+                String genes = StringUtils.join(",", hitGenes);
                 CyZoomablePathwayEditor pathwayEditor = pathwayFrame.getZoomablePathwayEditor();
                 helper.highlightPathwayDiagram(pathwayEditor, 
                                                genes);
@@ -83,7 +104,6 @@ public class PathwayEnrichmentHighlighter {
                 // to make repaint consistent.
                 editor.fireGraphEditorActionEvent(ActionType.SELECTION);
                 taskMonitor.setProgress(1.0d);
-                pathwayEditor.setPathwayEnrichmentHighlighter(PathwayEnrichmentHighlighter.this);
             }
         };
         @SuppressWarnings("rawtypes")

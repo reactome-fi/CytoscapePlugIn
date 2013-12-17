@@ -14,7 +14,6 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -45,31 +44,11 @@ import org.reactome.cytoscape.util.SearchDialog;
  *
  */
 public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
-    // For pathway enrichment result highlight
-    private PathwayEnrichmentHighlighter pathwayHighlighter;
     
     public CyZoomablePathwayEditor() {
         // Don't need the title
         titleLabel.setVisible(false);
         init();
-    }
-    
-    public void setPathwayEnrichmentHighlighter(PathwayEnrichmentHighlighter highlighter) {
-        this.pathwayHighlighter = highlighter;
-    }
-    
-    public PathwayEnrichmentHighlighter getPathwayEnrichmentHighlighter() {
-        return this.pathwayHighlighter;
-    }
-    
-    /**
-     * Get a set of genes that should be highlighted.
-     * @return
-     */
-    public Set<String> getHitGenes() {
-        if (pathwayHighlighter != null)
-            return pathwayHighlighter.getHitGenes();
-        return new HashSet<String>();
     }
     
     private void init() {
@@ -315,7 +294,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
     }
     
     private String formatGenesText(String genes) {
-        Set<String> hitGenes = getHitGenes();
+        PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
+        Set<String> hitGenes = hiliter.getHitGenes();
         // Add an extra space before delimit , and |
         StringBuilder builder = new StringBuilder();
         String gene = "";
@@ -338,10 +318,10 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor {
     private void showPathwayDiagram(Long pathwayId,
                                     String pathwayName) {
         PathwayDiagramRegistry.getRegistry().showPathwayDiagram(pathwayId);
-        if (pathwayHighlighter != null) {
-            PathwayInternalFrame pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(pathwayId);
-            pathwayHighlighter.highlightPathways(pathwayFrame, 
-                                                 pathwayName);
+        PathwayInternalFrame pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(pathwayId);
+        if (pathwayFrame != null) {
+            PathwayEnrichmentHighlighter.getHighlighter().highlightPathways(pathwayFrame, 
+                                                                            pathwayName);
         }
     }
     

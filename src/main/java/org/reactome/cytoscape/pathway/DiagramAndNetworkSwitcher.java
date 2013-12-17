@@ -5,17 +5,22 @@
 package org.reactome.cytoscape.pathway;
 
 import java.beans.PropertyChangeEvent;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.SwingUtilities;
+
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
+import org.cytoscape.view.model.View;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
@@ -48,7 +53,7 @@ public class DiagramAndNetworkSwitcher {
      * Convert a FI network converted form a pathway diagram back to a pathway diagram.
      * @param networkView
      */
-    public void convertToDiagram(CyNetworkView networkView) {
+    public void convertToDiagram(final CyNetworkView networkView) {
         // Just in case
         if (networkView == null)
             return;
@@ -60,12 +65,43 @@ public class DiagramAndNetworkSwitcher {
             return;
         PathwayDiagramRegistry registry = PathwayDiagramRegistry.getRegistry();
         registry.showPathwayDiagram(pathwayId);
-        // Do some clean-up
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceReference reference = context.getServiceReference(CyNetworkManager.class.getName());
-        CyNetworkManager mananger = (CyNetworkManager) context.getService(reference);
-        mananger.destroyNetwork(networkView.getModel());
-        context.ungetService(reference);
+        // Need to highlight if any
+        PathwayInternalFrame frame = registry.getPathwayFrameWithWait(pathwayId);
+        if (frame != null) {
+            // Get a list of hit genes for highlighting
+            List<String> hitGenes = new ArrayList<String>();
+            TableHelper tableHelper = new TableHelper();
+            CyNetwork network = networkView.getModel();
+            for (View<CyNode> nodeView : networkView.getNodeViews()) {
+                CyNode node = nodeView.getModel();
+                Boolean isHitGene = tableHelper.getStoredNodeAttribute(network,
+                                                                       node, 
+                                                                       "isHitGene", 
+                                                                       Boolean.class);
+                if (isHitGene != null && isHitGene) {
+                    String name = tableHelper.getStoredNodeAttribute(networkView.getModel(),
+                                                                     node,
+                                                                     "name", 
+                                                                     String.class);
+                    hitGenes.add(name);
+                }
+            }
+            PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
+            hiliter.highlightPathways(frame, 
+                                      hitGenes);
+        }
+        // If the following code is invoked before the above statment is finished (it is possible since
+        // a new thread is going to be used), a null exception may be thrown. So wrap it in an invokeLater method
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                // Do some clean-up
+                BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+                ServiceReference reference = context.getServiceReference(CyNetworkManager.class.getName());
+                CyNetworkManager mananger = (CyNetworkManager) context.getService(reference);
+                mananger.destroyNetwork(networkView.getModel());
+                context.ungetService(reference);
+            }
+        });
     }
     
     public void convertToFINetwork(final Long pathwayId,

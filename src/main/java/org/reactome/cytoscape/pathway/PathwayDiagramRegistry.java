@@ -331,7 +331,7 @@ public class PathwayDiagramRegistry {
         long diff = 0;
         PathwayInternalFrame rtn = null;
         while (diff < 10000) { // This is a dangerous code
-            PathwayInternalFrame frame = PathwayDiagramRegistry.getRegistry().getPathwayFrame(eventId);
+            PathwayInternalFrame frame = getPathwayFrame(eventId);
             if (frame != null && frame.isSelected()) {
                 rtn = frame;
                 break;

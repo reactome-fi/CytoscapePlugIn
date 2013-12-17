@@ -70,8 +70,6 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     JTree eventTree;
     // To control tree selection event firing
     private TreeSelectionListener selectionListener;
-    // For Pathway Enrichment results
-    private PathwayEnrichmentHighlighter enrichmentHighlighter;
     private Map<String, GeneSetAnnotation> pathwayToAnnotation;
     // Cached red colors for FDRs
     private List<Color> fdrColors;
@@ -174,10 +172,6 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         add(selectionPane, BorderLayout.SOUTH);
         selectionPane.setVisible(false);
     }
-    
-    public PathwayEnrichmentHighlighter getPathwayEnrichmentHighlighter() {
-        return this.enrichmentHighlighter;
-    }
 
     private void initPathwayEnrichmments() {
         // For easy processing
@@ -211,8 +205,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         add(fdrColorBar, BorderLayout.NORTH);
         // Default should be disable
         fdrColorBar.setVisible(false);
-        enrichmentHighlighter = new PathwayEnrichmentHighlighter();
-        enrichmentHighlighter.setPathwayToAnnotation(pathwayToAnnotation);
+        // Link the data model to the action class
+        PathwayEnrichmentHighlighter highlighter = PathwayEnrichmentHighlighter.getHighlighter();
+        highlighter.setPathwayToAnnotation(pathwayToAnnotation);
     }
     
     private void installListners() {
@@ -568,7 +563,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             return; // In case there is nothing selected
         PathwayDiagramRegistry.getRegistry().showPathwayDiagram(event.dbId);
         PathwayInternalFrame pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(event.dbId);
-        highlightPathways(pathwayFrame, event);
+        PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
+        hiliter.highlightPathways(pathwayFrame, event.name);
     }
     
     void viewEventInDiagram() {
@@ -595,18 +591,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 break; // Break it to avoid multiple showing pathway diagrams.
             }
         }
-        highlightPathways(pathwayFrame, event);
-    }
-
-    private void highlightPathways(final PathwayInternalFrame pathwayFrame,
-                                   EventObject event) {
-        if (pathwayFrame == null || event == null)
-            return;
-        final GeneSetAnnotation annotation = pathwayToAnnotation.get(event.name);
-        if (annotation == null)
-            return;
-        CyZoomablePathwayEditor pathwayEditor = pathwayFrame.getZoomablePathwayEditor();
-        enrichmentHighlighter.highlightPathways(pathwayFrame, event.name);
+        PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
+        hiliter.highlightPathways(pathwayFrame, event.name);
     }
 
     private EventObject getSelectedEvent() {
