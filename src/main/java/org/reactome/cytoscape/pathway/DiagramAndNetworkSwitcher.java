@@ -50,7 +50,7 @@ public class DiagramAndNetworkSwitcher {
     }
     
     /**
-     * Convert a FI network converted form a pathway diagram back to a pathway diagram.
+     * Convert a FI network converted from a pathway diagram back to a pathway diagram.
      * @param networkView
      */
     public void convertToDiagram(final CyNetworkView networkView) {
@@ -64,7 +64,8 @@ public class DiagramAndNetworkSwitcher {
         if (pathwayId == null)
             return;
         PathwayDiagramRegistry registry = PathwayDiagramRegistry.getRegistry();
-        registry.showPathwayDiagram(pathwayId);
+        registry.showPathwayDiagram(pathwayId, 
+                                    null);
         // Need to highlight if any
         PathwayInternalFrame frame = registry.getPathwayFrameWithWait(pathwayId);
         if (frame != null) {

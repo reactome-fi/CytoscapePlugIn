@@ -74,7 +74,7 @@ public class PathwayEnrichmentHighlighter {
      * @param pathwayFrame
      * @param eventName
      */
-    public void highlightPathways(final PathwayInternalFrame pathwayFrame,
+    public void highlightPathways(PathwayInternalFrame pathwayFrame,
                                   String eventName) {
         if (pathwayFrame == null || eventName == null)
             return;
@@ -86,7 +86,10 @@ public class PathwayEnrichmentHighlighter {
     }
 
     public void highlightPathways(final PathwayInternalFrame pathwayFrame,
-                                   final List<String> hitGenes) {
+                                  final List<String> hitGenes) {
+        // No need
+        if (hitGenes == null || hitGenes.size() == 0)
+            return; // Nothing to highlight
         AbstractTask task = new AbstractTask() {
             
             @Override

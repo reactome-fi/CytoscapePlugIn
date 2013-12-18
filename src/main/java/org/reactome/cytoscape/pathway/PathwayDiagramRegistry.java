@@ -19,7 +19,10 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
 
+import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.PathwayEditor;
@@ -28,7 +31,9 @@ import org.gk.render.Renderable;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -257,6 +262,62 @@ public class PathwayDiagramRegistry {
     }
     
     /**
+     * Check if a pathways has been displayed as a diagram or a FI network.
+     * @param pathwayId
+     * @return
+     */
+    public boolean isPathwayDisplayed(Long pathwayId) {
+        PathwayInternalFrame frame = getPathwayFrame(pathwayId);
+        if (frame != null)
+            return true;
+        CyNetworkView network = selectNetworkViewForPathway(pathwayId, false);
+        if (network != null)
+            return true;
+        return false;
+    }
+    
+    /**
+     * Get a converted FI network view for a pathway specified by its DB_ID.
+     * @param pathwayId
+     * @return
+     */
+    public CyNetworkView selectNetworkViewForPathway(Long pathwayId) {
+        return selectNetworkViewForPathway(pathwayId, true);
+    }
+    
+    private CyNetworkView selectNetworkViewForPathway(Long pathwayId, 
+                                                      boolean setAsCurrentView) {
+        if (pathwayId == null)
+            return null; // Nothing can be done
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference reference = context.getServiceReference(CyNetworkViewManager.class.getName());
+        CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(reference);
+        ServiceReference appRef = context.getServiceReference(CyApplicationManager.class.getName());
+        CyApplicationManager manager = (CyApplicationManager) context.getService(appRef);
+        if (viewManager.getNetworkViewSet() != null) {
+            TableHelper tableHelper = new TableHelper();
+            for (CyNetworkView view : viewManager.getNetworkViewSet()) {
+                String dataSetType = tableHelper.getDataSetType(view);
+                if (!"PathwayDiagram".equals(dataSetType))
+                    continue;
+                Long storedId = tableHelper.getStoredNetworkAttribute(view.getModel(),
+                                                                      "PathwayId",
+                                                                      Long.class);
+                if (pathwayId.equals(storedId)) {
+                    if (setAsCurrentView)
+                        manager.setCurrentNetworkView(view);
+                    context.ungetService(reference);
+                    context.ungetService(appRef);
+                    return view;
+                }
+            }
+        }
+        context.ungetService(reference);
+        context.ungetService(appRef);
+        return null; // Have not found it
+    }
+    
+    /**
      * Get the PathwayInternalFrame currently selected
      */
     public PathwayInternalFrame getSelectedPathwayFrame() {
@@ -298,7 +359,8 @@ public class PathwayDiagramRegistry {
      * a task.
      * @param pathwayId
      */
-    public void showPathwayDiagram(Long pathwayId) {
+    public void showPathwayDiagram(Long pathwayId,
+                                   String pathwayName) {
         PathwayInternalFrame frame = getPathwayFrame(pathwayId);
         if (frame != null) {
             try {
@@ -310,11 +372,24 @@ public class PathwayDiagramRegistry {
             }
             return; 
         }
+        // Check if a network view has been displayed
+        CyNetworkView networkView = selectNetworkViewForPathway(pathwayId);
+        if (networkView != null) {
+            return;
+        }
         @SuppressWarnings("rawtypes")
         TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
         PathwayDiagramLoadTask task = new PathwayDiagramLoadTask();
         task.setPathwayId(pathwayId);
         taskManager.execute(new TaskIterator(task));
+        // Highlight if needed
+        if (pathwayName != null) {
+            frame = getPathwayFrameWithWait(pathwayId);
+            if (frame != null) {
+                PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
+                hiliter.highlightPathways(frame, pathwayName);
+            }
+        }
     }
     
     /**

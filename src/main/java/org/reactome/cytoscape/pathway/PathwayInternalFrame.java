@@ -7,8 +7,6 @@ package org.reactome.cytoscape.pathway;
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyVetoException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -17,13 +15,8 @@ import javax.swing.JOptionPane;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 
-import org.gk.graphEditor.GraphEditorActionEvent;
-import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
-import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.persistence.DiagramGKBReader;
-import org.gk.render.HyperEdge;
-import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.slf4j.Logger;

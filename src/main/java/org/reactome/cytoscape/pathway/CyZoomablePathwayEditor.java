@@ -122,7 +122,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         if (!relatedIds.contains(selectionEvent.getParentId())) {
             // Remove any selection
             PathwayEditor editor = getPathwayEditor();
-            editor.removeSelection();
+            // it is possible a contained event may be there
+            @SuppressWarnings("unchecked")
+            List<Renderable> renderables = getPathwayEditor().getDisplayedObjects();
+            List<Renderable> selection = new ArrayList<Renderable>();
+            for (Renderable r : renderables) {
+                if (selectionEvent.getEventId().equals(r.getReactomeId())) {
+                    selection.add(r);
+                }
+            }
+            editor.setSelection(selection);
             editor.repaint(editor.getVisibleRect());
             return;
         }
@@ -306,7 +315,12 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    showPathwayDiagram(dbId, name);
+                    PathwayDiagramRegistry.getRegistry().showPathwayDiagram(dbId, name);
+                    PathwayInternalFrame pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(dbId);
+                    if (pathwayFrame != null) {
+                        PathwayEnrichmentHighlighter.getHighlighter().highlightPathways(pathwayFrame, 
+                                                                                        name);
+                    }
                 }
             });
             popup.add(openInDiagram);
@@ -433,16 +447,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         }
         builder.append(gene).append("\">").append(gene).append("</a></center>");
         return builder.toString();
-    }
-    
-    private void showPathwayDiagram(Long pathwayId,
-                                    String pathwayName) {
-        PathwayDiagramRegistry.getRegistry().showPathwayDiagram(pathwayId);
-        PathwayInternalFrame pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(pathwayId);
-        if (pathwayFrame != null) {
-            PathwayEnrichmentHighlighter.getHighlighter().highlightPathways(pathwayFrame, 
-                                                                            pathwayName);
-        }
     }
     
     /**

@@ -36,14 +36,11 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 
-import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
-import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.gk.model.ReactomeJavaConstants;
@@ -54,7 +51,6 @@ import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.GeneSetAnnotation;
-import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape.util.SearchDialog;
@@ -358,8 +354,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 selectionEvent.setParentId(event.dbId);
                 selectionEvent.setEventId(selectedEvent.dbId);
                 selectionEvent.setIsPathway(selectedEvent.isPathway);
-                registry.getEventSelectionMediator().propageEventSelectionEvent(this,
-                                                                                                            selectionEvent);
+                registry.getEventSelectionMediator().propageEventSelectionEvent(this, selectionEvent);
             }
         }
         if (registry.getSelectedPathwayFrame() == null) {
@@ -376,30 +371,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     private void selectFINetworkView(EventObject event) {
         if (event == null)
             return;
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceReference reference = context.getServiceReference(CyNetworkViewManager.class.getName());
-        CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(reference);
-        ServiceReference appRef = context.getServiceReference(CyApplicationManager.class.getName());
-        CyApplicationManager manager = (CyApplicationManager) context.getService(appRef);
-        if (viewManager.getNetworkViewSet() != null) {
-            TableHelper tableHelper = new TableHelper();
-            for (CyNetworkView view : viewManager.getNetworkViewSet()) {
-                String dataSetType = tableHelper.getDataSetType(view);
-                if (!"PathwayDiagram".equals(dataSetType))
-                    continue;
-                Long storedId = tableHelper.getStoredNetworkAttribute(view.getModel(),
-                                                                      "PathwayId",
-                                                                      Long.class);
-                if (event.dbId.equals(storedId)) {
-//                    tableHelper.setNetworkSelected(view.getModel(),
-//                                                   true);
-                    manager.setCurrentNetworkView(view);
-                    break;
-                }
-            }
-        }
-        context.ungetService(reference);
-        context.ungetService(appRef);
+        PathwayDiagramRegistry.getRegistry().selectNetworkViewForPathway(event.dbId);
     }
     
     private void showTreePopup(MouseEvent e) {
@@ -429,6 +401,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 }
             });
             popup.add(showDiagramMenu);
+            showDiagramMenu.setEnabled(!isDiagramDisplayed());
         }
         else {
             JMenuItem viewInDiagramMenu = new JMenuItem("View in Diagram");
@@ -440,6 +413,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 }
             });
             popup.add(viewInDiagramMenu);
+            viewInDiagramMenu.setEnabled(!isDiagramDisplayed());
         }
         popup.addSeparator();
         // Add a search function
@@ -561,16 +535,13 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         EventObject event = getSelectedEvent();
         if (event == null)
             return; // In case there is nothing selected
-        PathwayDiagramRegistry.getRegistry().showPathwayDiagram(event.dbId);
-        PathwayInternalFrame pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(event.dbId);
-        PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-        hiliter.highlightPathways(pathwayFrame, event.name);
+        PathwayDiagramRegistry.getRegistry().showPathwayDiagram(event.dbId, event.name);
     }
     
     void viewEventInDiagram() {
         if (eventTree.getSelectionCount() == 0)
             return;
-        final TreePath path = eventTree.getSelectionPath();
+        TreePath path = eventTree.getSelectionPath();
         PathwayInternalFrame pathwayFrame = null;
         EventObject event = null;
         // Find the pathway with its hasDiagram true
@@ -581,18 +552,27 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 // Don't want to make any change in the tree's selection
                 EventSelectionMediator mediator = PathwayDiagramRegistry.getRegistry().getEventSelectionMediator();
                 mediator.removeEventSelectionListener(this);
-                PathwayDiagramRegistry.getRegistry().showPathwayDiagram(event.dbId);
-                // Have to make sure PathwayInternalFrame has been selected
-                // Give it 10 seconds to avoid dead lock here
-                pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(event.dbId);
+                PathwayDiagramRegistry.getRegistry().showPathwayDiagram(event.dbId, event.name);
                 mediator.addEventSelectionListener(this);
                 // Fire a new selection event for selecting selected events
                 doTreeSelection();
                 break; // Break it to avoid multiple showing pathway diagrams.
             }
         }
-        PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-        hiliter.highlightPathways(pathwayFrame, event.name);
+    }
+    
+    private boolean isDiagramDisplayed() {
+        if (eventTree.getSelectionCount() == 0)
+            return true;
+        TreePath path = eventTree.getSelectionPath();
+        for (int i = path.getPathCount(); i > 0; i--) {
+            DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) path.getPathComponent(i - 1);
+            EventObject event = (EventObject) treeNode.getUserObject();
+            if (event.hasDiagram) {
+                return PathwayDiagramRegistry.getRegistry().isPathwayDisplayed(event.dbId);
+            }
+        }
+        return false;
     }
 
     private EventObject getSelectedEvent() {

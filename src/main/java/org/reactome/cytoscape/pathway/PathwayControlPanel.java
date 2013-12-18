@@ -52,8 +52,6 @@ import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
-import org.gk.render.HyperEdge;
-import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
@@ -387,6 +385,9 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                         handlePathwayViewSelection();
                 }
             });
+            // Synchronize with tree
+            // Always register this to avoid an ConcurrentException related to collection.
+            PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().addEventSelectionListener(pathwayView);
         }
         // Check if pathwayView has been set already
         if (jsp.getBottomComponent() == pathwayView) {
@@ -400,7 +401,6 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         pathwayView.setPreferredSize(overview.getSize());
         pathwayView.getPathwayEditor().setRenderable(pathway);
         overview.syncrhonizeScroll(pathwayView);
-        PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().addEventSelectionListener(pathwayView);
         overview.setParentEditor(pathwayView.getPathwayEditor());
         overview.setRenderable(pathway);
         // Replace the overview with the whole pathway diagram view
@@ -434,7 +434,6 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         // Remove from the original container
         overviewContainer.getParent().remove(overviewContainer);
         // Don't listen to selection
-        PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().removeEventSelectionListener(pathwayView);
         overviewContainer.setPreferredSize(pathwayView.getSize());
         int dividerPos = jsp.getDividerLocation();
         jsp.setBottomComponent(overviewContainer);
