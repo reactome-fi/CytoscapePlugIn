@@ -211,67 +211,63 @@ public class TableFormatterImpl implements TableFormatter
      * @param network The network model of a given network view.
      */
     @Override
-    public void makeModuleAnalysisTables(CyNetwork network)
-    {
-
-        //Creates the attributes tables for Module Analysis (view context menu)
+    public void makeModuleAnalysisTables(CyNetwork network) {
+        // Creates the attributes tables for Module Analysis (view context menu)
         CyTable netTable = network.getDefaultNetworkTable();
         CyTable nodeTable = network.getDefaultNodeTable();
-        if (netTable.getColumn("clustering_Type") == null)
-        {
-            netTable.createColumn("clustering_Type", String.class,
-                    Boolean.FALSE);
+        if (netTable.getColumn("clustering_Type") == null) {
+            netTable.createColumn("clustering_Type", 
+                                  String.class,
+                                  false);
         }
-        if (nodeTable.getColumn("module") == null)
-        {
-            nodeTable.createColumn("module", Integer.class, Boolean.FALSE);
+        if (nodeTable.getColumn("module") == null) {
+            nodeTable.createColumn("module", 
+                                   Integer.class,
+                                   false);
         }
         boolean found = false;
         CyTable moduleTable = null;
         Set<CyTable> tables = tableManager.getAllTables(Boolean.TRUE);
-        for (CyTable table : tables)
-        {
-            if (table.getTitle().equals("Network Modules"))
-            {
+        for (CyTable table : tables) {
+            if (table.getTitle().equals("Network Modules")) {
                 moduleTable = table;
                 found = true;
                 break;
             }
         }
-        if (found == false)
-        {
-            moduleTable = tableFactory.createTable("Network Modules",
-                    "module", Integer.class, Boolean.FALSE, Boolean.FALSE);
+        if (found == false) {
+            moduleTable = tableFactory
+                    .createTable("Network Modules", "module", Integer.class,
+                                 Boolean.FALSE, Boolean.FALSE);
             tableManager.addTable(moduleTable);
-            if (moduleTable.getColumn("module") == null)
-            {
-                moduleTable.createColumn("module", Integer.class, Boolean.FALSE);
+            if (moduleTable.getColumn("module") == null) {
+                moduleTable
+                        .createColumn("module", Integer.class, Boolean.FALSE);
             }
-            if (moduleTable.getColumn("Nodes in Module") == null)
-            {
+            if (moduleTable.getColumn("Nodes in Module") == null) {
                 moduleTable.createColumn("Nodes in Module", Integer.class,
-                        Boolean.FALSE);
+                                         Boolean.FALSE);
             }
-            if (moduleTable.getColumn("Node Percentage") == null)
-            {
+            if (moduleTable.getColumn("Node Percentage") == null) {
                 moduleTable.createColumn("Node Percentage", Integer.class,
-                        Boolean.FALSE);
+                                         Boolean.FALSE);
             }
-            if (moduleTable.getColumn("Samples in Module") == null)
-            {
-                moduleTable.createColumn("Samples in Module", Integer.class, Boolean.FALSE);
+            if (moduleTable.getColumn("Samples in Module") == null) {
+                moduleTable.createColumn("Samples in Module", Integer.class,
+                                         Boolean.FALSE);
             }
-            if (moduleTable.getColumn("Sample Percentage") == null)
-            {
-                moduleTable.createColumn("Sample Percentage", Double.class, Boolean.FALSE);
+            if (moduleTable.getColumn("Sample Percentage") == null) {
+                moduleTable.createColumn("Sample Percentage", Double.class,
+                                         Boolean.FALSE);
             }
-            if (moduleTable.getColumn("Node List") == null)
-            {
-                moduleTable.createColumn("Node List", String.class, Boolean.FALSE);
+            if (moduleTable.getColumn("Node List") == null) {
+                moduleTable.createColumn("Node List", String.class,
+                                         Boolean.FALSE);
             }
             tableManager.addTable(moduleTable);
-            //mapNetworkAttrTF.createTaskIterator(moduleTable);
-            networkTableManager.setTable(network, CyNetwork.class, "Modules", moduleTable);
+            // mapNetworkAttrTF.createTaskIterator(moduleTable);
+            networkTableManager.setTable(network, CyNetwork.class, "Modules",
+                                         moduleTable);
         }
         
     }

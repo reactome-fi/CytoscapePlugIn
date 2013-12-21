@@ -140,7 +140,7 @@ public class TableHelper {
 
     public void storeClusteringType(CyNetwork network, String clusteringType)
     {
-        storeNetworkAttribute(network, "clusteringType", clusteringType);
+        storeNetworkAttribute(network, "clustering_Type", clusteringType);
     }
     
     public void storeClusteringType(CyNetworkView view, String clusteringType)
@@ -150,7 +150,7 @@ public class TableHelper {
 
     public String getClusteringType(CyNetwork network)
     {
-        return getStoredNetworkAttribute(network, "clusteringType", String.class);
+        return getStoredNetworkAttribute(network, "clustering_Type", String.class);
     }
 
     private <V, T> void storeAttributeValue(CyTable cyIdenTable, 

@@ -134,7 +134,8 @@ public class PlugInObjectManager {
             token = token.trim();
             if (token.toLowerCase().contains("default")) return token;
         }
-        return null;
+        // There is no default set. Choose the first one.
+        return tokens[0];
     }
 
     public void setFiNetworkVersion(String fiNetworkVersion) {

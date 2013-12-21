@@ -1,35 +1,30 @@
-# Some externalize config information
-#restfulURL=http://reactomedev.oicr.on.ca:80/caBigR3WebApp/FIService/
-#restfulURL=http://reactomedev.oicr.on.ca:80/caBigR3WebApp2012/FIService/
-restfulURL=http://reactomews.oicr.on.ca:80/caBigR3WebApp2012/FIService/
-#restfulURL=http://brie8.cshl.edu:80/caBigR3WebApp/FIService/
-#restfulURL=http://localhost:80/caBigR3WebApp/FIService/
+# Configuration information
 # Control if a local service should be used
 networkService=org.reactome.cytoscape.service.LocalService
 dataSourceURL=http://reactomedev.oicr.on.ca/cgi-bin/eventbrowser?DB=${DB_NAME}&FORMAT=sectioned&ID=
-#dataSourceURL=http://brie8.cshl.edu/cgi-bin/eventbrowser?DB=test_reactome_28_plus_i&FORMAT=sectioned&ID=
 moduleColors=0,0,153;51,153,0;153,0,153;102,102,0;0,102,102;204,153,0;204,0,102;204,204,255,0,102,51;0,204,204;102,0,51;0,51,51;0,102,153;255,102,255;255,255,102
 userGuideURL=http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin
 # A list of FI network versions available for selection
-FINetworkVersions=2009 (Default),2012 (Latest)
+FINetworkVersions=2013,2012,2009
 #2009_(Default)_restfulURL=http://reactomedev.oicr.on.ca:8080/caBigR3WebApp/FIService/
 #2012_(Latest)_restfulURL=http://reactomedev.oicr.on.ca:8080/caBigR3WebApp2012/FIService/
 # For local test
-2009_(Default)_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
-2012_(Latest)_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+2009_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+2012_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+2013_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 # For reactomews path_x test
 #2009_(Default)_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp_PathX/FIService/
 #2012_(Latest)_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp_PathX/FIService/
-# For Production site: note port 80 is used
-#2009_(Default)_restfulURL=http://reactomews.oicr.on.ca:80/caBigR3WebApp/FIService/
-#2012_(Latest)_restfulURL=http://reactomews.oicr.on.ca:80/caBigR3WebApp2012/FIService/
-2009_(Default)_sourceDb=test_reactome_28_plus_i_myisam
-2012_(Latest)_sourceDb=test_reactome_41_plus_i
+# For Production site
+#2009_(Default)_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp/FIService/
+#2012_(Latest)_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2012/FIService/
+2009_sourceDb=test_reactome_28_plus_i_myisam
+2012_sourceDb=test_reactome_41_plus_i
+2013_sourceDb=test_reactome_47_plus_i
 # A list of evidences and their labels
 evidenceProperties=humanInteraction,scePPI,dmePPI,celPPI,mousePPI,genewaysPPI,pavlidisGeneExp,carlosGeneExp,pfamDomainInt,goBPSharing,probability
 evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interaction,Mouse Interaction,Geneways Interaction,Pavlidis Gene Exp,Carlos Gene Exp,PfamDomain Interaction,GO BP Sharing,Score
 # In order to query Reactome pathway diagrams: most likely this should be delegated via the FI service WS?
 ReactomeRESTfulAPI=http://localhost:8080/ReactomeRESTfulAPI/RESTfulWS/
 #ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/ReactomeRESTfulAPI_PathX/RESTfulWS/
-#ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/ReactomeRESTfulAPI/RESTfulWS/
 ReactomeURL=http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&ID=

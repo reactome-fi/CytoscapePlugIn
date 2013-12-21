@@ -382,20 +382,15 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
      * @author Eric T. Dawson
      * 
      */
-    class SurvivalAnalysisMenu implements CyNetworkViewContextMenuFactory
-    {
+    class SurvivalAnalysisMenu implements CyNetworkViewContextMenuFactory {
 
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
-            JMenuItem survivalAnalysisMenuItem = new JMenuItem(
-                    "Survival Analysis");
-            survivalAnalysisMenuItem.addActionListener(new ActionListener()
-            {
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem survivalAnalysisMenuItem = new JMenuItem("Survival Analysis");
+            survivalAnalysisMenuItem.addActionListener(new ActionListener() {
 
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
+                public void actionPerformed(ActionEvent e) {
                     doModuleSurvivalAnalysis(view);
                 }
             });
@@ -489,8 +484,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         return genes;
     }
 
-    private void doModuleSurvivalAnalysis(CyNetworkView view)
-    {
+    private void doModuleSurvivalAnalysis(CyNetworkView view) {
         Map<String, Integer> nodeToModule = extractNodeToModule(view);
         if (nodeToModule == null || nodeToModule.isEmpty()) return; // There is
                                                                     // not data
@@ -608,8 +602,9 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
             progPane.setText("Storing clustering results...");
             tableHelper.storeClusteringType(view,
                                             TableFormatterImpl.getSpectralPartitionCluster());
-            Map<String, Object> nodeToSamples = tableHelper.getNodeTableValuesByName(
-                                                                                     view.getModel(), "samples", String.class);
+            Map<String, Object> nodeToSamples = tableHelper.getNodeTableValuesByName(view.getModel(), 
+                                                                                     "samples", 
+                                                                                     String.class);
             
             showModuleInTab(nodeToCluster, nodeToSamples,
                             clusterResult.getModularity(), view);
@@ -774,64 +769,59 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                 view, type, isForModule);
     }
 
-    private Map<String, Integer> extractNodeToModule(CyNetworkView view)
-    {
+    private Map<String, Integer> extractNodeToModule(CyNetworkView view) {
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
         CyTable netTable = view.getModel().getDefaultNetworkTable();
         Long netSUID = view.getModel().getSUID();
         // Check if the network has been clustered
-        if (netTable.getRow(netSUID).get("clustering_Type", String.class) == null)
-        {
+        if (netTable.getRow(netSUID).get("clustering_Type", String.class) == null) {
             PlugInUtilities.showErrorMessage("Error in Annotating Modules",
-                    "Please cluster the FI network before annotating modules.");
+                                              "Please cluster the FI network before annotating modules.");
             return null;
         }
         final Map<String, Integer> nodeToModule = new HashMap<String, Integer>();
         Set<String> linkers = new HashSet<String>();
-        for (CyNode node : view.getModel().getNodeList())
-        {
+        for (CyNode node : view.getModel().getNodeList()) {
             Long nodeSUID = node.getSUID();
             String nodeName = nodeTable.getRow(nodeSUID).get("name",
-                    String.class);
+                                                             String.class);
             Integer module = nodeTable.getRow(nodeSUID).get("module",
-                    Integer.class);
+                                                            Integer.class);
             // Since nodes which are unlinked will have null value for module
             // (as may some other nodes),
             // only use those nodes with value for module.
-            if (module != null)
-            {
+            if (module != null) {
                 nodeToModule.put(nodeName, module);
-                Boolean isLinker = nodeTable.getRow(nodeSUID).get("isLinker",
-                        Boolean.class);
-                if (isLinker != null && isLinker)
-                {
+                Boolean isLinker = nodeTable.getRow(nodeSUID)
+                        .get("isLinker", Boolean.class);
+                if (isLinker != null && isLinker) {
                     linkers.add(nodeName);
                 }
             }
         }
         Integer cutoff = applyModuleSizeFiler(nodeToModule);
-        if (cutoff == null) return null; // Equivalent to canceling the task.
-        if (!linkers.isEmpty())
-        {
-            CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-            int reply = JOptionPane.showConfirmDialog(
-                    desktopApp.getJFrame(),
-                    "Linkers have been used in network construction."
-                            + " Including linkers\n will bias results. Would you like to exclude them from analysis?",
-                    "Exclude Linkers?", JOptionPane.YES_NO_CANCEL_OPTION);
+        if (cutoff == null)
+            return null; // Equivalent to canceling the task.
+        if (!linkers.isEmpty()) {
+            CySwingApplication desktopApp = PlugInObjectManager.getManager()
+                    .getCySwingApplication();
+            int reply = JOptionPane
+                    .showConfirmDialog(desktopApp.getJFrame(),
+                                       "Linkers have been used in network construction."
+                                               + " Including linkers\n will bias results. Would you like to exclude them from analysis?",
+                                       "Exclude Linkers?",
+                                       JOptionPane.YES_NO_CANCEL_OPTION);
             if (reply == JOptionPane.CANCEL_OPTION)
-
-            return null;
-            if (reply == JOptionPane.YES_OPTION)
-            {
+                
+                return null;
+            if (reply == JOptionPane.YES_OPTION) {
                 nodeToModule.keySet().removeAll(linkers);
-                if (nodeToModule.isEmpty())
-                {
-                    JOptionPane.showMessageDialog(
-                            desktopApp.getJFrame(),
-                            "No genes remain after removing linkers. Annotation cannot be performed.",
-                            "Cannot Annotate Modules",
-                            JOptionPane.INFORMATION_MESSAGE);
+                if (nodeToModule.isEmpty()) {
+                    JOptionPane
+                            .showMessageDialog(desktopApp.getJFrame(),
+                                               "No genes remain after removing linkers. Annotation cannot be performed.",
+                                               "Cannot Annotate Modules",
+                                               JOptionPane.INFORMATION_MESSAGE);
                     return null;
                 }
             }

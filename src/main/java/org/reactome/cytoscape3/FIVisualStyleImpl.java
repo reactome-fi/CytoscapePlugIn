@@ -138,10 +138,16 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         // Also a color for hit genes
         DiscreteMapping hitGeneColorFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
                                                                                                                      Boolean.class,
-                                                                                                                     BasicVisualLexicon.NODE_FILL_COLOR);
+                                                                                                                     BasicVisualLexicon.NODE_BORDER_PAINT);
         hitGeneColorFunction.putMapValue(true,
                                          NODE_HIGHLIGHT_COLOR);
         fiVisualStyle.addVisualMappingFunction(hitGeneColorFunction);
+        // Make it more obvious since we cannot use a filling color, which has been used by clusters
+        DiscreteMapping hitGeneBorderFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
+                                                                                                                      Boolean.class,
+                                                                                                                      BasicVisualLexicon.NODE_BORDER_WIDTH);
+        hitGeneBorderFunction.putMapValue(true, 5);
+        fiVisualStyle.addVisualMappingFunction(hitGeneBorderFunction);
         
         // Set default edge color and width
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_UNSELECTED_PAINT,
