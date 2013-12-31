@@ -128,6 +128,7 @@ public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
             }
         });
         popupMenu.add(item);
+        item.setEnabled(!eventTreePane.isDiagramDisplayed());
         popupMenu.show(contentTable, e.getX(), e.getY());
     }
 

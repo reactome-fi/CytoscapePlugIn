@@ -109,6 +109,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         eventTree.setShowsRootHandles(true);
         eventTree.setRootVisible(false);
         eventTree.setExpandsSelectedPaths(true);
+        // For some unknown reason, setLargeModel true will help to make text truncation not occurring
+        // for enrichment results.
+        eventTree.setLargeModel(true);
         // Only single selection
 //        eventTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         DefaultMutableTreeNode root = new DefaultMutableTreeNode();
@@ -561,7 +564,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         }
     }
     
-    private boolean isDiagramDisplayed() {
+    boolean isDiagramDisplayed() {
         if (eventTree.getSelectionCount() == 0)
             return true;
         TreePath path = eventTree.getSelectionPath();
@@ -667,8 +670,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     }
 
     private void showSearchResults(List<TreePath> paths,
-                                   boolean selectFirstPathOnly) {
+                                   boolean keepOriginalSelectPath) {
         DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
+        final TreePath selectedPath = eventTree.getSelectionPath();
         eventTree.clearSelection();
         for (TreePath path : paths) {
             // Actually we only need to expand the parent TreeNode only
@@ -682,20 +686,22 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             }
         }
         // Scroll to the first path
-        final TreePath firstPath = paths.get(0);
-        if (selectFirstPathOnly) {
+        if (keepOriginalSelectPath && selectedPath != null) {
+            // Since tree expanding, we need to scroll back to the original selected path
             SwingUtilities.invokeLater(new Runnable() {
                 
                 @Override
                 public void run() {
-                    eventTree.setSelectionPath(firstPath);
-                    eventTree.scrollPathToVisible(firstPath);
+                    // Need to do a re-selection to force selection is synchronized
+                    eventTree.setSelectionPath(selectedPath);
+                    eventTree.scrollPathToVisible(selectedPath);
                 }
             });
         }
         else {
             for (TreePath path : paths)
                 eventTree.addSelectionPath(path);
+            final TreePath firstPath = paths.get(0);
             SwingUtilities.invokeLater(new Runnable() {
                 
                 @Override
