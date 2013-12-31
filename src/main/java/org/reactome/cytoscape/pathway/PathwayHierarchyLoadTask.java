@@ -58,6 +58,10 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
         }
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         PathwayControlPanel controlPane = new PathwayControlPanel();
+        if (panel.getCytoPanelComponentCount() > 0 && panel.getComponentAt(0) != null) {
+            Component comp = panel.getComponentAt(0);
+            controlPane.setPreferredSize(comp.getPreferredSize()); // Control its size to avoid weird behavior
+        }   
         try {
             monitor.setStatusMessage("Loading pathways...");
             monitor.setTitle("Pathway Loading");
@@ -77,7 +81,7 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
         }
         context.registerService(CytoPanelComponent.class.getName(),
                                 controlPane,
-                                new Properties());
+                                null);
         // Make sure if a new Reactome control panel can be selected
         // Note: This may not work if the above call is asynchronous!
         index = getIndexOfPathwayControlPane(panel);

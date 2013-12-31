@@ -109,9 +109,6 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         eventTree.setShowsRootHandles(true);
         eventTree.setRootVisible(false);
         eventTree.setExpandsSelectedPaths(true);
-        // For some unknown reason, setLargeModel true will help to make text truncation not occurring
-        // for enrichment results.
-        eventTree.setLargeModel(true);
         // Only single selection
 //        eventTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         DefaultMutableTreeNode root = new DefaultMutableTreeNode();
@@ -125,6 +122,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         
         installListners();
         initPathwayEnrichmments();
+        
+        // For some unknown reason, setLargeModel true will help to make text truncation not occurring
+        // for enrichment results.
+        eventTree.setLargeModel(true);
     }
 
     private void initSelectionPane(TreeCellRenderer renderer) {
@@ -146,6 +147,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         selectionTree.setRootVisible(false);
         DefaultTreeModel model1 = new DefaultTreeModel(new DefaultMutableTreeNode());
         selectionTree.setModel(model1);
+        selectionTree.setLargeModel(true);
         selectionTree.setCellRenderer(renderer);
         selectionTree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
             
@@ -665,7 +667,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             tableBrowserPane.setSelectedIndex(index);
         // Need to highlight any opened pathway diagrams or FI diagram view
         PathwayDiagramRegistry.getRegistry().highlightPathwayViews();
-        // Fire a propert chanage action
+        // Fire a property change action
         firePropertyChange("showPathwayEnrichments", false, true);
     }
 
@@ -673,7 +675,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                                    boolean keepOriginalSelectPath) {
         DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
         final TreePath selectedPath = eventTree.getSelectionPath();
-        eventTree.clearSelection();
+        if (!keepOriginalSelectPath)
+            eventTree.clearSelection();
         for (TreePath path : paths) {
             // Actually we only need to expand the parent TreeNode only
             DefaultMutableTreeNode last = (DefaultMutableTreeNode) path.getLastPathComponent();
@@ -693,8 +696,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 @Override
                 public void run() {
                     // Need to do a re-selection to force selection is synchronized
-                    eventTree.setSelectionPath(selectedPath);
+//                    eventTree.setSelectionPath(selectedPath);
                     eventTree.scrollPathToVisible(selectedPath);
+                    if (annotationPanel != null) // Force selection in the table
+                        annotationPanel.doTreeSelection();
                 }
             });
         }
