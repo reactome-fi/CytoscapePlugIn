@@ -13,6 +13,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -227,6 +228,30 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             }
         };
         PlugInObjectManager.getManager().setConvertToNetworkMenu(networkToDiagramMenu);
+        
+        // Showing pathway enrichments
+        eventPane.addPropertyChangeListener(new PropertyChangeListener() {
+            
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getPropertyName().equals("showPathwayEnrichments")) {
+                    showPathwayEnrichments((Boolean)evt.getNewValue());
+                }
+            }
+        });
+        
+    }
+    
+    private void showPathwayEnrichments(Boolean isShown) {
+        if (jsp.getBottomComponent() != pathwayView) {
+            return; // Don't need to do anything since it is not displayed
+        }
+        if (isShown) {
+            PathwayEnrichmentHighlighter highlighter = PathwayEnrichmentHighlighter.getHighlighter();
+            highlighter.highlightPathway(pathwayView);
+        }
+        else
+            pathwayView.resetColors();
     }
     
     /**
@@ -393,6 +418,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         if (jsp.getBottomComponent() == pathwayView) {
             // Just in case a new pathway is passed on
             pathwayView.getPathwayEditor().setRenderable(pathway);
+            pathwayView.recordColors();
+            PathwayEnrichmentHighlighter.getHighlighter().highlightPathway(pathwayView);
             overview.setRenderable(pathway);
             return; // Don't need to do anything
         }
@@ -400,6 +427,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         // Note: only preferred size works
         pathwayView.setPreferredSize(overview.getSize());
         pathwayView.getPathwayEditor().setRenderable(pathway);
+        pathwayView.recordColors();
+        PathwayEnrichmentHighlighter.getHighlighter().highlightPathway(pathwayView);
         overview.syncrhonizeScroll(pathwayView);
         overview.setParentEditor(pathwayView.getPathwayEditor());
         overview.setRenderable(pathway);

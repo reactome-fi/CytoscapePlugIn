@@ -3,7 +3,7 @@
 networkService=org.reactome.cytoscape.service.LocalService
 dataSourceURL=http://reactomedev.oicr.on.ca/cgi-bin/eventbrowser?DB=${DB_NAME}&FORMAT=sectioned&ID=
 moduleColors=0,0,153;51,153,0;153,0,153;102,102,0;0,102,102;204,153,0;204,0,102;204,204,255,0,102,51;0,204,204;102,0,51;0,51,51;0,102,153;255,102,255;255,255,102
-userGuideURL=http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin
+userGuideURL=http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin_4
 # A list of FI network versions available for selection
 FINetworkVersions=2013,2012,2009
 #2009_(Default)_restfulURL=http://reactomedev.oicr.on.ca:8080/caBigR3WebApp/FIService/

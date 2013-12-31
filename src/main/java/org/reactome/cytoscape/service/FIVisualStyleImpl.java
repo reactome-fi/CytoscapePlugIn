@@ -1,4 +1,4 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -14,7 +14,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.property.ArrowShapeVisualProperty;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
@@ -28,8 +27,6 @@ import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.view.vizmap.mappings.PassthroughMapping;
-import org.reactome.cytoscape.service.FIVisualStyle;
-import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
@@ -53,8 +50,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
             VisualStyleFactory visStyleFactory,
             VisualMappingFunctionFactory visMapFuncFactoryC,
             VisualMappingFunctionFactory visMapFuncFactoryD,
-            VisualMappingFunctionFactory visMapFuncFactoryP)
-    {
+            VisualMappingFunctionFactory visMapFuncFactoryP) {
         this.visMapManager = visMapManager;
         this.visStyleFactory = visStyleFactory;
         this.visMapFuncFactoryC = visMapFuncFactoryC;
@@ -63,12 +59,9 @@ public class FIVisualStyleImpl implements FIVisualStyle {
     }
 
     @Override
-    public void setVisualStyle(CyNetworkView view)
-    {
-        // VisualStyle style = visMapManager.getVisualStyle(view);
+    public void setVisualStyle(CyNetworkView view) {
         Iterator it = visMapManager.getAllVisualStyles().iterator();
-        while (it.hasNext())
-        {
+        while (it.hasNext()) {
             VisualStyle current = (VisualStyle) it.next();
             if (current.getTitle().equalsIgnoreCase(FI_VISUAL_STYLE))
             {
@@ -76,17 +69,44 @@ public class FIVisualStyleImpl implements FIVisualStyle {
                 break;
             }
         }
-        createVisualStyle(view);
+        VisualStyle style = createVisualStyle(view);
+        // Apply the visual style and update the network view.
+        visMapManager.setVisualStyle(style, view);
+        view.updateView();
+    }
+    
+    /**
+     * 
+     * @param view
+     * @param createStyle true to create a new VisualStyle from cratch. Otherwise, use an existing one.
+     */
+    @Override
+    public void setVisualStyle(CyNetworkView view, boolean createStyle) {
+        if (createStyle) {
+            setVisualStyle(view);
+            return;
+        }
+        // Find an existing one
+        VisualStyle style = null;
+        Iterator it = visMapManager.getAllVisualStyles().iterator();
+        while (it.hasNext()) {
+            VisualStyle current = (VisualStyle) it.next();
+            if (current.getTitle().equalsIgnoreCase(FI_VISUAL_STYLE))
+            {
+                style = current;
+                break;
+            }
+        }
+        if (style == null)
+            style = createVisualStyle(view);
+        // Apply the visual style and update the network view.
+        visMapManager.setVisualStyle(style, view);
         view.updateView();
     }
 
-    @Override
-    public void createVisualStyle(CyNetworkView view)
-    {
-
+    private VisualStyle createVisualStyle(CyNetworkView view) {
         // Create a fresh visual style
         VisualStyle fiVisualStyle = visStyleFactory.createVisualStyle(FI_VISUAL_STYLE);
-        CyTable tableForStyling = view.getModel().getDefaultNodeTable();
 
         // Set the default node shape and color
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_SHAPE,
@@ -207,63 +227,56 @@ public class FIVisualStyleImpl implements FIVisualStyle {
                     upperBoundary);
             fiVisualStyle.addVisualMappingFunction(sampleNumberToSizeFunction);
         }
-        // Apply the visual style and update the network view.
-        visMapManager.setVisualStyle(fiVisualStyle, view);
-        view.updateView();
+        return fiVisualStyle;
     }
 
-    @Override
-    public int[] getSampleNumberRange(CyNetworkView view)
-    {
-        Map<Long, Object> idToSampleNumber = new TableHelper().getNodeTableValuesBySUID(
-                view.getModel(), "sampleNumber", Integer.class);
+    private int[] getSampleNumberRange(CyNetworkView view) {
+        Map<Long, Object> idToSampleNumber = new TableHelper().getNodeTableValuesBySUID(view.getModel(), 
+                                                                                        "sampleNumber", 
+                                                                                        Integer.class);
         if (idToSampleNumber == null || idToSampleNumber.isEmpty())
             return null;
         Set<Object> set = new HashSet<Object>(idToSampleNumber.values());
         List<Integer> list = new ArrayList<Integer>();
-        for (Object obj : set)
-        {
+        for (Object obj : set) {
             list.add((Integer) obj);
         }
         Collections.sort(list);
         Integer min = list.get(0);
         Integer max = list.get(list.size() - 1);
-        return new int[]
-        { min, max };
+        return new int[]{min, max};
     }
 
-    @Override
-    public JMenuItem getyFilesOrganic() {
+    private JMenuItem getyFilesOrganic() {
         JMenu yFilesMenu = null;
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        for (Component item : desktopApp.getJMenu("Layout").getMenuComponents())
-            if (item instanceof JMenu
-                    && ((JMenu) item).getText().equals("yFiles Layouts"))
-            {
+        for (Component item : desktopApp.getJMenu("Layout").getMenuComponents()) {
+            if (item instanceof JMenu && ((JMenu) item).getText().equals("yFiles Layouts")) {
                 yFilesMenu = (JMenu) item;
                 break;
             }
-        JMenuItem organicMenuItem = null;
-        for (Component item : yFilesMenu.getMenuComponents())
-            if (item instanceof JMenuItem
-                    && ((JMenuItem) item).getText().equals("Organic"))
-            {
-                organicMenuItem = (JMenuItem) item;
-                break;
+        }
+        if (yFilesMenu != null) {
+            JMenuItem organicMenuItem = null;
+            for (Component item : yFilesMenu.getMenuComponents()) {
+                if (item instanceof JMenuItem && ((JMenuItem) item).getText().equals("Organic")) {
+                    organicMenuItem = (JMenuItem) item;
+                    break;
+                }
             }
-        return organicMenuItem;
+            return organicMenuItem;
+        }
+        return null;
     }
 
     @Override
-    public void setLayout()
-    {
+    public void setLayout() {
         // Set the desired layout (yFiles Organic)
         // This method manually clicks the menu item to trigger
         // the new layout, as yFiles layouts are not available
         // for programmatic use.
         JMenuItem yFilesOrganicMenuItem = getyFilesOrganic();
-        if (yFilesOrganicMenuItem != null)
-        {
+        if (yFilesOrganicMenuItem != null) {
             yFilesOrganicMenuItem.doClick();
         }
     }

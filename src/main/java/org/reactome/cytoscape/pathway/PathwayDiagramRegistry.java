@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JInternalFrame;
 import javax.swing.event.InternalFrameAdapter;
@@ -27,12 +28,16 @@ import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
+import org.gk.persistence.DiagramGKBReader;
+import org.gk.persistence.DiagramGKBWriter;
 import org.gk.render.Renderable;
+import org.gk.render.RenderablePathway;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
+import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.slf4j.Logger;
@@ -59,7 +64,8 @@ public class PathwayDiagramRegistry {
     // Used to catch some property change
     private PropertyChangeSupport propertyChangeSupport;
     // This map is used to map a converted FI network to its original PathwayDiagram
-    private Map<CyNetwork, Renderable> networkToDiagram;
+    // Diagrams are saved in XML String to avoid node colors change (e.g. highlighting)
+    private Map<CyNetwork, String> networkToDiagram;
     
     /**
      * Default private constructor.
@@ -67,7 +73,7 @@ public class PathwayDiagramRegistry {
     private PathwayDiagramRegistry() {
         diagramIdToFrame = new HashMap<Long, PathwayInternalFrame>();
         pathwayIdToDiagramId = new HashMap<Long, Long>();
-        networkToDiagram = new HashMap<CyNetwork, Renderable>();
+        networkToDiagram = new HashMap<CyNetwork, String>();
         selectionMediator = new EventSelectionMediator();
         propertyChangeSupport = new PropertyChangeSupport(this);
     }
@@ -107,8 +113,16 @@ public class PathwayDiagramRegistry {
      * @param pathway
      */
     public void registerNetworkToDiagram(CyNetwork network, 
-                                          Renderable pathway) {
-        networkToDiagram.put(network, pathway);
+                                         RenderablePathway pathway) {
+        try {
+            DiagramGKBWriter writer = new DiagramGKBWriter();
+            writer.setNeedDisplayName(true);
+            String text = writer.generateXMLString(pathway);
+            networkToDiagram.put(network, text);
+        }
+        catch(Exception e) {
+            logger.error("registerNetworkToDiagram: " + e.getMessage(), e);
+        }
     }
     
     /**
@@ -117,7 +131,17 @@ public class PathwayDiagramRegistry {
      * @return
      */
     public Renderable getDiagramForNetwork(CyNetwork network) {
-        return networkToDiagram.get(network);
+        String text = networkToDiagram.get(network);
+        if (text != null) {
+            DiagramGKBReader reader = new DiagramGKBReader();
+            try {
+                return reader.openDiagram(text);
+            }
+            catch (Exception e) {
+                logger.error("getDiagramForNetwork: " + e.getMessage(), e);
+            }
+        }
+        return null;
     }
     
     public EventSelectionMediator getEventSelectionMediator() {
@@ -285,6 +309,31 @@ public class PathwayDiagramRegistry {
         return selectNetworkViewForPathway(pathwayId, true);
     }
     
+    /**
+     * Get a list of CyNetworkViews that are switched from PathwayDiagram views.
+     * @return
+     */
+    private List<CyNetworkView> getDiagramNetworkViews() {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference reference = context.getServiceReference(CyNetworkViewManager.class.getName());
+        CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(reference);
+        ServiceReference appRef = context.getServiceReference(CyApplicationManager.class.getName());
+        CyApplicationManager manager = (CyApplicationManager) context.getService(appRef);
+        List<CyNetworkView> views = new ArrayList<CyNetworkView>();
+        if (viewManager.getNetworkViewSet() != null) {
+            TableHelper tableHelper = new TableHelper();
+            for (CyNetworkView view : viewManager.getNetworkViewSet()) {
+                String dataSetType = tableHelper.getDataSetType(view);
+                if (!"PathwayDiagram".equals(dataSetType))
+                    continue;
+                views.add(view);
+            }
+        }
+        context.ungetService(reference);
+        context.ungetService(appRef);
+        return views;
+    }
+    
     private CyNetworkView selectNetworkViewForPathway(Long pathwayId, 
                                                       boolean setAsCurrentView) {
         if (pathwayId == null)
@@ -387,9 +436,51 @@ public class PathwayDiagramRegistry {
             frame = getPathwayFrameWithWait(pathwayId);
             if (frame != null) {
                 PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-                hiliter.highlightPathways(frame, pathwayName);
+                hiliter.highlightPathway(frame, pathwayName);
             }
         }
+    }
+    
+    /**
+     * Gene highlighting for any opened diagrams of FI views
+     */
+    public void highlightPathwayViews() {
+        PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
+        Set<String> genes = hiliter.getHitGenes();
+        List<String> geneList = new ArrayList<String>(genes);
+        for (PathwayInternalFrame frame : diagramIdToFrame.values()) {
+            hiliter.highlightPathway(frame, geneList);
+        }
+        // Check with network views
+        List<CyNetworkView> networkViews = getDiagramNetworkViews();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+        FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
+        for (CyNetworkView view : networkViews) {
+            hiliter.highlightNework(view.getModel(),
+                                    geneList);
+            visStyler.setVisualStyle(view, false); // Need to reset visual style to force update the view
+        }
+        context.ungetService(servRef);
+    }
+    
+    public void removeHighlightPathwayViews() {
+        PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
+        Set<String> genes = hiliter.getHitGenes();
+        List<String> geneList = new ArrayList<String>(genes);
+        for (PathwayInternalFrame frame : diagramIdToFrame.values()) {
+            hiliter.removeHighlightPathway(frame);
+        }
+        // Check with network views
+        List<CyNetworkView> networkViews = getDiagramNetworkViews();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+        FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
+        for (CyNetworkView view : networkViews) {
+            hiliter.removeHighlightNewtork(view.getModel());
+            visStyler.setVisualStyle(view, false);
+        }
+        context.ungetService(servRef);
     }
     
     /**

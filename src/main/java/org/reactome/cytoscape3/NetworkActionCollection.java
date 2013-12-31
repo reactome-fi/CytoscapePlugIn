@@ -157,7 +157,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                                 EdgeActionCollection.annotateFIs(view);
                                 BundleContext context = PlugInObjectManager.getManager().getBundleContext();
                                 ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-                                FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
+                                FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
                                 visStyler.setVisualStyle(view);
                                 context.ungetService(servRef);
                             }
@@ -618,7 +618,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         }
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-        FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
+        FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
         visStyler.setVisualStyle(view);
         releaseTableFormatter();
         

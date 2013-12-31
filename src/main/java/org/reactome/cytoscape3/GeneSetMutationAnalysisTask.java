@@ -213,8 +213,7 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             ServiceReference visHelperRef = context.getServiceReference(FIVisualStyle.class.getName());
             if (visHelperRef != null)
             {
-                FIVisualStyleImpl styleHelper = (FIVisualStyleImpl) context
-                        .getService(visHelperRef);
+                FIVisualStyle styleHelper = (FIVisualStyle) context.getService(visHelperRef);
                 styleHelper.setVisualStyle(view);
                 styleHelper.setLayout();
             }

@@ -5,6 +5,7 @@
 package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -15,7 +16,9 @@ import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.swing.*;
@@ -24,9 +27,9 @@ import javax.swing.event.HyperlinkListener;
 
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
+import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.render.HyperEdge;
 import org.gk.render.ProcessNode;
 import org.gk.render.Renderable;
@@ -54,6 +57,9 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     // A PathwayDiagram may be used by multile pathways (e.g. a disease pathway and a 
     // normal pathway may share a same PathwayDiagram)
     private List<Long> relatedPathwayIds;
+    // Keep the original colors so that they can be revert back in case remove highlighting
+    private Map<Renderable, Color> rToFg;
+    private Map<Renderable, Color> rToBg;
     
     public CyZoomablePathwayEditor() {
         // Don't need the title
@@ -115,6 +121,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             
         });
     }
+    
+    
     
     @Override
     public void eventSelected(EventSelectionEvent selectionEvent) {
@@ -188,6 +196,39 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
      */
     public void setRelatedPathwayIds(List<Long> pathwayIds) {
         this.relatedPathwayIds = pathwayIds;
+    }
+    
+    /**
+     * Record colors used originally in order to set it back.
+     */
+    public void recordColors() {
+        if (rToBg == null)
+            rToBg = new HashMap<Renderable, Color>();
+        else
+            rToBg.clear();
+        if (rToFg == null)
+            rToFg = new HashMap<Renderable, Color>();
+        else
+            rToFg.clear();
+        for (Object obj : getPathwayEditor().getDisplayedObjects()) {
+            Renderable r = (Renderable) obj;
+            rToBg.put(r, r.getBackgroundColor());
+            rToFg.put(r, r.getForegroundColor());
+        }
+    }
+    
+    /**
+     * Reset colors to the originally set in the database.
+     */
+    public void resetColors() {
+        for (Renderable r : rToBg.keySet())
+            r.setBackgroundColor(rToBg.get(r));
+        for (Renderable r : rToFg.keySet())
+            r.setForegroundColor(rToFg.get(r));
+        PathwayEditor editor = getPathwayEditor();
+        editor.repaint(getPathwayEditor().getVisibleRect());
+        // Forge update in other views if any
+        editor.fireGraphEditorActionEvent(ActionType.SELECTION);
     }
     
     public List<Long> getRelatedPathwaysIds() {
@@ -318,7 +359,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                     PathwayDiagramRegistry.getRegistry().showPathwayDiagram(dbId, name);
                     PathwayInternalFrame pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(dbId);
                     if (pathwayFrame != null) {
-                        PathwayEnrichmentHighlighter.getHighlighter().highlightPathways(pathwayFrame, 
+                        PathwayEnrichmentHighlighter.getHighlighter().highlightPathway(pathwayFrame, 
                                                                                         name);
                     }
                 }

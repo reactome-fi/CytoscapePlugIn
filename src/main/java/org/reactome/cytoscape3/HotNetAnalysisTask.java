@@ -144,7 +144,7 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
             viewManager.addNetworkView(view);
             EdgeActionCollection.setEdgeNames(view);
             ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-            FIVisualStyleImpl visStyler = (FIVisualStyleImpl) context.getService(servRef);
+            FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
             visStyler.setVisualStyle(view);
             visStyler.setLayout();
             ResultDisplayHelper.getHelper().showHotnetModulesInTab(selectedModules,

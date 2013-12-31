@@ -33,8 +33,9 @@ import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.pathway.ReactomePathwayAction;
+import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.FIVisualStyleImpl;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape3.EdgeActionCollection.EdgeQueryFIMenuItem;
@@ -104,8 +105,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
 
         //Initialize and register the FI VIsual Style with the framework,
         //allowing it to be used by all Reactome FI classes.
-        FIVisualStyleImpl styleHelper = new FIVisualStyleImpl(visMapManager, visStyleFactory, vmfFactoryC,
-                                                              vmfFactoryD, vmfFactoryP);
+        FIVisualStyle styleHelper = new FIVisualStyleImpl(visMapManager, visStyleFactory, vmfFactoryC,
+                                                          vmfFactoryD, vmfFactoryP);
         Properties visStyleHelperProps = new Properties();
         visStyleHelperProps.setProperty("title", "FIVisualStyleImpl");
         registerAllServices(context, styleHelper, visStyleHelperProps);

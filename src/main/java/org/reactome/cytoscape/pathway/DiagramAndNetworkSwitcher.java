@@ -88,7 +88,7 @@ public class DiagramAndNetworkSwitcher {
                 }
             }
             PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-            hiliter.highlightPathways(frame, 
+            hiliter.highlightPathway(frame, 
                                       hitGenes);
         }
         // If the following code is invoked before the above statment is finished (it is possible since
@@ -147,15 +147,8 @@ public class DiagramAndNetworkSwitcher {
         tableHelper.storeNetworkAttribute(network,
                                           "PathwayId", 
                                           pathwayId);
-        // Set up hit genes
-        if (hitGenes != null && hitGenes.size() > 0) {
-            Map<String, Boolean> map = new HashMap<String, Boolean>();
-            for (String gene : hitGenes)
-                map.put(gene, Boolean.TRUE);
-            tableHelper.storeNodeAttributesByName(network, 
-                                                  "isHitGene",
-                                                  map);
-        }
+        PathwayEnrichmentHighlighter.getHighlighter().highlightNework(network, 
+                                                                      hitGenes);
         // Store Instance ids information
         Map<String, String> edgeToIds = new HashMap<String, String>();
         // Keep annotation information

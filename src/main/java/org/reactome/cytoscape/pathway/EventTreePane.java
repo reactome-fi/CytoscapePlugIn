@@ -441,7 +441,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    hideEnrichmentResults();
+                    removeEnrichmentResults();
                 }
             });
             popup.add(removeEnrichmentAnalysis);
@@ -620,12 +620,15 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         model.nodeStructureChanged(treeRoot);
     }
     
-    private void hideEnrichmentResults() {
+    private void removeEnrichmentResults() {
         annotationPanel.close();
         annotationPanel = null;
         pathwayToAnnotation.clear();
         eventTree.repaint(eventTree.getVisibleRect());
         fdrColorBar.setVisible(false);
+        // Remove highlights in opened pathway views
+        PathwayDiagramRegistry.getRegistry().removeHighlightPathwayViews();
+        firePropertyChange("showPathwayEnrichments", true, false);
     }
     
     /**
@@ -657,6 +660,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         int index = tableBrowserPane.indexOfComponent(annotationPanel);
         if (index >= 0)
             tableBrowserPane.setSelectedIndex(index);
+        // Need to highlight any opened pathway diagrams or FI diagram view
+        PathwayDiagramRegistry.getRegistry().highlightPathwayViews();
+        // Fire a propert chanage action
+        firePropertyChange("showPathwayEnrichments", false, true);
     }
 
     private void showSearchResults(List<TreePath> paths,

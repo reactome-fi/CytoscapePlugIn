@@ -100,6 +100,7 @@ public class PathwayInternalFrame extends JInternalFrame {
         DiagramGKBReader reader = new DiagramGKBReader();
         RenderablePathway pathway = reader.openDiagram(xml);
         pathwayEditor.getPathwayEditor().setRenderable(pathway);
+        pathwayEditor.recordColors();
     }
     
     /**
