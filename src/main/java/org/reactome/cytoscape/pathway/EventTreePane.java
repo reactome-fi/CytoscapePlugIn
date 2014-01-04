@@ -625,9 +625,11 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         model.nodeStructureChanged(treeRoot);
     }
     
-    private void removeEnrichmentResults() {
-        annotationPanel.close();
-        annotationPanel = null;
+    protected void removeEnrichmentResults() {
+        if (annotationPanel != null) {
+            annotationPanel.close();
+            annotationPanel = null;
+        }
         pathwayToAnnotation.clear();
         eventTree.repaint(eventTree.getVisibleRect());
         fdrColorBar.setVisible(false);

@@ -41,10 +41,15 @@ import org.cytoscape.application.swing.events.CytoPanelComponentSelectedEvent;
 import org.cytoscape.application.swing.events.CytoPanelComponentSelectedListener;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
+import org.cytoscape.model.events.NetworkDestroyedEvent;
+import org.cytoscape.model.events.NetworkDestroyedListener;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
+import org.cytoscape.session.events.SessionLoadedEvent;
+import org.cytoscape.session.events.SessionLoadedListener;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.gk.gkEditor.PathwayOverviewPane;
@@ -53,6 +58,7 @@ import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.render.Renderable;
+import org.gk.render.RenderablePathway;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
@@ -83,11 +89,19 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     private boolean selectFromPathway;
     private boolean selectFromNetwork;
     
+    private static PathwayControlPanel instance;
+    
     /** 
-     * Default constructor.
+     * Default private constrcutor so that this class should be used as a singleton only.
      */
-    public PathwayControlPanel() {
+    private PathwayControlPanel() {
         init();
+    }
+    
+    public static PathwayControlPanel getInstance() {
+        if (instance == null)
+            instance = new PathwayControlPanel();
+        return instance;
     }
     
     private void init() {
@@ -208,6 +222,23 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                                 selectionListener, 
                                 null);
         
+        NetworkDestroyedListener networkDetroyedListener = new NetworkDestroyedListener() {
+            
+            @Override
+            public void handleEvent(NetworkDestroyedEvent e) {
+                if (networkView == null)
+                    return; // Do nothing
+                CyNetworkManager manager = e.getSource();
+                if (!manager.networkExists(networkView.getModel().getSUID())) {
+                    // The current view has been destroyed
+                    networkView = null;
+                }
+            }
+        };
+        context.registerService(NetworkDestroyedListener.class.getName(),
+                                networkDetroyedListener,
+                                null);
+        
         // A way to convert from FI network view back to Reactome diagram view
         CyNetworkViewContextMenuFactory networkToDiagramMenu = new CyNetworkViewContextMenuFactory() {
             
@@ -238,6 +269,22 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                 }
             }
         });
+        
+        // Remove this panel if a new session is created
+        SessionLoadedListener sessionListener = new SessionLoadedListener() {
+            
+            @Override
+            public void handleEvent(SessionLoadedEvent e) {
+                resetOverviewPane(); // Do this first so that the overviewcontainer can keep correct size
+                if (getParent() != null)
+                    getParent().remove(PathwayControlPanel.this);
+                // Since we are using a singleton, don't want to keep any enrichment results
+                eventPane.removeEnrichmentResults();
+            }
+        };
+        context.registerService(SessionLoadedListener.class.getName(),
+                                sessionListener,
+                                null);
         
     }
     
@@ -388,6 +435,9 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     }
     
     private void switchToFullPathwayView(Renderable pathway) {
+        // In case a network view is loaded from a saved session
+        if (getParent() == null || !isVisible())
+            return; // Do nothing is this component is not displayed.
         if (pathwayView == null) {
             pathwayView = new CyZoomablePathwayEditor();
             // Make sure the overview is at the correct place
@@ -439,6 +489,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         // Want to keep the original overview still
         // Get the JFrame
         JFrame frame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, jsp);
+        if (frame == null)
+            return;
         JLayeredPane layeredPane = frame.getLayeredPane();
         layeredPane.add(overviewContainer, JLayeredPane.PALETTE_LAYER);
         overviewContainer.setSize(100, 65);
@@ -470,6 +522,23 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         overview.syncrhonizeScroll(pathwayEditor);
         overview.setParentEditor(pathwayEditor.getPathwayEditor());
         overview.setRenderable(pathwayEditor.getPathwayEditor().getRenderable());
+    }
+    
+    /**
+     * Reset the overview part of the panel.
+     */
+    private void resetOverviewPane() {
+        if (jsp.getBottomComponent() != overviewContainer) {
+            // Remove from the original container
+            overviewContainer.getParent().remove(overviewContainer);
+            jsp.setBottomComponent(overviewContainer);
+            jsp.setDividerLocation(0.67d); // The original divider position
+        }
+        overview.setRenderable(new RenderablePathway());
+    }
+    
+    public void validateDividerPosition() {
+        jsp.setDividerLocation(0.67d);
     }
     
     public void setFloatedOverviewVisible(boolean visiable) {

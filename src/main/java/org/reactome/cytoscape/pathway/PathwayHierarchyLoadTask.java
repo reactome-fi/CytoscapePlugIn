@@ -6,7 +6,6 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.Component;
 import java.io.StringReader;
-import java.util.Properties;
 
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
@@ -57,7 +56,7 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
             return;
         }
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        PathwayControlPanel controlPane = new PathwayControlPanel();
+        PathwayControlPanel controlPane = PathwayControlPanel.getInstance();
         if (panel.getCytoPanelComponentCount() > 0 && panel.getComponentAt(0) != null) {
             Component comp = panel.getComponentAt(0);
             controlPane.setPreferredSize(comp.getPreferredSize()); // Control its size to avoid weird behavior
@@ -87,6 +86,7 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
         index = getIndexOfPathwayControlPane(panel);
         if (index >= 0)
             panel.setSelectedIndex(index);
+        controlPane.validateDividerPosition();
     }
     
     /**

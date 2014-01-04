@@ -4,10 +4,12 @@
  */
 package org.reactome.cytoscape.util;
 
+import java.awt.Component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +23,9 @@ import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
 import org.cytoscape.application.events.SetCurrentNetworkViewListener;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelComponent;
+import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.work.TaskManager;
@@ -87,6 +92,24 @@ public class PlugInObjectManager {
     }
     
     /**
+     * Check if Reactome pathways are loaded.
+     * @return
+     */
+    public boolean isPathwaysLoaded() {
+        CySwingApplication app = getCySwingApplication();
+        CytoPanel westPane = app.getCytoPanel(CytoPanelName.WEST);
+        for (int i = 0; i < westPane.getCytoPanelComponentCount(); i++) {
+            Component comp = westPane.getComponentAt(i);
+            if (comp instanceof CytoPanelComponent) {
+                String title = ((CytoPanelComponent)comp).getTitle();
+                if (title.equals("Reactome"))
+                    return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
      * Install a "Fetch FI Annotations" menu
      */
     private void installContextMenu(CyNetworkViewContextMenuFactory menu,
@@ -124,8 +147,12 @@ public class PlugInObjectManager {
             return getDefaultFINeworkVersion();
     }
 
-    public String getDefaultFINeworkVersion()
-    {
+    /**
+     * Get the default version of the FI network if it is set. Otherwise,
+     * the first one listed will be returned.
+     * @return
+     */
+    public String getDefaultFINeworkVersion() {
         Properties prop = PlugInObjectManager.getManager().getProperties();
         String fiVersions = prop.getProperty("FINetworkVersions");
         String[] tokens = fiVersions.split(",");
@@ -136,6 +163,29 @@ public class PlugInObjectManager {
         }
         // There is no default set. Choose the first one.
         return tokens[0];
+    }
+    
+    /**
+     * Get the latest version of the FI network listed in the configuration.
+     * @return
+     */
+    public String getLatestFINetworkVersion() {
+        Properties prop = PlugInObjectManager.getManager().getProperties();
+        String fiVersions = prop.getProperty("FINetworkVersions");
+        String[] tokens = fiVersions.split(",");
+        Map<Integer, String> yearToVersion = new HashMap<Integer, String>();
+        for (String token : tokens) {
+            token = token.trim();
+            int index = token.indexOf("(");
+            if (index > 0)
+                yearToVersion.put(new Integer(token.substring(0, index).trim()),
+                                  token);
+            else
+                yearToVersion.put(new Integer(token), token);
+        }
+        List<Integer> years = new ArrayList<Integer>(yearToVersion.keySet());
+        Collections.sort(years);
+        return yearToVersion.get(years.get(years.size() - 1));
     }
 
     public void setFiNetworkVersion(String fiNetworkVersion) {

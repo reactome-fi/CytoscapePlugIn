@@ -64,6 +64,7 @@ public class PathwayEnrichmentAnalysisTask extends AbstractTask {
         }
         progressPane.setValue(0);        
         progressPane.setText("Do enrichment analysis...");
+        progressPane.setValue(25); // Rather arbitrary value here
         // This is just for test by query pathway diagram for Cell Cycle Checkpoints 
         RESTFulFIService service = new RESTFulFIService();
         try {
@@ -95,6 +96,7 @@ public class PathwayEnrichmentAnalysisTask extends AbstractTask {
         }
         taskMonitor.setProgress(0);
         taskMonitor.setStatusMessage("Do enrichment analysis...");
+        taskMonitor.setProgress(0.25d); // A rather arbitrary progress
         // This is just for test by query pathway diagram for Cell Cycle Checkpoints 
         RESTFulFIService service = new RESTFulFIService();
         List<ModuleGeneSetAnnotation> annotations = service.annotateGeneSetWithReactomePathways(geneList);

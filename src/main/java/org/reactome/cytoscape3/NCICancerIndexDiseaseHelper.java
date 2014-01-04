@@ -42,6 +42,8 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.session.events.SessionLoadedEvent;
+import org.cytoscape.session.events.SessionLoadedListener;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.gk.util.GKApplicationUtilities;
@@ -275,8 +277,17 @@ public class NCICancerIndexDiseaseHelper
             init();
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             ServiceRegistration servReg = context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
-            //The above returns null. Attempts to cache it have been futile.
-
+            SessionLoadedListener sessionListener = new SessionLoadedListener() {
+                
+                @Override
+                public void handleEvent(SessionLoadedEvent e) {
+                    if (getParent() != null)
+                        getParent().remove(DiseaseDisplayPane.this);
+                }
+            };
+            context.registerService(SessionLoadedListener.class.getName(),
+                                    sessionListener,
+                                    null);
         }
         
         private List<DiseaseData> searchTopDiseases(Map<String, DiseaseData> codeToDisease) {

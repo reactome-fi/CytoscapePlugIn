@@ -242,9 +242,6 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         edgeMenuProps.setProperty("title", "Query FI Source");
         edgeMenuProps.setProperty("preferredMenu", "Apps.Reactome FI");
         registerService(context, edgeQueryMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
-        //Register the listener for cleaning things up after network destruction.
-        FISessionCleanup sessionCleanup = new FISessionCleanup();
-        registerService(context, sessionCleanup, NetworkViewDestroyedListener.class, new Properties());
     }
 
 }

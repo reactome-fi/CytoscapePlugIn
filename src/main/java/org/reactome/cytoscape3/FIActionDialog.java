@@ -33,9 +33,6 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  * This class sets up the GUIs for the various actions. Since all GUI creation
  * is handled through this class, a "context" parameter is used to determine
  * which GUI is to be implemented. Think of this as a lame GUI factory.
- * TODO: This is a very bad class by grouping all GUIs from multiple FI plugin actions
- * together into one place. However I need to add another new action or multiple
- * actions? A refactoring is needed.
  * @author Eric T. Dawson
  * 
  */

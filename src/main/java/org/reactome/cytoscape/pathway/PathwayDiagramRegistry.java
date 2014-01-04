@@ -22,6 +22,8 @@ import javax.swing.event.InternalFrameListener;
 
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.session.events.SessionLoadedEvent;
+import org.cytoscape.session.events.SessionLoadedListener;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.TaskIterator;
@@ -91,6 +93,16 @@ public class PathwayDiagramRegistry {
                     }
                 }
             });
+            SessionLoadedListener sessionListener = new SessionLoadedListener() {
+                
+                @Override
+                public void handleEvent(SessionLoadedEvent e) {
+                    getRegistry().closeAllFrames();
+                }
+            };
+            context.registerService(SessionLoadedListener.class.getName(),
+                                    sessionListener,
+                                    null);
         }
         return registry;
     }
@@ -410,6 +422,18 @@ public class PathwayDiagramRegistry {
      */
     public void showPathwayDiagram(Long pathwayId,
                                    String pathwayName) {
+        showPathwayDiagram(pathwayId, true, pathwayName);
+    }
+    
+    /**
+     * The actual method to show a pathway diagram.
+     * @param pathwayId
+     * @param needCheckNetworkView
+     * @param pathwayName
+     */
+    private void showPathwayDiagram(Long pathwayId,
+                                    boolean needCheckNetworkView,
+                                    String pathwayName) {
         PathwayInternalFrame frame = getPathwayFrame(pathwayId);
         if (frame != null) {
             try {
@@ -421,10 +445,12 @@ public class PathwayDiagramRegistry {
             }
             return; 
         }
-        // Check if a network view has been displayed
-        CyNetworkView networkView = selectNetworkViewForPathway(pathwayId);
-        if (networkView != null) {
-            return;
+        if (needCheckNetworkView) {
+            // Check if a network view has been displayed
+            CyNetworkView networkView = selectNetworkViewForPathway(pathwayId);
+            if (networkView != null) {
+                return;
+            }
         }
         @SuppressWarnings("rawtypes")
         TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
@@ -439,6 +465,16 @@ public class PathwayDiagramRegistry {
                 hiliter.highlightPathway(frame, pathwayName);
             }
         }
+    }
+    
+    /**
+     * Show a pathway diagram specified by its DB_ID. This method will not check if a network view is
+     * available for the pathway. In other words, using this method, a pathway can be displayed as both
+     * views: pathway diagram and FI view.
+     * @param pathwayId
+     */
+    public void showPathwayDiagram(Long pathwayId) {
+        showPathwayDiagram(pathwayId, false, null);
     }
     
     /**

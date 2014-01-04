@@ -45,8 +45,8 @@ import javax.swing.text.TabStop;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
-import org.cytoscape.model.events.NetworkAboutToBeDestroyedEvent;
-import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
+import org.cytoscape.session.events.SessionLoadedEvent;
+import org.cytoscape.session.events.SessionLoadedListener;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.junit.Test;
@@ -61,7 +61,7 @@ import org.reactome.r3.util.FileUtility;
  * @author wgm
  *
  */
-public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelComponent, NetworkAboutToBeDestroyedListener {
+public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelComponent {
     // A hard-coded cutoff to display links for module based survival analysis
     private final double P_VALUE_CUTOFF_FOR_MODULE = 0.05d;
     // Customized constants for links
@@ -83,9 +83,16 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
         context.registerService(CytoPanelComponent.class.getName(), 
                                 this, 
                                 new Properties());
-        context.registerService(NetworkAboutToBeDestroyedListener.class.getName(), 
-                                this, 
-                                new Properties());
+        SessionLoadedListener sessionListener = new SessionLoadedListener() {
+            
+            @Override
+            public void handleEvent(SessionLoadedEvent e) {
+                close();
+            }
+        };
+        context.registerService(SessionLoadedListener.class.getName(),
+                                sessionListener,
+                                null);
     }
     
     private void init() {
@@ -423,12 +430,6 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
         this.title = title;
     }
 
-    @Override
-    public void handleEvent(NetworkAboutToBeDestroyedEvent e)
-    {
-        close();      
-    }
-    
     private void close()
     {
         if (container == null)

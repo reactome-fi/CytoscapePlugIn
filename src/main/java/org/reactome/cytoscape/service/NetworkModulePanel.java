@@ -23,7 +23,6 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
@@ -35,6 +34,8 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
+import org.cytoscape.session.events.SessionLoadedEvent;
+import org.cytoscape.session.events.SessionLoadedListener;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.model.CyNetworkView;
@@ -45,7 +46,6 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
-
 
 @SuppressWarnings("serial")
 public abstract class NetworkModulePanel extends JPanel implements CytoPanelComponent, RowsSetListener {
@@ -74,6 +74,17 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         init();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         context.registerService(CytoPanelComponent.class.getName(), this, null);
+        // Most likely SessionAboutToBeLoadedListener should be used in 3.1.0.
+        SessionLoadedListener sessionListener = new SessionLoadedListener() {
+            
+            @Override
+            public void handleEvent(SessionLoadedEvent e) {
+                close();
+            }
+        };
+        context.registerService(SessionLoadedListener.class.getName(),
+                                sessionListener, 
+                                null);
     }
     
     public void setNetworkView(CyNetworkView view)

@@ -5,7 +5,6 @@
 package org.reactome.cytoscape.pathway;
 
 import java.beans.PropertyChangeEvent;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,12 +14,10 @@ import javax.swing.SwingUtilities;
 
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
-import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
-import org.cytoscape.view.model.View;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
@@ -64,32 +61,12 @@ public class DiagramAndNetworkSwitcher {
         if (pathwayId == null)
             return;
         PathwayDiagramRegistry registry = PathwayDiagramRegistry.getRegistry();
-        registry.showPathwayDiagram(pathwayId, 
-                                    null);
+        registry.showPathwayDiagram(pathwayId);
         // Need to highlight if any
         PathwayInternalFrame frame = registry.getPathwayFrameWithWait(pathwayId);
         if (frame != null) {
-            // Get a list of hit genes for highlighting
-            List<String> hitGenes = new ArrayList<String>();
-            TableHelper tableHelper = new TableHelper();
-            CyNetwork network = networkView.getModel();
-            for (View<CyNode> nodeView : networkView.getNodeViews()) {
-                CyNode node = nodeView.getModel();
-                Boolean isHitGene = tableHelper.getStoredNodeAttribute(network,
-                                                                       node, 
-                                                                       "isHitGene", 
-                                                                       Boolean.class);
-                if (isHitGene != null && isHitGene) {
-                    String name = tableHelper.getStoredNodeAttribute(networkView.getModel(),
-                                                                     node,
-                                                                     "name", 
-                                                                     String.class);
-                    hitGenes.add(name);
-                }
-            }
             PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-            hiliter.highlightPathway(frame, 
-                                      hitGenes);
+            hiliter.highlightPathway(frame.getZoomablePathwayEditor());
         }
         // If the following code is invoked before the above statment is finished (it is possible since
         // a new thread is going to be used), a null exception may be thrown. So wrap it in an invokeLater method

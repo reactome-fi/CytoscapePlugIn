@@ -13,8 +13,7 @@ import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.r3.util.InteractionUtilities;
 
 @SuppressWarnings("serial")
-public class NetworkModuleBrowser extends NetworkModulePanel
-{
+public class NetworkModuleBrowser extends NetworkModulePanel {
     private JLabel modularityLabel;
     
     public NetworkModuleBrowser() {
