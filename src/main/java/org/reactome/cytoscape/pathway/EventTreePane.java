@@ -625,6 +625,16 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         model.nodeStructureChanged(treeRoot);
     }
     
+    /**
+     * Reset the tree to keep the memory usage minimum.
+     */
+    public void resetTree() {
+        DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+        root.removeAllChildren();
+        model.nodeStructureChanged(root);
+    }
+    
     protected void removeEnrichmentResults() {
         if (annotationPanel != null) {
             annotationPanel.close();

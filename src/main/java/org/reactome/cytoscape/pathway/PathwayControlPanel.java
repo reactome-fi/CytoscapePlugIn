@@ -280,6 +280,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                     getParent().remove(PathwayControlPanel.this);
                 // Since we are using a singleton, don't want to keep any enrichment results
                 eventPane.removeEnrichmentResults();
+                eventPane.resetTree();
             }
         };
         context.registerService(SessionLoadedListener.class.getName(),

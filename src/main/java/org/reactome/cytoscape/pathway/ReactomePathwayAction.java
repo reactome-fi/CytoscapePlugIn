@@ -6,6 +6,8 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.event.ActionEvent;
 
+import javax.swing.JOptionPane;
+
 import org.cytoscape.application.swing.AbstractCyAction;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
@@ -27,6 +29,15 @@ public class ReactomePathwayAction extends AbstractCyAction {
     @Override
     @SuppressWarnings("rawtypes")
     public void actionPerformed(ActionEvent event) {
+        // Check if Reactome pathways have been loaded
+        if (PlugInObjectManager.getManager().isPathwaysLoaded()) {
+            int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                      "Reactome Pathways have been loaded already.\nDo you want to re-load them?", 
+                                                      "Reload Reactome Pathways?", 
+                                                      JOptionPane.YES_NO_OPTION);
+            if (reply == JOptionPane.NO_OPTION)
+                return; // No need to do anything
+        }
         // Need a new session
         if (!PlugInUtilities.createNewSession())
             return;
