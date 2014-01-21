@@ -180,18 +180,19 @@ public class FINetworkGenerator implements NetworkGenerator {
         Map<CyNode, Set<CyNode>> oldToNew = new HashMap<CyNode, Set<CyNode>>();
         int index = 0;
         Set<CyNode> partnerNodes = new HashSet<CyNode>();
-        for (String partner : partners)
-        {
+        TableHelper tableHelper = new TableHelper();
+        for (String partner : partners) {
             CyNode partnerNode = getNodeByName(partner, network);
-            if (partnerNode == null)
-            {
+            if (partnerNode == null) {
                 partnerNode = createNode(network, partner, "Gene", partner);
-                CyTable nodeTable = network.getDefaultNodeTable();
-                nodeTable.getRow(partnerNode.getSUID()).set("isLinker", true);
+                tableHelper.storeNodeAttribute(network,
+                                               partnerNode,
+                                               "isLinker",
+                                               Boolean.TRUE);
                 partnerNodes.add(partnerNode);
-                PlugInUtilities.setNodeSelected(network, 
-                                                partnerNode,
-                                                true);
+                tableHelper.setNodeSelected(network, 
+                                            partnerNode,
+                                            true);
             }
             createEdge(network, targetNode, partnerNode, "FI");
         }
@@ -200,14 +201,14 @@ public class FINetworkGenerator implements NetworkGenerator {
                      view);
     }
     
-    public void addFIPartners(String target, Set<String> partners, CyNetworkView view)
-    {
+    public void addFIPartners(String target, Set<String> partners, CyNetworkView view) {
         addFIPartners(getNodeByName(target, view.getModel()),
                       partners, 
                       view);
         view.updateView();
-        try
-        {
+        // For some reason, we need to re-apply the visual style to make display correct.
+        // This is a little weird!
+        try {
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             ServiceReference servRef = context
                     .getServiceReference(FIVisualStyle.class.getName());
@@ -215,8 +216,7 @@ public class FINetworkGenerator implements NetworkGenerator {
             visStyler.setVisualStyle(view);
             context.ungetService(servRef);
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
                                           "The visual style could not be applied.",
                                           "Visual Style Error", 

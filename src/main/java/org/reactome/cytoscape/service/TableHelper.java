@@ -20,8 +20,12 @@ public class TableHelper {
     public TableHelper() {
     }
 
-    public void createNewColumn(CyTable table, String columnName, Class<?> type) {
-        table.createColumn(columnName, type, Boolean.FALSE);
+    public void createNewColumn(CyTable table, 
+                                String columnName, 
+                                Class<?> type) {
+        table.createColumn(columnName,
+                           type,
+                           Boolean.FALSE);
     }
     
     public void storeFINetworkVersion(CyNetwork network, String version) {
@@ -175,6 +179,25 @@ public class TableHelper {
                                 nodeSUID,
                                 nodeSUID);
         }
+    }
+    
+    /**
+     * Store an attribute value for a sinle node specified by its name.
+     * @param network
+     * @param attributeName
+     * @param value
+     */
+    public <T> void storeNodeAttribute(CyNetwork network,
+                                       CyNode node,
+                                       String attributeName,
+                                       T value) {
+        if (value == null || node == null)
+            return;
+        CyTable table = network.getDefaultNodeTable();
+        if (table.getColumn(attributeName) == null)
+            createNewColumn(table, attributeName, value.getClass());
+        table.getRow(node.getSUID()).set(attributeName, 
+                                         value);
     }
 
     public void storeNodeAttributesByName(CyNetwork network,

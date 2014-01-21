@@ -143,22 +143,23 @@ public class FIVisualStyleImpl implements FIVisualStyle {
 
         // Change the node shape from the default (ellipse)
         // to diamond if the gene is a linker.
-        DiscreteMapping linkerGeneShapeFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
-                "isLinker", Boolean.class, BasicVisualLexicon.NODE_SHAPE);
+        DiscreteMapping linkerGeneShapeFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isLinker", 
+                                                                                                                   Boolean.class,
+                                                                                                                   BasicVisualLexicon.NODE_SHAPE);
         linkerGeneShapeFunction.putMapValue(true,
                                             NodeShapeVisualProperty.DIAMOND);
         fiVisualStyle.addVisualMappingFunction(linkerGeneShapeFunction);
         // Set shape for hit genes
-        DiscreteMapping hitGeneShapeFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("isHitGene", 
-                                                                                                                     Boolean.class,
-                                                                                                                     BasicVisualLexicon.NODE_SHAPE);
-        hitGeneShapeFunction.putMapValue(true,
-                                         NodeShapeVisualProperty.OCTAGON);
-        fiVisualStyle.addVisualMappingFunction(hitGeneShapeFunction);
+//        DiscreteMapping hitGeneShapeFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isHitGene", 
+//                                                                                                                 Boolean.class,
+//                                                                                                                 BasicVisualLexicon.NODE_SHAPE);
+//        hitGeneShapeFunction.putMapValue(true,
+//                                         NodeShapeVisualProperty.OCTAGON);
+//        fiVisualStyle.addVisualMappingFunction(hitGeneShapeFunction);
         // Also a color for hit genes
-        DiscreteMapping hitGeneColorFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
-                                                                                                                     Boolean.class,
-                                                                                                                     BasicVisualLexicon.NODE_BORDER_PAINT);
+        DiscreteMapping hitGeneColorFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
+                                                                                                                 Boolean.class,
+                                                                                                                 BasicVisualLexicon.NODE_BORDER_PAINT);
         hitGeneColorFunction.putMapValue(true,
                                          NODE_HIGHLIGHT_COLOR);
         fiVisualStyle.addVisualMappingFunction(hitGeneColorFunction);
