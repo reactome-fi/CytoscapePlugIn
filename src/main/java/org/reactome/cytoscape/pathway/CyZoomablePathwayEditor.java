@@ -378,10 +378,24 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 }
             });
             popup.add(listGenesItem);
+            // Fetch FIs
+            JMenuItem fetchFIs = new JMenuItem("Fetch FIs");
+            fetchFIs.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    fetchFIs(dbId);
+                }
+            });
+            popup.add(fetchFIs);
         }
         popup.show(getPathwayEditor(), 
                    event.getX(),
                    event.getY());
+    }
+    
+    private void fetchFIs(Long dbId) {
+        
     }
     
     /**

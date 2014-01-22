@@ -275,47 +275,38 @@ public class RESTFulFIService implements FINetworkService
         return rtn;
     }
 
-    public Set<String> queryFIsForNode(String nodeName) throws Exception
-    {
+    public Set<String> queryFIsForNode(String nodeName) throws Exception {
         String url = restfulURL + "network/queryFIs";
         Element root = callInXML(url, nodeName);
         List<?> interactions = root.getChildren();
         Set<String> rtn = new HashSet<String>();
         // Get the interactions
-        for (Object name : interactions)
-        {
+        for (Object name : interactions) {
             Element elm = (Element) name;
-            String firstProtein = elm.getChild("firstProtein").getChildText(
-                    "name");
-            String secondProtein = elm.getChild("secondProtein").getChildText(
-                    "name");
-            if (firstProtein.equals(nodeName))
-            {
+            String firstProtein = elm.getChild("firstProtein").getChildText("name");
+            String secondProtein = elm.getChild("secondProtein").getChildText("name");
+            if (firstProtein.equals(nodeName)) {
                 rtn.add(secondProtein);
             }
-            else
-            {
+            else {
                 rtn.add(firstProtein);
             }
         }
         return rtn;
     }
 
-    public Long queryPathwayId(String pathwayName) throws IOException
-    {
+    public Long queryPathwayId(String pathwayName) throws IOException {
         String url = restfulURL + "network/queryPathwayId";
         String text = callHttp(url, HTTP_POST, pathwayName);
         return new Long(text);
     }
 
-    public String queryKEGGPathwayId(String pathwayName) throws IOException
-    {
+    public String queryKEGGPathwayId(String pathwayName) throws IOException {
         String url = restfulURL + "network/queryKEGGPathwayId";
         return callHttp(url, HTTP_POST, pathwayName);
     }
 
-    public String queryKEGGGeneIds(String geneNames) throws IOException
-    {
+    public String queryKEGGGeneIds(String geneNames) throws IOException {
         String url = restfulURL + "network/queryKEGGGeneIds";
         return callHttp(url, HTTP_POST, geneNames);
     }
