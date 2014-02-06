@@ -140,11 +140,12 @@ public class PathwayInternalFrame extends JInternalFrame {
             Set<String> hitGenes = PathwayEnrichmentHighlighter.getHighlighter().getHitGenes();
             helper.convertToFINetwork(getPathwayId(),
                                       (RenderablePathway)pathwayEditor.getPathwayEditor().getRenderable(),
-                                      hitGenes);
+                                      hitGenes,
+                                      this);
             
-            // Make sure this PathwayInternalFrame should be closed
-            setVisible(false);
-            dispose();
+//            // Make sure this PathwayInternalFrame should be closed
+//            setVisible(false);
+//            dispose();
         }
         catch(Exception e) {
             logger.error("Error in convertAsFINetwork(): " + e.getMessage(), e);

@@ -408,6 +408,14 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             RESTFulFIService service = new RESTFulFIService();
             String genes = service.listGenes(entityId);
             
+            if (genes == null || genes.trim().length() == 0) {
+                JOptionPane.showMessageDialog(this,
+                                              "There is no gene contained in \"" + name + "\"",
+                                              "No Gene",
+                                              JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            
             JEditorPane pane = new JEditorPane();
             pane.setEditable(false);
             pane.setContentType("text/html");

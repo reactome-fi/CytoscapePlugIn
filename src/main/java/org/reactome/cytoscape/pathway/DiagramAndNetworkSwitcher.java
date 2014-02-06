@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import org.cytoscape.model.CyNetwork;
@@ -32,6 +33,7 @@ import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.funcInt.ReactomeSource;
@@ -84,7 +86,8 @@ public class DiagramAndNetworkSwitcher {
     
     public void convertToFINetwork(final Long pathwayId,
                                    final RenderablePathway pathway,
-                                   final Set<String> hitGenes) throws Exception {
+                                   final Set<String> hitGenes,
+                                   final PathwayInternalFrame pathwayFrame) throws Exception {
         Task task = new AbstractTask() {
             
             @Override
@@ -92,7 +95,8 @@ public class DiagramAndNetworkSwitcher {
                 convertPathwayToFINetwork(pathwayId,
                                           pathway, 
                                           hitGenes,
-                                          taskMonitor);
+                                          taskMonitor,
+                                          pathwayFrame);
             }
         }; 
         @SuppressWarnings("rawtypes")
@@ -103,12 +107,25 @@ public class DiagramAndNetworkSwitcher {
     private void convertPathwayToFINetwork(final Long pathwayId,
                                            final RenderablePathway pathway,
                                            final Set<String> hitGenes,
-                                           TaskMonitor taskMonitor) throws Exception {
+                                           TaskMonitor taskMonitor,
+                                           PathwayInternalFrame pathwayFrame) throws Exception {
         taskMonitor.setTitle("Convert Pathway to FI Network");
         taskMonitor.setStatusMessage("Converting to FI network...");
         taskMonitor.setProgress(0.0d);
         RESTFulFIService fiService = new RESTFulFIService();
         List<Interaction> interactions = fiService.convertPathwayToFIs(pathwayId);
+        if (interactions == null || interactions.size() == 0) {
+            JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
+                                          "There is no FI existing in the selected pathway.",
+                                          "No FI",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        // Make sure this PathwayInternalFrame should be closed
+        pathwayFrame.setVisible(false);
+        pathwayFrame.dispose();
+        
         taskMonitor.setProgress(0.50d);
         // Need to create a new CyNetwork
         FINetworkGenerator generator = new FINetworkGenerator();
@@ -120,7 +137,7 @@ public class DiagramAndNetworkSwitcher {
         TableHelper tableHelper = new TableHelper();
         tableHelper.markAsFINetwork(network);
         tableHelper.storeDataSetType(network, 
-                                     "PathwayDiagram");
+                "PathwayDiagram");
         tableHelper.storeNetworkAttribute(network,
                                           "PathwayId", 
                                           pathwayId);
@@ -201,6 +218,7 @@ public class DiagramAndNetworkSwitcher {
                                                             pathway,
                                                             null);
         PathwayDiagramRegistry.getRegistry().firePropertyChange(event);
+        
     }
     
 }
