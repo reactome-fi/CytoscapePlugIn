@@ -517,10 +517,17 @@ public class RESTFulFIService implements FINetworkService
         Element resultElm = callInXML(url, query.toString());
         return resultElm;
     }
+    
+    public Element queryFIsForPEInDiagram(Long peId,
+                                          Long pdId) throws Exception {
+        String url = restfulURL + "network/queryFIsForPEInPathwayDiagram/" + pdId + "/" + peId;
+        Element elm = PlugInUtilities.callHttpInXML(url, 
+                                                    HTTP_GET,
+                                                    null);
+        return elm;
+    }
 
-    public Element doMCLClustering(Set<String> fisWithCorrs, Double inflation)
-            throws Exception
-    {
+    public Element doMCLClustering(Set<String> fisWithCorrs, Double inflation) throws Exception {
         String url = restfulURL + "network/mclClustering";
         // Create a query
         StringBuilder builder = new StringBuilder();
@@ -534,9 +541,8 @@ public class RESTFulFIService implements FINetworkService
     }
 
     public Element doHotNetAnalysis(Map<String, Double> geneToScore,
-            Double delta, Double fdrCutoff, Integer permutation)
-            throws Exception
-    {
+                                    Double delta, Double fdrCutoff, 
+                                    Integer permutation) throws Exception {
         String url = restfulURL + "network/hotnetAnalysis";
         // Create query
         StringBuilder builder = new StringBuilder();

@@ -394,8 +394,10 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                    event.getY());
     }
     
+    @SuppressWarnings("unchecked")
     private void fetchFIs(Long dbId) {
-        
+        FetchFIForPEInDiagramHelper helper = new FetchFIForPEInDiagramHelper(dbId, this);
+        helper.fetchFIs();
     }
     
     /**
@@ -557,6 +559,5 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             return super.getVisibleRect();
         }
     }
-
     
 }
