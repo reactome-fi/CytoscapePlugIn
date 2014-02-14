@@ -526,6 +526,12 @@ public class RESTFulFIService implements FINetworkService
                                                     null);
         return elm;
     }
+    
+    public Element queryReactomeInstance(Long dbId) throws Exception {
+        String url = restfulURL + "network/queryReactomeInstance/" + dbId;
+        Element elm = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
+        return elm;
+    }
 
     public Element doMCLClustering(Set<String> fisWithCorrs, Double inflation) throws Exception {
         String url = restfulURL + "network/mclClustering";

@@ -25,6 +25,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.service.RESTFulFIService;
+import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -145,7 +146,7 @@ public class EdgeActionCollection {
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
-                    fetchInteraction(view, edgeView);
+                    queryFISource(view, edgeView);
                 }
                 
             });
@@ -154,11 +155,10 @@ public class EdgeActionCollection {
         
     }
     
-    private void fetchInteraction(CyNetworkView view,
-                                  View<CyEdge> edgeView)
-    {
+    private void queryFISource(CyNetworkView view,
+                               View<CyEdge> edgeView) {
         ProgressPane progPane = new ProgressPane();
-        progPane.setText("Fetching FI Annotation(s)");
+        progPane.setText("Querying FI Source");
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         desktopApp.getJFrame().setGlassPane(progPane);
         desktopApp.getJFrame().getGlassPane().setVisible(true);
@@ -168,22 +168,22 @@ public class EdgeActionCollection {
         
         Long targetSUID = edgeView.getModel().getTarget().getSUID();
         String target = nodeTable.getRow(targetSUID).get("name", String.class);
-        try
-        {
-            
+        try {
             RESTFulFIService fiService = new RESTFulFIService(view);
             List<Interaction> interactions = fiService.queryEdge(source, target);
             //There should be exactly one reaction
             if (interactions.isEmpty())
             {
-                PlugInUtilities.showErrorMessage("Error in FI Query", "No interactions could be found.");
+                PlugInUtilities.showErrorMessage("Error in FI Source Query", 
+                                                 "No FI source can be found for FI, " + source + " - " + target + ".");
+                desktopApp.getJFrame().getGlassPane().setVisible(false);
                 return;
             }
             displayInteraction(edgeView, interactions, source, target);
         }
-        catch (Exception e)
-        {
-            PlugInUtilities.showErrorMessage("Error in Fetching Annotation", "There was an error in fetching the FI annotation. Please try again.");
+        catch (Exception e) {
+            PlugInUtilities.showErrorMessage("Error in FI Source Query", 
+                                             "Error in fetching the FI source: " + e.getMessage());
         }
         desktopApp.getJFrame().getGlassPane().setVisible(false);
     }
@@ -291,7 +291,7 @@ public class EdgeActionCollection {
         if (selectedRow < 0)
             return;
         JPopupMenu popup = new JPopupMenu();
-        JMenuItem goToReactome = new JMenuItem("Open Reactome Source");
+        JMenuItem goToReactome = new JMenuItem("View Reactome Source");
         goToReactome.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 showReactomeSource(table);
@@ -308,12 +308,8 @@ public class EdgeActionCollection {
             return;
         ReactomeSourceTableModel tableModel = (ReactomeSourceTableModel) table.getModel();
         Long id = (Long) tableModel.getValueAt(selectedRow, 0);
-        String dataSourceURL = PlugInObjectManager.getManager().getDataSourceURL();
-        if (dataSourceURL == null) {
-            PlugInUtilities.showErrorMessage("Data source URL has not been set.", 
-                    "Error in Opening Source");
-        }
-        PlugInUtilities.openURL(dataSourceURL + id);
+        ReactomeSourceView sourceView = new ReactomeSourceView();
+        sourceView.viewReactomeSource(id, table);
     }
     
 }

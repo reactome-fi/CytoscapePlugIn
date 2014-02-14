@@ -5,7 +5,9 @@
 package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -14,23 +16,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.BorderFactory;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.gk.render.HyperEdge;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
-import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.ProgressPane;
 import org.gk.util.StringUtils;
@@ -118,8 +113,8 @@ public class FetchFIForPEInDiagramHelper {
             }
             progressPane.setValue(100);
             progressPane.setText("Finish query.");
-            showResults(list);
             frame.getGlassPane().setVisible(false);
+            showResults(list);
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -130,6 +125,10 @@ public class FetchFIForPEInDiagramHelper {
         }
     }
     
+    private void addFIsToPathwayDiagram(List<String[]> fis) {
+        
+    }
+    
     private void showResults(List<Element> elements) {
         JFrame desktop = PlugInObjectManager.getManager().getCytoscapeDesktop();
         JDialog dialog = GKApplicationUtilities.createDialog(desktop,
@@ -137,10 +136,25 @@ public class FetchFIForPEInDiagramHelper {
         FIResultsPane resultPane = new FIResultsPane();
         resultPane.setFIs(elements);
         dialog.getContentPane().add(resultPane, BorderLayout.CENTER);
-        dialog.setModal(true);
-        dialog.setSize(580, 350);
-        GKApplicationUtilities.center(dialog);
+        // Don't want to use a modal dialog so that the user may check
+        // PEs displayed in the dialog.
+        //dialog.setModal(true);
+        int width = 580;
+        int height = 350;
+        dialog.setSize(width, height);
+        // Want to place this dialog at the center of desktop
+        int x = (desktop.getWidth() - width) / 2;
+        int y = (desktop.getHeight() - height) / 2;
+        Point p = new Point(x, y);
+        SwingUtilities.convertPointToScreen(p, desktop);
+        dialog.setLocation(p);
         dialog.setVisible(true);
+        if (!resultPane.isOkClicked)
+            return;
+        List<String[]> selectedFIs = resultPane.getSelectedFIs();
+        if (selectedFIs == null || selectedFIs.size() == 0)
+            return; // Nothing to be added
+        addFIsToPathwayDiagram(selectedFIs);
     }
     
     /**
@@ -150,6 +164,8 @@ public class FetchFIForPEInDiagramHelper {
     private class FIResultsPane extends JPanel {
         private JTable fiTable;
         private JTextArea titleText;
+        private JButton addFIBtn;
+        private boolean isOkClicked = false;
         
         public FIResultsPane() {
             init();
@@ -179,24 +195,48 @@ public class FetchFIForPEInDiagramHelper {
             fiTable.setRowSorter(sorter);
             add(new JScrollPane(fiTable), BorderLayout.CENTER);
             
-            DialogControlPane controlPane = new DialogControlPane();
-            controlPane.getOKBtn().addActionListener(new ActionListener() {
+            // Served as a control panel
+            JPanel controlPane = new JPanel();
+            controlPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
+            addFIBtn = new JButton();
+            addFIBtn.setText("Add Selected FIs to Diagram");
+            JButton closeBtn = new JButton();
+            closeBtn.setText("Close");
+            controlPane.add(addFIBtn);
+            controlPane.add(closeBtn);
+            
+            addFIBtn.addActionListener(new ActionListener() {
                 
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     JDialog dialog = (JDialog) SwingUtilities.getAncestorOfClass(JDialog.class, FIResultsPane.this);
                     dialog.dispose();
+                    isOkClicked = true;
                 }
             });
-            controlPane.getCancelBtn().addActionListener(new ActionListener() {
+            closeBtn.addActionListener(new ActionListener() {
                 
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     JDialog dialog = (JDialog) SwingUtilities.getAncestorOfClass(JDialog.class, FIResultsPane.this);
                     dialog.dispose();
+                    isOkClicked = false;
                 }
             });
             add(controlPane, BorderLayout.SOUTH);
+            
+            // Enable selection synchronization
+            addFIBtn.setEnabled(false);
+            fiTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+                
+                @Override
+                public void valueChanged(ListSelectionEvent e) {
+                    if (fiTable.getSelectedRowCount() > 0)
+                        addFIBtn.setEnabled(true);
+                    else
+                        addFIBtn.setEnabled(false);
+                }
+            });
         }
         
         public void setFIs(List<Element> fiList) {
@@ -210,7 +250,27 @@ public class FetchFIForPEInDiagramHelper {
                     (totalFIs == 1 ? " has " : "s have") +
                     " been fetched for the selected \"" + name + "\". " + 
                     "(Note: FIs that can be extracted from the displayed diagram have " + 
-                    "been excluded.)");
+                    "been excluded. Use Control-Click (Windows) or Command-Click (Mac OS) for "
+                    + "multiple selections.)");
+        }
+        
+        /**
+         * Get the selected FIs listed in the table.
+         * @return
+         */
+        public List<String[]> getSelectedFIs() {
+            List<String[]> rtn = new ArrayList<String[]>();
+            if (fiTable.getSelectedRows() != null) {
+                for (int row : fiTable.getSelectedRows()) {
+                    String[] fi = new String[] {
+                            fiTable.getValueAt(row, 0) + "",
+                            fiTable.getValueAt(row, 1) + "",
+                            fiTable.getValueAt(row, 2) + ""
+                    };
+                    rtn.add(fi);
+                }
+            }
+            return rtn;
         }
         
     }
