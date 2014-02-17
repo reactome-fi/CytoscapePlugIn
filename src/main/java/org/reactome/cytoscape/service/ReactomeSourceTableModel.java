@@ -2,7 +2,7 @@
  * Created on Oct 6, 2006
  *
  */
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 import java.util.ArrayList;
 import java.util.List;

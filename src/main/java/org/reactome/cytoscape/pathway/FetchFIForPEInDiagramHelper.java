@@ -10,6 +10,8 @@ import java.awt.Font;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -225,10 +227,13 @@ public class FetchFIForPEInDiagramHelper {
             });
             add(controlPane, BorderLayout.SOUTH);
             
+            installListeners();
+        }
+        
+        private void installListeners() {
             // Enable selection synchronization
             addFIBtn.setEnabled(false);
             fiTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-                
                 @Override
                 public void valueChanged(ListSelectionEvent e) {
                     if (fiTable.getSelectedRowCount() > 0)
@@ -237,6 +242,41 @@ public class FetchFIForPEInDiagramHelper {
                         addFIBtn.setEnabled(false);
                 }
             });
+            fiTable.addMouseListener(new MouseAdapter() {
+                public void mousePressed(MouseEvent e) {
+                    if (e.isPopupTrigger()) 
+                        doTablePopup(e);
+                    else if (e.getClickCount() == 2)
+                        queryFISource();
+                }
+                public void mouseReleased(MouseEvent e) {
+                    if (e.isPopupTrigger())
+                        doTablePopup(e);
+                }
+            });
+        }
+        
+        private void doTablePopup(MouseEvent e) {
+            // Work for one selection only
+            if (fiTable.getSelectedRowCount() != 1)
+                return;
+            JPopupMenu popup = new JPopupMenu();
+            JMenuItem goToReactome = new JMenuItem("Query FI Source");
+            goToReactome.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    queryFISource();
+                }
+            });
+            popup.add(goToReactome);
+            popup.show(fiTable,
+                       e.getX(),
+                       e.getY());
+        }
+        
+        private void queryFISource() {
+            if (fiTable.getSelectedRowCount() != 1)
+                return;
+            System.out.println("Query FI Source: " + "");
         }
         
         public void setFIs(List<Element> fiList) {

@@ -1,20 +1,15 @@
 package org.reactome.cytoscape3;
 
-import java.awt.BorderLayout;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import javax.swing.*;
-import javax.swing.border.Border;
+import javax.swing.JFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CyEdgeViewContextMenuFactory;
 import org.cytoscape.application.swing.CyMenuItem;
@@ -24,14 +19,12 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.RESTFulFIService;
-import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.funcInt.FIAnnotation;
-import org.reactome.funcInt.Interaction;
-import org.reactome.funcInt.ReactomeSource;
 /**
  * A class which contains functions performed on edges
  * in the FI network.
@@ -157,159 +150,15 @@ public class EdgeActionCollection {
     
     private void queryFISource(CyNetworkView view,
                                View<CyEdge> edgeView) {
-        ProgressPane progPane = new ProgressPane();
-        progPane.setText("Querying FI Source");
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        desktopApp.getJFrame().setGlassPane(progPane);
-        desktopApp.getJFrame().getGlassPane().setVisible(true);
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
         Long sourceSUID =  edgeView.getModel().getSource().getSUID();
         String source = nodeTable.getRow(sourceSUID).get("name", String.class);
         
         Long targetSUID = edgeView.getModel().getTarget().getSUID();
         String target = nodeTable.getRow(targetSUID).get("name", String.class);
-        try {
-            RESTFulFIService fiService = new RESTFulFIService(view);
-            List<Interaction> interactions = fiService.queryEdge(source, target);
-            //There should be exactly one reaction
-            if (interactions.isEmpty())
-            {
-                PlugInUtilities.showErrorMessage("Error in FI Source Query", 
-                                                 "No FI source can be found for FI, " + source + " - " + target + ".");
-                desktopApp.getJFrame().getGlassPane().setVisible(false);
-                return;
-            }
-            displayInteraction(edgeView, interactions, source, target);
-        }
-        catch (Exception e) {
-            PlugInUtilities.showErrorMessage("Error in FI Source Query", 
-                                             "Error in fetching the FI source: " + e.getMessage());
-        }
-        desktopApp.getJFrame().getGlassPane().setVisible(false);
-    }
-    
-    private void displayInteraction(View<CyEdge> edgeView, List<Interaction> interactions, String source, String target)
-    {
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        JDialog dialog = new JDialog(desktopApp.getJFrame());
-        dialog.setTitle("Interaction Info");
-        dialog.setSize(400, 300);
-        dialog.setLocationRelativeTo(desktopApp.getJFrame());
-        JPanel supportPanel = createSupportPane(interactions);
-        dialog.getContentPane().add(supportPanel, BorderLayout.CENTER);
-        // Add a label
-        JLabel label = new JLabel("Interaction: " + source + " - " + target);
-        // Add an etched border for label
-        Border emptyBorder = BorderFactory.createEmptyBorder(4, 4, 4, 4);
-        Border etchedBorder = BorderFactory.createEtchedBorder();
-        label.setBorder(BorderFactory.createCompoundBorder(etchedBorder, emptyBorder));
-        Font font = label.getFont();
-        label.setFont(font.deriveFont(Font.BOLD));
-        dialog.getContentPane().add(label, BorderLayout.NORTH);
-        dialog.setVisible(true);
-    }
-    
-    private JPanel createSupportPane(List<Interaction> interactions)
-    {
-        JPanel supportPane = new JPanel();
-        supportPane.setBorder(BorderFactory.createEtchedBorder());
-        supportPane.setLayout(new BorderLayout());
-        JTabbedPane supportTabbedPane = new JTabbedPane();
-        List<Interaction> predictedFIs = new ArrayList<Interaction>();
-        List<Interaction> pathwayFIs = new ArrayList<Interaction>();
-        /*
-         * It is possible that one pair of FIs may actually come from two
-         * different sources due to the fact that data comes from normalized
-         * amino acid data from Uniprot.
-         */
-        for (Interaction i : interactions)
-        {
-            if (i.getEvidence() == null)
-                pathwayFIs.add(i);
-            else
-                predictedFIs.add(i);
-        }
-        if (pathwayFIs.isEmpty())
-        {
-            //Grab the FIs with the highest score.
-            Interaction highest = null;
-            for (Interaction i : predictedFIs)
-            {
-                if (highest == null)
-                    highest = i;
-                else if (highest.getEvidence().getProbability() < i.getEvidence().getProbability())
-                    highest = i;
-            }
-            JTable evidenceTable = new JTable();
-            EvidenceTableModel evidenceModel = new EvidenceTableModel();
-            evidenceModel.setEvidence(highest.getEvidence());
-            evidenceTable.setModel(evidenceModel);
-            supportTabbedPane.addTab("Support Evidence",
-                                     new JScrollPane(evidenceTable));
-        }
-        else
-        {
-            //Only allow pathway FIs.
-            Set<ReactomeSource> allSources = new HashSet<ReactomeSource>();
-            for (Interaction interaction : pathwayFIs)
-                allSources.addAll(interaction.getReactomeSources());
-            setReactomeSourceTab(supportTabbedPane, allSources);
-        }
-        supportPane.add(supportTabbedPane, BorderLayout.CENTER);
-        return supportPane;
-    }
-    
-    private void setReactomeSourceTab(JTabbedPane supportTabbedPane,
-                                      Set<ReactomeSource> sources) {
-        final JTable sourceTable = new JTable();
-        sourceTable.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent e) {
-                if (e.isPopupTrigger()) 
-                    doSourceTablePopup(sourceTable, e);
-                else if (e.getClickCount() == 2) {
-                    showReactomeSource(sourceTable);
-                }
-            }
-            public void mouseReleased(MouseEvent e) {
-                if (e.isPopupTrigger())
-                    doSourceTablePopup(sourceTable, e);
-            }
-        });
-        sourceTable.setToolTipText("Double click or right clik to use popup menu for details");
-        ReactomeSourceTableModel sourceModel = new ReactomeSourceTableModel();
-        sourceModel.setReactomeSources(sources);
-        sourceTable.setModel(sourceModel);
-        supportTabbedPane.addTab("Reactome Sources",
-                                 new JScrollPane(sourceTable));
-    }
-    
-    private void doSourceTablePopup(final JTable table, 
-                                    MouseEvent e) 
-    {
-        // Work for one selection only
-        final int selectedRow = table.getSelectedRow();
-        if (selectedRow < 0)
-            return;
-        JPopupMenu popup = new JPopupMenu();
-        JMenuItem goToReactome = new JMenuItem("View Reactome Source");
-        goToReactome.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                showReactomeSource(table);
-            }
-        });
-        popup.add(goToReactome);
-        popup.show(table, e.getX(), e.getY());
-    }
-    
-    private void showReactomeSource(final JTable table) {
-        // Work for one selection only
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow < 0)
-            return;
-        ReactomeSourceTableModel tableModel = (ReactomeSourceTableModel) table.getModel();
-        Long id = (Long) tableModel.getValueAt(selectedRow, 0);
-        ReactomeSourceView sourceView = new ReactomeSourceView();
-        sourceView.viewReactomeSource(id, table);
+        
+        FISourceQueryHelper helper = new FISourceQueryHelper();
+        helper.queryFISource(source, target, view);
     }
     
 }
