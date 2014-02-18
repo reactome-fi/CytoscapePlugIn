@@ -40,7 +40,7 @@ public class NodeActionCollection
         public CyMenuItem createMenuItem(final CyNetworkView netView,
                 final View<CyNode> nodeView)
         {
-            JMenuItem geneCardMenuItem = new JMenuItem("Gene Card");
+            JMenuItem geneCardMenuItem = new JMenuItem("Query Gene Card");
             geneCardMenuItem.addActionListener(new ActionListener()
             {
 
@@ -50,9 +50,7 @@ public class NodeActionCollection
                     Long nodeID = nodeView.getModel().getSUID();
                     String id = netView.getModel().getDefaultNodeTable()
                             .getRow(nodeID).get("name", String.class);
-                    String url = "http://www.genecards.org/cgi-bin/carddisp.pl?gene="
-                            + id;
-                    PlugInUtilities.openURL(url);
+                    PlugInUtilities.queryGeneCard(id);
                 }
 
             });
@@ -279,7 +277,6 @@ public class NodeActionCollection
            // List<Object> selected = outList.getSelectedValuesList();
             //The below method is deprecated. When Apple updates to Java 1.7
             //the above should be used instead. TODO
-            @SuppressWarnings("deprecation")
             Object [] selected = outList.getSelectedValues(); 
             for (Object s : selected)
             {
@@ -318,7 +315,6 @@ public class NodeActionCollection
             updateAllUIs();
         }
 
-        @SuppressWarnings("rawtypes")
         private void updateAllUIs()
         {
             inLabel.setText("Partners in network: " + partnersInNetwork.size());

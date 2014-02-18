@@ -5,6 +5,7 @@
 package org.reactome.cytoscape.service;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -39,9 +40,36 @@ public class FISourceQueryHelper {
     public FISourceQueryHelper() {
     }
     
+    /**
+     * An overloaded method to query the source for a FI specified by its
+     * two participating partners.
+     * @param partner1
+     * @param partner2
+     * @param parent
+     */
     public void queryFISource(String partner1,
-                              String partner2) {
-        
+                              String partner2,
+                              Component parent) {
+        try {
+            RESTFulFIService fiService = new RESTFulFIService();
+            List<Interaction> interactions = fiService.queryEdge(partner1, partner2);
+            //There should be exactly one reaction
+            if (interactions.isEmpty()) {
+                JOptionPane.showMessageDialog(parent,
+                                              "No FI source can be found for FI, " + partner1 + " - " + partner2 + ".",
+                                              "Error in FI Source Query",
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            Window parentWindow = (Window) SwingUtilities.getAncestorOfClass(Window.class, parent);
+            displayInteraction(interactions,
+                               partner1 + " - " + partner2,
+                               parentWindow);
+        }
+        catch (Exception e) {
+            PlugInUtilities.showErrorMessage("Error in FI Source Query", 
+                                             "Error in fetching the FI source: " + e.getMessage());
+        }
     }
                               
     /**

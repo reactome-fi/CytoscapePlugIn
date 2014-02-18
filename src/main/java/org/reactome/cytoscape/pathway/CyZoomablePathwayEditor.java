@@ -6,6 +6,9 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -17,9 +20,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -30,15 +36,10 @@ import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.render.HyperEdge;
-import org.gk.render.ProcessNode;
-import org.gk.render.Renderable;
-import org.gk.render.RenderableCompartment;
-import org.gk.render.RenderableComplex;
-import org.gk.render.RenderableEntitySet;
-import org.gk.render.RenderableProtein;
+import org.gk.render.*;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
+import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -324,6 +325,68 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             getPathwayEditor().setSelection(selected);
     }
     
+    /**
+     * Do popup for newly added FIs that don't have Reactome DB_IDs specified.
+     * @param r
+     * @param event
+     */
+    private void doPopupForNewObject(final Renderable r,
+                                     MouseEvent event) {
+        JPopupMenu popup = null;
+        if (r instanceof RenderableInteraction) {
+            JMenuItem queryFISource = new JMenuItem("Query FI Source");
+            queryFISource.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    queryFISource((RenderableInteraction)r);
+                }
+            });
+            popup = new JPopupMenu();
+            popup.add(queryFISource);
+        }
+        else if (r instanceof RenderableProtein) {
+            // Check if there is any interaction added
+            CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
+            if (pathwayEditor.hasFIsOverlaid(r)) {
+                JMenuItem queryGeneCard = new JMenuItem("Query Gene Card");
+                queryGeneCard.addActionListener(new ActionListener() {
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        queryGeneCard((RenderableProtein)r);
+                    }
+                });
+                popup = new JPopupMenu();
+                popup.add(queryGeneCard);
+            }
+        }
+        if (popup != null)
+            popup.show(getPathwayEditor(),
+                       event.getX(),
+                       event.getY());
+    }
+    
+    private void queryFISource(RenderableInteraction fi) {
+        // Need to get FI partners from name
+        String name = fi.getDisplayName();
+        // Do a match
+        Pattern pattern = Pattern.compile("(.+) - (.+)");
+        Matcher matcher = pattern.matcher(name);
+        if (matcher.matches()) {
+            String partner1 = matcher.group(1);
+            String partner2 = matcher.group(2);
+            FISourceQueryHelper queryHelper = new FISourceQueryHelper();
+            queryHelper.queryFISource(partner1,
+                                      partner2,
+                                      this);
+        }
+    }
+    
+    private void queryGeneCard(RenderableProtein protein) {
+        PlugInUtilities.queryGeneCard(protein.getDisplayName());
+    }
+    
     private void doPopup(MouseEvent event) {
         @SuppressWarnings("unchecked")
         List<Renderable> selection = getPathwayEditor().getSelection();
@@ -334,8 +397,10 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         if (selection.size() != 1)
             return;
         Renderable r = selection.get(0);
-        if (r.getReactomeId() == null)
+        if (r.getReactomeId() == null) {
+            doPopupForNewObject(r, event);
             return;
+        }
         final Long dbId = r.getReactomeId();
         final String name = r.getDisplayName();
         JPopupMenu popup = new JPopupMenu();
@@ -387,11 +452,36 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                     fetchFIs(dbId);
                 }
             });
+            popup.addSeparator();
             popup.add(fetchFIs);
+            // Check if a remove FIs action should be added
+            CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
+            final Node node = (Node) r;
+            if (pathwayEditor.hasFIsOverlaid(r)) {
+                JMenuItem removeFIs = new JMenuItem("Remove FIs");
+                removeFIs.addActionListener(new ActionListener() {
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        removeFIs(node);
+                    }
+                });
+                popup.add(removeFIs);
+            }
         }
         popup.show(getPathwayEditor(), 
                    event.getX(),
                    event.getY());
+    }
+    
+    /**
+     * Remove FIs for all Nodes having the DB_ID specified by the parameter. If a node
+     * is displayed multiple times, only FIs associated with the passed Node will be removed.
+     * @param dbId
+     */
+    private void removeFIs(Node r) {
+        CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
+        pathwayEditor.removeFIs(r);
     }
     
     @SuppressWarnings("unchecked")
@@ -533,8 +623,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     protected PathwayEditor createPathwayEditor() {
         return new CyPathwayEditor();
     }
-
+    
+    /**
+     * A customized PathwayEditor in order to do something specifial for PathwayDiagram displayed in
+     * Cytoscape.
+     * @author gwu
+     *
+     */
     private class CyPathwayEditor extends PathwayEditor {
+        // Record newly added RenderableInteraction for new drawing
+        private List<RenderableInteraction> overlaidFIs;
         
         public CyPathwayEditor() {
             setEditable(false); // Only used as a pathway diagram view and not for editing
@@ -557,6 +655,103 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 return visibleRect;
             }
             return super.getVisibleRect();
+        }
+        
+        public void removeFIs(Node r) {
+            if (overlaidFIs == null || overlaidFIs.size() == 0)
+                return;
+            List<RenderableInteraction> toBeRemoved = new ArrayList<RenderableInteraction>();
+            for (RenderableInteraction fi : overlaidFIs) {
+                if (fi.getInputNodes().contains(r) || fi.getOutputNodes().contains(r)) {
+                    toBeRemoved.add(fi);
+                    // Deleted added gene if it is not connected to others
+                    Node input = fi.getInputNode(0);
+                    Node output = fi.getOutputNode(0);
+                    delete(fi);
+                    Node geneNode = null;
+                    if (input == r)
+                        geneNode = output;
+                    else
+                        geneNode = input;
+                    if (geneNode.getConnectedReactions().size() == 0)
+                        delete(geneNode);
+                }
+            }
+            overlaidFIs.removeAll(toBeRemoved);
+            repaint(getVisibleRect());
+        }
+        
+        /**
+         * Check if there is any FI overlaid for the specified Renderable object.
+         * @param r usually should be a Node object.
+         * @return
+         */
+        public boolean hasFIsOverlaid(Renderable r) {
+            if (overlaidFIs == null || overlaidFIs.size() == 0)
+                return false;
+            for (RenderableInteraction fi : overlaidFIs) {
+                if (fi.getInputNodes().contains(r) || fi.getOutputNodes().contains(r))
+                    return true;
+            }
+            return false;
+        }
+        
+        @Override
+        public void insertEdge(HyperEdge edge, boolean useDefaultInsertPos) {
+            super.insertEdge(edge, useDefaultInsertPos);
+            if (edge instanceof RenderableInteraction) {
+                RenderableInteraction fi = (RenderableInteraction) edge;
+                if (fi.getInteractionType() == InteractionType.INTERACT) {
+                    if (overlaidFIs == null)
+                        overlaidFIs = new ArrayList<RenderableInteraction>();
+                    overlaidFIs.add(fi);
+                }
+            }
+        }
+        
+        @Override
+        public void paint(Graphics g) {
+            super.paint(g);
+            if (overlaidFIs == null || overlaidFIs.size() == 0)
+                return;
+            // The following code is based on DiseasePathwayImageEditor
+            // in package org.gk.graphEditor.
+            // Create a background
+            Graphics2D g2 = (Graphics2D) g;
+            // Draw a transparent background: light grey
+            Color color = new Color(204, 204, 204, 175);
+            g2.setPaint(color);
+            Dimension size = getPreferredSize();
+            // Preferred size has been scaled. Need to scale it back
+            g2.fillRect(0, 
+                        0, 
+                        (int)(size.width / scaleX + 1.0d), 
+                        (int)(size.height / scaleY + 1.0d));
+            // Draw overlaid FIs and their associated Objects
+            Set<Node> nodes = new HashSet<Node>();
+            for (RenderableInteraction fi : overlaidFIs) {
+                nodes.addAll(fi.getInputNodes());
+                nodes.addAll(fi.getOutputNodes());
+            }
+            Rectangle clip = g.getClipBounds();
+            for (Node node : nodes) {
+                node.validateBounds(g);
+                if (clip.intersects(node.getBounds()))
+                    node.render(g);
+            }
+            for (RenderableInteraction fi : overlaidFIs) {
+                fi.validateConnectInfo();
+                if (clip.intersects(fi.getBounds()))
+                    fi.render(g);
+            }
+        }
+
+        /**
+         * Override so that nothing is needed to be done for added RenderableInteractions.
+         */
+        @Override
+        protected void validateCompartmentSetting(Renderable r) {
+            return; 
         }
     }
     

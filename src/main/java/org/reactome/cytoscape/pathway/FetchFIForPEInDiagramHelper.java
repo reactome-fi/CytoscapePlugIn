@@ -25,13 +25,20 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.HyperEdge;
+import org.gk.render.InteractionType;
+import org.gk.render.Node;
 import org.gk.render.Renderable;
+import org.gk.render.RenderableInteraction;
 import org.gk.render.RenderablePathway;
+import org.gk.render.RenderableProtein;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.ProgressPane;
 import org.gk.util.StringUtils;
 import org.jdom.Element;
+import org.reactome.cytoscape.service.FISourceQueryHelper;
+import org.reactome.cytoscape.service.JiggleLayout;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
@@ -127,8 +134,129 @@ public class FetchFIForPEInDiagramHelper {
         }
     }
     
+    @SuppressWarnings("unchecked")
     private void addFIsToPathwayDiagram(List<String[]> fis) {
-        
+        // Get the selected PE as the anchor for adding FIs
+        PathwayEditor editor = pathwayEditor.getPathwayEditor();
+        List<Renderable> selection = editor.getSelection();
+        if (selection == null || selection.size() != 1)
+            return;
+        Renderable r = selection.get(0);
+        if (!(r instanceof Node))
+            return;
+        Node node = (Node) r;
+        List<Renderable> newNodes = new ArrayList<Renderable>();
+        for (String[] fi : fis) {
+            Node partner = null;
+            // Check if a FI should be added to the existing objects
+            if (fi[2].length() == 0) {
+                partner = getRenderableForGene(fi[1],
+                                               newNodes);
+                createInteraction(node, 
+                                  partner, 
+                                  fi, 
+                                  editor);
+            }
+            else {
+                // Need to split the text first
+                String[] names = fi[2].split(", ");
+                for (String name : names) {
+                    partner = getNodeForName(name);
+                    if (partner == null)
+                        continue;
+                    createInteraction(node, partner, fi, editor);
+                }
+            }
+        }
+        // Do a layout
+        layout(node, newNodes);
+        editor.repaint(editor.getVisibleRect());
+    }
+    
+    /**
+     * Do a giggle layout around the center nodes for newly added FI partners.
+     * @param node
+     * @param newNodes
+     */
+    private void layout(Node node,
+                        List<Renderable> newNodes) {
+        if (newNodes.size() == 0)
+            return;
+        List<String> newNames = new ArrayList<String>();
+        for (Renderable r : newNodes)
+            newNames.add(r.getDisplayName());
+        Map<String, double[]> nameToCoords = new JiggleLayout().jiggleLayout(node.getDisplayName(),
+                                                                             newNames);
+        double dx = node.getPosition().getX() - nameToCoords.get(node.getDisplayName())[0];
+        double dy = node.getPosition().getY() - nameToCoords.get(node.getDisplayName())[1];
+        for (Renderable r : newNodes) {
+            double[] coords = nameToCoords.get(r.getDisplayName());
+            int x = (int) (coords[0] + dx);
+            int y = (int) (coords[1] + dx);
+            // Should not be allowed outside the bounds
+            if (x < 50) // These numbers 50 and 25 are rather arbitrary
+                x = 50;
+            if (y < 25)
+                y = 25;
+            r.setPosition(x, y);
+            List<HyperEdge> interactions = ((Node)r).getConnectedReactions();
+            for (HyperEdge edge : interactions)
+                edge.layout();
+        }
+    }
+
+    private void createInteraction(Node node, 
+                                   Node partner, 
+                                   String[] fi,
+                                   PathwayEditor editor) {
+        // Create an interaction
+        RenderableInteraction interaction = new RenderableInteraction();
+        interaction.addInput(node);
+        interaction.addOutput(partner);
+        // Just use Interact for the time being.
+        //TODO: This should be changed to use annotation.
+        interaction.setInteractionType(InteractionType.INTERACT);
+        // Add a display name
+        interaction.setDisplayName(fi[0] + " - " + fi[1]);
+        interaction.layout();
+        editor.insertEdge(interaction, false);
+    }
+    
+    /**
+     * Get a RenderableProtein for a gene specified by its name. If this gene has been
+     * added in the diagram, the previously added RenderableProtein should be returned.
+     * Otherwise, a new RenderableProtein should be created. For the time being, only
+     * RenderableProtein will be created assuming that FIs involve proteins only.
+     * @param gene
+     * @return
+     */
+    private RenderableProtein getRenderableForGene(String gene,
+                                                   List<Renderable> newNodes) {
+        for (Object obj : pathwayEditor.getPathwayEditor().getDisplayedObjects()) {
+            Renderable r = (Renderable) obj;
+            if (r instanceof HyperEdge || r.getReactomeId() != null)
+                continue;
+            if (r instanceof RenderableProtein && r.getDisplayName().equals(gene))
+                return (RenderableProtein) r;
+        }
+        // Need to add a new RenderableProtein
+        RenderableProtein protein = new RenderableProtein();
+        protein.setDisplayName(gene);
+        pathwayEditor.getPathwayEditor().insertNode(protein);
+        newNodes.add(protein);
+        return protein;
+    }
+    
+    private Node getNodeForName(String name) {
+        for (Object obj : pathwayEditor.getPathwayEditor().getDisplayedObjects()) {
+            Renderable r = (Renderable) obj;
+            if (!(r instanceof Node) || r.getReactomeId() == null)
+                continue;
+            Node node = (Node) r;
+            if (node.getDisplayName().equals(name))
+                return node;
+        }
+        return null;
     }
     
     private void showResults(List<Element> elements) {
@@ -137,6 +265,14 @@ public class FetchFIForPEInDiagramHelper {
                                                              "Fetch FIs Result");
         FIResultsPane resultPane = new FIResultsPane();
         resultPane.setFIs(elements);
+        if (resultPane.getTotalFIs() == 0) {
+            JOptionPane.showMessageDialog(desktop,
+                                          "No FI can be fetched for the selected object. (Note: FIs that can\n"
+                                          + "be extracted from the displayed pathway diagram are excluded.)",
+                                          "No FI",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
         dialog.getContentPane().add(resultPane, BorderLayout.CENTER);
         // Don't want to use a modal dialog so that the user may check
         // PEs displayed in the dialog.
@@ -150,6 +286,7 @@ public class FetchFIForPEInDiagramHelper {
         Point p = new Point(x, y);
         SwingUtilities.convertPointToScreen(p, desktop);
         dialog.setLocation(p);
+        dialog.setModal(true);
         dialog.setVisible(true);
         if (!resultPane.isOkClicked)
             return;
@@ -276,7 +413,13 @@ public class FetchFIForPEInDiagramHelper {
         private void queryFISource() {
             if (fiTable.getSelectedRowCount() != 1)
                 return;
-            System.out.println("Query FI Source: " + "");
+            int selectedRow = fiTable.getSelectedRow();
+            String partner1 = (String) fiTable.getValueAt(selectedRow, 0);
+            String partner2 = (String) fiTable.getValueAt(selectedRow, 1);
+            FISourceQueryHelper helper = new FISourceQueryHelper();
+            helper.queryFISource(partner1,
+                                 partner2,
+                                 this);
         }
         
         public void setFIs(List<Element> fiList) {
@@ -292,6 +435,14 @@ public class FetchFIForPEInDiagramHelper {
                     "(Note: FIs that can be extracted from the displayed diagram have " + 
                     "been excluded. Use Control-Click (Windows) or Command-Click (Mac OS) for "
                     + "multiple selections.)");
+        }
+        
+        /**
+         * Check how many FIs displayed in total.
+         * @return
+         */
+        public int getTotalFIs() {
+            return fiTable.getModel().getRowCount();     
         }
         
         /**

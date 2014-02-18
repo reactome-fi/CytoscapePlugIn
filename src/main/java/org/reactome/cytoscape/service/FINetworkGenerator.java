@@ -16,8 +16,6 @@ import java.util.Set;
 
 import javax.swing.JOptionPane;
 
-import jiggle.*;
-
 import org.cytoscape.event.CyEventHelper;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
@@ -224,55 +222,31 @@ public class FINetworkGenerator implements NetworkGenerator {
         }
     }
 
-    public void jiggleLayout(CyNode anchor, Set<CyNode> partners, CyNetworkView view)
-    {
-        jiggle.Graph graph = new jiggle.Graph();
-        //Initialize the center of the graph.
-        Vertex center = graph.insertVertex();
-        initializeJiggleVertex(center);
-        List<Vertex> vertices = new ArrayList<Vertex>();
-        for (int i1 = 0; i1 < partners.size(); i1++)
-        {
-            Vertex v = graph.insertVertex();
-            initializeJiggleVertex(v);
-            graph.insertEdge(v, center);
-            vertices.add(v);
+    private void jiggleLayout(CyNode anchor, Set<CyNode> partners, CyNetworkView view) {
+        CyTable nodeTable = view.getModel().getDefaultNodeTable();
+        String center = nodeTable.getRow(anchor.getSUID()).get("name", String.class);
+        List<String> partnerNames = new ArrayList<String>();
+        for (CyNode node : partners) {
+            String name = nodeTable.getRow(node.getSUID()).get("name", String.class);
+            partnerNames.add(name);
         }
-        jiggle.Graph g = graph;
-        int d = g.getDimensions();
-        double k = 25;
-        SpringLaw springLaw = new QuadraticSpringLaw(g, k);
-        // Use strong repulsion
-        VertexVertexRepulsionLaw vvRepulsionLaw = new HybridVertexVertexRepulsionLaw(g, 3 * k);
-        //vvRepulsionLaw.setBarnesHutTheta(0.9d);
-        VertexEdgeRepulsionLaw veRepulsionLaw = new InverseSquareVertexEdgeRepulsionLaw(g, k);
-        ForceModel fm = new ForceModel(g);
-        fm.addForceLaw (springLaw);
-        fm.addForceLaw (vvRepulsionLaw);
-        // Using a force repulsion law hurts performance unfortunately.
-        fm.addForceLaw(veRepulsionLaw);
-        double acc = 0.5d;
-        double rt = 0.2d;
-        FirstOrderOptimizationProcedure opt = new ConjugateGradients(g, fm, acc, rt);
-        opt.setConstrained(true);
-        // Do a layout for 100 iterations
-        for (int i = 0; i < 40; i++)
-            opt.improveGraph();
-        // Grab the position of the anchor.
-        double[] coords = center.getCoords();
+        JiggleLayout layout = new JiggleLayout();
+        Map<String, double[]> nameToCoord = layout.jiggleLayout(center, partnerNames);
+        
+        // Need to extract new coordinates
+        double[] coords = nameToCoord.get(center);
         double dx = view.getNodeView(anchor).getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION) - coords[0];
         double dy = view.getNodeView(anchor).getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION) - coords[1];
-        int i = 0;
+
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference servRef = context.getServiceReference(CyEventHelper.class.getName());
         CyEventHelper eventHelper = (CyEventHelper) context.getService(servRef);
         
-        for(CyNode node : partners)
-        {
-            Vertex v = vertices.get(i);
-            i ++;
-            double x = v.getCoords()[0] + dx;
-            double y = v.getCoords()[1] + dy;
+        for(CyNode node : partners) {
+            String name = nodeTable.getRow(node.getSUID()).get("name", String.class);
+            coords = nameToCoord.get(name);
+            double x = coords[0] + dx;
+            double y = coords[1] + dy;
             eventHelper.flushPayloadEvents();
             View<CyNode> nodeView = view.getNodeView(node);
             nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, x);
@@ -280,17 +254,6 @@ public class FINetworkGenerator implements NetworkGenerator {
         }
         
         context.ungetService(servRef);
-    }
-    
-    private void initializeJiggleVertex(Vertex v) {
-        // Assign a random position
-        double[] pos = v.getCoords();
-        pos[0] = 500 * Math.random();
-        pos[1] = 500 * Math.random();
-        // Assign a fixed size
-        double[] size = v.getSize();
-        size[0] = (int) 50;
-        size[1] = (int) 50;
     }
 
     private void addFIs(Set<String> fis, CyNetwork network) {
@@ -303,14 +266,17 @@ public class FINetworkGenerator implements NetworkGenerator {
         }
         Map<CyNode, Set<CyNode>> oldToNew = new HashMap<CyNode, Set<CyNode>>();
         int index = 0;
-        for (String fi : fis)
-        {
+        for (String fi : fis) {
             //Add the interacting nodes.
             index = fi.indexOf("\t");
             String gene1 = fi.substring(0, index);
-            CyNode node1 = addFINode(gene1, network);
+            CyNode node1 = searchCyNode(gene1, network);
             String gene2 = fi.substring(index + 1);
-            CyNode node2 = addFINode(gene2, network);
+            CyNode node2 = searchCyNode(gene2, network);
+            // This method is used to add a FI between two existing nodes..
+            // If any node doesn't exist, don't create any edge.
+            if (node1 == null || node2 == null)
+                continue;
             //Add the edge between the nodes.
             createEdge(network, node1, node2, "FI");
 
@@ -345,32 +311,26 @@ public class FINetworkGenerator implements NetworkGenerator {
         view.updateView();
     }
     
-    private CyNode addFINode(String name, CyNetwork network)
-    {
+    /**
+     * Search an added CyNode based on its name.
+     * @param name
+     * @param network
+     * @return
+     */
+    private CyNode searchCyNode(String name, CyNetwork network) {
         CyTable nodeTable = network.getDefaultNodeTable();
-        TableHelper tableHelper = new TableHelper();
-        boolean found = false;
         CyNode fiNode = null;
-        for (CyNode node : network.getNodeList())
-        {
+        for (CyNode node : network.getNodeList()) {
             Long tmpSUID = node.getSUID();
             String tmp = nodeTable.getRow(tmpSUID).get("name", String.class);
-            if (name.equals(tmp))
-            {
+            if (name.equals(tmp)) {
                 fiNode = node;
-                found = true;
                 nodeTable.getRow(tmpSUID).set("nodeLabel", name);
                 nodeTable.getRow(tmpSUID).set("nodeToolTip", name);
-                break;
+                return node;
             }
         }
-        if (!found)
-        {
-            fiNode = network.addNode();
-            nodeTable.getRow(fiNode.getSUID()).set("nodeLabel", name);
-            nodeTable.getRow(fiNode.getSUID()).set("nodeToolTip", name);
-        }
-        return fiNode;
+        return null;
     }
 
 }

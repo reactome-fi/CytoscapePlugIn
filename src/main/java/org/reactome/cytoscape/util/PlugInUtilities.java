@@ -271,6 +271,15 @@ public class PlugInUtilities {
                                       title,
                                       JOptionPane.ERROR_MESSAGE);
     }
+    
+    /**
+     * Open a web page for a gene in a web browser.
+     * @param gene
+     */
+    public static void queryGeneCard(String gene) {
+        String url = "http://www.genecards.org/cgi-bin/carddisp.pl?gene=" + gene;
+        openURL(url);
+    }
 
     /**
      * Open an OS web browser to display the passed URL.
