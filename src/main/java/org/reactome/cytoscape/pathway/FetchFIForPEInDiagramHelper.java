@@ -49,6 +49,7 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  *
  */
 public class FetchFIForPEInDiagramHelper {
+    private final String FI_ATTRIBUTE_KEY = "isOverlaidFI";
     private Long peDbID;
     private CyZoomablePathwayEditor pathwayEditor;
     // Keep this map in order to map from DB_ID to _displayNames
@@ -145,6 +146,15 @@ public class FetchFIForPEInDiagramHelper {
         if (!(r instanceof Node))
             return;
         Node node = (Node) r;
+        // Two or more FIs can link two PEs, including newly added genes and 
+        // existing pathway PEs. Use this map to merge them together into one 
+        // single FI since multiple FIs cannot be displayed properly in the 
+        // pathway diagram.
+        // Some FIs may have been added previously. Newly added FIs should be
+        // merged into them if possible.
+        Map<String, RenderableInteraction> nodesToInteraction = new HashMap<String, RenderableInteraction>();
+        getPreAddedFIs(node, nodesToInteraction);
+        filterPreAddedFIs(fis, nodesToInteraction);
         List<Renderable> newNodes = new ArrayList<Renderable>();
         for (String[] fi : fis) {
             Node partner = null;
@@ -155,7 +165,8 @@ public class FetchFIForPEInDiagramHelper {
                 createInteraction(node, 
                                   partner, 
                                   fi, 
-                                  editor);
+                                  editor,
+                                  nodesToInteraction);
             }
             else {
                 // Need to split the text first
@@ -164,13 +175,78 @@ public class FetchFIForPEInDiagramHelper {
                     partner = getNodeForName(name);
                     if (partner == null)
                         continue;
-                    createInteraction(node, partner, fi, editor);
+                    createInteraction(node, 
+                                      partner, 
+                                      fi, 
+                                      editor,
+                                      nodesToInteraction);
                 }
             }
         }
         // Do a layout
         layout(node, newNodes);
         editor.repaint(editor.getVisibleRect());
+    }
+    
+    private void filterPreAddedFIs(List<String[]> fis,
+                                   Map<String, RenderableInteraction> nodesToFI) {
+        List<String[]> preFIs = new ArrayList<String[]>();
+        for (String[] fi : fis) {
+            String name = generateFIName(fi);
+            for (RenderableInteraction rFI : nodesToFI.values()) {
+                // This check should be reliable enough since the format used
+                // to generate a name for a FI.
+                if (rFI.getDisplayName().contains(name)) {
+                    preFIs.add(fi);
+                    break;
+                }
+            }
+        }
+        if (preFIs.size() == 0)
+            return;
+        fis.removeAll(preFIs);
+        if (fis.size() == 0) {
+            String message = (preFIs.size() == 1 ? "The selected FI has " : "The selected FIs have ");
+            message = "been added before!";
+            JOptionPane.showMessageDialog(pathwayEditor,
+                                          message,
+                                          "Adding FIs",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        // Generate a message
+        StringBuilder builder = new StringBuilder();
+        if (preFIs.size() == 1) 
+            builder.append("This selected FI has been added, and will not be "
+                    + "added again: " + generateFIName(preFIs.get(0)));
+        else {
+            builder.append("The following FIs have been added, and will not be " + 
+                           "added again:");
+            for (String[] fi : preFIs) {
+                builder.append("\n").append(generateFIName(fi));
+            }
+        }
+        JOptionPane.showMessageDialog(pathwayEditor,
+                                      builder.toString(),
+                                      "Adding FIs",
+                                      JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private void getPreAddedFIs(Node node,
+                                Map<String, RenderableInteraction> nodesToFI) {
+        List<HyperEdge> edges = node.getConnectedReactions();
+        for (HyperEdge edge : edges) {
+            if (edge instanceof RenderableInteraction) {
+                Object attValue = edge.getAttributeValue(FI_ATTRIBUTE_KEY);
+                // Primary attribute is saved as String
+                if (attValue != null && attValue.equals("true")) {
+                    Node input = edge.getInputNode(0);
+                    Node output = edge.getOutputNode(0);
+                    String key = generateKeyForFINodes(input, output);
+                    nodesToFI.put(key, (RenderableInteraction)edge);
+                }
+            }
+        }
     }
     
     /**
@@ -192,7 +268,7 @@ public class FetchFIForPEInDiagramHelper {
         for (Renderable r : newNodes) {
             double[] coords = nameToCoords.get(r.getDisplayName());
             int x = (int) (coords[0] + dx);
-            int y = (int) (coords[1] + dx);
+            int y = (int) (coords[1] + dy);
             // Should not be allowed outside the bounds
             if (x < 50) // These numbers 50 and 25 are rather arbitrary
                 x = 50;
@@ -208,18 +284,51 @@ public class FetchFIForPEInDiagramHelper {
     private void createInteraction(Node node, 
                                    Node partner, 
                                    String[] fi,
-                                   PathwayEditor editor) {
+                                   PathwayEditor editor,
+                                   Map<String, RenderableInteraction> nodesToInteraction) {
+        String key = generateKeyForFINodes(node, partner);
+        RenderableInteraction interaction = nodesToInteraction.get(key);
+        if (interaction != null) {
+            // Add a new name
+            String name = interaction.getDisplayName();
+            name += ", " + generateFIName(fi);
+            interaction.setDisplayName(name);
+            return;
+        }
         // Create an interaction
-        RenderableInteraction interaction = new RenderableInteraction();
+        interaction = new RenderableInteraction();
+        // Add a flag to indicate this is an overlaid FI
+        interaction.setAttributeValue(FI_ATTRIBUTE_KEY,
+                                      Boolean.TRUE);
         interaction.addInput(node);
         interaction.addOutput(partner);
         // Just use Interact for the time being.
         //TODO: This should be changed to use annotation.
         interaction.setInteractionType(InteractionType.INTERACT);
         // Add a display name
-        interaction.setDisplayName(fi[0] + " - " + fi[1]);
+        interaction.setDisplayName(generateFIName(fi));
         interaction.layout();
         editor.insertEdge(interaction, false);
+        nodesToInteraction.put(key, interaction);
+    }
+    
+    private String generateFIName(String[] fi) {
+        if (fi[0].compareTo(fi[1]) < 0)
+            return fi[0] + " - " + fi[1];
+        else
+            return fi[1] + " - " + fi[0];
+    }
+
+    private String generateKeyForFINodes(Node node, Node partner) {
+        // Generate a key
+        String name1 = node.getDisplayName();
+        String name2 = partner.getDisplayName();
+        String key = null;
+        if (name1.compareTo(name2) < 0)
+            key = name1 + " - " + name2;
+        else
+            key = name2 + " - " + name1;
+        return key;
     }
     
     /**
@@ -558,4 +667,5 @@ public class FetchFIForPEInDiagramHelper {
         }
         
     }
+    
 }

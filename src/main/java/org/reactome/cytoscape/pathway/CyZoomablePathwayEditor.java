@@ -18,7 +18,9 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -334,16 +336,11 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                      MouseEvent event) {
         JPopupMenu popup = null;
         if (r instanceof RenderableInteraction) {
-            JMenuItem queryFISource = new JMenuItem("Query FI Source");
-            queryFISource.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    queryFISource((RenderableInteraction)r);
-                }
-            });
-            popup = new JPopupMenu();
-            popup.add(queryFISource);
+            JMenuItem queryFISource = createQueryFISourceMenuItem((RenderableInteraction)r);
+            if (queryFISource != null) {
+                popup = new JPopupMenu();
+                popup.add(queryFISource);
+            }
         }
         else if (r instanceof RenderableProtein) {
             // Check if there is any interaction added
@@ -367,12 +364,48 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                        event.getY());
     }
     
-    private void queryFISource(RenderableInteraction fi) {
-        // Need to get FI partners from name
-        String name = fi.getDisplayName();
+    private JMenuItem createQueryFISourceMenuItem(RenderableInteraction interaction) {
+        JMenuItem rtn = null;
+        String name = interaction.getDisplayName();
+        // Check how many FIs have been merged in the specified interaction
+        String[] tokens = name.split(", ");
+        if (tokens.length > 1) {
+            // Need to use submenus
+            rtn = new JMenu("Query FI Source");
+            // Do a sorting
+            List<String> list = Arrays.asList(tokens);
+            Collections.sort(list);
+            for (String fi : list) {
+                JMenuItem item = new JMenuItem(fi);
+                final String tmpFi = fi;
+                item.addActionListener(new ActionListener() {
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        queryFISource(tmpFi);
+                    }
+                });
+                rtn.add(item);
+            }
+        }
+        else {
+            rtn = new JMenuItem("Query FI Source");
+            final String fi = tokens[0];
+            rtn.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    queryFISource(fi);
+                }
+            });
+        }
+        return rtn;
+    }
+    
+    private void queryFISource(String fi) {
         // Do a match
         Pattern pattern = Pattern.compile("(.+) - (.+)");
-        Matcher matcher = pattern.matcher(name);
+        Matcher matcher = pattern.matcher(fi);
         if (matcher.matches()) {
             String partner1 = matcher.group(1);
             String partner2 = matcher.group(2);
