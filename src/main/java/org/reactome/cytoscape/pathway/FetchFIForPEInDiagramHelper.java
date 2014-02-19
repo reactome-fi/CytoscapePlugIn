@@ -27,7 +27,6 @@ import javax.swing.table.TableRowSorter;
 
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.HyperEdge;
-import org.gk.render.InteractionType;
 import org.gk.render.Node;
 import org.gk.render.Renderable;
 import org.gk.render.RenderableInteraction;
@@ -49,7 +48,6 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  *
  */
 public class FetchFIForPEInDiagramHelper {
-    private final String FI_ATTRIBUTE_KEY = "isOverlaidFI";
     private Long peDbID;
     private CyZoomablePathwayEditor pathwayEditor;
     // Keep this map in order to map from DB_ID to _displayNames
@@ -102,13 +100,14 @@ public class FetchFIForPEInDiagramHelper {
                                           JOptionPane.ERROR_MESSAGE);
             return;
         }
+        JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         try {
             RESTFulFIService service = new RESTFulFIService();
             ProgressPane progressPane = new ProgressPane();
-            JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
             frame.setGlassPane(progressPane);
             progressPane.setMinimum(0);
             progressPane.setMaximum(100);
+            progressPane.setIndeterminate(true);
             progressPane.setTitle("Fetching FIs");
             progressPane.setVisible(true);
             progressPane.setText("Querying the server...");
@@ -132,11 +131,12 @@ public class FetchFIForPEInDiagramHelper {
                                           "Error in fetching FIs for a selected object in diagram:\n" + e.getMessage(),
                                           "Error in Fetching FIs",
                                           JOptionPane.ERROR_MESSAGE);
+            frame.getGlassPane().setVisible(false);
         }
     }
     
     @SuppressWarnings("unchecked")
-    private void addFIsToPathwayDiagram(List<String[]> fis) {
+    private void addFIsToPathwayDiagram(List<SimpleFI> fis) {
         // Get the selected PE as the anchor for adding FIs
         PathwayEditor editor = pathwayEditor.getPathwayEditor();
         List<Renderable> selection = editor.getSelection();
@@ -156,11 +156,11 @@ public class FetchFIForPEInDiagramHelper {
         getPreAddedFIs(node, nodesToInteraction);
         filterPreAddedFIs(fis, nodesToInteraction);
         List<Renderable> newNodes = new ArrayList<Renderable>();
-        for (String[] fi : fis) {
+        for (SimpleFI fi : fis) {
             Node partner = null;
             // Check if a FI should be added to the existing objects
-            if (fi[2].length() == 0) {
-                partner = getRenderableForGene(fi[1],
+            if (fi.existedPEs.length() == 0) {
+                partner = getRenderableForGene(fi.partner2,
                                                newNodes);
                 createInteraction(node, 
                                   partner, 
@@ -170,7 +170,7 @@ public class FetchFIForPEInDiagramHelper {
             }
             else {
                 // Need to split the text first
-                String[] names = fi[2].split(", ");
+                String[] names = fi.existedPEs.split(", ");
                 for (String name : names) {
                     partner = getNodeForName(name);
                     if (partner == null)
@@ -188,10 +188,10 @@ public class FetchFIForPEInDiagramHelper {
         editor.repaint(editor.getVisibleRect());
     }
     
-    private void filterPreAddedFIs(List<String[]> fis,
+    private void filterPreAddedFIs(List<SimpleFI> fis,
                                    Map<String, RenderableInteraction> nodesToFI) {
-        List<String[]> preFIs = new ArrayList<String[]>();
-        for (String[] fi : fis) {
+        List<SimpleFI> preFIs = new ArrayList<SimpleFI>();
+        for (SimpleFI fi : fis) {
             String name = generateFIName(fi);
             for (RenderableInteraction rFI : nodesToFI.values()) {
                 // This check should be reliable enough since the format used
@@ -222,7 +222,7 @@ public class FetchFIForPEInDiagramHelper {
         else {
             builder.append("The following FIs have been added, and will not be " + 
                            "added again:");
-            for (String[] fi : preFIs) {
+            for (SimpleFI fi : preFIs) {
                 builder.append("\n").append(generateFIName(fi));
             }
         }
@@ -236,15 +236,11 @@ public class FetchFIForPEInDiagramHelper {
                                 Map<String, RenderableInteraction> nodesToFI) {
         List<HyperEdge> edges = node.getConnectedReactions();
         for (HyperEdge edge : edges) {
-            if (edge instanceof RenderableInteraction) {
-                Object attValue = edge.getAttributeValue(FI_ATTRIBUTE_KEY);
-                // Primary attribute is saved as String
-                if (attValue != null && attValue.equals("true")) {
-                    Node input = edge.getInputNode(0);
-                    Node output = edge.getOutputNode(0);
-                    String key = generateKeyForFINodes(input, output);
-                    nodesToFI.put(key, (RenderableInteraction)edge);
-                }
+            if (edge instanceof FIRenderableInteraction) {
+                Node input = edge.getInputNode(0);
+                Node output = edge.getOutputNode(0);
+                String key = generateKeyForFINodes(input, output);
+                nodesToFI.put(key, (RenderableInteraction)edge);
             }
         }
     }
@@ -283,28 +279,25 @@ public class FetchFIForPEInDiagramHelper {
 
     private void createInteraction(Node node, 
                                    Node partner, 
-                                   String[] fi,
+                                   SimpleFI fi,
                                    PathwayEditor editor,
                                    Map<String, RenderableInteraction> nodesToInteraction) {
         String key = generateKeyForFINodes(node, partner);
-        RenderableInteraction interaction = nodesToInteraction.get(key);
+        FIRenderableInteraction interaction = (FIRenderableInteraction) nodesToInteraction.get(key);
         if (interaction != null) {
             // Add a new name
             String name = interaction.getDisplayName();
             name += ", " + generateFIName(fi);
             interaction.setDisplayName(name);
+            // Merge directions together too.
+            interaction.addDirections(fi.direction);
             return;
         }
         // Create an interaction
-        interaction = new RenderableInteraction();
-        // Add a flag to indicate this is an overlaid FI
-        interaction.setAttributeValue(FI_ATTRIBUTE_KEY,
-                                      Boolean.TRUE);
+        interaction = new FIRenderableInteraction();
         interaction.addInput(node);
         interaction.addOutput(partner);
-        // Just use Interact for the time being.
-        //TODO: This should be changed to use annotation.
-        interaction.setInteractionType(InteractionType.INTERACT);
+        interaction.setDirections(fi.direction);
         // Add a display name
         interaction.setDisplayName(generateFIName(fi));
         interaction.layout();
@@ -312,11 +305,13 @@ public class FetchFIForPEInDiagramHelper {
         nodesToInteraction.put(key, interaction);
     }
     
-    private String generateFIName(String[] fi) {
-        if (fi[0].compareTo(fi[1]) < 0)
-            return fi[0] + " - " + fi[1];
+    private String generateFIName(SimpleFI fi) {
+        String partner1 = fi.partner1;
+        String partner2 = fi.partner2;
+        if (partner1.compareTo(partner2) < 0)
+            return partner1 + " - " + partner2;
         else
-            return fi[1] + " - " + fi[0];
+            return partner2 + " - " + partner1;
     }
 
     private String generateKeyForFINodes(Node node, Node partner) {
@@ -399,7 +394,7 @@ public class FetchFIForPEInDiagramHelper {
         dialog.setVisible(true);
         if (!resultPane.isOkClicked)
             return;
-        List<String[]> selectedFIs = resultPane.getSelectedFIs();
+        List<SimpleFI> selectedFIs = resultPane.getSelectedFIs();
         if (selectedFIs == null || selectedFIs.size() == 0)
             return; // Nothing to be added
         addFIsToPathwayDiagram(selectedFIs);
@@ -558,15 +553,15 @@ public class FetchFIForPEInDiagramHelper {
          * Get the selected FIs listed in the table.
          * @return
          */
-        public List<String[]> getSelectedFIs() {
-            List<String[]> rtn = new ArrayList<String[]>();
+        public List<SimpleFI> getSelectedFIs() {
+            List<SimpleFI> rtn = new ArrayList<SimpleFI>();
             if (fiTable.getSelectedRows() != null) {
                 for (int row : fiTable.getSelectedRows()) {
-                    String[] fi = new String[] {
-                            fiTable.getValueAt(row, 0) + "",
-                            fiTable.getValueAt(row, 1) + "",
-                            fiTable.getValueAt(row, 2) + ""
-                    };
+                    SimpleFI fi = new SimpleFI();
+                    fi.partner1 = fiTable.getValueAt(row, 0) + "";
+                    fi.partner2 = fiTable.getValueAt(row, 1) + "";
+                    fi.direction = fiTable.getValueAt(row, 2) + "";
+                    fi.existedPEs = fiTable.getValueAt(row, 3) + "";
                     rtn.add(fi);
                 }
             }
@@ -575,9 +570,25 @@ public class FetchFIForPEInDiagramHelper {
         
     }
     
+    /**
+     * A simple class to encode a FI returned from the server.
+     * @author gwu
+     *
+     */
+    private class SimpleFI {
+        private String partner1;
+        private String partner2;
+        private String direction;
+        private String existedPEs;
+        
+        public SimpleFI() {
+        }
+    }
+    
     private class FITableModel extends AbstractTableModel {
         private String[] tableHeaders = new String[]{"Gene in Selected Object",
                                                      "FI Partner",
+                                                     "FI Direction",
                                                      "Objects Containing FI Patner"};
         private String[][] content;
         
@@ -586,6 +597,7 @@ public class FetchFIForPEInDiagramHelper {
         
         public void setContent(List<Element> elements) {
             Map<String, Map<String, String>> geneToPartnerToPEs = new HashMap<String, Map<String, String>>();
+            Map<String, Map<String, String>> geneToPartnerToDirection = new HashMap<String, Map<String, String>>();
             for (Element elm : elements) {
                 String gene = elm.getChildText("gene");
                 Map<String, String> partnerToPeIds = geneToPartnerToPEs.get(gene);
@@ -593,8 +605,15 @@ public class FetchFIForPEInDiagramHelper {
                     partnerToPeIds = new HashMap<String, String>();
                     geneToPartnerToPEs.put(gene, partnerToPeIds);
                 }
+                Map<String, String> partnerToDirection = geneToPartnerToDirection.get(gene);
+                if (partnerToDirection == null) {
+                    partnerToDirection = new HashMap<String, String>();
+                    geneToPartnerToDirection.put(gene, partnerToDirection);
+                }
                 Element partnerGeneElm = elm.getChild("partnerGene");
                 String partner = partnerGeneElm.getChildText("gene");
+                String direction = elm.getChildText("direction");
+                partnerToDirection.put(partner, direction);
                 @SuppressWarnings("unchecked")
                 List<Element> peDbIdsElms = partnerGeneElm.getChildren("peDbIds");
                 List<String> peNames = new ArrayList<String>();
@@ -623,12 +642,14 @@ public class FetchFIForPEInDiagramHelper {
             int index = 0;
             for (String gene : geneList) {
                 Map<String, String> partnerToPEIds = geneToPartnerToPEs.get(gene);
+                Map<String, String> partnerToDirection = geneToPartnerToDirection.get(gene);
                 List<String> partnerList = new ArrayList<String>(partnerToPEIds.keySet());
                 Collections.sort(partnerList);
                 for (String partner : partnerList) {
                     content[index][0] = gene;
                     content[index][1] = partner;
-                    content[index][2] = partnerToPEIds.get(partner);
+                    content[index][2] = partnerToDirection.get(partner);
+                    content[index][3] = partnerToPEIds.get(partner);
                     index ++;
                 }
             }

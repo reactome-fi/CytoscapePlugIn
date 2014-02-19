@@ -38,7 +38,15 @@ import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.render.*;
+import org.gk.render.HyperEdge;
+import org.gk.render.Node;
+import org.gk.render.ProcessNode;
+import org.gk.render.Renderable;
+import org.gk.render.RenderableCompartment;
+import org.gk.render.RenderableComplex;
+import org.gk.render.RenderableEntitySet;
+import org.gk.render.RenderableInteraction;
+import org.gk.render.RenderableProtein;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
@@ -243,6 +251,22 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         return rtn;
     }
     
+    private boolean removeOverlaidFIs() {
+        CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
+        if (!pathwayEditor.hasFIsOverlaid())
+            return true;
+        // Make sure all overlaid FIs should be removed
+        int reply = JOptionPane.showConfirmDialog(this,
+                                                 "Overlaid FIs need to be removed first in order to generate the FI network view.\n" + 
+                                                 "Do you want to remove the overlaid FIs?",
+                                                 "Remove FIs?", 
+                                                 JOptionPane.OK_CANCEL_OPTION);
+        if (reply != JOptionPane.OK_OPTION)
+            return false;
+        pathwayEditor.removeFIs();
+        return true;
+    }
+    
     private void doPathwayPopup(MouseEvent e) {
         JPopupMenu popup = new JPopupMenu();
         JMenuItem convertToFINetwork = new JMenuItem("Convert as FI Network");
@@ -250,11 +274,28 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (!removeOverlaidFIs())
+                    return;
                 // A kind of hack
-                CyZoomablePathwayEditor.this.firePropertyChange("convertAsFINetwork", false, true);
+                CyZoomablePathwayEditor.this.firePropertyChange("convertAsFINetwork", 
+                                                                false,
+                                                                true);
             }
         });
         popup.add(convertToFINetwork);
+        final CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
+        if (pathwayEditor.hasFIsOverlaid()) {
+            // Give a chance to remove overlaid FIs
+            JMenuItem item = new JMenuItem("Remove FIs");
+            item.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    pathwayEditor.removeFIs();
+                }
+            });
+            popup.add(item);
+        }
         JMenuItem searchDiagram = new JMenuItem("Search Diagram");
         searchDiagram.addActionListener(new ActionListener() {
             
@@ -517,10 +558,15 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         pathwayEditor.removeFIs(r);
     }
     
-    @SuppressWarnings("unchecked")
-    private void fetchFIs(Long dbId) {
-        FetchFIForPEInDiagramHelper helper = new FetchFIForPEInDiagramHelper(dbId, this);
-        helper.fetchFIs();
+    private void fetchFIs(final Long dbId) {
+        Thread t = new Thread() {
+            public void run() {
+                FetchFIForPEInDiagramHelper helper = new FetchFIForPEInDiagramHelper(dbId,
+                                                                                     CyZoomablePathwayEditor.this);
+                helper.fetchFIs();
+            }
+        };
+        t.start();
     }
     
     /**
@@ -661,11 +707,10 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
      * A customized PathwayEditor in order to do something specifial for PathwayDiagram displayed in
      * Cytoscape.
      * @author gwu
-     *
      */
     private class CyPathwayEditor extends PathwayEditor {
         // Record newly added RenderableInteraction for new drawing
-        private List<RenderableInteraction> overlaidFIs;
+        private List<FIRenderableInteraction> overlaidFIs;
         
         public CyPathwayEditor() {
             setEditable(false); // Only used as a pathway diagram view and not for editing
@@ -690,6 +735,10 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             return super.getVisibleRect();
         }
         
+        /**
+         * Remove FIs attached to a Node specified by r.
+         * @param r
+         */
         public void removeFIs(Node r) {
             if (overlaidFIs == null || overlaidFIs.size() == 0)
                 return;
@@ -715,6 +764,26 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         }
         
         /**
+         * Remove all overlaid FIs.
+         */
+        public void removeFIs() {
+            if (overlaidFIs == null || overlaidFIs.size() == 0)
+                return;
+           for (RenderableInteraction fi : overlaidFIs) {
+               Node input = fi.getInputNode(0);
+               Node output = fi.getOutputNode(0);
+               delete(fi);
+               // Check if a connected node should be deleted too
+               if (input.getReactomeId() == null && input.getConnectedReactions().size() == 0)
+                   delete(input);
+               if (output.getReactomeId() == null && output.getConnectedReactions().size() == 0)
+                   delete(output);
+           }
+           overlaidFIs.clear();
+           repaint(getVisibleRect());
+        }
+        
+        /**
          * Check if there is any FI overlaid for the specified Renderable object.
          * @param r usually should be a Node object.
          * @return
@@ -729,16 +798,23 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             return false;
         }
         
+        /**
+         * Check if there is any FI overlaid
+         * @return
+         */
+        public boolean hasFIsOverlaid() {
+            if (overlaidFIs == null || overlaidFIs.size() == 0)
+                return false;
+            return true;
+        }
+        
         @Override
         public void insertEdge(HyperEdge edge, boolean useDefaultInsertPos) {
             super.insertEdge(edge, useDefaultInsertPos);
-            if (edge instanceof RenderableInteraction) {
-                RenderableInteraction fi = (RenderableInteraction) edge;
-                if (fi.getInteractionType() == InteractionType.INTERACT) {
-                    if (overlaidFIs == null)
-                        overlaidFIs = new ArrayList<RenderableInteraction>();
-                    overlaidFIs.add(fi);
-                }
+            if (edge instanceof FIRenderableInteraction) {
+                if (overlaidFIs == null)
+                    overlaidFIs = new ArrayList<FIRenderableInteraction>();
+                overlaidFIs.add((FIRenderableInteraction)edge);
             }
         }
         

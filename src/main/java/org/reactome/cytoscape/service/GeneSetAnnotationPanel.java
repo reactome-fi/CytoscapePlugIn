@@ -170,8 +170,10 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
             }
             else {
                 Long dbId = service.queryPathwayId(pathway);
-                String dataSourceURL = PlugInObjectManager.getManager().getDataSourceURL();
-                PlugInUtilities.openURL(dataSourceURL + dbId);
+                ReactomeSourceView sourceView = new ReactomeSourceView();
+                sourceView.viewReactomeSource(dbId, this);
+//                String dataSourceURL = PlugInObjectManager.getManager().getDataSourceURL();
+//                PlugInUtilities.openURL(dataSourceURL + dbId);
             }
         }
         catch(IOException e) {

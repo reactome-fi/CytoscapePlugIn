@@ -984,7 +984,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         
         private void browseFile() {
             Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
-            FileChooserFilter mafFilter = new FileChooserFilter("Gene Set File", ".txt");
+            FileChooserFilter mafFilter = new FileChooserFilter("Gene Set File", "txt");
             filters.add(mafFilter);
             
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();

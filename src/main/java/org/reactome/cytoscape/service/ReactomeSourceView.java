@@ -6,6 +6,7 @@ package org.reactome.cytoscape.service;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -58,7 +59,14 @@ public class ReactomeSourceView {
             InstanceDialog instanceDialog = new InstanceDialog(window);
             instanceDialog.setInstance(element);
             instanceDialog.setSize(500, 400);
-            instanceDialog.setLocationRelativeTo(component);
+            // This is a hack to avoid two instance dialog overlapping
+            if (component instanceof InstanceDialog) {
+                Point location = component.getLocation();
+                // number 16 is rather arbitrary
+                instanceDialog.setLocation(location.x + 16, location.y + 16);
+            }
+            else
+                instanceDialog.setLocationRelativeTo(component);
             instanceDialog.setModal(true);
             instanceDialog.setVisible(true);
         }
@@ -79,7 +87,6 @@ public class ReactomeSourceView {
      */
     private class InstanceDialog extends JDialog {
         private JEditorPane htmlPane;
-        private Long dbId;
         
         public InstanceDialog(Window parent) {
             super(parent);
