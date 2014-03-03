@@ -27,10 +27,6 @@ import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
-import org.cytoscape.view.model.events.NetworkViewDestroyedListener;
-import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
-import org.cytoscape.view.vizmap.VisualMappingManager;
-import org.cytoscape.view.vizmap.VisualStyleFactory;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.pathway.ReactomePathwayAction;
@@ -90,30 +86,23 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator
         FileUtil fileUtil = getService(context, FileUtil.class);
         CyLayoutAlgorithmManager layoutManager = getService(context,
                 CyLayoutAlgorithmManager.class);
-        MapTableToNetworkTablesTaskFactory mapNetworkAttrTFServiceRef = getService(context,MapTableToNetworkTablesTaskFactory.class);
-        VisualMappingManager visMapManager = getService(context,
-                VisualMappingManager.class);
-        VisualStyleFactory visStyleFactory = getService(context,
-                VisualStyleFactory.class);
-        VisualMappingFunctionFactory vmfFactoryC = getService(context,
-                VisualMappingFunctionFactory.class, "(mapping.type=continuous)");
-        VisualMappingFunctionFactory vmfFactoryD = getService(context,
-                VisualMappingFunctionFactory.class, "(mapping.type=discrete)");
-        VisualMappingFunctionFactory vmfFactoryP = getService(context,
-                VisualMappingFunctionFactory.class,
-                "(mapping.type=passthrough)");
-
+        
+        // Register FI network visualization mapping as OSGi services
         //Initialize and register the FI VIsual Style with the framework,
         //allowing it to be used by all Reactome FI classes.
-        FIVisualStyle styleHelper = new FIVisualStyleImpl(visMapManager, visStyleFactory, vmfFactoryC,
-                                                          vmfFactoryD, vmfFactoryP);
+        FIVisualStyle styleHelper = new FIVisualStyleImpl();
         Properties visStyleHelperProps = new Properties();
         visStyleHelperProps.setProperty("title", "FIVisualStyleImpl");
         registerAllServices(context, styleHelper, visStyleHelperProps);
         
         //Initialize and register the TableFormatter with the network
         //so that it is accessible across the app.
-        TableFormatterImpl tableFormatter = new TableFormatterImpl(tableFactory, tableManager, networkTableManager, mapNetworkAttrTFServiceRef);
+        MapTableToNetworkTablesTaskFactory mapNetworkAttrTFServiceRef = getService(context,
+                                                                                   MapTableToNetworkTablesTaskFactory.class);
+        TableFormatterImpl tableFormatter = new TableFormatterImpl(tableFactory, 
+                                                                   tableManager,
+                                                                   networkTableManager,
+                                                                   mapNetworkAttrTFServiceRef);
         Properties tableFormatterProps = new Properties();
         tableFormatterProps.setProperty("title", "TableFormatterImpl");
         registerAllServices(context, tableFormatter, tableFormatterProps);

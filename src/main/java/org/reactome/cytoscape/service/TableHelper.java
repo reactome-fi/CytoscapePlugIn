@@ -53,6 +53,8 @@ public class TableHelper {
         // the value again.
         String dataSetType = netTable.getRow(view.getModel().getSUID()).get(
                 "dataSetType", String.class);
+        if (dataSetType == null)
+            return false; // Just in case
         if (dataSetType.equals(MCL_ARRAY_CLUSTERING)
                 || dataSetType.equals(SAMPLE_MUTATION_DATA)) return true;
         return false;

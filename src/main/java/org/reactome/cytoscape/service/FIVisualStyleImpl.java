@@ -27,6 +27,9 @@ import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
 import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.cytoscape.view.vizmap.mappings.PassthroughMapping;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
@@ -40,74 +43,84 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class FIVisualStyleImpl implements FIVisualStyle {
     private final String FI_VISUAL_STYLE = "FI Network";
-    private VisualMappingManager visMapManager;
-    private VisualStyleFactory visStyleFactory;
-    private VisualMappingFunctionFactory visMapFuncFactoryP;
-    private VisualMappingFunctionFactory visMapFuncFactoryD;
-    private VisualMappingFunctionFactory visMapFuncFactoryC;
 
-    public FIVisualStyleImpl(VisualMappingManager visMapManager,
-            VisualStyleFactory visStyleFactory,
-            VisualMappingFunctionFactory visMapFuncFactoryC,
-            VisualMappingFunctionFactory visMapFuncFactoryD,
-            VisualMappingFunctionFactory visMapFuncFactoryP) {
-        this.visMapManager = visMapManager;
-        this.visStyleFactory = visStyleFactory;
-        this.visMapFuncFactoryC = visMapFuncFactoryC;
-        this.visMapFuncFactoryD = visMapFuncFactoryD;
-        this.visMapFuncFactoryP = visMapFuncFactoryP;
+    public FIVisualStyleImpl() {
     }
 
     @Override
     public void setVisualStyle(CyNetworkView view) {
-        Iterator it = visMapManager.getAllVisualStyles().iterator();
-        while (it.hasNext()) {
-            VisualStyle current = (VisualStyle) it.next();
-            if (current.getTitle().equalsIgnoreCase(FI_VISUAL_STYLE))
-            {
-                visMapManager.removeVisualStyle(current);
-                break;
-            }
-        }
-        VisualStyle style = createVisualStyle(view);
-        // Apply the visual style and update the network view.
-        visMapManager.setVisualStyle(style, view);
-        view.updateView();
+        setVisualStyle(view, true);
     }
     
     /**
      * 
      * @param view
-     * @param createStyle true to create a new VisualStyle from cratch. Otherwise, use an existing one.
+     * @param createStyle true to create a new VisualStyle from scratch. Otherwise, use an existing one.
      */
     @Override
     public void setVisualStyle(CyNetworkView view, boolean createStyle) {
-        if (createStyle) {
-            setVisualStyle(view);
-            return;
-        }
         // Find an existing one
         VisualStyle style = null;
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference reference = context.getServiceReference(VisualMappingManager.class.getName());
+        VisualMappingManager visMapManager = (VisualMappingManager) context.getService(reference);
         Iterator it = visMapManager.getAllVisualStyles().iterator();
         while (it.hasNext()) {
             VisualStyle current = (VisualStyle) it.next();
-            if (current.getTitle().equalsIgnoreCase(FI_VISUAL_STYLE))
-            {
-                style = current;
+            if (current.getTitle().equalsIgnoreCase(FI_VISUAL_STYLE)) {
+                if (createStyle)
+                    visMapManager.removeVisualStyle(current);
+                else
+                    style = current;
                 break;
             }
         }
         if (style == null)
             style = createVisualStyle(view);
+        if (style == null)
+            return; // Cannot do anything
         // Apply the visual style and update the network view.
         visMapManager.setVisualStyle(style, view);
         view.updateView();
+        visMapManager = null;
+        context.ungetService(reference);
+    }
+    
+    protected ServiceReference getVisualMappingFunctionFactorServiceReference(String filter) {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        try {
+            ServiceReference[] references = context.getServiceReferences(VisualMappingFunctionFactory.class.getName(),
+                                                                         filter);
+            if (references == null)
+                return null;
+            return references[0];
+        }
+        catch(InvalidSyntaxException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
-    private VisualStyle createVisualStyle(CyNetworkView view) {
+    protected VisualStyle createVisualStyle(CyNetworkView view) {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference reference = context.getServiceReference(VisualStyleFactory.class.getName());
+        VisualStyleFactory visStyleFactory = (VisualStyleFactory) context.getService(reference);
         // Create a fresh visual style
         VisualStyle fiVisualStyle = visStyleFactory.createVisualStyle(FI_VISUAL_STYLE);
-
+        visStyleFactory = null;
+        context.ungetService(reference);
+        
+        // We want to use all three types of visual mapping
+        ServiceReference referenceC = getVisualMappingFunctionFactorServiceReference("(mapping.type=continuous)");
+        ServiceReference referenceD = getVisualMappingFunctionFactorServiceReference("(mapping.type=discrete)");
+        ServiceReference referenceP = getVisualMappingFunctionFactorServiceReference("(mapping.type=passthrough)");
+        if (referenceC == null || referenceD == null || referenceP == null) {
+            return null;
+        }
+        VisualMappingFunctionFactory visMapFuncFactoryC = (VisualMappingFunctionFactory) context.getService(referenceC);
+        VisualMappingFunctionFactory visMapFuncFactoryD = (VisualMappingFunctionFactory) context.getService(referenceD);
+        VisualMappingFunctionFactory visMapFuncFactoryP = (VisualMappingFunctionFactory) context.getService(referenceP);
+        
         // Set the default node shape and color
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_SHAPE,
                 NodeShapeVisualProperty.ELLIPSE);
@@ -118,16 +131,16 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_TRANSPARENCY, 100);
         // Give the nodes a label based on their name
         String nodeLabelAttrName = "nodeLabel";
-        PassthroughMapping labelFunction = (PassthroughMapping) this.visMapFuncFactoryP.createVisualMappingFunction(
+        PassthroughMapping labelFunction = (PassthroughMapping) visMapFuncFactoryP.createVisualMappingFunction(
                 nodeLabelAttrName, String.class, BasicVisualLexicon.NODE_LABEL);
         String toolTipAttrName = "nodeToolTip";
-        PassthroughMapping toolTipFunction = (PassthroughMapping) this.visMapFuncFactoryP.createVisualMappingFunction(
+        PassthroughMapping toolTipFunction = (PassthroughMapping) visMapFuncFactoryP.createVisualMappingFunction(
                 toolTipAttrName, String.class, BasicVisualLexicon.NODE_TOOLTIP);
         fiVisualStyle.addVisualMappingFunction(labelFunction);
         fiVisualStyle.addVisualMappingFunction(toolTipFunction);
 
         // Set the node color based on module
-        DiscreteMapping colorToModuleFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
+        DiscreteMapping colorToModuleFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
                 "module", Integer.class, BasicVisualLexicon.NODE_FILL_COLOR);
         String moduleColors = PlugInObjectManager.getManager().getProperties().getProperty(
                 "moduleColors");
@@ -149,6 +162,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         linkerGeneShapeFunction.putMapValue(true,
                                             NodeShapeVisualProperty.DIAMOND);
         fiVisualStyle.addVisualMappingFunction(linkerGeneShapeFunction);
+
         // Set shape for hit genes
 //        DiscreteMapping hitGeneShapeFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isHitGene", 
 //                                                                                                                 Boolean.class,
@@ -164,7 +178,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
                                          NODE_HIGHLIGHT_COLOR);
         fiVisualStyle.addVisualMappingFunction(hitGeneColorFunction);
         // Make it more obvious since we cannot use a filling color, which has been used by clusters
-        DiscreteMapping hitGeneBorderFunction = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
+        DiscreteMapping hitGeneBorderFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
                                                                                                                       Boolean.class,
                                                                                                                       BasicVisualLexicon.NODE_BORDER_WIDTH);
         hitGeneBorderFunction.putMapValue(true, 5);
@@ -176,7 +190,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_WIDTH, 1.5d);
 
         // Set the edge target arrow shape based on FI Direction
-        DiscreteMapping arrowMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
+        DiscreteMapping arrowMapping = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
                 "FI Direction", String.class,
                 BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE);
         arrowMapping.putMapValue("->", ArrowShapeVisualProperty.ARROW);
@@ -190,7 +204,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         fiVisualStyle.addVisualMappingFunction(arrowMapping);
 
         // Set the edge source arrow shape based on FI Direction
-        arrowMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
+        arrowMapping = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
                 "FI Direction", String.class,
                 BasicVisualLexicon.EDGE_SOURCE_ARROW_SHAPE);
         arrowMapping.putMapValue("<-", ArrowShapeVisualProperty.ARROW);
@@ -203,7 +217,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
 
         fiVisualStyle.addVisualMappingFunction(arrowMapping);
         // Use dashed lines for predicted interactions.
-        DiscreteMapping edgeLineMapping = (DiscreteMapping) this.visMapFuncFactoryD.createVisualMappingFunction(
+        DiscreteMapping edgeLineMapping = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
                 "FI Annotation", String.class,
                 BasicVisualLexicon.EDGE_LINE_TYPE);
         edgeLineMapping.putMapValue("predicted",
@@ -214,7 +228,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         int[] sampleNumberRange = getSampleNumberRange(view);
         if (sampleNumberRange != null)
         {
-            ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) this.visMapFuncFactoryC.createVisualMappingFunction(
+            ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) visMapFuncFactoryC.createVisualMappingFunction(
                     "sampleNumber", Integer.class, BasicVisualLexicon.NODE_SIZE);
             Integer lowerSampleNumberBound = sampleNumberRange[0];
             BoundaryRangeValues<Double> lowerBoundary = new BoundaryRangeValues<Double>(
@@ -228,6 +242,9 @@ public class FIVisualStyleImpl implements FIVisualStyle {
                     upperBoundary);
             fiVisualStyle.addVisualMappingFunction(sampleNumberToSizeFunction);
         }
+        context.ungetService(referenceC);
+        context.ungetService(referenceD);
+        context.ungetService(referenceP);
         return fiVisualStyle;
     }
 
@@ -248,7 +265,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         return new int[]{min, max};
     }
 
-    private JMenuItem getyFilesOrganic() {
+    protected JMenuItem getLayoutMenu(String layout) {
         JMenu yFilesMenu = null;
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         for (Component item : desktopApp.getJMenu("Layout").getMenuComponents()) {
@@ -260,7 +277,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         if (yFilesMenu != null) {
             JMenuItem organicMenuItem = null;
             for (Component item : yFilesMenu.getMenuComponents()) {
-                if (item instanceof JMenuItem && ((JMenuItem) item).getText().equals("Organic")) {
+                if (item instanceof JMenuItem && ((JMenuItem) item).getText().equals(layout)) {
                     organicMenuItem = (JMenuItem) item;
                     break;
                 }
@@ -269,6 +286,10 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         }
         return null;
     }
+    
+    protected JMenuItem getLayoutMenu() {
+        return getLayoutMenu("Organic");
+    }
 
     @Override
     public void setLayout() {
@@ -276,7 +297,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         // This method manually clicks the menu item to trigger
         // the new layout, as yFiles layouts are not available
         // for programmatic use.
-        JMenuItem yFilesOrganicMenuItem = getyFilesOrganic();
+        JMenuItem yFilesOrganicMenuItem = getLayoutMenu();
         if (yFilesOrganicMenuItem != null) {
             yFilesOrganicMenuItem.doClick();
         }

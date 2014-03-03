@@ -45,6 +45,7 @@ import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.funcInt.Protein;
 import org.reactome.funcInt.ReactomeSource;
+import org.reactome.pgm.PGMFactorGraph;
 import org.reactome.r3.graph.NetworkClusterResult;
 import org.reactome.r3.util.InteractionUtilities;
 import org.w3c.dom.NodeList;
@@ -145,9 +146,25 @@ public class RESTFulFIService implements FINetworkService
      * @param pathwayId
      * @return a list of Interaction objects converted from a Pathway specified by its DB_ID.
      */
-    @SuppressWarnings("unchecked")
     public List<Interaction> convertPathwayToFIs(Long pathwayId) throws Exception {
         String url = restfulURL + "network/convertPathwayToFIs/" + pathwayId;
+        return queryInteractions(url);
+    }
+
+    public PGMFactorGraph convertPathwayToFactorGraph(Long pathwayId) throws Exception {
+        String url = restfulURL + "network/convertPathwayToFactorGraph/" + pathwayId;
+        Element root = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
+        // Convert it into org.w3.dom.Document to be used in JAXB
+        org.w3c.dom.Document document = new DOMOutputter().output(root.getDocument());
+        org.w3c.dom.Node docRoot = document.getDocumentElement();
+        JAXBContext jc = JAXBContext.newInstance(PGMFactorGraph.class);
+        Unmarshaller unmarshaller = jc.createUnmarshaller();
+        PGMFactorGraph fg = (PGMFactorGraph) unmarshaller.unmarshal(docRoot);
+        return fg;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private List<Interaction> queryInteractions(String url) throws Exception {
         Element root = PlugInUtilities.callHttpInXML(url,
                                                      HTTP_GET, 
                                                      null);

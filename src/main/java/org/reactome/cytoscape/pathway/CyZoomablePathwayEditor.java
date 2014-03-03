@@ -283,6 +283,22 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             }
         });
         popup.add(convertToFINetwork);
+        
+        // Convert as a factor graph
+        JMenuItem convertAsFactorGraph = new JMenuItem("Convert as Factor Graph");
+        convertAsFactorGraph.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // A kind of hack
+                CyZoomablePathwayEditor.this.firePropertyChange("convertAsFactorGraph", 
+                                                                false,
+                                                                true);
+            }
+        });
+        popup.add(convertAsFactorGraph);
+        popup.addSeparator();
+        
         final CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
         if (pathwayEditor.hasFIsOverlaid()) {
             // Give a chance to remove overlaid FIs

@@ -64,6 +64,8 @@ public class PathwayInternalFrame extends JInternalFrame {
             public void propertyChange(PropertyChangeEvent evt) {
                 if (evt.getPropertyName().equals("convertAsFINetwork"))
                     convertAsFINetwork();
+                else if (evt.getPropertyName().equals("convertAsFactorGraph"))
+                    convertAsFactorGraph();
             }
         });
     }
@@ -131,10 +133,24 @@ public class PathwayInternalFrame extends JInternalFrame {
         pathwayEditor.setRelatedPathwayIds(pathwayIds);
     }
     
+    private void convertAsFactorGraph() {
+        try {
+            DiagramAndFactorGraphSwitcher helper = new DiagramAndFactorGraphSwitcher();
+            helper.convertToFactorGraph(getPathwayId(),
+                                        (RenderablePathway)pathwayEditor.getPathwayEditor().getRenderable(),
+                                        this);
+        }
+        catch(Exception e) {
+            logger.error("Error in convertAsFactorGraph(): " + e.getMessage(), 
+                         e);
+            JOptionPane.showMessageDialog(this, 
+                                          "Error in converting a pathway to a factor graph: " + e.getMessage(),
+                                          "Error in Converting Pathway to Factor Graph",
+                                          JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
     private void convertAsFINetwork() {
-        //TODO: The RESTFulFIService class should be refactored and moved to other package.
-        // Right now it is in the top-level package. Also the version of FI network
-        // Used in this place may needs to be changed. 
         try {
             DiagramAndNetworkSwitcher helper = new DiagramAndNetworkSwitcher();
             Set<String> hitGenes = PathwayEnrichmentHighlighter.getHighlighter().getHitGenes();

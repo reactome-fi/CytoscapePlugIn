@@ -103,7 +103,7 @@ public class DiagramAndNetworkSwitcher {
         TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
         taskManager.execute(new TaskIterator(task));
     }
-
+    
     private void convertPathwayToFINetwork(final Long pathwayId,
                                            final RenderablePathway pathway,
                                            final Set<String> hitGenes,
