@@ -8,14 +8,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
+import org.cytoscape.application.swing.CyEdgeViewContextMenuFactory;
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
+import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNode;
@@ -24,78 +27,181 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.PopupMenuHandler;
+import org.reactome.cytoscape.service.PopupMenuManager;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableFormatter;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape3.EdgeActionCollection.EdgeQueryFIMenuItem;
+import org.reactome.cytoscape3.NodeActionCollection.CancerGeneIndexMenu;
+import org.reactome.cytoscape3.NodeActionCollection.FetchFIsMenu;
+import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
 import org.reactome.r3.graph.GeneClusterPair;
 import org.reactome.r3.graph.NetworkClusterResult;
 import org.reactome.r3.util.InteractionUtilities;
 
 /**
- * This class provides a bunch of methods to modify a network (e.g. clustering,
- * retrieving cancer gene index, etc). Most functions appear as pop-up menus in
- * the network view. All context menu items are contained as subclasses
+ * This class is used to generate popup menus for a FI network.
  * 
- * @author Eric T. Dawson
+ * @author Eric T. Dawson & Guanming Wu
  * 
  */
-class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
-                              // SessionLoadedListener
-{
-    private TableHelper tableHelper;
-    ServiceReference tableFormatterServRef;
-    TableFormatterImpl tableFormatter;
-    private ModuleBasedSurvivalAnalysisHelper survivalHelper;
+public class FINetworkPopupMenuHandler implements PopupMenuHandler {
+    // A flag to track if popup menus controlled by this PopupMenuHandler
+    // have been installed
+    private boolean isInstalled;
+    // A list of registered ServiceReference for Popup menu
+    // so that they can be unregistered later on
+    private List<ServiceRegistration> menuRegistrations;
 
-    // private ModuleBasedSurvivalHelper survivalHelper;
-    public NetworkActionCollection()
-    {
-        tableHelper = new TableHelper();
+    public FINetworkPopupMenuHandler() {
+        menuRegistrations = new ArrayList<ServiceRegistration>();
     }
-
-    /**
-     * A method to grab the TableFormatterImpl from the address space so that
-     * new tables can be created and filled with the proper columns.
-     * 
-     * @author Eric T Dawson
-     */
-    private void getTableFormatter()
-    {
-        try
-        {
-            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-            ServiceReference servRef = context.getServiceReference(TableFormatter.class.getName());
-            if (servRef != null)
-            {
-                this.tableFormatterServRef = servRef;
-                this.tableFormatter = (TableFormatterImpl) context.getService(servRef);
-            }
-            else
-                throw new Exception();
-        }
-        catch (Throwable t)
-        {
-            JOptionPane.showMessageDialog(null,
-                    "The table formatter could not be retrieved.",
-                    "Table Formatting Error", JOptionPane.ERROR_MESSAGE);
-        }
+    
+    private <T> void addPopupMenu(BundleContext context,
+                                  T menuFactory,
+                                  Class<T> cls,
+                                  Properties properties) {
+        ServiceRegistration registration = context.registerService(cls.getName(),
+                                                                   menuFactory,
+                                                                   properties);
+        menuRegistrations.add(registration);
     }
-
-    /**
-     * A method to release the TableFormatterImpl
-     * 
-     * @author Eric T Dawson
-     */
-    private void releaseTableFormatter()
-    {
+    
+    @Override
+    public void install() {
+        if (isInstalled)
+            return;
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        context.ungetService(tableFormatterServRef);
+        // Instantiate and register the context menus for the network view
+        ClusterFINetworkMenu clusterMenu = new ClusterFINetworkMenu();
+        Properties clusterProps = new Properties();
+        clusterProps.setProperty("title", "Cluster FI Network");
+        clusterProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        addPopupMenu(context, 
+                        clusterMenu,
+                        CyNetworkViewContextMenuFactory.class,
+                        clusterProps);
+        
+        FIAnnotationFetcherMenu fiFetcherMenu = new FIAnnotationFetcherMenu();
+        PopupMenuManager.getManager().setFiAnnotMenu(fiFetcherMenu);
+        
+        NetworkPathwayEnrichmentMenu netPathMenu = new NetworkPathwayEnrichmentMenu();
+        Properties netPathProps = new Properties();
+        netPathProps.setProperty("title", "Network Pathway Enrichment");
+        String preferredMenuText = "Apps.Reactome FI.Analyze Network Functions[10]";
+        netPathProps.setProperty("preferredMenu", preferredMenuText);
+        addPopupMenu(context, netPathMenu, CyNetworkViewContextMenuFactory.class, netPathProps);
+        
+        NetworkGOCellComponentMenu netGOCellMenu = new NetworkGOCellComponentMenu();
+        Properties netGOCellProps = new Properties();
+        netGOCellProps.setProperty("title", "Network GO Cell Component");
+        netGOCellProps.setProperty("preferredMenu", preferredMenuText);
+        addPopupMenu(context, netGOCellMenu, CyNetworkViewContextMenuFactory.class, netGOCellProps);
+        
+        NetworkGOBioProcessMenu netGOBioMenu = new NetworkGOBioProcessMenu();
+        Properties netGOBioProps = new Properties();
+        netGOBioProps.setProperty("title", "Network GO Biological Process");
+        netGOBioProps.setProperty("preferredMenu", preferredMenuText);
+        addPopupMenu(context, netGOBioMenu, CyNetworkViewContextMenuFactory.class, netGOBioProps);
+        
+        NetworkGOMolecularFunctionMenu netGOMolMenu = new NetworkGOMolecularFunctionMenu();
+        Properties netGOMolProps = new Properties();
+        netGOMolProps.setProperty("title", "Network GO Molecular Function");
+        netGOMolProps.setProperty("preferredMenu", preferredMenuText);
+        addPopupMenu(context, netGOMolMenu, CyNetworkViewContextMenuFactory.class, netGOMolProps);
+        
+        ModulePathwayEnrichmentMenu modPathMenu = new ModulePathwayEnrichmentMenu();
+        Properties modPathProps = new Properties();
+        preferredMenuText = "Apps.Reactome FI.Analyze Module Functions[30]";
+        modPathProps.setProperty("title", "Module Pathway Enrichment");
+        modPathProps.setProperty("preferredMenu", preferredMenuText);
+        addPopupMenu(context, modPathMenu, CyNetworkViewContextMenuFactory.class, modPathProps);
+        
+        ModuleGOCellComponentMenu modCellMenu = new ModuleGOCellComponentMenu();
+        Properties modCellProps = new Properties();
+        modCellProps.setProperty("title", "Module GO Cell Component");
+        modCellProps.setProperty("preferredMenu", preferredMenuText);
+        addPopupMenu(context, modCellMenu, CyNetworkViewContextMenuFactory.class, modCellProps);
+        
+        ModuleGOBioProcessMenu modBioMenu = new ModuleGOBioProcessMenu();
+        Properties modBioProps = new Properties();
+        modBioProps.setProperty("title", "Module GO Biological Process");
+        modBioProps.setProperty("preferredMenu", preferredMenuText);
+        addPopupMenu(context, modBioMenu, CyNetworkViewContextMenuFactory.class, modBioProps);
+        
+        ModuleGOMolecularFunctionMenu modMolMenu = new ModuleGOMolecularFunctionMenu();
+        Properties modMolProps = new Properties();
+        modMolProps.setProperty("title", "Module GO Molecular Function");
+        modMolProps.setProperty("preferredMenu", preferredMenuText);
+        addPopupMenu(context, modMolMenu, CyNetworkViewContextMenuFactory.class, modMolProps);
+        
+        SurvivalAnalysisMenu survivalMenu = new SurvivalAnalysisMenu();
+        Properties survivalMenuProps = new Properties();
+        survivalMenuProps.setProperty("title", "Survival Analysis");
+        survivalMenuProps.setProperty("preferredMenu", preferredMenuText);
+        addPopupMenu(context, survivalMenu, CyNetworkViewContextMenuFactory.class, survivalMenuProps);
+        
+        LoadCancerGeneIndexForNetwork fetchCGINetwork = new LoadCancerGeneIndexForNetwork();
+        Properties fetchCGINetprops = new Properties();
+        fetchCGINetprops.setProperty("title", "Fetch Cancer Gene Index");
+        fetchCGINetprops.setProperty("preferredMenu", "Apps.Reactome FI");
+        addPopupMenu(context, fetchCGINetwork, CyNetworkViewContextMenuFactory.class, fetchCGINetprops);
+        
+        // Instantiate and register the context menus for the node views
+        NodeActionCollection nodeActionCollection = new NodeActionCollection();
+        GeneCardMenu geneCardMenu = nodeActionCollection.new GeneCardMenu();
+        Properties geneCardProps = new Properties();
+        geneCardProps.setProperty("title", "Gene Card");
+        geneCardProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        addPopupMenu(context, geneCardMenu,
+                CyNodeViewContextMenuFactory.class, geneCardProps);
+        
+        CancerGeneIndexMenu cgiMenu = nodeActionCollection.new CancerGeneIndexMenu();
+        Properties cgiMenuProps = new Properties();
+        cgiMenuProps.setProperty("title", "Fetch Cancer Gene Index");
+        cgiMenuProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        addPopupMenu(context, cgiMenu, CyNodeViewContextMenuFactory.class, cgiMenuProps);
+        
+        FetchFIsMenu fetchFIs = nodeActionCollection.new FetchFIsMenu();
+        Properties fetchFIsProps = new Properties();
+        fetchFIsProps.setProperty("title", "Fetch FIs");
+        fetchFIsProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        addPopupMenu(context, fetchFIs, CyNodeViewContextMenuFactory.class, fetchFIsProps);
+        
+        //Instantiate and register the context menus for edge views
+        EdgeActionCollection edgeAC = new EdgeActionCollection();
+        EdgeQueryFIMenuItem edgeQueryMenu = edgeAC.new EdgeQueryFIMenuItem();
+        Properties edgeMenuProps = new Properties();
+        edgeMenuProps.setProperty("title", "Query FI Source");
+        edgeMenuProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        addPopupMenu(context, edgeQueryMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
+        
+        isInstalled = true;
+    }
+
+    @Override
+    public void uninstall() {
+        if (!isInstalled)
+            return;
+        // Just unregister all registered menus
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        for (ServiceRegistration registration : menuRegistrations)
+            registration.unregister();
+        menuRegistrations.clear();
+        isInstalled = false;
+    }
+
+    @Override
+    public boolean isInstalled() {
+        return isInstalled;
     }
 
     /**
@@ -105,7 +211,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
      * @author Eric T. Dawson
      * 
      */
-    class ClusterFINetworkMenu implements CyNetworkViewContextMenuFactory
+    private class ClusterFINetworkMenu implements CyNetworkViewContextMenuFactory
     {
 
         @Override
@@ -136,7 +242,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
      * @author Eric T. Dawson
      * 
      */
-    class FIAnnotationFetcherMenu implements CyNetworkViewContextMenuFactory
+    private class FIAnnotationFetcherMenu implements CyNetworkViewContextMenuFactory
     {
 
         @Override
@@ -178,7 +284,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
 
     }
 
-    class NetworkPathwayEnrichmentMenu implements
+    private class NetworkPathwayEnrichmentMenu implements
             CyNetworkViewContextMenuFactory
     {
 
@@ -201,7 +307,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
 
     }
 
-    class NetworkGOCellComponentMenu implements CyNetworkViewContextMenuFactory
+    private class NetworkGOCellComponentMenu implements CyNetworkViewContextMenuFactory
     {
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView view)
@@ -223,7 +329,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         }
     }
 
-    class NetworkGOBioProcessMenu implements CyNetworkViewContextMenuFactory
+    private class NetworkGOBioProcessMenu implements CyNetworkViewContextMenuFactory
     {
 
         @Override
@@ -245,7 +351,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
 
     }
 
-    class NetworkGOMolecularFunctionMenu implements
+    private class NetworkGOMolecularFunctionMenu implements
             CyNetworkViewContextMenuFactory
     {
 
@@ -269,7 +375,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
 
     }
 
-    class ModulePathwayEnrichmentMenu implements
+    private class ModulePathwayEnrichmentMenu implements
             CyNetworkViewContextMenuFactory
     {
 
@@ -292,7 +398,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
 
     }
 
-    class ModuleGOCellComponentMenu implements CyNetworkViewContextMenuFactory
+    private class ModuleGOCellComponentMenu implements CyNetworkViewContextMenuFactory
     {
 
         @Override
@@ -321,7 +427,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
      * @author Eric T. Dawson
      * 
      */
-    class ModuleGOBioProcessMenu implements CyNetworkViewContextMenuFactory
+    private class ModuleGOBioProcessMenu implements CyNetworkViewContextMenuFactory
     {
 
         @Override
@@ -351,7 +457,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
      * @author Eric T. Dawson
      * 
      */
-    class ModuleGOMolecularFunctionMenu implements
+    private class ModuleGOMolecularFunctionMenu implements
             CyNetworkViewContextMenuFactory
     {
 
@@ -382,7 +488,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
      * @author Eric T. Dawson
      * 
      */
-    class SurvivalAnalysisMenu implements CyNetworkViewContextMenuFactory {
+    private class SurvivalAnalysisMenu implements CyNetworkViewContextMenuFactory {
 
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView view) {
@@ -398,7 +504,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         }
     }
 
-    class LoadCancerGeneIndexForNetwork implements
+    private class LoadCancerGeneIndexForNetwork implements
             CyNetworkViewContextMenuFactory
     {
 
@@ -486,54 +592,43 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
 
     private void doModuleSurvivalAnalysis(CyNetworkView view) {
         Map<String, Integer> nodeToModule = extractNodeToModule(view);
-        if (nodeToModule == null || nodeToModule.isEmpty()) return; // There is
-                                                                    // not data
-                                                                    // for
-                                                                    // analysis.
+        if (nodeToModule == null || nodeToModule.isEmpty()) 
+            return; // There is no data for analysis
+        
         TableHelper tableHelper = new TableHelper();
         String dataType = tableHelper.getDataSetType(view);
-        if (dataType == null) return; // The type of data is unknown so nothing
-                                      // can be done.
-        try
-        {
-            if (dataType.equals(TableFormatterImpl.getSampleMutationData()))
-            {
+        if (dataType == null) 
+            return; // The type of data is unknown so nothing can be done.
+        try {
+            if (dataType.equals(TableFormatterImpl.getSampleMutationData())) {
                 Map<String, Object> nodeToSamples = tableHelper.getNodeTableValuesByName(
                         view.getModel(), "samples", String.class);
-                if (nodeToSamples == null || nodeToSamples.isEmpty())
-                {
+                if (nodeToSamples == null || 
+                    nodeToSamples.isEmpty()) {
                     PlugInUtilities.showErrorMessage("No Sample Information",
-                            "Survival Analysis can not be performed because no sample information exists.");
+                                                     "Survival Analysis can not be performed because no sample information exists.");
                     return;
                 }
                 Map<String, Set<String>> nodeToSampleSet = extractNodeToSampleSet(nodeToSamples);
-                if (survivalHelper == null)
-                {
-                    survivalHelper = new ModuleBasedSurvivalAnalysisHelper();
-                }
-                survivalHelper.doSurvivalAnalysis(nodeToModule, nodeToSampleSet);
+                ModuleBasedSurvivalAnalysisHelper survivalHelper = new ModuleBasedSurvivalAnalysisHelper();
+                survivalHelper.doSurvivalAnalysis(nodeToModule, 
+                                                  nodeToSampleSet);
             }
-            else if (dataType.equals(TableFormatterImpl.getMCLArrayClustering()))
-            {
+            else if (dataType.equals(TableFormatterImpl.getMCLArrayClustering())) {
                 Map<Integer, Map<String, Double>> moduleToSampleToValue = FIPlugInHelper.getHelper().getMCLModuleToSampleToValue();
-                if (moduleToSampleToValue == null
-                        || moduleToSampleToValue.size() == 0)
-                {
+                if (moduleToSampleToValue == null || 
+                    moduleToSampleToValue.size() == 0) {
                     PlugInUtilities.showErrorMessage(
-                            "No sample information has been provided. Survival analysis cannot be done.",
-                            "No Sample Information");
+                            "No Sample Information",
+                            "No sample information has been provided. Survival analysis cannot be done.");
                     return;
                 }
-                if (survivalHelper == null)
-                {
-                    survivalHelper = new ModuleBasedSurvivalAnalysisHelper();
-                }
+                ModuleBasedSurvivalAnalysisHelper survivalHelper = new ModuleBasedSurvivalAnalysisHelper();
                 survivalHelper.doSurvivalAnalysisForMCLModules(nodeToModule,
-                        moduleToSampleToValue);
+                                                               moduleToSampleToValue);
             }
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             e.printStackTrace();
             PlugInUtilities.showErrorMessage("Error During Survival Analysis",
                     "Survival Analysis could not be performed.\n Please see the logs.");
@@ -579,7 +674,12 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
         frame.setGlassPane(progPane);
         frame.getGlassPane().setVisible(true);
         
-        getTableFormatter();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference tableFormatterServRef = context.getServiceReference(TableFormatter.class.getName());
+        if (tableFormatterServRef == null)
+            return;
+        
+        TableFormatterImpl tableFormatter = (TableFormatterImpl) context.getService(tableFormatterServRef);
         tableFormatter.makeModuleAnalysisTables(view.getModel());
         List<CyEdge> edgeList = view.getModel().getEdgeList();
         
@@ -597,6 +697,7 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                 }
             }
             
+            TableHelper tableHelper = new TableHelper();
             tableHelper.storeNodeAttributesByName(view, "module", nodeToCluster);
             
             progPane.setText("Storing clustering results...");
@@ -616,11 +717,13 @@ class NetworkActionCollection // implements NetworkAboutToBeDestroyedListener,
                                           JOptionPane.ERROR_MESSAGE);
             frame.getGlassPane().setVisible(false);
         }
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+
         ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
         FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
         visStyler.setVisualStyle(view);
-        releaseTableFormatter();
+        
+        context.ungetService(servRef);
+        context.ungetService(tableFormatterServRef);
         
         frame.getGlassPane().setVisible(false);
     }

@@ -62,33 +62,18 @@ public class PlugInObjectManager {
     private TaskManager taskManager;
     // Currently selected FI network version
     private String fiNetworkVersion;
-    // This is used to keep the mapping between a Service object and its Registration
-    // so that they can be turned on/off
-    private Map<Object, ServiceRegistration> serviceToRegistration;
-    // Keep this registration in order to turn off
-    private CyNetworkViewContextMenuFactory fiAnnotMenu;
-    private CyNetworkViewContextMenuFactory convertToNetworkMenu;
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
      */
     private PlugInObjectManager() {
         serviceReferences = new ArrayList<ServiceReference>();
-        serviceToRegistration = new HashMap<Object, ServiceRegistration>();
     }
     
     public static PlugInObjectManager getManager() {
         if (manager == null)
             manager = new PlugInObjectManager();
         return manager;
-    }
-    
-    public void setConvertToNetworkMenu(CyNetworkViewContextMenuFactory menu) {
-        this.convertToNetworkMenu = menu;
-    }
-
-    public void setFiAnnotMenu(CyNetworkViewContextMenuFactory fiAnnotMenu) {
-        this.fiAnnotMenu = fiAnnotMenu;
     }
     
     /**
@@ -109,36 +94,6 @@ public class PlugInObjectManager {
         return false;
     }
     
-    /**
-     * Install a "Fetch FI Annotations" menu
-     */
-    private void installContextMenu(CyNetworkViewContextMenuFactory menu,
-                                    String title) {
-        if (menu == null)
-            return;
-        ServiceRegistration registration = serviceToRegistration.get(menu);
-        if (registration != null)
-            return; // It has been registered already
-        Properties fiFetcherProps = new Properties();
-        fiFetcherProps.setProperty("title", title);
-        fiFetcherProps.setProperty("preferredMenu", "Apps.Reactome FI");
-        // Want to keep the registration of this menu in order to turn it off
-        registration = context.registerService(CyNetworkViewContextMenuFactory.class.getName(), 
-                                               menu, 
-                                               fiFetcherProps);
-        serviceToRegistration.put(menu, registration);
-    }
-    
-    private void uninstallContextMenu(CyNetworkViewContextMenuFactory menu) {
-        if (menu == null)
-            return;
-        ServiceRegistration registration = serviceToRegistration.get(menu);
-        if (registration == null)
-            return; // It has unregistered already
-        registration.unregister();
-        serviceToRegistration.remove(menu);
-    }
-
     public String getFiNetworkVersion()
     {
         if (this.fiNetworkVersion != null)
@@ -210,35 +165,6 @@ public class PlugInObjectManager {
             }
             
         });
-        
-        // Add a listener for NewtorkView selection
-        SetCurrentNetworkViewListener currentNetworkViewListener = new SetCurrentNetworkViewListener() {
-            
-            @Override
-            public void handleEvent(SetCurrentNetworkViewEvent event) {
-                if (event.getNetworkView() == null)
-                    return; // This is more like a Pathway view
-                CyNetwork network = event.getNetworkView().getModel();
-                // Check if this network is a converted
-                CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
-                String dataSetType = row.get("dataSetType",
-                                             String.class);
-                if ("PathwayDiagram".equals(dataSetType)) {
-                    // Don't need this annotation
-                    uninstallContextMenu(PlugInObjectManager.this.fiAnnotMenu);
-                    installContextMenu(PlugInObjectManager.this.convertToNetworkMenu,
-                                       "Convert to Diagram");
-                }
-                else {
-                    installContextMenu(PlugInObjectManager.this.fiAnnotMenu,
-                                       "Fetch FI Annotations");
-                    uninstallContextMenu(PlugInObjectManager.this.convertToNetworkMenu);
-                }
-            }
-        };
-        context.registerService(SetCurrentNetworkViewListener.class.getName(),
-                                currentNetworkViewListener,
-                                null);
     }
     
     public BundleContext getBundleContext() {

@@ -28,6 +28,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.PopupMenuManager;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
@@ -155,6 +156,9 @@ public class DiagramAndFactorGraphSwitcher {
         FIVisualStyle visStyler = new FactorGraphVisualStyle();
         visStyler.setVisualStyle(view);
         visStyler.setLayout();
+        
+        // A new set of Popup menus are needed
+        PopupMenuManager.getManager().installPopupMenu(ReactomeNetworkType.FactorGraph);
         
         taskMonitor.setProgress(1.0d);
         PropertyChangeEvent event = new PropertyChangeEvent(this, 

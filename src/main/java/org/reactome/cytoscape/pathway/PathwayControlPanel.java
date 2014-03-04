@@ -63,6 +63,7 @@ import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.SynchronousBundleListener;
+import org.reactome.cytoscape.service.PopupMenuManager;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
@@ -258,7 +259,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                 return rtn;
             }
         };
-        PlugInObjectManager.getManager().setConvertToNetworkMenu(networkToDiagramMenu);
+        PopupMenuManager.getManager().setConvertToDiagramMenu(networkToDiagramMenu);
         
         // Showing pathway enrichments
         eventPane.addPropertyChangeListener(new PropertyChangeListener() {
