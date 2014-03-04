@@ -177,7 +177,7 @@ public class MicroarrayAnalysisTask extends FIAnalysisTask {
         //        moduleToSampleToValue);
         tableHelper.storeDataSetType(network, TableFormatterImpl
                                      .getMCLArrayClustering());
-        tableHelper.markAsFINetwork(network);
+        tableHelper.markAsReactomeNetwork(network);
         return network;
     }
     

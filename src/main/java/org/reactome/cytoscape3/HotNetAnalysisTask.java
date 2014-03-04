@@ -137,7 +137,7 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
             CyNetworkView view = viewFactory.createNetworkView(network);
             tableHelper.storeClusteringType(view, TableFormatterImpl.getHotNetModule());
             tableHelper.storeDataSetType(network, TableFormatterImpl.getSampleMutationData());
-            tableHelper.markAsFINetwork(network);
+            tableHelper.markAsReactomeNetwork(network);
             tableHelper.storeFINetworkVersion(network,
                                               PlugInObjectManager.getManager().getFiNetworkVersion());
             CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);

@@ -176,7 +176,7 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
                                               PlugInObjectManager.getManager().getFiNetworkVersion());
             tableHelper.storeDataSetType(network, TableFormatterImpl
                     .getSampleMutationData());
-            tableHelper.markAsFINetwork(network);
+            tableHelper.markAsReactomeNetwork(network);
             CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);
             viewManager.addNetworkView(view);
             if (geneToSampleNumber != null && !geneToSampleNumber.isEmpty())

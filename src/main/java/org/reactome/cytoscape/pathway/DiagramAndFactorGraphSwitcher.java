@@ -29,6 +29,7 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
+import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -100,9 +101,10 @@ public class DiagramAndFactorGraphSwitcher {
         row.set("name",
                 "Factor Graph for " + pathway.getDisplayName());
         TableHelper tableHelper = new TableHelper();
-//        tableHelper.markAsFINetwork(network);
-//        tableHelper.storeDataSetType(network, 
-//                "PathwayDiagram");
+        //TODO: Treat it as a FI network for the time being. This will be changed in the future.
+        tableHelper.markAsReactomeNetwork(network, ReactomeNetworkType.FactorGraph);
+        tableHelper.storeDataSetType(network, 
+                                    "PathwayDiagram");
         tableHelper.storeNetworkAttribute(network,
                                           "PathwayId", 
                                           pathwayId);
@@ -119,6 +121,10 @@ public class DiagramAndFactorGraphSwitcher {
         tableHelper.storeNodeAttributesByName(network,
                                               "nodeToolTip",
                                               nodeToolTipInfo);
+        Map<String, String> sourceIdInfo = generateSourceIdInfo(fg);
+        tableHelper.storeNodeAttributesByName(network, 
+                                              "SourceIds",
+                                              sourceIdInfo);
 
         // Cache the fetched pathway diagram to avoid another slow query
         PathwayDiagramRegistry.getRegistry().registerNetworkToDiagram(network,
@@ -203,6 +209,27 @@ public class DiagramAndFactorGraphSwitcher {
             nodeTypeInfo.put(variable.getLabel(), "variable");
         }
         return nodeTypeInfo;
+    }
+    
+    private Map<String, String> generateSourceIdInfo(PGMFactorGraph fg) {
+        Map<String, String> sourceIdInfo = new HashMap<String, String>();
+        for (PGMFactor factor : fg.getFactors()) {
+            String label = factor.getLabel();
+            // A Reactome Id
+            if (label.matches("\\d+")) {
+                sourceIdInfo.put(label, label);
+            }
+        }
+        for (PGMVariable variable : fg.getVariables()) {
+            String label = variable.getLabel();
+            if (label.matches("\\d+"))
+                sourceIdInfo.put(label, label);
+            else if (label.matches("(\\d+)_(protein|mRNA|DNA)")) {// Central dogma node
+                int index = label.indexOf("_");
+                sourceIdInfo.put(label, label.substring(0, index));
+            }
+        }
+        return sourceIdInfo;
     }
     
     /**

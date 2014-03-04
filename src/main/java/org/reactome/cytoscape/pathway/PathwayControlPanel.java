@@ -154,7 +154,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 String propName = evt.getPropertyName();
-                if (propName.equals("ConvertDiagramToFIView")) {
+                if (propName.equals("ConvertDiagramToFIView") ||
+                    propName.equals("ConvertPathwayToFactorGraph")) {
                     switchToFullPathwayView((Renderable)evt.getOldValue());
                 }
             }
@@ -406,13 +407,16 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                 }
             }
         }
+        // The following method should not be called.
+        // It is used to do the whole screen fit as in the menu.
+//        networkView.fitSelected();
         networkView.updateView();
         selectFromPathway = false;
     }
     
     private void doNetworkViewIsSelected(CyNetworkView networkView) {
         TableHelper tableHelper = new TableHelper();
-        if (!tableHelper.isFINetwork(networkView))
+        if (!tableHelper.isReactomeNetwork(networkView))
             return;
         // Check if this is a PathwayDiagram view
         String dataSetType = tableHelper.getDataSetType(networkView);

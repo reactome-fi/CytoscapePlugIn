@@ -31,6 +31,7 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
+import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -135,7 +136,8 @@ public class DiagramAndNetworkSwitcher {
         row.set("name",
                 "FI Nework for " + pathway.getDisplayName());
         TableHelper tableHelper = new TableHelper();
-        tableHelper.markAsFINetwork(network);
+        tableHelper.markAsReactomeNetwork(network,
+                                          ReactomeNetworkType.FINetwork);
         tableHelper.storeDataSetType(network, 
                 "PathwayDiagram");
         tableHelper.storeNetworkAttribute(network,

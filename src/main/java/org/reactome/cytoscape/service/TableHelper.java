@@ -41,23 +41,42 @@ public class TableHelper {
                                             String.class);
     }
 
-    public boolean isFINetwork(CyNetworkView view) {
+    public boolean isReactomeNetwork(CyNetworkView view) {
         CyTable netTable = view.getModel().getDefaultNetworkTable();
         Long netSUID = view.getModel().getSUID();
-        Boolean isFINetwork = netTable.getRow(netSUID).get(
-                "isReactomeFINetwork", Boolean.class);
+        String networkType = netTable.getRow(netSUID).get("ReactomeNetworkType",
+                                                          String.class);
 
-        if (isFINetwork != null) return isFINetwork;
+        if (networkType != null) 
+            return true;
 
         // For sessions loaded from a file, it is necessary to set
         // the value again.
-        String dataSetType = netTable.getRow(view.getModel().getSUID()).get(
-                "dataSetType", String.class);
+        String dataSetType = netTable.getRow(view.getModel().getSUID()).get("dataSetType",
+                                                                            String.class);
         if (dataSetType == null)
             return false; // Just in case
-        if (dataSetType.equals(MCL_ARRAY_CLUSTERING)
-                || dataSetType.equals(SAMPLE_MUTATION_DATA)) return true;
+        // Some old saved network
+        if (dataSetType.equals(MCL_ARRAY_CLUSTERING) || dataSetType.equals(SAMPLE_MUTATION_DATA))
+            return true;
         return false;
+    }
+    
+    /**
+     * Get the stored ReactomeNetworkType information for a CyNetwork converted
+     * from a pathway diagram. If a network that is not converted from a Reactome
+     * pathway, null should be returned.
+     * @param network
+     * @return
+     */
+    public ReactomeNetworkType getReactomeNetworkType(CyNetwork network) {
+        CyTable netTable = network.getDefaultNetworkTable();
+        Long netSUID = network.getSUID();
+        String networkType = netTable.getRow(netSUID).get("ReactomeNetworkType",
+                                                          String.class);
+        if (networkType == null)
+            return null;
+        return ReactomeNetworkType.valueOf(networkType);
     }
 
     public void storeDataSetType(CyNetwork network, String dataSetType)
@@ -134,16 +153,24 @@ public class TableHelper {
         row.set(CyNetwork.SELECTED, isSelected);
     }
     
+    public void markAsReactomeNetwork(CyNetwork network) {
+        markAsReactomeNetwork(network,
+                              ReactomeNetworkType.FINetwork);
+    }
+    
     /**
      * Mark a Network as a FINetwork. 
      * @param network
      */
-    public void markAsFINetwork(CyNetwork network) {
+    public void markAsReactomeNetwork(CyNetwork network,
+                                      ReactomeNetworkType networkType) {
+        // Have to store the enum type into a string
+        // since the enum type is not supported!
         storeNetworkAttribute(network,
-                              "isReactomeFINetwork",
-                              Boolean.TRUE);
+                              "ReactomeNetworkType",
+                              networkType.toString());
     }
-
+    
     public void storeClusteringType(CyNetwork network, String clusteringType)
     {
         storeNetworkAttribute(network, "clustering_Type", clusteringType);
