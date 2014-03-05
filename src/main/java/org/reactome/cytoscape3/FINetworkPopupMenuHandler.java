@@ -15,13 +15,17 @@ import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
+import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
+import org.cytoscape.application.events.SetCurrentNetworkViewListener;
 import org.cytoscape.application.swing.CyEdgeViewContextMenuFactory;
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.gk.util.ProgressPane;
@@ -30,10 +34,11 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.DiseaseData;
+import org.reactome.cytoscape.pathway.DiagramAndNetworkSwitcher;
+import org.reactome.cytoscape.service.AbstractPopupMenuHandler;
 import org.reactome.cytoscape.service.FIVisualStyle;
-import org.reactome.cytoscape.service.PopupMenuHandler;
-import org.reactome.cytoscape.service.PopupMenuManager;
 import org.reactome.cytoscape.service.RESTFulFIService;
+import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableFormatter;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.service.TableHelper;
@@ -53,16 +58,48 @@ import org.reactome.r3.util.InteractionUtilities;
  * @author Eric T. Dawson & Guanming Wu
  * 
  */
-public class FINetworkPopupMenuHandler implements PopupMenuHandler {
-    // A flag to track if popup menus controlled by this PopupMenuHandler
-    // have been installed
-    private boolean isInstalled;
-    // A list of registered ServiceReference for Popup menu
-    // so that they can be unregistered later on
-    private List<ServiceRegistration> menuRegistrations;
-
+public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
+    // Keep these two menus and their registration separately for dynmaically on/off
+    private CyNetworkViewContextMenuFactory annotFIsMenu;
+    private CyNetworkViewContextMenuFactory networkToDiagramMenu;
+    protected Map<CyNetworkViewContextMenuFactory, ServiceRegistration> menuToRegistration;
+    
     public FINetworkPopupMenuHandler() {
-        menuRegistrations = new ArrayList<ServiceRegistration>();
+        menuToRegistration = new HashMap<CyNetworkViewContextMenuFactory, ServiceRegistration>();
+        // Add a listener for NewtorkView selection
+        SetCurrentNetworkViewListener currentNetworkViewListener = new SetCurrentNetworkViewListener() {
+            
+            @Override
+            public void handleEvent(SetCurrentNetworkViewEvent event) {
+                if (event.getNetworkView() == null)
+                    return; // This is more like a Pathway view
+                CyNetwork network = event.getNetworkView().getModel();
+                // Check if this network is a converted
+                CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
+                String dataSetType = row.get("dataSetType",
+                                             String.class);
+                if ("PathwayDiagram".equals(dataSetType)) {
+                    // Check the ReactomeNetworkType
+                    ReactomeNetworkType type = new TableHelper().getReactomeNetworkType(network);
+                    if (type == ReactomeNetworkType.FINetwork) {
+                        uninstallDynamicMenu(annotFIsMenu);
+                        installConvertToDiagramMenu();
+                    }
+                    else if (type == ReactomeNetworkType.FactorGraph) {
+                        uninstallDynamicMenu(annotFIsMenu);
+                        uninstallDynamicMenu(networkToDiagramMenu);
+                    }
+                }
+                else {
+                    installFIAnnotMenu();
+                    uninstallDynamicMenu(networkToDiagramMenu);
+                }
+            }
+        };
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        context.registerService(SetCurrentNetworkViewListener.class.getName(),
+                                currentNetworkViewListener,
+                                null);
     }
     
     private <T> void addPopupMenu(BundleContext context,
@@ -76,9 +113,7 @@ public class FINetworkPopupMenuHandler implements PopupMenuHandler {
     }
     
     @Override
-    public void install() {
-        if (isInstalled)
-            return;
+    protected void installMenus() {
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         // Instantiate and register the context menus for the network view
         ClusterFINetworkMenu clusterMenu = new ClusterFINetworkMenu();
@@ -89,9 +124,6 @@ public class FINetworkPopupMenuHandler implements PopupMenuHandler {
                         clusterMenu,
                         CyNetworkViewContextMenuFactory.class,
                         clusterProps);
-        
-        FIAnnotationFetcherMenu fiFetcherMenu = new FIAnnotationFetcherMenu();
-        PopupMenuManager.getManager().setFiAnnotMenu(fiFetcherMenu);
         
         NetworkPathwayEnrichmentMenu netPathMenu = new NetworkPathwayEnrichmentMenu();
         Properties netPathProps = new Properties();
@@ -183,25 +215,51 @@ public class FINetworkPopupMenuHandler implements PopupMenuHandler {
         edgeMenuProps.setProperty("title", "Query FI Source");
         edgeMenuProps.setProperty("preferredMenu", "Apps.Reactome FI");
         addPopupMenu(context, edgeQueryMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
-        
-        isInstalled = true;
     }
 
-    @Override
-    public void uninstall() {
-        if (!isInstalled)
-            return;
-        // Just unregister all registered menus
+    private void installConvertToDiagramMenu() {
+        if (networkToDiagramMenu == null)
+            networkToDiagramMenu = new NewtorkToDiagramMenu();
+        installDynamicMenu(networkToDiagramMenu,
+                           "Convert to Diagram");
+    }
+    
+    private void installFIAnnotMenu() {
+        if (annotFIsMenu == null)
+            annotFIsMenu = new FIAnnotationFetcherMenu();
+        installDynamicMenu(annotFIsMenu,
+                           "Fetch FI Annotations");
+    }
+    
+    private void installDynamicMenu(CyNetworkViewContextMenuFactory menu,
+                                    String title) {
+        ServiceRegistration registration = menuToRegistration.get(menu);
+        if (registration != null)
+            return; // This menu has been installed.
+        Properties props = new Properties();
+        props.setProperty("title", title);
+        props.setProperty("preferredMenu", "Apps.Reactome FI");
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        for (ServiceRegistration registration : menuRegistrations)
-            registration.unregister();
-        menuRegistrations.clear();
-        isInstalled = false;
+        registration = context.registerService(CyNetworkViewContextMenuFactory.class.getName(),
+                                               menu,
+                                               props);
+        menuToRegistration.put(menu, registration);
+    }
+    
+    private void uninstallDynamicMenu(CyNetworkViewContextMenuFactory menu) {
+        ServiceRegistration registration = menuToRegistration.get(menu);
+        if (registration == null)
+            return; // This menu has been uninstalled already
+        registration.unregister();
+        menuToRegistration.remove(menu);
     }
 
     @Override
-    public boolean isInstalled() {
-        return isInstalled;
+    protected void uninstallMenus() {
+        super.uninstallMenus();
+        // Two dynamic menus
+        uninstallDynamicMenu(annotFIsMenu);
+        uninstallDynamicMenu(networkToDiagramMenu);
     }
 
     /**
@@ -503,6 +561,25 @@ public class FINetworkPopupMenuHandler implements PopupMenuHandler {
             return new CyMenuItem(survivalAnalysisMenuItem, 10.f);
         }
     }
+    
+    // A way to convert from FI network view back to Reactome diagram view
+    private class NewtorkToDiagramMenu implements CyNetworkViewContextMenuFactory {
+        
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView networkView) {
+            JMenuItem menuItem = new JMenuItem("Convert to Diagram");
+            menuItem.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent arg0) {
+                    DiagramAndNetworkSwitcher helper = new DiagramAndNetworkSwitcher();
+                    helper.convertToDiagram(networkView);
+                }
+            });
+            CyMenuItem rtn = new CyMenuItem(menuItem, 1.5f);
+            return rtn;
+        }
+    };
 
     private class LoadCancerGeneIndexForNetwork implements
             CyNetworkViewContextMenuFactory

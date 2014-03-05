@@ -113,7 +113,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         popupManager.registerMenuHandler(ReactomeNetworkType.FactorGraph,
                                          new FactorGraphPopupMenuHandler());
         
-        // Used as the default PopupMenuHandler
+        // Used as the default PopupMenuHandler. Most likely, this is not needed.
+        // But keep it here for the time being.
         popupManager.installPopupMenu(ReactomeNetworkType.FINetwork);
     }
 

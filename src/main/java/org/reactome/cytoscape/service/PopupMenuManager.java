@@ -6,15 +6,12 @@ package org.reactome.cytoscape.service;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
 import org.cytoscape.application.events.SetCurrentNetworkViewListener;
-import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.model.CyNetwork;
-import org.cytoscape.model.CyRow;
+import org.cytoscape.view.model.CyNetworkView;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
@@ -27,10 +24,9 @@ public class PopupMenuManager {
     private static PopupMenuManager manager;
     // Used to register PopupMenuHandler for different network
     private Map<ReactomeNetworkType, PopupMenuHandler> typeToHandler;
-    // Keep these two menus in order to turn on/off
-    private CyNetworkViewContextMenuFactory fiAnnotMenu;
-    private CyNetworkViewContextMenuFactory convertToDiagramMenu;
-    private Map<CyNetworkViewContextMenuFactory, ServiceRegistration> menuToRegistration;
+    // Since there is no API in Cytoscape that can be used to get the current
+    // selected CyNetworkView, this variable is used to cache this information
+    private CyNetworkView currentNetworkView;
     
     public static PopupMenuManager getManager() {
         if (manager == null)
@@ -38,49 +34,40 @@ public class PopupMenuManager {
         return manager;
     }
     
-    public void setConvertToDiagramMenu(CyNetworkViewContextMenuFactory menu) {
-        this.convertToDiagramMenu = menu;
-    }
-
-    public void setFiAnnotMenu(CyNetworkViewContextMenuFactory fiAnnotMenu) {
-        this.fiAnnotMenu = fiAnnotMenu;
-    }
-    
     /**
      * The sole private constructor.
      */
     private PopupMenuManager() {
         typeToHandler = new HashMap<ReactomeNetworkType, PopupMenuHandler>();
-        menuToRegistration = new HashMap<CyNetworkViewContextMenuFactory, ServiceRegistration>();
+        
         // Add a listener for NewtorkView selection
         SetCurrentNetworkViewListener currentNetworkViewListener = new SetCurrentNetworkViewListener() {
             
             @Override
             public void handleEvent(SetCurrentNetworkViewEvent event) {
+                currentNetworkView = event.getNetworkView();
                 if (event.getNetworkView() == null)
                     return; // This is more like a Pathway view
                 CyNetwork network = event.getNetworkView().getModel();
-                // Check if this network is a converted
-                CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
-                String dataSetType = row.get("dataSetType",
-                                             String.class);
-                if ("PathwayDiagram".equals(dataSetType)) {
-                    // Don't need this annotation
-                    uninstallContextMenu(PopupMenuManager.this.fiAnnotMenu);
-                    installContextMenu(PopupMenuManager.this.convertToDiagramMenu,
-                                       "Convert to Diagram");
-                }
-                else {
-                    installContextMenu(PopupMenuManager.this.fiAnnotMenu,
-                                       "Fetch FI Annotations");
-                    uninstallContextMenu(PopupMenuManager.this.convertToDiagramMenu);
-                }
+                // Check the ReactomeNetworkType
+                ReactomeNetworkType type = new TableHelper().getReactomeNetworkType(network);
+                if (type == null)
+                    type = ReactomeNetworkType.FINetwork; // Default
+                installPopupMenu(type);
             }
         };
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         context.registerService(SetCurrentNetworkViewListener.class.getName(),
                                 currentNetworkViewListener,
                                 null);
+    }
+    
+    /**
+     * Get the current selected CyNetworkView in the whole Cytoscape application.
+     * @return
+     */
+    public CyNetworkView getCurrentNetworkView() {
+        return this.currentNetworkView;
     }
     
     /**
@@ -116,37 +103,6 @@ public class PopupMenuManager {
     public void registerMenuHandler(ReactomeNetworkType type,
                                     PopupMenuHandler handler) {
         typeToHandler.put(type, handler);
-    }
-    
-    /**
-     * Install a "Fetch FI Annotations" menu
-     */
-    private void installContextMenu(CyNetworkViewContextMenuFactory menu,
-                                    String title) {
-        if (menu == null)
-            return;
-        ServiceRegistration registration = menuToRegistration.get(menu);
-        if (registration != null)
-            return; // It has been registered already
-        Properties fiFetcherProps = new Properties();
-        fiFetcherProps.setProperty("title", title);
-        fiFetcherProps.setProperty("preferredMenu", "Apps.Reactome FI");
-        // Want to keep the registration of this menu in order to turn it off
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        registration = context.registerService(CyNetworkViewContextMenuFactory.class.getName(), 
-                                               menu, 
-                                               fiFetcherProps);
-        menuToRegistration.put(menu, registration);
-    }
-    
-    private void uninstallContextMenu(CyNetworkViewContextMenuFactory menu) {
-        if (menu == null)
-            return;
-        ServiceRegistration registration = menuToRegistration.get(menu);
-        if (registration == null)
-            return; // It has unregistered already
-        registration.unregister();
-        menuToRegistration.remove(menu);
     }
     
 }

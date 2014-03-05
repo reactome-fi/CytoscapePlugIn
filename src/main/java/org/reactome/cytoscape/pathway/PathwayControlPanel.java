@@ -7,8 +7,6 @@ package org.reactome.cytoscape.pathway;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.beans.PropertyChangeEvent;
@@ -22,7 +20,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JFrame;
 import javax.swing.JLayeredPane;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
@@ -32,8 +29,6 @@ import javax.swing.event.InternalFrameListener;
 
 import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
 import org.cytoscape.application.events.SetCurrentNetworkViewListener;
-import org.cytoscape.application.swing.CyMenuItem;
-import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
@@ -63,7 +58,6 @@ import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.SynchronousBundleListener;
-import org.reactome.cytoscape.service.PopupMenuManager;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
@@ -240,26 +234,6 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         context.registerService(NetworkDestroyedListener.class.getName(),
                                 networkDetroyedListener,
                                 null);
-        
-        // A way to convert from FI network view back to Reactome diagram view
-        CyNetworkViewContextMenuFactory networkToDiagramMenu = new CyNetworkViewContextMenuFactory() {
-            
-            @Override
-            public CyMenuItem createMenuItem(CyNetworkView netView) {
-                JMenuItem menuItem = new JMenuItem("Convert to Diagram");
-                menuItem.addActionListener(new ActionListener() {
-                    
-                    @Override
-                    public void actionPerformed(ActionEvent arg0) {
-                        DiagramAndNetworkSwitcher helper = new DiagramAndNetworkSwitcher();
-                        helper.convertToDiagram(networkView);
-                    }
-                });
-                CyMenuItem rtn = new CyMenuItem(menuItem, 1.5f);
-                return rtn;
-            }
-        };
-        PopupMenuManager.getManager().setConvertToDiagramMenu(networkToDiagramMenu);
         
         // Showing pathway enrichments
         eventPane.addPropertyChangeListener(new PropertyChangeListener() {
