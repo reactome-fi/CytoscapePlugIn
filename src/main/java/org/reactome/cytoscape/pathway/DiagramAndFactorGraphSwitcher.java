@@ -26,6 +26,8 @@ import org.cytoscape.work.TaskMonitor;
 import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.pgm.FactorGraphVisualStyle;
+import org.reactome.cytoscape.pgm.NetworkToFactorGraphMap;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -166,6 +168,8 @@ public class DiagramAndFactorGraphSwitcher {
                                                             pathway,
                                                             null);
         PathwayDiagramRegistry.getRegistry().firePropertyChange(event);
+        
+        NetworkToFactorGraphMap.getMap().put(network, fg);
     }
     
     private Map<String, String> generateNodeToolTip(PGMFactorGraph fg) {

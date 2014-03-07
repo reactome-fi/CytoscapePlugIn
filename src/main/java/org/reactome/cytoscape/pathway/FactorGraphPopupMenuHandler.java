@@ -22,16 +22,24 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
+import org.cytoscape.task.NodeViewTaskFactory;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
+import org.cytoscape.work.ServiceProperties;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.reactome.cytoscape.pgm.FactorValuesDialog;
+import org.reactome.cytoscape.pgm.NetworkToFactorGraphMap;
 import org.reactome.cytoscape.service.AbstractPopupMenuHandler;
 import org.reactome.cytoscape.service.PopupMenuManager;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.pgm.PGMFactor;
+import org.reactome.pgm.PGMFactorGraph;
 
 /**
  * This PopupMenuHandler is used for a factor graph network.
@@ -125,8 +133,8 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         if (registration != null)
             return; // This menu has been installed.
         Properties props = new Properties();
-        props.setProperty("title", title);
-        props.setProperty("preferredMenu", "Apps.Reactome FI");
+        props.setProperty(ServiceProperties.TITLE, title);
+        props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         registration = context.registerService(CyNodeViewContextMenuFactory.class.getName(),
                                                menu,
@@ -144,18 +152,33 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         menuToRegistration.remove(menu);
     }
     
+    private void uninstallExpandNodeMenu() {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        try {
+            ServiceReference[] references = context.getAllServiceReferences(NodeViewTaskFactory.class.getName(),
+                                                                           ServiceProperties.TITLE + "=Extend Network by public interaction database...");
+            if (references == null || references.length == 0)
+                return;
+            ServiceReference reference = references[0];
+            context.ungetService(reference);
+        }
+        catch(InvalidSyntaxException e) {
+            e.printStackTrace();
+        }
+    }
+    
     /* (non-Javadoc)
      * @see org.reactome.cytoscape.service.PopupMenuHandler#install()
      */
     @Override
     protected void installMenus() {
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        String preferredMenu = "Apps.Reactome FI";
+        String preferredMenu = PREFERRED_MENU;
         
         CyNodeViewContextMenuFactory viewReactomeSourceMenu = new ViewReactomeSourceMenu();
         Properties props = new Properties();
-        props.setProperty("title", "View Reactome Source");
-        props.setProperty("preferredMenu", preferredMenu);
+        props.setProperty(ServiceProperties.TITLE, "View Reactome Source");
+        props.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenu);
         ServiceRegistration registration = context.registerService(CyNodeViewContextMenuFactory.class.getName(),
                                                                    viewReactomeSourceMenu,
                                                                    props);
@@ -163,8 +186,8 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         
         CyNetworkViewContextMenuFactory convertToPathwayMenu = new ConvertToDiagramMenu();
         props = new Properties();
-        props.setProperty("title", "Convert to Pathway");
-        props.setProperty("preferredMenu", preferredMenu);
+        props.setProperty(ServiceProperties.TITLE, "Convert to Pathway");
+        props.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenu);
         registration = context.registerService(CyNetworkViewContextMenuFactory.class.getName(),
                                                convertToPathwayMenu,
                                                props);
@@ -197,7 +220,41 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         
         private void viewFactorValues(CyNetworkView netView,
                                       View<CyNode> nodeView) {
-            System.out.println("View factor values!");
+            // Need to find the factor first
+            PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(netView.getModel());
+            if (fg == null) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "Cannot find a matched factor graph for the network!", 
+                                              "No Factor Graph", 
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            PGMFactor factor = getFactor(fg, netView.getModel(), nodeView.getModel());
+            if (factor == null) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "Cannot find a matched factor for the selected node!", 
+                                              "No Factor", 
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            FactorValuesDialog dialog = new FactorValuesDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
+            dialog.setFactor(factor);
+            
+            dialog.setSize(500, 350);
+            dialog.setModal(false);
+            dialog.setLocationRelativeTo(PlugInObjectManager.getManager().getCytoscapeDesktop());
+            dialog.setVisible(true);
+        }
+        
+        private PGMFactor getFactor(PGMFactorGraph fg,
+                                    CyNetwork network,
+                                    CyNode node) {
+            String name = new TableHelper().getStoredNodeAttribute(network, node, "name", String.class);
+            for (PGMFactor factor : fg.getFactors()) {
+                if (factor.getLabel().equals(name))
+                    return factor;
+            }
+            return null;
         }
     }
     

@@ -15,6 +15,11 @@ import org.osgi.framework.ServiceRegistration;
  *
  */
 public abstract class AbstractPopupMenuHandler implements PopupMenuHandler {
+    // This may not be a good idea to push our popup menus to the top-level,
+    // instead of add as sub-menus to apps. However, I really don't want our
+    // use to see that very long "Extend Network by public interaction database...".
+    // 100 is based on numbers defined in interface org.cytoscape.work.ServiceProperties.
+    protected final String PREFERRED_MENU = "Reactome FI[100]";
     private boolean isInstalled;
     protected List<ServiceRegistration> menuRegistrations;
     

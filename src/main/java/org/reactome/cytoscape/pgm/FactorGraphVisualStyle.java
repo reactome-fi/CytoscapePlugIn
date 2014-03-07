@@ -2,7 +2,7 @@
  * Created on Mar 3, 2014
  *
  */
-package org.reactome.cytoscape.pathway;
+package org.reactome.cytoscape.pgm;
 
 import java.awt.Color;
 

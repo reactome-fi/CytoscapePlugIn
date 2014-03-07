@@ -28,6 +28,7 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.work.ServiceProperties;
 import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -118,8 +119,8 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         // Instantiate and register the context menus for the network view
         ClusterFINetworkMenu clusterMenu = new ClusterFINetworkMenu();
         Properties clusterProps = new Properties();
-        clusterProps.setProperty("title", "Cluster FI Network");
-        clusterProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        clusterProps.setProperty(ServiceProperties.TITLE, "Cluster FI Network");
+        clusterProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, 
                         clusterMenu,
                         CyNetworkViewContextMenuFactory.class,
@@ -127,93 +128,93 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         
         NetworkPathwayEnrichmentMenu netPathMenu = new NetworkPathwayEnrichmentMenu();
         Properties netPathProps = new Properties();
-        netPathProps.setProperty("title", "Network Pathway Enrichment");
-        String preferredMenuText = "Apps.Reactome FI.Analyze Network Functions[10]";
-        netPathProps.setProperty("preferredMenu", preferredMenuText);
+        netPathProps.setProperty(ServiceProperties.TITLE, "Network Pathway Enrichment");
+        String preferredMenuText = PREFERRED_MENU + ".Analyze Network Functions[10]";
+        netPathProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, netPathMenu, CyNetworkViewContextMenuFactory.class, netPathProps);
         
         NetworkGOCellComponentMenu netGOCellMenu = new NetworkGOCellComponentMenu();
         Properties netGOCellProps = new Properties();
-        netGOCellProps.setProperty("title", "Network GO Cell Component");
-        netGOCellProps.setProperty("preferredMenu", preferredMenuText);
+        netGOCellProps.setProperty(ServiceProperties.TITLE, "Network GO Cell Component");
+        netGOCellProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, netGOCellMenu, CyNetworkViewContextMenuFactory.class, netGOCellProps);
         
         NetworkGOBioProcessMenu netGOBioMenu = new NetworkGOBioProcessMenu();
         Properties netGOBioProps = new Properties();
-        netGOBioProps.setProperty("title", "Network GO Biological Process");
-        netGOBioProps.setProperty("preferredMenu", preferredMenuText);
+        netGOBioProps.setProperty(ServiceProperties.TITLE, "Network GO Biological Process");
+        netGOBioProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, netGOBioMenu, CyNetworkViewContextMenuFactory.class, netGOBioProps);
         
         NetworkGOMolecularFunctionMenu netGOMolMenu = new NetworkGOMolecularFunctionMenu();
         Properties netGOMolProps = new Properties();
-        netGOMolProps.setProperty("title", "Network GO Molecular Function");
-        netGOMolProps.setProperty("preferredMenu", preferredMenuText);
+        netGOMolProps.setProperty(ServiceProperties.TITLE, "Network GO Molecular Function");
+        netGOMolProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, netGOMolMenu, CyNetworkViewContextMenuFactory.class, netGOMolProps);
         
         ModulePathwayEnrichmentMenu modPathMenu = new ModulePathwayEnrichmentMenu();
         Properties modPathProps = new Properties();
-        preferredMenuText = "Apps.Reactome FI.Analyze Module Functions[30]";
-        modPathProps.setProperty("title", "Module Pathway Enrichment");
-        modPathProps.setProperty("preferredMenu", preferredMenuText);
+        preferredMenuText = PREFERRED_MENU + ".Analyze Module Functions[30]";
+        modPathProps.setProperty(ServiceProperties.TITLE, "Module Pathway Enrichment");
+        modPathProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, modPathMenu, CyNetworkViewContextMenuFactory.class, modPathProps);
         
         ModuleGOCellComponentMenu modCellMenu = new ModuleGOCellComponentMenu();
         Properties modCellProps = new Properties();
-        modCellProps.setProperty("title", "Module GO Cell Component");
-        modCellProps.setProperty("preferredMenu", preferredMenuText);
+        modCellProps.setProperty(ServiceProperties.TITLE, "Module GO Cell Component");
+        modCellProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, modCellMenu, CyNetworkViewContextMenuFactory.class, modCellProps);
         
         ModuleGOBioProcessMenu modBioMenu = new ModuleGOBioProcessMenu();
         Properties modBioProps = new Properties();
-        modBioProps.setProperty("title", "Module GO Biological Process");
-        modBioProps.setProperty("preferredMenu", preferredMenuText);
+        modBioProps.setProperty(ServiceProperties.TITLE, "Module GO Biological Process");
+        modBioProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, modBioMenu, CyNetworkViewContextMenuFactory.class, modBioProps);
         
         ModuleGOMolecularFunctionMenu modMolMenu = new ModuleGOMolecularFunctionMenu();
         Properties modMolProps = new Properties();
-        modMolProps.setProperty("title", "Module GO Molecular Function");
-        modMolProps.setProperty("preferredMenu", preferredMenuText);
+        modMolProps.setProperty(ServiceProperties.TITLE, "Module GO Molecular Function");
+        modMolProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, modMolMenu, CyNetworkViewContextMenuFactory.class, modMolProps);
         
         SurvivalAnalysisMenu survivalMenu = new SurvivalAnalysisMenu();
         Properties survivalMenuProps = new Properties();
-        survivalMenuProps.setProperty("title", "Survival Analysis");
-        survivalMenuProps.setProperty("preferredMenu", preferredMenuText);
+        survivalMenuProps.setProperty(ServiceProperties.TITLE, "Survival Analysis");
+        survivalMenuProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, survivalMenu, CyNetworkViewContextMenuFactory.class, survivalMenuProps);
         
         LoadCancerGeneIndexForNetwork fetchCGINetwork = new LoadCancerGeneIndexForNetwork();
         Properties fetchCGINetprops = new Properties();
-        fetchCGINetprops.setProperty("title", "Fetch Cancer Gene Index");
-        fetchCGINetprops.setProperty("preferredMenu", "Apps.Reactome FI");
+        fetchCGINetprops.setProperty(ServiceProperties.TITLE, "Fetch Cancer Gene Index");
+        fetchCGINetprops.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, fetchCGINetwork, CyNetworkViewContextMenuFactory.class, fetchCGINetprops);
         
         // Instantiate and register the context menus for the node views
         NodeActionCollection nodeActionCollection = new NodeActionCollection();
         GeneCardMenu geneCardMenu = nodeActionCollection.new GeneCardMenu();
         Properties geneCardProps = new Properties();
-        geneCardProps.setProperty("title", "Gene Card");
-        geneCardProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        geneCardProps.setProperty(ServiceProperties.TITLE, "Gene Card");
+        geneCardProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, geneCardMenu,
                 CyNodeViewContextMenuFactory.class, geneCardProps);
         
         CancerGeneIndexMenu cgiMenu = nodeActionCollection.new CancerGeneIndexMenu();
         Properties cgiMenuProps = new Properties();
-        cgiMenuProps.setProperty("title", "Fetch Cancer Gene Index");
-        cgiMenuProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        cgiMenuProps.setProperty(ServiceProperties.TITLE, "Fetch Cancer Gene Index");
+        cgiMenuProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, cgiMenu, CyNodeViewContextMenuFactory.class, cgiMenuProps);
         
         FetchFIsMenu fetchFIs = nodeActionCollection.new FetchFIsMenu();
         Properties fetchFIsProps = new Properties();
-        fetchFIsProps.setProperty("title", "Fetch FIs");
-        fetchFIsProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        fetchFIsProps.setProperty(ServiceProperties.TITLE, "Fetch FIs");
+        fetchFIsProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, fetchFIs, CyNodeViewContextMenuFactory.class, fetchFIsProps);
         
         //Instantiate and register the context menus for edge views
         EdgeActionCollection edgeAC = new EdgeActionCollection();
         EdgeQueryFIMenuItem edgeQueryMenu = edgeAC.new EdgeQueryFIMenuItem();
         Properties edgeMenuProps = new Properties();
-        edgeMenuProps.setProperty("title", "Query FI Source");
-        edgeMenuProps.setProperty("preferredMenu", "Apps.Reactome FI");
+        edgeMenuProps.setProperty(ServiceProperties.TITLE, "Query FI Source");
+        edgeMenuProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, edgeQueryMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
     }
 
@@ -237,8 +238,8 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         if (registration != null)
             return; // This menu has been installed.
         Properties props = new Properties();
-        props.setProperty("title", title);
-        props.setProperty("preferredMenu", "Apps.Reactome FI");
+        props.setProperty(ServiceProperties.TITLE, title);
+        props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         registration = context.registerService(CyNetworkViewContextMenuFactory.class.getName(),
                                                menu,
