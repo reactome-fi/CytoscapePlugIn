@@ -35,11 +35,13 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.session.CySession;
 import org.cytoscape.session.CySessionManager;
+import org.cytoscape.task.NetworkTaskFactory;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.util.swing.OpenBrowser;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.ServiceProperties;
 import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
@@ -48,6 +50,7 @@ import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 
 /**
@@ -64,6 +67,32 @@ public class PlugInUtilities {
     public final static String HTTP_POST = "Post";
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * Zoom out a CyNetwork view by using a registered service.
+     */
+    public static void zoomOut(CyNetwork network, int times) {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        try {
+            ServiceReference[] references = context.getServiceReferences(NetworkTaskFactory.class.getName(),
+                                                                        "(" + ServiceProperties.TITLE + "=Zoom Out)");
+            if (references == null || references.length == 0)
+                return;
+            ServiceReference reference = references[0];
+            NetworkTaskFactory taskFactory = (NetworkTaskFactory) context.getService(reference);
+            if (taskFactory == null)
+                return;
+            TaskIterator iterator = taskFactory.createTaskIterator(network);
+            for (int i = 1; i < times; i++)
+                iterator.append(taskFactory.createTaskIterator(network));
+            @SuppressWarnings("rawtypes")
+            TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
+            taskManager.execute(iterator);
+        }
+        catch(InvalidSyntaxException e) {
+            e.printStackTrace();
+        }
     }
     
     /**

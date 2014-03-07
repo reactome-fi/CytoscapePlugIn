@@ -60,6 +60,7 @@ import org.osgi.framework.BundleEvent;
 import org.osgi.framework.SynchronousBundleListener;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * This customized JPanel, which implements CytoPanelComponent, is used as a control panel for Reactome pathways.
@@ -341,6 +342,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         }
         TableHelper tableHelper = new TableHelper();
         // Do selection for edges
+        int totalSelected = 0;
         for (View<CyEdge> edgeView : networkView.getEdgeViews()) {
             // De-select first
             tableHelper.setEdgeSelected(networkView.getModel(),
@@ -358,6 +360,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                     tableHelper.setEdgeSelected(networkView.getModel(),
                                                 edgeView.getModel(),
                                                 true);
+                    totalSelected ++;
                     break;
                 }
             }
@@ -378,13 +381,19 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                     tableHelper.setNodeSelected(networkView.getModel(),
                                                 nodeView.getModel(), 
                                                 true);
+                    totalSelected ++;
                     break;
                 }
             }
         }
         // The following method should not be called.
         // It is used to do the whole screen fit as in the menu.
-//        networkView.fitSelected();
+        if (totalSelected > 0) {
+            networkView.fitSelected();
+            if (totalSelected == 1)
+                PlugInUtilities.zoomOut(networkView.getModel(),
+                                        20); // 20 is rather arbitrary
+        }
         networkView.updateView();
         selectFromPathway = false;
     }
