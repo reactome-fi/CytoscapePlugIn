@@ -338,9 +338,13 @@ public class PlugInUtilities {
         }
     }
     
-    private static HttpClient initializeHTTPClient(PostMethod post, String query) throws UnsupportedEncodingException {
-        RequestEntity entity = new StringRequestEntity(query, "text/plain",
-                "UTF-8");
+    private static HttpClient initializeHTTPClient(PostMethod post, 
+                                                   String sendType,
+                                                   String query) throws UnsupportedEncodingException {
+        RequestEntity entity = new StringRequestEntity(query, 
+                                                       sendType,
+//                                                       "text/plain",
+                                                       "UTF-8");
         post.setRequestEntity(entity);
         post.setRequestHeader("Accept", "application/xml, text/plain");
         HttpClient client = new HttpClient();
@@ -360,6 +364,7 @@ public class PlugInUtilities {
         String text = callHttp(url, 
                                type,
                                query, 
+                               "text/plain",
                                "application/xml");
         StringReader reader = new StringReader(text);
         SAXBuilder builder = new SAXBuilder();
@@ -380,7 +385,23 @@ public class PlugInUtilities {
         return callHttp(url, 
                         type, 
                         query, 
+                        "text/plain",
                         "text/plain, application/xml"); // A String may be wrapped in an XML element.
+    }
+    
+    /**
+     * Call a POST HTTP method. The query should be in an XML, and returned text will be in XML too.
+     * @param url
+     * @param query query text should be in XML.
+     * @return returned text should be in XML.
+     * @throws IOException
+     */
+    public static String postHttpInXML(String url, String query) throws IOException {
+        return callHttp(url, 
+                        HTTP_POST, 
+                        query, 
+                        "application/xml",
+                        "application/xml, application/json, text/plain"); // A String may be wrapped in an XML element.
     }
     
     /**
@@ -395,12 +416,13 @@ public class PlugInUtilities {
     private static String callHttp(String url,
                                    String type,
                                    String query,
+                                   String sendType,
                                    String requestType) throws IOException {
         HttpMethod method = null;
         HttpClient client = null;
         if (type.equals(HTTP_POST)) {
             method = new PostMethod(url);
-            client = initializeHTTPClient((PostMethod) method, query);
+            client = initializeHTTPClient((PostMethod) method, sendType, query);
         }
         else {
             method = new GetMethod(url); // Default

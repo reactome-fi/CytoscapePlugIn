@@ -10,6 +10,8 @@ package org.reactome.cytoscape.service;
  */
 
 import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -24,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.cytoscape.model.CyEdge;
@@ -161,6 +164,22 @@ public class RESTFulFIService implements FINetworkService
         Unmarshaller unmarshaller = jc.createUnmarshaller();
         PGMFactorGraph fg = (PGMFactorGraph) unmarshaller.unmarshal(docRoot);
         return fg;
+    }
+    
+    public PGMFactorGraph runInferenceOnFactorGraph(PGMFactorGraph pfg) throws Exception {
+        String url = restfulURL + "network/runInferenceOnFactorGraph";
+        // Need to marshal the factor graph into an XML string
+        JAXBContext context = JAXBContext.newInstance(PGMFactorGraph.class);
+        StringWriter writer = new StringWriter();
+        Marshaller marshaller = context.createMarshaller();
+        marshaller.marshal(pfg, writer);
+        String rtn = PlugInUtilities.postHttpInXML(url, writer.getBuffer().toString());
+        writer.close();
+        Unmarshaller unmarshaller = context.createUnmarshaller();
+        StringReader reader = new StringReader(rtn);
+        PGMFactorGraph pfgWithValues = (PGMFactorGraph) unmarshaller.unmarshal(reader);
+        reader.close();
+        return pfgWithValues;
     }
     
     @SuppressWarnings("unchecked")

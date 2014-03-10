@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
@@ -26,20 +27,24 @@ import org.cytoscape.task.NodeViewTaskFactory;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.work.ServiceProperties;
+import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.pgm.FactorValuesDialog;
 import org.reactome.cytoscape.pgm.NetworkToFactorGraphMap;
+import org.reactome.cytoscape.pgm.VariableValuesDialog;
 import org.reactome.cytoscape.service.AbstractPopupMenuHandler;
 import org.reactome.cytoscape.service.PopupMenuManager;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.pgm.PGMFactor;
 import org.reactome.pgm.PGMFactorGraph;
+import org.reactome.pgm.PGMVariable;
 
 /**
  * This PopupMenuHandler is used for a factor graph network.
@@ -192,6 +197,15 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                                convertToPathwayMenu,
                                                props);
         menuRegistrations.add(registration);
+        
+        CyNetworkViewContextMenuFactory runInferneceMenu = new RunInferenceMenu();
+        props = new Properties();
+        props.setProperty(ServiceProperties.TITLE, "Run Inference");
+        props.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenu);
+        registration = context.registerService(CyNetworkViewContextMenuFactory.class.getName(),
+                                               runInferneceMenu,
+                                               props);
+        menuRegistrations.add(registration);
     }
     
     /* (non-Javadoc)
@@ -200,6 +214,74 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
     @Override
     public void uninstallMenus() {
         super.uninstallMenus();
+    }
+    
+    /**
+     * Run a factor graph inference by calling a remote RESTful API.
+     * @param needFinishDialog
+     * @return true if the results are returned from the remote server. Otherwise,
+     * false is returned.
+     */
+    private boolean runInference(CyNetwork network,
+                                 boolean needFinishDialog) {
+        PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(network);
+        if (fg == null) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "There is no factor graph found for the displayed network.\n" + 
+                                          "No inference can be done.",
+                                          "No Factor Graph",
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+        try {
+            ProgressPane progressPane = new ProgressPane();
+            frame.setGlassPane(progressPane);
+            progressPane.setTitle("Run Inference");
+            progressPane.setText("Run inference on factor graph...");
+            progressPane.setIndeterminate(true);
+            frame.getGlassPane().setVisible(true);
+            RESTFulFIService fiService = new RESTFulFIService();
+            PGMFactorGraph pfgWithValues = fiService.runInferenceOnFactorGraph(fg);
+            // Want to copy values from pfgWithValues to the original factor graph.
+            // The original factor graph can be replaced by the returned new factor graph
+            // too. However, it is felt that copying values is more reliable, which is just
+            // my gut feeling.
+            copyVariableValues(pfgWithValues, fg);
+            frame.getGlassPane().setVisible(false);
+            if (needFinishDialog) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "Inference has finished successfully. You may use \"View Marginal Probabilities\"\n" + 
+                                              "by selecting a variable node.",
+                                              "Inference Finished",
+                                              JOptionPane.INFORMATION_MESSAGE);
+            }
+            return true;
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Error in running infernece on factor graph: " + e.getMessage(),
+                                          "Error in Inference",
+                                          JOptionPane.ERROR_MESSAGE);
+            if (frame.getGlassPane() != null)
+                frame.getGlassPane().setVisible(false);
+            return false;
+        }
+    }
+    
+    private void copyVariableValues(PGMFactorGraph src, 
+                                    PGMFactorGraph target) {
+        // Using ids are more reliable than other properties because of the usage
+        // in libdai.
+        Map<String, PGMVariable> idToVar = new HashMap<String, PGMVariable>();
+        for (PGMVariable var : src.getVariables()) {
+            idToVar.put(var.getId(), var);
+        }
+        for (PGMVariable var : target.getVariables()) {
+            PGMVariable srcVar = idToVar.get(var.getId());
+            var.setValues(srcVar.getValues()); // Just use the original List object directly
+        }
     }
     
     private class ViewFactorValueMenu implements CyNodeViewContextMenuFactory {
@@ -238,7 +320,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 return;
             }
             FactorValuesDialog dialog = new FactorValuesDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
-            dialog.setFactor(factor);
+            dialog.setPGMNode(factor);
             
             dialog.setSize(500, 350);
             dialog.setModal(false);
@@ -256,6 +338,24 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             }
             return null;
         }
+    }
+    
+    private class RunInferenceMenu implements CyNetworkViewContextMenuFactory {
+
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView netView) {
+            JMenuItem menuItem = new JMenuItem("Run Inference");
+            menuItem.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    runInference(netView.getModel(),
+                                 true);
+                }
+            });
+            return new CyMenuItem(menuItem, 10.f);
+        }
+        
     }
     
     private class ViewVariableMarginalMenu implements CyNodeViewContextMenuFactory {
@@ -276,7 +376,61 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         
         private void viewVariableMarginal(CyNetworkView netView,
                                           View<CyNode> nodeView) {
-            System.out.println("View Marginal Probabilities!");
+            // Need to find the factor first
+            PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(netView.getModel());
+            if (fg == null) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "Cannot find a matched factor graph for the network!", 
+                                              "No Factor Graph", 
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            PGMVariable variable = getVariable(fg, netView.getModel(), nodeView.getModel());
+            if (variable == null) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "Cannot find a matched variable for the selected node!", 
+                                              "No Variable", 
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // Check if the found variable has values associated. If not, 
+            // ask the user to do an inference first
+            if (variable.getValues() == null) {
+                int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                          "In order to view the marginal probabilities for a variable. Please \n" + 
+                                                          "run an inference first. Do you want to run inference?",
+                                                          "Run Inference?",
+                                                          JOptionPane.OK_CANCEL_OPTION);
+                if (reply != JOptionPane.OK_OPTION)
+                    return;
+                if(!runInference(netView.getModel(), false)) {
+                    return;
+                }
+            }
+            if (variable.getValues() == null) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "Cannot find marginal probabilities for the selected variable.",
+                                              "No Marginal Probabilities", 
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            VariableValuesDialog dialog = new VariableValuesDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
+            dialog.setPGMNode(variable);
+            dialog.setSize(400, 275);
+            dialog.setLocationRelativeTo(dialog.getOwner());
+            dialog.setModal(true);
+            dialog.setVisible(true);
+        }
+        
+        private PGMVariable getVariable(PGMFactorGraph fg,
+                                        CyNetwork network,
+                                        CyNode node) {
+            String name = new TableHelper().getStoredNodeAttribute(network, node, "name", String.class);
+            for (PGMVariable variable : fg.getVariables()) {
+                if (variable.getLabel().equals(name))
+                    return variable;
+            }
+            return null;
         }
     }
     

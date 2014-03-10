@@ -5,25 +5,20 @@
 package org.reactome.cytoscape.pgm;
 
 import java.awt.BorderLayout;
-import java.awt.Font;
 import java.awt.Frame;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JDialog;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.reactome.pgm.PGMFactor;
+import org.reactome.pgm.PGMNode;
 import org.reactome.pgm.PGMVariable;
 
 /**
@@ -32,33 +27,21 @@ import org.reactome.pgm.PGMVariable;
  * @author gwu
  *
  */
-public class FactorValuesDialog extends JDialog {
+public class FactorValuesDialog extends PGMNodeValuesDialog {
     private JTable table;
-    private JTextArea textLabel;
     
     /**
      * @param owner
      */
     public FactorValuesDialog(Frame owner) {
         super(owner);
-        init();
+        setTitle("Factor Values");
     }
     
-    private void init() {
-        setTitle("Factor Values");
-        
+    @Override
+    protected JComponent createContentPane() {
         JPanel labelPane = new JPanel();
-        labelPane.setLayout(new BorderLayout());
-        labelPane.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        textLabel = new JTextArea();
-        textLabel.setBackground(labelPane.getBackground());
-        textLabel.setWrapStyleWord(true);
-        textLabel.setLineWrap(true);
-        textLabel.setEditable(false);
-        Font font = textLabel.getFont();
-        font = font.deriveFont(Font.BOLD);
-        textLabel.setFont(font);
-        labelPane.add(textLabel, BorderLayout.CENTER);
+        textLabel = createTextLabel(labelPane);
         getContentPane().add(labelPane, BorderLayout.NORTH);
         
         table = new JTable();
@@ -91,30 +74,20 @@ public class FactorValuesDialog extends JDialog {
         };
         sorter.setModel(model);
         table.setRowSorter(sorter);
-        
-        getContentPane().add(new JScrollPane(table), BorderLayout.CENTER);
-        
-        JPanel controlPane = new JPanel();
-        JButton closeBtn = new JButton("Close");
-        closeBtn.addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
-        controlPane.add(closeBtn);
-        getContentPane().add(controlPane, BorderLayout.SOUTH);
+        return new JScrollPane(table);
     }
     
     /**
      * The client should call this method to set the values for display.
      * @param factor
      */
-    public void setFactor(PGMFactor factor) {
-        textLabel.setText("Values for Factor \"" + factor.getLabel() + "\"");
-        FactorValueTableModel model = (FactorValueTableModel) table.getModel();
-        model.setFactor(factor);
+    @Override
+    public void setPGMNode(PGMNode factor) {
+        if (factor instanceof PGMFactor) {
+            textLabel.setText("Values for Factor \"" + factor.getLabel() + "\"");
+            FactorValueTableModel model = (FactorValueTableModel) table.getModel();
+            model.setFactor((PGMFactor)factor);
+        }
     }
     
     private class FactorValueTableModel extends AbstractTableModel {
