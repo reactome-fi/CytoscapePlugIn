@@ -26,6 +26,7 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class FactorGraphVisualStyle extends FIVisualStyleImpl {
+    private final Color LIGHT_PURPLE = new Color(204, 204, 255);
     
     /**
      * Default constructor.
@@ -50,6 +51,8 @@ public class FactorGraphVisualStyle extends FIVisualStyleImpl {
                                           NodeShapeVisualProperty.RECTANGLE);
         nodeTypeShapeFunction.putMapValue("variable",
                                           NodeShapeVisualProperty.ELLIPSE);
+        nodeTypeShapeFunction.putMapValue("observation",
+                                          NodeShapeVisualProperty.HEXAGON);
         fiVisualStyle.addVisualMappingFunction(nodeTypeShapeFunction);
         
         DiscreteMapping nodeTypeColorFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("nodeType",
@@ -58,6 +61,8 @@ public class FactorGraphVisualStyle extends FIVisualStyleImpl {
                                           Color.WHITE);
         nodeTypeColorFunction.putMapValue("variable",
                                           Color.LIGHT_GRAY);
+        nodeTypeColorFunction.putMapValue("observation",
+                                          LIGHT_PURPLE);
         fiVisualStyle.addVisualMappingFunction(nodeTypeColorFunction);
         
         DiscreteMapping<String, Double> nodeTypeSizeFunction = (DiscreteMapping<String, Double>) visMapFuncFactoryD.createVisualMappingFunction("nodeType",

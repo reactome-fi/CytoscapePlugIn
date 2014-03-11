@@ -126,12 +126,8 @@ public abstract class FIActionDialog extends JDialog {
         String text = fileTF.getText().trim();
         return new File(text);
     }
-
-    /**
-     * Allows a user to browse for a file using Cytoscape's built-in file utility.
-     * @param tf
-     */
-    private void browseFile(JTextField tf) {
+    
+    protected Collection<FileChooserFilter> createFileFilters() {
         Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
         // The following code to choose two file formats is not reliable.
         // The user may choose a customized file (e.g. tab delimited).
@@ -141,6 +137,15 @@ public abstract class FIActionDialog extends JDialog {
         FileChooserFilter mafFilter = new FileChooserFilter("NCI MAF Files",
                                                             mafExts);
         filters.add(mafFilter);
+        return filters;
+    }
+
+    /**
+     * Allows a user to browse for a file using Cytoscape's built-in file utility.
+     * @param tf
+     */
+    protected void browseFile(JTextField tf) {
+        Collection<FileChooserFilter> filters = createFileFilters();
         
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference fileUtilRef = context.getServiceReference(FileUtil.class.getName());
@@ -173,7 +178,8 @@ public abstract class FIActionDialog extends JDialog {
      * @param loadPanel
      * @param constraints
      */
-    protected void createFileChooserGui(final JLabel fileChooseLabel,
+    protected void createFileChooserGui(final JTextField fileTF,
+                                        final JLabel fileChooseLabel,
                                         final JButton browseButton, 
                                         JPanel loadPanel,
                                         GridBagConstraints constraints) {

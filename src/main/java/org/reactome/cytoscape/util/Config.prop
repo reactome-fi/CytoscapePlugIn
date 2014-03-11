@@ -25,3 +25,7 @@ evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interacti
 ReactomeRESTfulAPI=http://localhost:8080/ReactomeRESTfulAPI/RESTfulWS/
 #ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/ReactomeRESTfulAPI_PathX/RESTfulWS/
 ReactomeURL=http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&ID=
+# Pre-learned probabilities between gene expression nodes and mRNA nodes
+expressionFactorValues=0.02,0.89,0.09,0.01,0.92,0.07,0.03,0.76,0.21
+# pre-learned probabilities between CNVs and DNA nodes
+cnvFactorValues=0.83,0.12,0.05,0.14,0.695,0.165,0.07,0.26,0.67

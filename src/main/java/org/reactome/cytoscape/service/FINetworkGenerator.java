@@ -77,10 +77,10 @@ public class FINetworkGenerator implements NetworkGenerator {
      * @param type
      * @return
      */
-    private CyEdge createEdge(CyNetwork network, 
-                              CyNode node1, 
-                              CyNode node2,
-                              String type) {
+    public CyEdge createEdge(CyNetwork network, 
+                             CyNode node1, 
+                             CyNode node2,
+                             String type) {
         CyTable nodeTable = network.getDefaultNodeTable();
         CyTable edgeTable = network.getDefaultEdgeTable();
         
@@ -134,10 +134,10 @@ public class FINetworkGenerator implements NetworkGenerator {
         return null;
     }
 
-    private CyNode createNode(CyNetwork network, 
-                              String label,
-                              String type,
-                              String tooltip) {
+    public CyNode createNode(CyNetwork network, 
+                             String label,
+                             String type,
+                             String tooltip) {
         CyNode node = network.addNode();
         Long nodeSUID = node.getSUID();
         // Add node labels, tooltips, common names, etc.
@@ -199,7 +199,9 @@ public class FINetworkGenerator implements NetworkGenerator {
                      view);
     }
     
-    public void addFIPartners(String target, Set<String> partners, CyNetworkView view) {
+    public void addFIPartners(String target,
+                              Set<String> partners,
+                              CyNetworkView view) {
         addFIPartners(getNodeByName(target, view.getModel()),
                       partners, 
                       view);
@@ -222,7 +224,7 @@ public class FINetworkGenerator implements NetworkGenerator {
         }
     }
 
-    private void jiggleLayout(CyNode anchor, Set<CyNode> partners, CyNetworkView view) {
+    public void jiggleLayout(CyNode anchor, Set<CyNode> partners, CyNetworkView view) {
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
         String center = nodeTable.getRow(anchor.getSUID()).get("name", String.class);
         List<String> partnerNames = new ArrayList<String>();

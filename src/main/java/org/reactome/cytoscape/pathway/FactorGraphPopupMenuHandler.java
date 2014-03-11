@@ -31,7 +31,9 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.pgm.FactorValuesDialog;
 import org.reactome.cytoscape.pgm.NetworkToFactorGraphMap;
+import org.reactome.cytoscape.pgm.ObservationDataHelper;
 import org.reactome.cytoscape.pgm.ObservationDataLoadDialog;
+import org.reactome.cytoscape.pgm.ObservationType;
 import org.reactome.cytoscape.pgm.VariableValuesDialog;
 import org.reactome.cytoscape.service.AbstractPopupMenuHandler;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -108,7 +110,8 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             uninstallDynamicMenu(viewVariableMarginalMenu);
             installViewFactorValuesMenu();
         }
-        else if ("variable".equals(nodeType)) {
+        else if ("variable".equals(nodeType) || "observation".equals(nodeType)) { // Though there is no need to view marginal for an observation node,
+                                                                                  // it will be nicer for comparison.
             installViewVariableMarginalMenu();
             uninstallDynamicMenu(viewFactorValuesMenu);
         }
@@ -428,14 +431,41 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                     loadObservationData(netView);
                 }
             });
-            return new CyMenuItem(menuItem, 101.0f); // Want a menu separator
+            return new CyMenuItem(menuItem, 1001.0f);
         }
         
         private void loadObservationData(CyNetworkView netView) {
+            PGMFactorGraph pfg = NetworkToFactorGraphMap.getMap().get(netView.getModel());
+            if (pfg == null) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "Cannot find a matched factor graph for the network!", 
+                                              "No Factor Graph", 
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             ObservationDataLoadDialog dialog = new ObservationDataLoadDialog();
             dialog.setLocationRelativeTo(dialog.getOwner());
             dialog.setModal(true);
             dialog.setVisible(true);
+            if (!dialog.isOkClicked())
+                return;
+            if (dialog.getDNAFile() == null && dialog.getGeneExpFile() == null)
+                return;
+            ObservationDataHelper helper = new ObservationDataHelper(pfg, netView);
+            try {
+                if (dialog.getDNAFile() != null)
+                    helper.loadData(dialog.getDNAFile(), ObservationType.CNV);
+                if (dialog.getGeneExpFile() != null)
+                    helper.loadData(dialog.getGeneExpFile(), ObservationType.GENE_EXPRESSION);
+            }
+            catch(Exception e) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "Error in loading observation data: " + e.getMessage(),
+                                              "Error in Loading Data",
+                                              JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+                return;
+            }
         }
         
     }

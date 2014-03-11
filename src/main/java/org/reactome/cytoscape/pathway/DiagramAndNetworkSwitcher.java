@@ -174,7 +174,7 @@ public class DiagramAndNetworkSwitcher {
         
         // Need to query sourceIds for displayed genes
         taskMonitor.setStatusMessage("Fetch genes to ids mapping...");
-        Map<String, List<Long>> geneToDBIds = fiService.getGeneToDbIDs(pathway.getReactomeDiagramId());
+        Map<String, List<Long>> geneToDBIds = fiService.getGeneToDbIds(pathway.getReactomeDiagramId());
         // Need to a little format to avoid storing a list
         Map<String, String> geneToIdsAtt = new HashMap<String, String>();
         for (String gene : geneToDBIds.keySet()) {

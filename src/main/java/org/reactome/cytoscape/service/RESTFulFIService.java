@@ -35,6 +35,7 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.RenderablePathway;
+import org.gk.util.StringUtils;
 import org.jdom.Element;
 import org.jdom.output.DOMOutputter;
 import org.jdom.output.Format;
@@ -205,10 +206,14 @@ public class RESTFulFIService implements FINetworkService
      * @return
      * @throws Exception
      */
-    @SuppressWarnings("unchecked")
-    public Map<String, List<Long>> getGeneToDbIDs(Long pathwayDiagramId) throws Exception {
+    public Map<String, List<Long>> getGeneToDbIds(Long pathwayDiagramId) throws Exception {
         String url = restfulURL + "network/getGeneToIdsInPathwayDiagram/" + pathwayDiagramId;
         Element root = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
+        return getGeneToDbIds(root);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, List<Long>> getGeneToDbIds(Element root) {
         List<Element> geneToPEIds = root.getChildren("geneToPEIds");
         Map<String, List<Long>> rtn = new HashMap<String, List<Long>>();
         for (Element elm : geneToPEIds) {
@@ -220,6 +225,13 @@ public class RESTFulFIService implements FINetworkService
             rtn.put(gene, dbIds);
         }
         return rtn;
+    }
+    
+    public Map<String, List<Long>> getGeneToEWASIds(Set<Long> dbIds) throws Exception {
+        String url = restfulURL + "network/getGeneToEWASIds";
+        String query = StringUtils.join(",", new ArrayList<Long>(dbIds));
+        Element root = PlugInUtilities.callHttpInXML(url, HTTP_POST, query);
+        return getGeneToDbIds(root);
     }
 
     private Interaction parseInteractionElement(List<Element> children) throws Exception {

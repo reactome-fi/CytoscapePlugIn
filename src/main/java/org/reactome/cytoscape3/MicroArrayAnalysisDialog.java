@@ -68,7 +68,8 @@ public class MicroArrayAnalysisDialog extends FIActionDialog {
         JLabel fileChooseLabel = new JLabel("Choose Data File:");
         JButton browseButton = new JButton("Browse");
         fileTF = new JTextField();
-        createFileChooserGui(fileChooseLabel,
+        createFileChooserGui(fileTF,
+                             fileChooseLabel,
                              browseButton,
                              filePanel, 
                              constraints);
