@@ -8,7 +8,6 @@ import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -25,6 +24,7 @@ import org.reactome.pgm.PGMVariable;
  *
  */
 public class VariableValuesDialog extends PGMNodeValuesDialog {
+    private JLabel textLabel;
     private JLabel state0Value;
     private JLabel state1Value;
     private JLabel state2Value;
@@ -43,24 +43,20 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
         contentPane.setLayout(new GridBagLayout());
         contentPane.setBorder(BorderFactory.createEtchedBorder());
         
-        JPanel labelPane = new JPanel();
-        textLabel = createTextLabel(labelPane);
-        GridBagConstraints constraints0 = new GridBagConstraints();
-        constraints0.gridx = 0;
-        constraints0.gridy = 0;
-        constraints0.weightx = 0.5d;
-        constraints0.fill = GridBagConstraints.HORIZONTAL;
-        contentPane.add(labelPane, constraints0);
-        
-        JPanel valuePane = new JPanel();
-        valuePane.setLayout(new GridBagLayout());
+        textLabel = new JLabel("");
         GridBagConstraints constraints = new GridBagConstraints();
-        constraints.insets = new Insets(4, 4, 4, 4);
-        state0Value = addStateLabels(valuePane, constraints, 0);
-        state1Value = addStateLabels(valuePane, constraints, 1);
-        state2Value = addStateLabels(valuePane, constraints, 2);
-        constraints0.gridy = 1;
-        contentPane.add(valuePane, constraints0);
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.weightx = 0.5d;
+        constraints.gridwidth = 2;
+//        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.anchor = GridBagConstraints.CENTER;
+        contentPane.add(textLabel, constraints);
+        
+        constraints.gridwidth = 1;
+        state0Value = addStateLabels(contentPane, constraints, 0);
+        state1Value = addStateLabels(contentPane, constraints, 1);
+        state2Value = addStateLabels(contentPane, constraints, 2);
         
         return contentPane;
     }  
@@ -71,10 +67,10 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
             return;
         List<Double> values = variable.getValues();
         if (values == null || values.size() == 0) {
-            textLabel.setText("Unknown marginal probabilities for variable \"" + variable.getLabel() + "\".");
+            textLabel.setText("<html><center><b><u>Unknown marginal probabilities for variable \"" + variable.getLabel() + "\".</u></b></center></html>");
             return;
         }
-        textLabel.setText("Marginal Probabilities for variable \"" + variable.getLabel() + "\":");
+        textLabel.setText("<html><center><b><u>Marginal Probabilities for Variable \"" + variable.getLabel() + "\"</u></b></center></html>");
         state0Value.setText(formatProbability(values.get(0)));
         if (values.size() > 1)
             state1Value.setText(formatProbability(values.get(1)));

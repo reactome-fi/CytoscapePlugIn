@@ -10,8 +10,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.JComponent;
-import javax.swing.JPanel;
+import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
@@ -29,6 +30,7 @@ import org.reactome.pgm.PGMVariable;
  */
 public class FactorValuesDialog extends PGMNodeValuesDialog {
     private JTable table;
+    private JLabel textLabel;
     
     /**
      * @param owner
@@ -40,9 +42,9 @@ public class FactorValuesDialog extends PGMNodeValuesDialog {
     
     @Override
     protected JComponent createContentPane() {
-        JPanel labelPane = new JPanel();
-        textLabel = createTextLabel(labelPane);
-        getContentPane().add(labelPane, BorderLayout.NORTH);
+        textLabel = new JLabel("");
+        textLabel.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        getContentPane().add(textLabel, BorderLayout.NORTH);
         
         table = new JTable();
         FactorValueTableModel model = new FactorValueTableModel();
@@ -84,7 +86,7 @@ public class FactorValuesDialog extends PGMNodeValuesDialog {
     @Override
     public void setPGMNode(PGMNode factor) {
         if (factor instanceof PGMFactor) {
-            textLabel.setText("Values for Factor \"" + factor.getLabel() + "\"");
+            textLabel.setText("<html><u><b>Values for Factor \"" + factor.getLabel() + "\"</b></u></html>\"");
             FactorValueTableModel model = (FactorValueTableModel) table.getModel();
             model.setFactor((PGMFactor)factor);
         }

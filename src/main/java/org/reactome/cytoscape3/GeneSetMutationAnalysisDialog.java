@@ -19,6 +19,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.gk.util.DialogControlPane;
+import org.reactome.cytoscape.service.FIActionDialog;
+import org.reactome.cytoscape.service.FIVersionSelectionPanel;
 
 /**
  * @author gwu
@@ -64,18 +66,15 @@ public class GeneSetMutationAnalysisDialog extends FIActionDialog {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
 
-        // DialogControlPane controls access to the OK/Cancel
-        // buttons of the main dialog pane.
-        DialogControlPane controlPane = new DialogControlPane();
-        JButton okBtn = controlPane.getOKBtn();
-
         // File box/browse button presented to the user, linked to
         // the file chooser, followed by format selection.
         JLabel fileChooseLabel = new JLabel("Choose data file:");
         fileTF = new JTextField();
         JButton browseButton = new JButton("Browse");
-        createFileChooserGui(fileChooseLabel, okBtn, browseButton,
-                loadPanel, constraints);
+        createFileChooserGui(fileChooseLabel, 
+                             browseButton,
+                             loadPanel,
+                             constraints);
 
         JLabel fileFormatLabel = new JLabel("Specify file format: ");
         geneSetBtn = new JRadioButton("Gene set");
@@ -213,37 +212,11 @@ public class GeneSetMutationAnalysisDialog extends FIActionDialog {
         gsmaPanel.add(constructPanel);
         getContentPane().add(gsmaPanel, BorderLayout.CENTER);
 
-        okBtn.addActionListener(new ActionListener()
-        {
-
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                isOkClicked = true;
-                dispose();
-            }
-        });
-        JButton cancelBtn = controlPane.getCancelBtn();
-        cancelBtn.addActionListener(new ActionListener()
-        {
-            @Override
-            public void actionPerformed(ActionEvent e)
-            {
-                isOkClicked = false;
-                dispose();
-            }
-        });
-        okBtn.setDefaultCapable(true);
-        getRootPane().setDefaultButton(okBtn);
-        getContentPane().add(controlPane, BorderLayout.SOUTH);
-        // The following controls are disabled by default
         // as they are only necessary for gene/sample pair and MAF files.
         sampleCutoffLabel.setEnabled(false);
         sampleCutoffField.setEnabled(false);
         chooseHomoBox.setEnabled(false);
         sampleCommentLabel.setEnabled(false);
-        
-        
         return gsmaPanel;
     }
     

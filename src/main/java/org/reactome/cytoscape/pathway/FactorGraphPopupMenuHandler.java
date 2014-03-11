@@ -23,17 +23,15 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
-import org.cytoscape.task.NodeViewTaskFactory;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.work.ServiceProperties;
 import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.pgm.FactorValuesDialog;
 import org.reactome.cytoscape.pgm.NetworkToFactorGraphMap;
+import org.reactome.cytoscape.pgm.ObservationDataLoadDialog;
 import org.reactome.cytoscape.pgm.VariableValuesDialog;
 import org.reactome.cytoscape.service.AbstractPopupMenuHandler;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -157,21 +155,6 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         menuToRegistration.remove(menu);
     }
     
-    private void uninstallExpandNodeMenu() {
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        try {
-            ServiceReference[] references = context.getAllServiceReferences(NodeViewTaskFactory.class.getName(),
-                                                                           ServiceProperties.TITLE + "=Extend Network by public interaction database...");
-            if (references == null || references.length == 0)
-                return;
-            ServiceReference reference = references[0];
-            context.ungetService(reference);
-        }
-        catch(InvalidSyntaxException e) {
-            e.printStackTrace();
-        }
-    }
-    
     /* (non-Javadoc)
      * @see org.reactome.cytoscape.service.PopupMenuHandler#install()
      */
@@ -181,30 +164,29 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         String preferredMenu = PREFERRED_MENU;
         
         CyNodeViewContextMenuFactory viewReactomeSourceMenu = new ViewReactomeSourceMenu();
-        Properties props = new Properties();
-        props.setProperty(ServiceProperties.TITLE, "View Reactome Source");
-        props.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenu);
-        ServiceRegistration registration = context.registerService(CyNodeViewContextMenuFactory.class.getName(),
-                                                                   viewReactomeSourceMenu,
-                                                                   props);
-        menuRegistrations.add(registration);
+        installMenu(viewReactomeSourceMenu, "View Reactome Source", CyNodeViewContextMenuFactory.class);
         
         CyNetworkViewContextMenuFactory convertToPathwayMenu = new ConvertToDiagramMenu();
-        props = new Properties();
-        props.setProperty(ServiceProperties.TITLE, "Convert to Pathway");
-        props.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenu);
-        registration = context.registerService(CyNetworkViewContextMenuFactory.class.getName(),
-                                               convertToPathwayMenu,
-                                               props);
-        menuRegistrations.add(registration);
+        installMenu(convertToPathwayMenu, "Convert to Pathway", CyNetworkViewContextMenuFactory.class);
         
         CyNetworkViewContextMenuFactory runInferneceMenu = new RunInferenceMenu();
-        props = new Properties();
-        props.setProperty(ServiceProperties.TITLE, "Run Inference");
-        props.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenu);
-        registration = context.registerService(CyNetworkViewContextMenuFactory.class.getName(),
-                                               runInferneceMenu,
-                                               props);
+        installMenu(runInferneceMenu, "Run Inference", CyNetworkViewContextMenuFactory.class);
+        
+        CyNetworkViewContextMenuFactory loadObservationDataMenu = new LoadObservationDataMenu();
+        installMenu(loadObservationDataMenu, "Load Observation Data", CyNetworkViewContextMenuFactory.class);
+        
+    }
+    
+    private <T> void installMenu(T menu,
+                                 String title,
+                                 Class<T> cls) {
+        Properties props = new Properties();
+        props.setProperty(ServiceProperties.TITLE, title);
+        props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceRegistration registration = context.registerService(cls.getName(),
+                                                                   menu,
+                                                                   props);
         menuRegistrations.add(registration);
     }
     
@@ -432,6 +414,30 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             }
             return null;
         }
+    }
+    
+    private class LoadObservationDataMenu implements CyNetworkViewContextMenuFactory {
+
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView netView) {
+            JMenuItem menuItem = new JMenuItem("Load Observation Data");
+            menuItem.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    loadObservationData(netView);
+                }
+            });
+            return new CyMenuItem(menuItem, 101.0f); // Want a menu separator
+        }
+        
+        private void loadObservationData(CyNetworkView netView) {
+            ObservationDataLoadDialog dialog = new ObservationDataLoadDialog();
+            dialog.setLocationRelativeTo(dialog.getOwner());
+            dialog.setModal(true);
+            dialog.setVisible(true);
+        }
+        
     }
     
     private class ConvertToDiagramMenu implements CyNetworkViewContextMenuFactory {

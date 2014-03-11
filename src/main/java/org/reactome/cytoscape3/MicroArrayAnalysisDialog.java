@@ -4,14 +4,11 @@
  */
 package org.reactome.cytoscape3;
 
-import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 
 import javax.swing.BorderFactory;
@@ -26,7 +23,8 @@ import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 
-import org.gk.util.DialogControlPane;
+import org.reactome.cytoscape.service.FIActionDialog;
+import org.reactome.cytoscape.service.FIVersionSelectionPanel;
 
 /**
  * @author gwu
@@ -67,13 +65,13 @@ public class MicroArrayAnalysisDialog extends FIActionDialog {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 0.1;
         
-        // Add a control panel
-        DialogControlPane controlPane = new DialogControlPane();
         JLabel fileChooseLabel = new JLabel("Choose Data File:");
-        JButton okBtn = controlPane.getOKBtn();
         JButton browseButton = new JButton("Browse");
         fileTF = new JTextField();
-        createFileChooserGui(fileChooseLabel, okBtn, browseButton, filePanel, constraints);
+        createFileChooserGui(fileChooseLabel,
+                             browseButton,
+                             filePanel, 
+                             constraints);
         // Add a note text
         JTextArea noteTA = new JTextArea();
         Font font3 = filePanel.getFont();
@@ -147,31 +145,13 @@ public class MicroArrayAnalysisDialog extends FIActionDialog {
         clusterPanel.add(mclIRangeLabel, constraints);
         maaPanel.add(clusterPanel);
         
-        okBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (!validateFile(fileTF, 
-                                  fileTF))
-                    return;
-                setVisible(false);
-                dispose();
-                isOkClicked = true;
-            }});
-        controlPane.getCancelBtn().addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                setVisible(false);
-                dispose();
-            }
-        });
-        okBtn.setDefaultCapable(true);
-        getRootPane().setDefaultButton(okBtn);
-        okBtn.setEnabled(false); // If no file is selected
-        getContentPane().add(controlPane, BorderLayout.SOUTH);
-
-        setLocationRelativeTo(getOwner());
-        
         return maaPanel;
+    }
+    
+    protected void doOKAction() {
+        if (!validateFile(fileTF, fileTF))
+            return;
+        super.doOKAction();
     }
     
     /* (non-Javadoc)

@@ -19,6 +19,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.gk.util.DialogControlPane;
+import org.reactome.cytoscape.service.FIActionDialog;
+import org.reactome.cytoscape.service.FIVersionSelectionPanel;
 
 /**
  * A customized JDialog for HotnetAnalysis action.
@@ -68,12 +70,13 @@ public class HotNetAnalysisDialog extends FIActionDialog {
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 0.1;
-        DialogControlPane controlPane = new DialogControlPane();
-        JButton okBtn = controlPane.getOKBtn();
         JLabel fileChooseLabel = new JLabel("Choose data file:");
         fileTF = new JTextField();
         JButton browseButton = new JButton("Browse");
-        createFileChooserGui(fileChooseLabel, okBtn, browseButton, filePanel, constraints);
+        createFileChooserGui(fileChooseLabel, 
+                             browseButton,
+                             filePanel,
+                             constraints);
         JLabel fileFormatLabel = new JLabel("Specify file format:");
         constraints.gridy = 1;
         constraints.gridx = 0;
@@ -151,32 +154,14 @@ public class HotNetAnalysisDialog extends FIActionDialog {
         constraints.gridx = 1;
         constraints.gridwidth = 3;
         paramPane.add(permutationTF, constraints);
-        
         hnaPanel.add(paramPane);
-        okBtn.addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (!validateParameters())
-                    return;
-                setVisible(false);
-                dispose();
-                isOkClicked = true;
-            }
-        });
-        controlPane.getCancelBtn().addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                setVisible(false);
-                dispose();
-            }
-        });
-        okBtn.setDefaultCapable(true);
-        getRootPane().setDefaultButton(okBtn);
-//        okBtn.setEnabled(false); // If no file is selected
-        getContentPane().add(controlPane, BorderLayout.SOUTH);
         return hnaPanel;
+    }
+    
+    protected void doOKAction() {
+        if (!validateParameters())
+            return;
+        super.doOKAction();
     }
     
     /* (non-Javadoc)

@@ -1,10 +1,11 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,6 +25,7 @@ import javax.swing.event.DocumentListener;
 
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
+import org.gk.util.DialogControlPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -40,20 +42,87 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 public abstract class FIActionDialog extends JDialog {
     // Common GUI controls
     protected JTextField fileTF;
-    
+    // There should be a OK button always
+    protected JButton okBtn;
     //Universal parameters
-    boolean isOkClicked;
+    protected boolean isOkClicked;
     
     protected FIActionDialog() {
+        super(PlugInObjectManager.getManager().getCytoscapeDesktop());
         init();
+    }
+    
+    /**
+     * Creates the graphical user interfaces for each of the Reactome FI analyses.
+     * @param actionType A string indicating the type of action to be performed (GeneSetMutationAnalysis, UserGuide, Microarray, Hotnet).
+     */
+    private void init() {
+        // Main dialog pane. A tabbed pane is used
+        // to mimic the Cytoscape GUI and provide room
+        // for future tabbed user interfaces.
+        // The mouse event has been overridden to avoid the mouse action.
+        setTitle("Reactome FI PlugIn");
+        JTabbedPane mainPane = new JTabbedPane() {
+
+            @Override
+            protected void processMouseEvent(MouseEvent e) {
+                // Do nothing to disable mouse clicking effect.
+            }
+            
+        };
+        setSize(500, 535);
+        Font font = new Font("Verdana", Font.BOLD, 12);
+        
+        // Pane for FI Network version selection.
+        FIVersionSelectionPanel versionPane = new FIVersionSelectionPanel();
+        Border etchedBorder = BorderFactory.createEtchedBorder();
+        Border versionBorder = BorderFactory.createTitledBorder(etchedBorder,
+                                                                versionPane.getTitle(), TitledBorder.LEFT, TitledBorder.CENTER,
+                                                                font);
+        versionPane.setBorder(versionBorder);
+        
+        // Create a control pane first so that the OK button can be used
+        // during synchronization
+        DialogControlPane controlPane = initControlPane();
+        
+        JPanel innerPanel = createInnerPanel(versionPane,
+                                             font);
+        String tabTitle = getTabTitle();
+        
+        mainPane.addTab(tabTitle, innerPanel);
+        mainPane.setSelectedComponent(innerPanel);
+        
+        getContentPane().add(mainPane, BorderLayout.CENTER);
+        getContentPane().add(controlPane, BorderLayout.SOUTH);
+    }
+    
+    private DialogControlPane initControlPane() {
+        DialogControlPane controlPane = new DialogControlPane();
+        this.okBtn = controlPane.getOKBtn();
+        okBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doOKAction();
+            }
+        });
+        JButton cancelBtn = controlPane.getCancelBtn();
+        cancelBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                isOkClicked = false;
+                dispose();
+            }
+        });
+        okBtn.setDefaultCapable(true);
+        getRootPane().setDefaultButton(okBtn);
+        return controlPane;
     }
 
     /**
      * Retrieves the file given from the path in the textbox.
      * @return The file at the specified location
      */
-    public File getSelectedFile()
-    {
+    public File getSelectedFile() {
         String text = fileTF.getText().trim();
         return new File(text);
     }
@@ -105,13 +174,11 @@ public abstract class FIActionDialog extends JDialog {
      * @param constraints
      */
     protected void createFileChooserGui(final JLabel fileChooseLabel,
-            final JButton okBtn,
-            final JButton browseButton, JPanel loadPanel,
-            GridBagConstraints constraints) {
-
+                                        final JButton browseButton, 
+                                        JPanel loadPanel,
+                                        GridBagConstraints constraints) {
         loadPanel.add(fileChooseLabel, constraints);
-        fileTF.getDocument().addDocumentListener(new DocumentListener()
-        {
+        fileTF.getDocument().addDocumentListener(new DocumentListener(){
 
             @Override
             public void removeUpdate(DocumentEvent e)
@@ -140,16 +207,14 @@ public abstract class FIActionDialog extends JDialog {
             }
 
             @Override
-            public void changedUpdate(DocumentEvent e)
-            {
+            public void changedUpdate(DocumentEvent e) {
             }
         });
         fileTF.setColumns(20);
         constraints.gridx = 1;
         constraints.weightx = 0.80;
         loadPanel.add(fileTF, constraints);
-        browseButton.addActionListener(new ActionListener()
-        {
+        browseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e)
             {
@@ -162,41 +227,15 @@ public abstract class FIActionDialog extends JDialog {
         okBtn.setEnabled(false);
     }
 
-    /**
-     * Creates the graphical user interfaces for each of the Reactome FI analyses.
-     * @param actionType A string indicating the type of action to be performed (GeneSetMutationAnalysis, UserGuide, Microarray, Hotnet).
-     */
-    private void init() {
-        // Main dialog pane. A tabbed pane is used
-        // to mimic the Cytoscape GUI and provide room
-        // for future tabbed user interfaces.
-        // Most likely we should avoid using tabs. The GUI is a little weird since
-        // the tab can be clicked.---- Guanming
-        setTitle("Reactome FI");
-        JTabbedPane mainPane = new JTabbedPane();
-        setSize(500, 535);
-        Font font = new Font("Verdana", Font.BOLD, 12);
-        
-        // Pane for FI Network version selection.
-        FIVersionSelectionPanel versionPane = new FIVersionSelectionPanel();
-        Border etchedBorder = BorderFactory.createEtchedBorder();
-        Border versionBorder = BorderFactory.createTitledBorder(etchedBorder,
-                                                                versionPane.getTitle(), TitledBorder.LEFT, TitledBorder.CENTER,
-                                                                font);
-        versionPane.setBorder(versionBorder);
-        JPanel innerPanel = createInnerPanel(versionPane,
-                                             font);
-        String tabTitle = getTabTitle();
-        
-        mainPane.addTab(tabTitle, innerPanel);
-        mainPane.setSelectedComponent(innerPanel);
-        getContentPane().add(mainPane, BorderLayout.CENTER);
-    }
-    
     protected abstract JPanel createInnerPanel(FIVersionSelectionPanel versionPanel,
                                                Font font);
     
     protected abstract String getTabTitle(); 
+    
+    protected void doOKAction() {
+        isOkClicked = true;
+        dispose();
+    }
     
     /**
      * 

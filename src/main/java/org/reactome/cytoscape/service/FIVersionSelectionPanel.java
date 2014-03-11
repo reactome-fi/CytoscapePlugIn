@@ -1,4 +1,4 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
