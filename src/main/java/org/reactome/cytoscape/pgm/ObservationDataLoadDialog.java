@@ -170,6 +170,18 @@ public class ObservationDataLoadDialog extends FIActionDialog {
         return getFile(dnaTFs);
     }
     
+    public double[] getDNAThresholdValues() {
+        String value1 = dnaTFs.get(1).getText().trim();
+        String value2 = dnaTFs.get(2).getText().trim();
+        return new double[]{new Double(value1), new Double(value2)};
+    }
+    
+    public double[] getGeneExpThresholdValues() {
+        String value1 = geneExpTFs.get(1).getText().trim();
+        String value2 = geneExpTFs.get(2).getText().trim();
+        return new double[]{new Double(value1), new Double(value2)};
+    }
+    
     private File getFile(List<JTextField> tfs) {
         String text = tfs.get(0).getText().trim();
         if (text.length() == 0)

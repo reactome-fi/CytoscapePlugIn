@@ -36,7 +36,9 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.RenderablePathway;
 import org.gk.util.StringUtils;
+import org.jdom.Document;
 import org.jdom.Element;
+import org.jdom.input.SAXBuilder;
 import org.jdom.output.DOMOutputter;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
@@ -49,6 +51,7 @@ import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.funcInt.Protein;
 import org.reactome.funcInt.ReactomeSource;
+import org.reactome.pgm.InferenceResults;
 import org.reactome.pgm.PGMFactorGraph;
 import org.reactome.r3.graph.NetworkClusterResult;
 import org.reactome.r3.util.InteractionUtilities;
@@ -167,20 +170,33 @@ public class RESTFulFIService implements FINetworkService
         return fg;
     }
     
-    public PGMFactorGraph runInferenceOnFactorGraph(PGMFactorGraph pfg) throws Exception {
+    public List<InferenceResults> runInferenceOnFactorGraph(PGMFactorGraph pfg) throws Exception {
         String url = restfulURL + "network/runInferenceOnFactorGraph";
         // Need to marshal the factor graph into an XML string
-        JAXBContext context = JAXBContext.newInstance(PGMFactorGraph.class);
+        JAXBContext context = JAXBContext.newInstance(PGMFactorGraph.class,
+                                                      InferenceResults.class);
         StringWriter writer = new StringWriter();
         Marshaller marshaller = context.createMarshaller();
         marshaller.marshal(pfg, writer);
         String rtn = PlugInUtilities.postHttpInXML(url, writer.getBuffer().toString());
         writer.close();
-        Unmarshaller unmarshaller = context.createUnmarshaller();
         StringReader reader = new StringReader(rtn);
-        PGMFactorGraph pfgWithValues = (PGMFactorGraph) unmarshaller.unmarshal(reader);
-        reader.close();
-        return pfgWithValues;
+        SAXBuilder builder = new SAXBuilder();
+        Document doc = builder.build(reader);
+        // Convert it into org.w3.dom.Document to be used in JAXB
+        org.w3c.dom.Document document = new DOMOutputter().output(doc);
+        org.w3c.dom.Node docRoot = document.getDocumentElement();
+        NodeList children = docRoot.getChildNodes();
+        List<InferenceResults> resultsList = new ArrayList<InferenceResults>();
+        Unmarshaller unmarshaller = context.createUnmarshaller();
+        
+        for (int i = 0; i < children.getLength(); i++) {
+            org.w3c.dom.Node child = children.item(i);
+            InferenceResults results = (InferenceResults) unmarshaller.unmarshal(child);
+            resultsList.add(results);
+        }
+        
+        return resultsList;
     }
     
     @SuppressWarnings("unchecked")

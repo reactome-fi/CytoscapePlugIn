@@ -42,6 +42,8 @@ import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.pgm.InferenceResults;
+import org.reactome.pgm.Observation;
 import org.reactome.pgm.PGMFactor;
 import org.reactome.pgm.PGMFactorGraph;
 import org.reactome.pgm.PGMVariable;
@@ -227,12 +229,13 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             progressPane.setIndeterminate(true);
             frame.getGlassPane().setVisible(true);
             RESTFulFIService fiService = new RESTFulFIService();
-            PGMFactorGraph pfgWithValues = fiService.runInferenceOnFactorGraph(fg);
+            List<InferenceResults> inferenceResults = fiService.runInferenceOnFactorGraph(fg);
             // Want to copy values from pfgWithValues to the original factor graph.
             // The original factor graph can be replaced by the returned new factor graph
             // too. However, it is felt that copying values is more reliable, which is just
             // my gut feeling.
-            copyVariableValues(pfgWithValues, fg);
+            copyVariableValues(inferenceResults,
+                               fg);
             frame.getGlassPane().setVisible(false);
             if (needFinishDialog) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
@@ -255,17 +258,29 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         }
     }
     
-    private void copyVariableValues(PGMFactorGraph src, 
+    private void copyVariableValues(List<InferenceResults> resultsList, 
                                     PGMFactorGraph target) {
-        // Using ids are more reliable than other properties because of the usage
-        // in libdai.
-        Map<String, PGMVariable> idToVar = new HashMap<String, PGMVariable>();
-        for (PGMVariable var : src.getVariables()) {
-            idToVar.put(var.getId(), var);
-        }
+        // The first results should be the prior marginals
+        InferenceResults results = resultsList.get(0);
+        Map<String, List<Double>> varIdToProbs = results.getResults();
         for (PGMVariable var : target.getVariables()) {
-            PGMVariable srcVar = idToVar.get(var.getId());
-            var.setValues(srcVar.getValues()); // Just use the original List object directly
+            List<Double> probs = varIdToProbs.get(var.getId());
+            if (probs != null)
+                var.setValues(probs); // Just use the original List object directly
+        }
+        // All others should be posterior probabilities
+        for (int i = 1; i < resultsList.size(); i++) {
+            results = resultsList.get(i);
+            if (results.getSample() == null)
+                continue;
+            String sample = results.getSample();
+            varIdToProbs = results.getResults();
+            for (PGMVariable var : target.getVariables()) {
+                List<Double> probs = varIdToProbs.get(var.getId());
+                if (probs == null)
+                    continue;
+                var.addPosteriorValues(sample, probs);
+            }
         }
     }
     
@@ -434,6 +449,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             return new CyMenuItem(menuItem, 1001.0f);
         }
         
+        @SuppressWarnings("unchecked")
         private void loadObservationData(CyNetworkView netView) {
             PGMFactorGraph pfg = NetworkToFactorGraphMap.getMap().get(netView.getModel());
             if (pfg == null) {
@@ -453,10 +469,27 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 return;
             ObservationDataHelper helper = new ObservationDataHelper(pfg, netView);
             try {
+                Map<PGMVariable, Map<String, Integer>> dnaVarToSampleToState = null;
                 if (dialog.getDNAFile() != null)
-                    helper.loadData(dialog.getDNAFile(), ObservationType.CNV);
+                    dnaVarToSampleToState = helper.loadData(dialog.getDNAFile(), 
+                                                            ObservationType.CNV,
+                                                            dialog.getDNAThresholdValues());
+                Map<PGMVariable, Map<String, Integer>> geneExpVarToSampleToState = null;
                 if (dialog.getGeneExpFile() != null)
-                    helper.loadData(dialog.getGeneExpFile(), ObservationType.GENE_EXPRESSION);
+                    geneExpVarToSampleToState = helper.loadData(dialog.getGeneExpFile(),
+                                                                ObservationType.GENE_EXPRESSION,
+                                                                dialog.getGeneExpThresholdValues());
+                if (dnaVarToSampleToState == null && geneExpVarToSampleToState == null)
+                    return;
+                List<Observation> observations = null;
+                if (dnaVarToSampleToState != null && geneExpVarToSampleToState != null)
+                    observations = helper.generateObservations(dnaVarToSampleToState,
+                                                               geneExpVarToSampleToState);
+                else if (dnaVarToSampleToState != null)
+                    observations = helper.generateObservations(dnaVarToSampleToState);
+                else if (geneExpVarToSampleToState != null)
+                    observations = helper.generateObservations(geneExpVarToSampleToState);
+                pfg.setObservations(observations);                                               
             }
             catch(Exception e) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
