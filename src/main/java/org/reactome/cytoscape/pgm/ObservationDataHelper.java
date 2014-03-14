@@ -224,7 +224,7 @@ public class ObservationDataHelper {
     private void parseData(String line,
                            List<String> samples,
                            PGMVariable variable,
-                           Map<PGMVariable, Map<String, Integer>> variabletoSampleToState,
+                           Map<PGMVariable, Map<String, Integer>> variableToSampleToState,
                            double[] thresholdValues) {
         Map<String, Integer> sampleToState = new HashMap<String, Integer>();
         String[] tokens = line.split("\t");
@@ -247,6 +247,7 @@ public class ObservationDataHelper {
                 }
             }
         }
+        variableToSampleToState.put(variable, sampleToState);
     }
     
     private void layout(Map<CyNode, CyNode> anchorToPartner,

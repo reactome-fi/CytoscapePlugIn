@@ -209,53 +209,56 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
      * @return true if the results are returned from the remote server. Otherwise,
      * false is returned.
      */
-    private boolean runInference(CyNetwork network,
-                                 boolean needFinishDialog) {
-        PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(network);
-        if (fg == null) {
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "There is no factor graph found for the displayed network.\n" + 
-                                          "No inference can be done.",
-                                          "No Factor Graph",
-                                          JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
-        try {
-            ProgressPane progressPane = new ProgressPane();
-            frame.setGlassPane(progressPane);
-            progressPane.setTitle("Run Inference");
-            progressPane.setText("Run inference on factor graph...");
-            progressPane.setIndeterminate(true);
-            frame.getGlassPane().setVisible(true);
-            RESTFulFIService fiService = new RESTFulFIService();
-            List<InferenceResults> inferenceResults = fiService.runInferenceOnFactorGraph(fg);
-            // Want to copy values from pfgWithValues to the original factor graph.
-            // The original factor graph can be replaced by the returned new factor graph
-            // too. However, it is felt that copying values is more reliable, which is just
-            // my gut feeling.
-            copyVariableValues(inferenceResults,
-                               fg);
-            frame.getGlassPane().setVisible(false);
-            if (needFinishDialog) {
-                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                              "Inference has finished successfully. You may use \"View Marginal Probabilities\"\n" + 
-                                              "by selecting a variable node.",
-                                              "Inference Finished",
-                                              JOptionPane.INFORMATION_MESSAGE);
+    private void runInference(final CyNetwork network,
+                              final boolean needFinishDialog) {
+        Thread t = new Thread() {
+            public void run() {
+                PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(network);
+                if (fg == null) {
+                    JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                  "There is no factor graph found for the displayed network.\n" + 
+                                                          "No inference can be done.",
+                                                          "No Factor Graph",
+                                                          JOptionPane.ERROR_MESSAGE);
+                    return ;
+                }
+                JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+                try {
+                    ProgressPane progressPane = new ProgressPane();
+                    frame.setGlassPane(progressPane);
+                    progressPane.setTitle("Run Inference");
+                    progressPane.setText("Run inference on factor graph...");
+                    progressPane.setIndeterminate(true);
+                    frame.getGlassPane().setVisible(true);
+                    RESTFulFIService fiService = new RESTFulFIService();
+                    List<InferenceResults> inferenceResults = fiService.runInferenceOnFactorGraph(fg);
+                    // Want to copy values from pfgWithValues to the original factor graph.
+                    // The original factor graph can be replaced by the returned new factor graph
+                    // too. However, it is felt that copying values is more reliable, which is just
+                    // my gut feeling.
+                    copyVariableValues(inferenceResults,
+                                       fg);
+                    frame.getGlassPane().setVisible(false);
+                    if (needFinishDialog) {
+                        JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                      "Inference has finished successfully. You may use \"View Marginal Probabilities\"\n" + 
+                                                              "by selecting a variable node.",
+                                                              "Inference Finished",
+                                                              JOptionPane.INFORMATION_MESSAGE);
+                    }
+                }
+                catch(Exception e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                  "Error in running infernece on factor graph: " + e.getMessage(),
+                                                  "Error in Inference",
+                                                  JOptionPane.ERROR_MESSAGE);
+                    if (frame.getGlassPane() != null)
+                        frame.getGlassPane().setVisible(false);
+                }
             }
-            return true;
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Error in running infernece on factor graph: " + e.getMessage(),
-                                          "Error in Inference",
-                                          JOptionPane.ERROR_MESSAGE);
-            if (frame.getGlassPane() != null)
-                frame.getGlassPane().setVisible(false);
-            return false;
-        }
+        };
+        t.start();
     }
     
     private void copyVariableValues(List<InferenceResults> resultsList, 
@@ -403,9 +406,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                                           JOptionPane.OK_CANCEL_OPTION);
                 if (reply != JOptionPane.OK_OPTION)
                     return;
-                if(!runInference(netView.getModel(), false)) {
-                    return;
-                }
+                runInference(netView.getModel(), false);
             }
             if (variable.getValues() == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
@@ -489,7 +490,13 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                     observations = helper.generateObservations(dnaVarToSampleToState);
                 else if (geneExpVarToSampleToState != null)
                     observations = helper.generateObservations(geneExpVarToSampleToState);
-                pfg.setObservations(observations);                                               
+                pfg.setObservations(observations);    
+                // Give the user an information
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "The data has been loaded successfully.",
+                                              "Data Loaded",
+                                              JOptionPane.INFORMATION_MESSAGE);
+                return;
             }
             catch(Exception e) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
