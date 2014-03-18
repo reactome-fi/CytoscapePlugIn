@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.SwingUtilities;
+
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
@@ -151,14 +153,14 @@ public class ObservationDataHelper {
         List<String> samples = parseSamples(line);
         int index = 0;
         // A helper object to create Nodes and Edges
-        FINetworkGenerator fiHelper = new FINetworkGenerator();
+        final FINetworkGenerator fiHelper = new FINetworkGenerator();
         CyNetwork network = networkView.getModel();
         CyTable nodeTable = network.getDefaultNodeTable();
         // Keep these mappings for layout after an updateView.
         // Otherwise, a null exception will be thrown because there
         // is no view for newly added CyNode
-        Map<CyNode, CyNode> varNodeToFactorNode = new HashMap<CyNode, CyNode>();
-        Map<CyNode, CyNode> factorNodeToObsNode = new HashMap<CyNode, CyNode>();
+        final Map<CyNode, CyNode> varNodeToFactorNode = new HashMap<CyNode, CyNode>();
+        final Map<CyNode, CyNode> factorNodeToObsNode = new HashMap<CyNode, CyNode>();
         Map<PGMVariable, Map<String, Integer>> variableToSampleToState = new HashMap<PGMVariable, Map<String,Integer>>();
         while ((line = fu.readLine()) != null) {
             index = line.indexOf("\t");
@@ -210,10 +212,16 @@ public class ObservationDataHelper {
         fu.close();
         fg.validatVariables();
         networkView.updateView();
+        // Use a swing thread so that updateView can be done first in order to get
+        // node view with coordinates. Otherwise, a null exception is going to be thrown.
         // Now do a layout
         // The order is important
-        layout(varNodeToFactorNode, fiHelper);
-        layout(factorNodeToObsNode, fiHelper);
+        SwingUtilities.invokeLater(new Thread() {
+            public void run() {
+                layout(varNodeToFactorNode, fiHelper);
+                layout(factorNodeToObsNode, fiHelper);
+            }
+        });
         // Need to recall visual style in order to make newly added nodes to have
         // correct visual styles.
         FIVisualStyle visStyler = new FactorGraphVisualStyle();

@@ -51,6 +51,7 @@ import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.RESTFulFIService;
+import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape.util.SearchDialog;
@@ -494,6 +495,20 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         final Long dbId = r.getReactomeId();
         final String name = r.getDisplayName();
         JPopupMenu popup = new JPopupMenu();
+        // Add a view Reactome source so that the web site may not be accessed in order to view
+        // the detailed information
+        JMenuItem viewReactomeSource = new JMenuItem("View Reactome Source");
+        viewReactomeSource.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ReactomeSourceView view = new ReactomeSourceView();
+                view.viewReactomeSource(dbId,
+                                        getPathwayEditor());
+            }
+        });
+        popup.add(viewReactomeSource);
+        
         JMenuItem showDetailed = new JMenuItem("View in Reactome");
         showDetailed.addActionListener(new ActionListener() {
             @Override

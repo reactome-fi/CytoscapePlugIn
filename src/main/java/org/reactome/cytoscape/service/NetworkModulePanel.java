@@ -115,8 +115,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         selectTableRowsForNodes(nodeIds);
     }
 
-    private void init()
-    {
+    private void init() {
         // Register selection listener
         PlugInObjectManager.getManager().getBundleContext().registerService(RowsSetListener.class.getName(), 
                                                                             this, 
@@ -157,10 +156,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         controlToolBar.add(closeBtn);
         add(controlToolBar, BorderLayout.NORTH);
         
-        //TODO if a network is destroyed/removed, remove the module panel as well.
-        
-        
-     // Add a popup menu to show detailed information for pathways
+        // Add a popup menu to show detailed information for pathways
         contentTable.addMouseListener(new MouseAdapter() {
 
             @Override
@@ -175,7 +171,8 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
                     doContentTablePopup(e);
             }
         });
-        this.setVisible(true);
+        // Need to call this method. Otherwise, it cannot be displayed.
+        setVisible(true);
     }
     
     private void doHideOtherNodesAction()
@@ -210,8 +207,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         }
     }
     
-    private void doTableSelection()
-    {
+    protected void doTableSelection() {
         //Check if there is a network view.
         if (this.view == null)
             return;
@@ -387,6 +383,41 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         return popupMenu;
     }
     
+    protected Set<String> getSelectedNodes() {
+        int[] selectedRows = contentTable.getSelectedRows();
+        NetworkModuleTableModel model = (NetworkModuleTableModel) contentTable.getModel();
+        List<String> idsInRows = model.getNodeIdsAtRows(selectedRows);
+        // Do a selection
+        Set<String> selectedIds = new HashSet<String>();
+        for (String ids : idsInRows) {
+            String[] tokens = ids.split(",");
+            for (String token : tokens)
+                selectedIds.add(token);
+        }
+        return selectedIds;
+    }
+    
+    private void selectTableRowsForNodes(List<String> nodes) {
+        NetworkModuleTableModel model = (NetworkModuleTableModel) contentTable.getModel();
+        List<Integer> rows = model.getRowsForNodeIds(nodes);
+        // Need to disable table selection to avoid circular calling
+        contentTable.getSelectionModel().removeListSelectionListener(tableSelectionListener);
+        ListSelectionModel selectionModel = contentTable.getSelectionModel();
+        selectionModel.clearSelection();
+        Integer min = Integer.MAX_VALUE;
+        for (Integer row : rows) {
+            selectionModel.addSelectionInterval(row, row);
+            if (row < min)
+                min = row;
+        }
+        if (rows.size() > 0) { // Only for selection
+            // Need to scroll
+            Rectangle rect = contentTable.getCellRect(min, 0, false);
+            contentTable.scrollRectToVisible(rect);
+        }
+        contentTable.getSelectionModel().addListSelectionListener(tableSelectionListener);
+    }
+    
     protected abstract class NetworkModuleTableModel extends AbstractTableModel {
         protected List<String[]> tableData;
         protected String[] columnHeaders;
@@ -468,42 +499,6 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         }
     }
     
-    
-    protected Set<String> getSelectedNodes() {
-        int[] selectedRows = contentTable.getSelectedRows();
-        NetworkModuleTableModel model = (NetworkModuleTableModel) contentTable.getModel();
-        List<String> idsInRows = model.getNodeIdsAtRows(selectedRows);
-        // Do a selection
-        Set<String> selectedIds = new HashSet<String>();
-        for (String ids : idsInRows) {
-            String[] tokens = ids.split(",");
-            for (String token : tokens)
-                selectedIds.add(token);
-        }
-        return selectedIds;
-    }
-    
-    private void selectTableRowsForNodes(List<String> nodes) {
-        NetworkModuleTableModel model = (NetworkModuleTableModel) contentTable.getModel();
-        List<Integer> rows = model.getRowsForNodeIds(nodes);
-        // Need to disable table selection to avoid circular calling
-        contentTable.getSelectionModel().removeListSelectionListener(tableSelectionListener);
-        ListSelectionModel selectionModel = contentTable.getSelectionModel();
-        selectionModel.clearSelection();
-        Integer min = Integer.MAX_VALUE;
-        for (Integer row : rows) {
-            selectionModel.addSelectionInterval(row, row);
-            if (row < min)
-                min = row;
-        }
-        if (rows.size() > 0) { // Only for selection
-            // Need to scroll
-            Rectangle rect = contentTable.getCellRect(min, 0, false);
-            contentTable.scrollRectToVisible(rect);
-        }
-        contentTable.getSelectionModel().addListSelectionListener(tableSelectionListener);
-    }
-  
     /**
      * The class which generates the 'X' icon for the tabs. The constructor 
      * accepts an icon which is extra to the 'X' icon, so you can have tabs 

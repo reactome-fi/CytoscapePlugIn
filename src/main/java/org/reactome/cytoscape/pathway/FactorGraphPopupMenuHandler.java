@@ -18,6 +18,9 @@ import javax.swing.JOptionPane;
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
+import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
@@ -30,6 +33,7 @@ import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.pgm.FactorValuesDialog;
+import org.reactome.cytoscape.pgm.IPAValueTablePane;
 import org.reactome.cytoscape.pgm.NetworkToFactorGraphMap;
 import org.reactome.cytoscape.pgm.ObservationDataHelper;
 import org.reactome.cytoscape.pgm.ObservationDataLoadDialog;
@@ -238,13 +242,19 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                     // my gut feeling.
                     copyVariableValues(inferenceResults,
                                        fg);
+                    showIPAValues(inferenceResults, fg);
                     frame.getGlassPane().setVisible(false);
                     if (needFinishDialog) {
+                        String message = "Inference has finished successfully. You may use \"View Marginal Probabilities\"\n" + 
+                                         "by selecting a variable node";
+                        if (inferenceResults.size() == 1)
+                            message += ".";
+                        else
+                            message += ", and view IPA values at the table panel.";
                         JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                                      "Inference has finished successfully. You may use \"View Marginal Probabilities\"\n" + 
-                                                              "by selecting a variable node.",
-                                                              "Inference Finished",
-                                                              JOptionPane.INFORMATION_MESSAGE);
+                                                      message,
+                                                      "Inference Finished",
+                                                      JOptionPane.INFORMATION_MESSAGE);
                     }
                 }
                 catch(Exception e) {
@@ -259,6 +269,28 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             }
         };
         t.start();
+    }
+    
+    /**
+     * Calculate and show IPA values.
+     * @param resultsList
+     * @param target
+     * @return true if values are shown.
+     */
+    private boolean showIPAValues(List<InferenceResults> resultsList,
+                                  PGMFactorGraph factorGraph) {
+        if (resultsList.size() == 1) // Just prior probabilities
+            return false; 
+        IPAValueTablePane valuePane = new IPAValueTablePane("IPA Values");
+        valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
+        valuePane.setResultsList(resultsList);
+        // Need to select it
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
+        int index = tableBrowserPane.indexOfComponent(valuePane);
+        if (index >= 0)
+            tableBrowserPane.setSelectedIndex(index);
+        return true;
     }
     
     private void copyVariableValues(List<InferenceResults> resultsList, 
@@ -419,7 +451,8 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             dialog.setPGMNode(variable);
             dialog.setSize(400, 275);
             dialog.setLocationRelativeTo(dialog.getOwner());
-            dialog.setModal(true);
+            // Don't use a modal dialog so that multiple dialogs can be opened for comparison
+//            dialog.setModal(true);
             dialog.setVisible(true);
         }
         
@@ -499,11 +532,11 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 return;
             }
             catch(Exception e) {
+                e.printStackTrace();
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Error in loading observation data: " + e.getMessage(),
                                               "Error in Loading Data",
                                               JOptionPane.ERROR_MESSAGE);
-                e.printStackTrace();
                 return;
             }
         }

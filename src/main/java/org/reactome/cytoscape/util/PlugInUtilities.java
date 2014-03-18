@@ -285,6 +285,10 @@ public class PlugInUtilities {
         }
         return null;
     }  
+    
+    public static String formatProbability(double value) {
+        return String.format("%1.2E", value);
+    }
 
     /**
      * Show an error message

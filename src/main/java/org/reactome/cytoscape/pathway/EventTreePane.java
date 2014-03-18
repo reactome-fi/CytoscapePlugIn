@@ -51,6 +51,7 @@ import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.GeneSetAnnotation;
+import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape.util.SearchDialog;
@@ -384,6 +385,18 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         if (event == null)
             return;
         JPopupMenu popup = new JPopupMenu();
+        // A simple view of the source
+        JMenuItem viewReactomeSource = new JMenuItem("View Reactome Source");
+        viewReactomeSource.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ReactomeSourceView sourceView = new ReactomeSourceView();
+                sourceView.viewReactomeSource(event.dbId,
+                                              eventTree);
+            }
+        });
+        popup.add(viewReactomeSource);
         // Point to Reactome web site
         JMenuItem showDetailed = new JMenuItem("View in Reactome");
         showDetailed.addActionListener(new ActionListener() {

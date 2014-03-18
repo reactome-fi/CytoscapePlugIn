@@ -225,6 +225,11 @@ public class FINetworkGenerator implements NetworkGenerator {
     }
 
     public void jiggleLayout(CyNode anchor, Set<CyNode> partners, CyNetworkView view) {
+        View<CyNode> nodeView = view.getNodeView(anchor);
+        if (nodeView == null)
+            return; // Nothing can be done
+        // Just a sanity check since NodeView should be used in the following statements
+        
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
         String center = nodeTable.getRow(anchor.getSUID()).get("name", String.class);
         List<String> partnerNames = new ArrayList<String>();
@@ -237,6 +242,7 @@ public class FINetworkGenerator implements NetworkGenerator {
         
         // Need to extract new coordinates
         double[] coords = nameToCoord.get(center);
+
         double dx = view.getNodeView(anchor).getVisualProperty(BasicVisualLexicon.NODE_X_LOCATION) - coords[0];
         double dy = view.getNodeView(anchor).getVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION) - coords[1];
 
@@ -250,7 +256,9 @@ public class FINetworkGenerator implements NetworkGenerator {
             double x = coords[0] + dx;
             double y = coords[1] + dy;
             eventHelper.flushPayloadEvents();
-            View<CyNode> nodeView = view.getNodeView(node);
+            nodeView = view.getNodeView(node);
+            if (nodeView == null)
+                continue;
             nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, x);
             nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, y);
         }

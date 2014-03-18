@@ -26,6 +26,7 @@ import javax.swing.SwingConstants;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.pgm.PGMNode;
 import org.reactome.pgm.PGMVariable;
 
@@ -128,11 +129,11 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
             return;
         }
         textLabel.setText("<html><center><b><u>Marginal Probabilities for Variable \"" + variable.getLabel() + "\"</u></b></center></html>");
-        state0Value.setText(formatProbability(values.get(0)));
+        state0Value.setText(PlugInUtilities.formatProbability(values.get(0)));
         if (values.size() > 1)
-            state1Value.setText(formatProbability(values.get(1)));
+            state1Value.setText(PlugInUtilities.formatProbability(values.get(1)));
         if (values.size() > 2)
-            state2Value.setText(formatProbability(values.get(2)));  
+            state2Value.setText(PlugInUtilities.formatProbability(values.get(2)));  
         // Display posterior probabilities if existing
         PGMVariable pVar = (PGMVariable) variable;
         if (pVar.getPosteriorValues() == null || pVar.getPosteriorValues().size() == 0) {
@@ -143,10 +144,6 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
             PosteriorTableModel model = (PosteriorTableModel) posteriorTable.getModel();
             model.setData(pVar);
         }
-    }
-    
-    private String formatProbability(double value) {
-        return String.format("%1.2E", value);
     }
     
     private JLabel addStateLabels(JPanel contentPane,
@@ -217,7 +214,7 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
                 List<String> copy = new ArrayList<String>(values.size());
                 valuesList.add(copy);
                 for (Double value : values)
-                    copy.add(formatProbability(value));
+                    copy.add(PlugInUtilities.formatProbability(value));
             }
             fireTableStructureChanged();
         }
