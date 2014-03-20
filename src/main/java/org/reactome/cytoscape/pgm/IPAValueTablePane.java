@@ -4,6 +4,11 @@
  */
 package org.reactome.cytoscape.pgm;
 
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -11,6 +16,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.BorderFactory;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.event.RowSorterEvent;
+import javax.swing.event.RowSorterListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.model.CyNetwork;
@@ -18,6 +31,18 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.model.CyNetworkView;
+import org.jfree.chart.ChartMouseEvent;
+import org.jfree.chart.ChartMouseListener;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.CategoryAxis;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.labels.StandardCategoryToolTipGenerator;
+import org.jfree.chart.plot.CategoryMarker;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.renderer.category.LineAndShapeRenderer;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.general.DatasetChangeEvent;
 import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -33,6 +58,13 @@ import org.reactome.pgm.PGMVariable;
 public class IPAValueTablePane extends NetworkModulePanel {
     // Cache a map from CyNode to PGMVariable for a very quick access
     private Map<CyNode, PGMVariable> nodeToVar;
+    // Used to draw
+    private DefaultCategoryDataset dataset;
+    private CategoryPlot plot;
+    // For some reason, a single selection fire too many selection event.
+    // Use this member variable to block multiple handling of the same
+    // selection event.
+    List<CyNode> preSelectedNodes;
     
     /**
      * In order to show title, have to set the title in the constructor.
@@ -41,6 +73,135 @@ public class IPAValueTablePane extends NetworkModulePanel {
         super(title);
         hideOtherNodesBox.setVisible(false);
         nodeToVar = new HashMap<CyNode, PGMVariable>();
+        modifyContentPane();
+    }
+    
+    private void modifyContentPane() {
+        // Add a JSplitPane for the table and a new graph pane to display graphs
+        JScrollPane tablePane = null;
+        for (int i = 0; i < getComponentCount(); i++) {
+            Component comp = getComponent(i);
+            if (comp instanceof JScrollPane) {
+                tablePane = (JScrollPane) comp;
+                remove(tablePane);
+                break;
+            }
+        }
+        JPanel graphPane = createGraphPane();
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+                                              graphPane,
+                                              tablePane);
+        splitPane.setResizeWeight(0.50d);
+        add(splitPane, BorderLayout.CENTER);
+    }
+    
+    private JPanel createGraphPane() {
+        dataset = new DefaultCategoryDataset();
+        // Want to control data update by this object self to avoid
+        // conflict exception.
+        dataset.setNotify(false);
+        CategoryAxis axisX = new CategoryAxis("Sample");
+        LineAndShapeRenderer renderer = new LineAndShapeRenderer(true, true);
+        renderer.setBaseToolTipGenerator(new StandardCategoryToolTipGenerator());
+        plot = new CategoryPlot(dataset,
+                                axisX,
+                                new NumberAxis("IPA"),
+                                renderer);
+        plot.setNoDataMessage("Choose one or more variables having no \"INFINITY\" value to plot.");
+        JFreeChart chart = new JFreeChart(plot);
+        ChartPanel panel = new ChartPanel(chart);
+        // For mouse selection
+        panel.addChartMouseListener(new ChartMouseListener() {
+            
+            @Override
+            public void chartMouseMoved(ChartMouseEvent event) {
+            }
+            
+            @Override
+            public void chartMouseClicked(ChartMouseEvent event) {
+                doChartMouseClicked(event);
+            }
+        });
+        
+        panel.setBorder(BorderFactory.createEtchedBorder());
+        panel.setPreferredSize(new Dimension(500, 100));
+        contentTable.getModel().addTableModelListener(new TableModelListener() {
+            
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                resetPlotDataset();
+            }
+        });
+        contentTable.getRowSorter().addRowSorterListener(new RowSorterListener() {
+            
+            @Override
+            public void sorterChanged(RowSorterEvent e) {
+                resetPlotDataset();
+            }
+        });
+        return panel;
+    }
+    
+    private void doChartMouseClicked(ChartMouseEvent event) {
+        
+    }
+    
+    private void resetPlotDataset() {
+        dataset.clear();
+        DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
+        IPAValueTableModel model = (IPAValueTableModel) contentTable.getModel();
+        if (model.isEmpty()) {
+            plot.datasetChanged(event);
+            return;
+        }
+        // In the following, use the model, instead of the table,
+        // to get values. For some reason, the table's data is not correct!
+        // Most likely, this is because the use of a RowSorter.
+        for (int col = 1; col < model.getColumnCount(); col++) {
+            List<Double> values = readValues(model, col);
+            if (values == null)
+                continue;
+            for (int row = 0; row < model.getRowCount(); row++) {
+                int index = contentTable.convertRowIndexToModel(row);
+                String sample = (String) model.getValueAt(index, 0);
+                dataset.addValue(values.get(index),
+                                 model.getColumnName(col),
+                                 sample);
+            }
+        }
+        // The following code is used to control performance:
+        // 16 is arbitrary
+        CategoryAxis axis = plot.getDomainAxis();
+        if (model.getRowCount() > 16) {
+            axis.setTickLabelsVisible(false);
+            axis.setTickMarksVisible(false);
+        }
+        else {
+            axis.setTickLabelsVisible(true);
+            axis.setTickMarksVisible(true);
+        }
+        plot.datasetChanged(event);
+    }
+    
+    /**
+     * Use this helper method to read in a list of double value displayed in a 
+     * table. If there is any INFINITY in the colum, a null is returned.
+     * @param col
+     * @return
+     */
+    private List<Double> readValues(IPAValueTableModel model,
+                                    int col) {
+        List<Double> rtn = new ArrayList<Double>();
+        try {
+            for (int row = 0; row < model.getRowCount(); row ++) {
+                String value = (String) model.getValueAt(row, col);
+                rtn.add(new Double(value));
+            }
+        }
+        catch(NumberFormatException e) {
+            return null;
+        }
+        return rtn;
     }
     
     @Override
@@ -84,6 +245,9 @@ public class IPAValueTablePane extends NetworkModulePanel {
         List<CyNode> selectedNodes = CyTableUtil.getNodesInState(network,
                                                                  CyNetwork.SELECTED,
                                                                  true);
+        if (selectedNodes.equals(preSelectedNodes))
+            return;
+        preSelectedNodes = selectedNodes;
         List<PGMVariable> variables = new ArrayList<PGMVariable>();
         if (selectedNodes != null && selectedNodes.size() > 0) {
             for (CyNode node : selectedNodes) {
@@ -127,6 +291,10 @@ public class IPAValueTablePane extends NetworkModulePanel {
                         if (value1 == null || value1.length() == 0 ||
                             value2 == null || value2.length() == 0)
                             return 0;
+                        if (value1.equals("-INFINITY") || value2.equals("INFINITY"))
+                            return -1;
+                        if (value2.equals("-INFINITY") || value1.equals("INFINITY"))
+                            return 1;
                         Double d1 = new Double(value1);
                         Double d2 = new Double(value2);
                         return d1.compareTo(d2);
@@ -134,15 +302,27 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 };
                 return comparator;
             }
-            
         };
         return sorter;
     }
     
-    
     @Override
     protected void doTableSelection() {
-        // Do nothing for the time being
+        // Need to clear all markers first
+        plot.clearDomainMarkers();
+        int[] rows = contentTable.getSelectedRows();
+        if (rows == null || rows.length == 0) {
+            return;
+        }
+        IPAValueTableModel model = (IPAValueTableModel) contentTable.getModel();
+        for (int i = 0; i < rows.length; i++) {
+            int index = contentTable.convertRowIndexToModel(rows[i]);
+            String sample = (String) model.getValueAt(index, 0);
+            CategoryMarker marker = new CategoryMarker(sample);
+            marker.setStroke(new BasicStroke(2.0f)); // Give it an enough stroke
+            marker.setPaint(Color.BLACK);
+            plot.addDomainMarker(marker);
+        }
     }
 
     private class IPAValueTableModel extends NetworkModuleTableModel {
@@ -155,8 +335,16 @@ public class IPAValueTablePane extends NetworkModulePanel {
             tableData = new ArrayList<String[]>();
         }
         
-        public void setResultsList(List<InferenceResults> resultsList) {
-            this.resultsList = new ArrayList<InferenceResults>(resultsList);
+        public boolean isEmpty() {
+            if (getColumnCount() < 2)
+                return true;
+            if (getColumnName(1).equals(ORIGINAL_HEADERS[1]))
+                return true;
+            return false;
+        }
+        
+        public void setResultsList(List<InferenceResults> resultsList1) {
+            this.resultsList = new ArrayList<InferenceResults>(resultsList1);
             Collections.sort(this.resultsList, new Comparator<InferenceResults>() {
                 public int compare(InferenceResults results1, InferenceResults results2) {
                     String sample1 = results1.getSample();
@@ -178,7 +366,6 @@ public class IPAValueTablePane extends NetworkModulePanel {
                                                ""};
                 tableData.add(values);
             }
-            
             fireTableStructureChanged();
         }
         

@@ -219,13 +219,13 @@ public class ObservationDataHelper {
         SwingUtilities.invokeLater(new Thread() {
             public void run() {
                 layout(varNodeToFactorNode, fiHelper);
-                layout(factorNodeToObsNode, fiHelper);
+                layout(factorNodeToObsNode, fiHelper);        
+                // Need to recall visual style in order to make newly added nodes to have
+                // correct visual styles.
+                FIVisualStyle visStyler = new FactorGraphVisualStyle();
+                visStyler.setVisualStyle(networkView);
             }
         });
-        // Need to recall visual style in order to make newly added nodes to have
-        // correct visual styles.
-        FIVisualStyle visStyler = new FactorGraphVisualStyle();
-        visStyler.setVisualStyle(networkView);
         return variableToSampleToState;
     }
     
