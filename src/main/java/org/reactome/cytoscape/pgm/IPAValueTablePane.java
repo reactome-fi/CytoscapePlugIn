@@ -9,6 +9,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -37,6 +38,8 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.entity.CategoryItemEntity;
+import org.jfree.chart.entity.ChartEntity;
 import org.jfree.chart.labels.StandardCategoryToolTipGenerator;
 import org.jfree.chart.plot.CategoryMarker;
 import org.jfree.chart.plot.CategoryPlot;
@@ -64,7 +67,9 @@ public class IPAValueTablePane extends NetworkModulePanel {
     // For some reason, a single selection fire too many selection event.
     // Use this member variable to block multiple handling of the same
     // selection event.
-    List<CyNode> preSelectedNodes;
+    private List<CyNode> preSelectedNodes;
+    // To control selection synchronization
+    private boolean isFromMouse;
     
     /**
      * In order to show title, have to set the title in the constructor.
@@ -101,7 +106,10 @@ public class IPAValueTablePane extends NetworkModulePanel {
         // conflict exception.
         dataset.setNotify(false);
         CategoryAxis axisX = new CategoryAxis("Sample");
-        LineAndShapeRenderer renderer = new LineAndShapeRenderer(true, true);
+        // Draw lines but not shapes. However, this is user configurable
+        // in the fly. So the choice is not so critical.
+        LineAndShapeRenderer renderer = new LineAndShapeRenderer(true, 
+                                                                 false);
         renderer.setBaseToolTipGenerator(new StandardCategoryToolTipGenerator());
         plot = new CategoryPlot(dataset,
                                 axisX,
@@ -143,7 +151,44 @@ public class IPAValueTablePane extends NetworkModulePanel {
     }
     
     private void doChartMouseClicked(ChartMouseEvent event) {
-        
+        ChartEntity entity = event.getEntity();
+        if (entity == null || !(entity instanceof CategoryItemEntity))
+            return;
+        CategoryItemEntity caEntity = (CategoryItemEntity) entity;
+        plot.clearDomainMarkers();
+        CategoryMarker marker = createMarker(caEntity.getColumnKey());
+        plot.addDomainMarker(marker);
+        // Need to select the row in the table
+        isFromMouse = true;
+        selectSampleInTable((String)caEntity.getColumnKey());
+        isFromMouse = false;
+    }
+    
+    private void selectSampleInTable(String sample) {
+        contentTable.clearSelection();
+        // Find the row index in the table model
+        IPAValueTableModel model = (IPAValueTableModel) contentTable.getModel();
+        int selected = -1;
+        for (int i = 0; i < model.getRowCount(); i++) {
+            String tmp = (String) model.getValueAt(i, 0);
+            if (tmp.equals(sample)) {
+                selected = i;
+                break;
+            }
+        }
+        if (selected == -1)
+            return;
+        int index = contentTable.convertRowIndexToView(selected);
+        contentTable.setRowSelectionInterval(index, index);
+        Rectangle rect = contentTable.getCellRect(index, 0, false);
+        contentTable.scrollRectToVisible(rect);
+    }
+    
+    private CategoryMarker createMarker(Comparable<?> category) {
+        CategoryMarker marker = new CategoryMarker(category);
+        marker.setStroke(new BasicStroke(2.0f)); // Give it an enough stroke
+        marker.setPaint(Color.BLACK);
+        return marker;
     }
     
     private void resetPlotDataset() {
@@ -308,6 +353,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
     
     @Override
     protected void doTableSelection() {
+        if (isFromMouse)
+            return; // No need
         // Need to clear all markers first
         plot.clearDomainMarkers();
         int[] rows = contentTable.getSelectedRows();
@@ -318,9 +365,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
         for (int i = 0; i < rows.length; i++) {
             int index = contentTable.convertRowIndexToModel(rows[i]);
             String sample = (String) model.getValueAt(index, 0);
-            CategoryMarker marker = new CategoryMarker(sample);
-            marker.setStroke(new BasicStroke(2.0f)); // Give it an enough stroke
-            marker.setPaint(Color.BLACK);
+            CategoryMarker marker = createMarker(sample);
             plot.addDomainMarker(marker);
         }
     }
