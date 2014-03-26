@@ -20,7 +20,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.AbstractTableModel;
@@ -41,8 +40,8 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
     private JLabel state1Value;
     private JLabel state2Value;
     // To display posterior probabilities
-    private JTable posteriorTable;
     private JPanel posteriorPane;
+    private PlotTablePanel posteriorValuePane;
     
     /**
      * @param owner
@@ -95,7 +94,10 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
         JLabel label = new JLabel("Marginal probabilities in samples:");
         posteriorPane.add(label, BorderLayout.NORTH);
         
-        posteriorTable = new JTable();
+        posteriorValuePane = new PlotTablePanel("Probability");
+        posteriorPane.add(posteriorValuePane, BorderLayout.CENTER);
+        
+        JTable posteriorTable = new JTable();
         PosteriorTableModel model = new PosteriorTableModel();
         posteriorTable.setModel(model);
         TableRowSorter<PosteriorTableModel> sorter = new TableRowSorter<PosteriorTableModel>() {
@@ -116,7 +118,7 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
         };
         sorter.setModel(model);
         posteriorTable.setRowSorter(sorter);
-        posteriorPane.add(new JScrollPane(posteriorTable), BorderLayout.CENTER);
+        posteriorValuePane.setTable(posteriorTable);
     }
     
     @Override
@@ -141,7 +143,7 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
         }
         else {
             posteriorPane.setVisible(true);
-            PosteriorTableModel model = (PosteriorTableModel) posteriorTable.getModel();
+            PosteriorTableModel model = (PosteriorTableModel) posteriorValuePane.getTableModel();
             model.setData(pVar);
         }
     }

@@ -170,10 +170,8 @@ public class ModuleBasedSurvivalAnalysisHelper
     }
     
     private void doSurvivalAnalysis(Map<String, Integer> nodeToModule,
-                                    Integer selectedModule, String scoreMatrixText) throws IOException
-                                    {   
-        //TODO TODO TODO
-        //TODO
+                                    Integer selectedModule, 
+                                    String scoreMatrixText) throws IOException {   
         this.scoreMatrix = scoreMatrixText;
         SurvivalInfoDialog dialog = new SurvivalInfoDialog();
         dialog.setLocationRelativeTo(dialog.getOwner());
