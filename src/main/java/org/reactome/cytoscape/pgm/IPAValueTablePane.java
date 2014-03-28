@@ -6,6 +6,9 @@ package org.reactome.cytoscape.pgm;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -15,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.table.TableRowSorter;
 
@@ -74,6 +79,31 @@ public class IPAValueTablePane extends NetworkModulePanel {
         initNodeToVarMap();
     }
     
+    
+    @Override
+    protected void doContentTablePopup(MouseEvent e) {
+        JPopupMenu popupMenu = createExportAnnotationPopup();
+        final IPAValueTableModel tableModel = (IPAValueTableModel) contentPane.getTableModel();
+        final boolean hidePValues = tableModel.hidePValues;
+        String text = null;
+        if (hidePValues)
+            text = "Show Column(s) for PValues";
+        else
+            text = "Hide Column(s) for PValues";
+        JMenuItem item = new JMenuItem(text);
+        item.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                tableModel.setHidePValues(!hidePValues);
+                contentPane.setPValueAxisVisible(hidePValues);
+            }
+        });
+        popupMenu.add(item);
+        popupMenu.show(contentTable, 
+                       e.getX(), 
+                       e.getY());
+    }
+
     private void initNodeToVarMap() {
         nodeToVar.clear();
         PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(view.getModel());
@@ -177,6 +207,10 @@ public class IPAValueTablePane extends NetworkModulePanel {
 
     private class IPAValueTableModel extends NetworkModuleTableModel {
         private final String[] ORIGINAL_HEADERS = new String[]{"Sample", "Select Nodes to View"};
+        // Cache the list of variables for different view
+        private List<PGMVariable> variables;
+        // A flag to indicate if p-values should be displayed
+        private boolean hidePValues;
         
         public IPAValueTableModel() {
             columnHeaders = ORIGINAL_HEADERS; // Just some test data
@@ -194,37 +228,31 @@ public class IPAValueTablePane extends NetworkModulePanel {
             fireTableStructureChanged();
         }
         
+        public void setHidePValues(boolean hidePValues) {
+            this.hidePValues = hidePValues;
+            resetData();
+        }
+        
         public void setVariables(List<PGMVariable> variables) {
-            if (variables == null || variables.size() == 0) {
-                columnHeaders = ORIGINAL_HEADERS;
-                // Refresh the tableData
-                for (String[] values : tableData) {
-                    for (int i = 1; i < values.length; i++)
-                        values[i] = "";
-                }
-                fireTableStructureChanged();
-                return;
+            this.variables = variables;
+            if (variables != null) {
+                Collections.sort(variables, new Comparator<PGMVariable>() {
+                    public int compare(PGMVariable var1, PGMVariable var2) {
+                        return var1.getLabel().compareTo(var2.getLabel());
+                    }
+                });
             }
+            resetData();
+        }
+        
+        private void resetDataWithPValues(List<String> sampleList) {
             columnHeaders = new String[variables.size() * 2 + 1];
             columnHeaders[0] = "Sample";
-            Collections.sort(variables, new Comparator<PGMVariable>() {
-                public int compare(PGMVariable var1, PGMVariable var2) {
-                    return var1.getLabel().compareTo(var2.getLabel());
-                }
-            });
             for (int i = 0; i < variables.size(); i++) {
                 String label = variables.get(i).getLabel();
                 columnHeaders[2 * i + 1] = label;
                 columnHeaders[2 * i + 2] = label + "(pvalue)";
             }
-            // Get a list of all samples
-            Set<String> samples = new HashSet<String>();
-            for (PGMVariable var : variables) {
-                samples.addAll(var.getPosteriorValues().keySet());
-            }
-            List<String> sampleList = new ArrayList<String>(samples);
-            Collections.sort(sampleList);
-            tableData.clear();
             // In order to caclualte p-values
             Map<PGMVariable, List<Double>> varToRandomIPAs = generateRandomIPAs(variables);
             for (int i = 0; i < sampleList.size(); i++) {
@@ -243,6 +271,55 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 }
                 tableData.add(rowData);
             }
+        }
+        
+        private void resetDataWithoutPValues(List<String> sampleList) {
+            columnHeaders = new String[variables.size() + 1];
+            columnHeaders[0] = "Sample";
+            for (int i = 0; i < variables.size(); i++) {
+                String label = variables.get(i).getLabel();
+                columnHeaders[i + 1] = label;
+            }
+            for (int i = 0; i < sampleList.size(); i++) {
+                String[] rowData = new String[variables.size() + 1];
+                rowData[0] = sampleList.get(i);
+                for (int j = 0; j < variables.size(); j++) {
+                    PGMVariable var = variables.get(j);
+                    Map<String, List<Double>> posteriors = var.getPosteriorValues();
+                    List<Double> postProbs = posteriors.get(rowData[0]);
+                    double ipa = calculateIPA(var.getValues(),
+                                              postProbs);
+                    rowData[j + 1] = PlugInUtilities.formatProbability(ipa);
+                }
+                tableData.add(rowData);
+            }
+        }
+        
+        private void resetData() {
+            if (variables == null || variables.size() == 0) {
+                columnHeaders = ORIGINAL_HEADERS;
+                // Refresh the tableData
+                for (String[] values : tableData) {
+                    for (int i = 1; i < values.length; i++)
+                        values[i] = "";
+                }
+                fireTableStructureChanged();
+                return;
+            }
+            // Get a list of all samples
+            Set<String> samples = new HashSet<String>();
+            for (PGMVariable var : variables) {
+                samples.addAll(var.getPosteriorValues().keySet());
+            }
+            List<String> sampleList = new ArrayList<String>(samples);
+            Collections.sort(sampleList);
+            tableData.clear();
+            
+            if (hidePValues)
+                resetDataWithoutPValues(sampleList);
+            else
+                resetDataWithPValues(sampleList);
+            
             fireTableStructureChanged();
         }
         

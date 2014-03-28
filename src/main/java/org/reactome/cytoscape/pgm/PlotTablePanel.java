@@ -30,6 +30,7 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.entity.CategoryItemEntity;
 import org.jfree.chart.entity.ChartEntity;
 import org.jfree.chart.labels.StandardCategoryToolTipGenerator;
@@ -119,6 +120,15 @@ public class PlotTablePanel extends JPanel {
         return contentTable.getModel();
     }
     
+    /**
+     * Set the p-value axis visible or invisible.
+     * @param isVisible
+     */
+    public void setPValueAxisVisible(boolean isVisible) {
+        ValueAxis pvalueAxis = plot.getRangeAxis(1);
+        pvalueAxis.setVisible(isVisible);
+    }
+    
     private void doTableSelection() {
         if (isFromMouse)
             return; // No need
@@ -163,6 +173,7 @@ public class PlotTablePanel extends JPanel {
                                                                       false);
             renderer1.setBaseToolTipGenerator(new StandardCategoryToolTipGenerator());
             plot.setRenderer(1, renderer1);
+            plot.mapDatasetToRangeAxis(1, 1);
         }
         
         plot.setNoDataMessage("Select one or more variables having no \"INFINITY\" value to plot.");
