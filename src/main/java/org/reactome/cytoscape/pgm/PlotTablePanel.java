@@ -47,6 +47,8 @@ import org.jfree.data.general.DatasetChangeEvent;
 public class PlotTablePanel extends JPanel {
     // Used to draw
     private DefaultCategoryDataset dataset;
+    // For p-values
+    private DefaultCategoryDataset pValueDataset;
     private CategoryPlot plot;
     // To control selection synchronization
     private boolean isFromMouse;
@@ -57,11 +59,14 @@ public class PlotTablePanel extends JPanel {
     /**
      * Default constructor.
      */
-    public PlotTablePanel(String axisName) {
-        init(axisName);
+    public PlotTablePanel(String axisName,
+                          boolean needPValuePlot) {
+        init(axisName, 
+             needPValuePlot);
     }
-    
-    private void init(String axisName) {
+
+    private void init(String axisName,
+                      boolean needPValuePlot) {
         setLayout(new BorderLayout());
         
         JSplitPane jsp = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -69,7 +74,7 @@ public class PlotTablePanel extends JPanel {
         jsp.setDividerLocation(150); // Give the plot 150 px initially
         add(jsp, BorderLayout.CENTER);
         
-        JPanel graphPane = createGraphPane(axisName);
+        JPanel graphPane = createGraphPane(axisName, needPValuePlot);
         jsp.setLeftComponent(graphPane);
         // Should be replaced by an actual table
         contentTable = new JTable();
@@ -132,7 +137,8 @@ public class PlotTablePanel extends JPanel {
         }
     }
     
-    private JPanel createGraphPane(String axisName) {
+    private JPanel createGraphPane(String axisName,
+                                   boolean needPValuePlot) {
         dataset = new DefaultCategoryDataset();
         // Want to control data update by this object self to avoid
         // conflict exception.
@@ -147,7 +153,20 @@ public class PlotTablePanel extends JPanel {
                                 axisX,
                                 new NumberAxis(axisName),
                                 renderer);
-        plot.setNoDataMessage("Choose one or more variables having no \"INFINITY\" value to plot.");
+        
+        if (needPValuePlot) {
+            pValueDataset = new DefaultCategoryDataset();
+            plot.setDataset(1, pValueDataset);
+            NumberAxis pValueAxis = new NumberAxis("P-Value");
+            plot.setRangeAxis(1, pValueAxis);
+            LineAndShapeRenderer renderer1 = new LineAndShapeRenderer(true, 
+                                                                      false);
+            renderer1.setBaseToolTipGenerator(new StandardCategoryToolTipGenerator());
+            plot.setRenderer(1, renderer1);
+        }
+        
+        plot.setNoDataMessage("Select one or more variables having no \"INFINITY\" value to plot.");
+        
         JFreeChart chart = new JFreeChart(plot);
         ChartPanel panel = new ChartPanel(chart);
         // For mouse selection
@@ -211,12 +230,9 @@ public class PlotTablePanel extends JPanel {
     
     private void resetPlotDataset() {
         dataset.clear();
-        DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
+        if (pValueDataset != null)
+            pValueDataset.clear();
         TableModel model = contentTable.getModel();
-        if (model.getRowCount() == 0) {
-            plot.datasetChanged(event);
-            return;
-        }
         // In the following, use the model, instead of the table,
         // to get values. For some reason, the table's data is not correct!
         // Most likely, this is because the use of a RowSorter.
@@ -224,12 +240,18 @@ public class PlotTablePanel extends JPanel {
             List<Double> values = readValues(model, col);
             if (values == null)
                 continue;
+            String colName = model.getColumnName(col);
             for (int row = 0; row < model.getRowCount(); row++) {
                 int index = contentTable.convertRowIndexToModel(row);
                 String sample = (String) model.getValueAt(index, 0);
-                dataset.addValue(values.get(index),
-                                 model.getColumnName(col),
-                                 sample);
+                if (colName.endsWith("(pvalue)"))
+                    pValueDataset.addValue(values.get(index),
+                                           colName,
+                                           sample);
+                else
+                    dataset.addValue(values.get(index),
+                                     colName,
+                                     sample);
             }
         }
         // The following code is used to control performance:
@@ -243,7 +265,12 @@ public class PlotTablePanel extends JPanel {
             axis.setTickLabelsVisible(true);
             axis.setTickMarksVisible(true);
         }
+        DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
         plot.datasetChanged(event);
+        if (pValueDataset != null) {
+            DatasetChangeEvent pValueEvent = new DatasetChangeEvent(this, pValueDataset);
+            plot.datasetChanged(pValueEvent);
+        }
     }
     
     /**

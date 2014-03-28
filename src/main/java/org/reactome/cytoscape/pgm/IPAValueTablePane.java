@@ -10,8 +10,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JScrollPane;
 import javax.swing.table.TableRowSorter;
@@ -24,7 +26,6 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.pgm.InferenceResults;
 import org.reactome.pgm.PGMFactorGraph;
 import org.reactome.pgm.PGMVariable;
 
@@ -62,7 +63,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 break;
             }
         }
-        contentPane = new PlotTablePanel("IPA");
+        contentPane = new PlotTablePanel("IPA", true);
         contentPane.setTable(contentTable);
         add(contentPane, BorderLayout.CENTER);
     }
@@ -128,9 +129,9 @@ public class IPAValueTablePane extends NetworkModulePanel {
         model.setVariables(variables);
     }
 
-    public void setResultsList(List<InferenceResults> resultsList) {
+    public void setSamples(List<String> samples) {
         IPAValueTableModel model = (IPAValueTableModel) contentPane.getTableModel();
-        model.setResultsList(resultsList);
+        model.setSamples(samples);
     }
     
     /* (non-Javadoc)
@@ -176,34 +177,17 @@ public class IPAValueTablePane extends NetworkModulePanel {
 
     private class IPAValueTableModel extends NetworkModuleTableModel {
         private final String[] ORIGINAL_HEADERS = new String[]{"Sample", "Select Nodes to View"};
-        // Cache the whole list in order for showing selected variables
-        private List<InferenceResults> resultsList;
         
         public IPAValueTableModel() {
             columnHeaders = ORIGINAL_HEADERS; // Just some test data
             tableData = new ArrayList<String[]>();
         }
         
-        public void setResultsList(List<InferenceResults> resultsList1) {
-            this.resultsList = new ArrayList<InferenceResults>(resultsList1);
-            Collections.sort(this.resultsList, new Comparator<InferenceResults>() {
-                public int compare(InferenceResults results1, InferenceResults results2) {
-                    String sample1 = results1.getSample();
-                    String sample2 = results2.getSample();
-                    // Make sure an InferenceResults having no sample assigned is the first one always.
-                    if (sample1 == null)
-                        return -1;
-                    if (sample2 == null)
-                        return 1;
-                    return sample1.compareTo(sample2);
-                }
-            });
-            
+        public void setSamples(List<String> samples) {
+            Collections.sort(samples);
             tableData.clear();
-            for (InferenceResults results : this.resultsList) {
-                if (results.getSample() == null)
-                    continue;
-                String[] values = new String[]{results.getSample(),
+            for (String sample : samples) {
+                String[] values = new String[]{sample,
                                                ""};
                 tableData.add(values);
             }
@@ -221,36 +205,119 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 fireTableStructureChanged();
                 return;
             }
-            columnHeaders = new String[variables.size() + 1];
+            columnHeaders = new String[variables.size() * 2 + 1];
             columnHeaders[0] = "Sample";
-            for (int i = 0; i < variables.size(); i++) 
-                columnHeaders[i + 1] = variables.get(i).getLabel();
-            // Fill up the data
-            // The first one should be the prior probability
-            InferenceResults prior = resultsList.get(0);
-            Map<String, List<Double>> priorProbs = prior.getResults();
+            Collections.sort(variables, new Comparator<PGMVariable>() {
+                public int compare(PGMVariable var1, PGMVariable var2) {
+                    return var1.getLabel().compareTo(var2.getLabel());
+                }
+            });
+            for (int i = 0; i < variables.size(); i++) {
+                String label = variables.get(i).getLabel();
+                columnHeaders[2 * i + 1] = label;
+                columnHeaders[2 * i + 2] = label + "(pvalue)";
+            }
+            // Get a list of all samples
+            Set<String> samples = new HashSet<String>();
+            for (PGMVariable var : variables) {
+                samples.addAll(var.getPosteriorValues().keySet());
+            }
+            List<String> sampleList = new ArrayList<String>(samples);
+            Collections.sort(sampleList);
             tableData.clear();
-            for (int i = 1; i < resultsList.size(); i++) {
-                InferenceResults posterior = resultsList.get(i);
-                Map<String, List<Double>> postProbs = posterior.getResults();
-                String[] rowData = new String[variables.size() + 1];
-                rowData[0] = posterior.getSample();
+            // In order to caclualte p-values
+            Map<PGMVariable, List<Double>> varToRandomIPAs = generateRandomIPAs(variables);
+            for (int i = 0; i < sampleList.size(); i++) {
+                String[] rowData = new String[variables.size() * 2 + 1];
+                rowData[0] = sampleList.get(i);
                 for (int j = 0; j < variables.size(); j++) {
-                    double ipa = calculateIPA(variables.get(j),
-                                              priorProbs,
+                    PGMVariable var = variables.get(j);
+                    Map<String, List<Double>> posteriors = var.getPosteriorValues();
+                    List<Double> postProbs = posteriors.get(rowData[0]);
+                    double ipa = calculateIPA(var.getValues(),
                                               postProbs);
-                    rowData[j + 1] = PlugInUtilities.formatProbability(ipa);
+                    rowData[2 * j + 1] = PlugInUtilities.formatProbability(ipa);
+                    List<Double> randomIPAs = varToRandomIPAs.get(var);
+                    String pvalue = calculatePValue(ipa, randomIPAs);
+                    rowData[2 * j + 2] = pvalue;
                 }
                 tableData.add(rowData);
             }
             fireTableStructureChanged();
         }
         
-        private double calculateIPA(PGMVariable variable,
-                                    Map<String, List<Double>> varToPriorProbs,
-                                    Map<String, List<Double>> varToPostProbs) {
-            List<Double> priorProbs = varToPriorProbs.get(variable.getId());
-            List<Double> postProbs = varToPostProbs.get(variable.getId());
+        /**
+         * Split the random values into two parts: one for positive and another for negative.
+         * P-values should be calculated based on these two parts. In other words, this should
+         * be a two-tailed test.
+         * @param value
+         * @param randomValues
+         * @return
+         */
+        private String calculatePValue(double value, List<Double> randomValues) {
+            if (value == 0.0d)
+                return "1.0"; // Always
+            if (value > 0.0d) {
+                return calculatePValueRightTail(value, randomValues);
+            }
+            else {
+                return calculatePValueLeftTail(value, randomValues);
+            }
+        }
+        
+        private String calculatePValueRightTail(double value, List<Double> randomValues) {
+            // Values in copy should be sorted already.
+            int index = -1;
+            for (int i = randomValues.size() - 1; i >= 0; i--) {
+                if (randomValues.get(i) < value) {
+                    index = i;
+                    break;
+                }
+            }
+            // In order to plot and sort, use 0.0 for "<"
+//            if (index == randomValues.size() - 1)
+//                return "<" + (1.0d / randomValues.size());
+            if (index == -1)
+                return "1.0";
+            // Move the count one position ahead
+            return (double) (randomValues.size() - index - 1) / randomValues.size() + "";
+        }
+        
+        private String calculatePValueLeftTail(double value, List<Double> randomValues) {
+            // Values in copy should be sorted already.
+            int index = -1;
+            for (int i = 0; i < randomValues.size(); i++) {
+                if (randomValues.get(i) > value) {
+                    index = i;
+                    break;
+                }
+            }
+            // In order to plot and sort, use 0.0 for "<"
+//            if (index == 0)
+//                return "<" + (1.0d / randomValues.size());
+            if (index == -1)
+                return "1.0";
+            return (double) index / randomValues.size() + "";
+        }
+        
+        private Map<PGMVariable, List<Double>> generateRandomIPAs(List<PGMVariable> variables) {
+            Map<PGMVariable, List<Double>> varToRandomIPAs = new HashMap<PGMVariable, List<Double>>();
+            for (PGMVariable var : variables) {
+                List<Double> ipas = new ArrayList<Double>();
+                varToRandomIPAs.put(var, ipas);
+                Map<String, List<Double>> randomPosts = var.getRandomPosteriorValues();
+                for (String sample : randomPosts.keySet()) {
+                    double ipa = calculateIPA(var.getValues(),
+                                              randomPosts.get(sample));
+                    ipas.add(ipa);
+                }
+                Collections.sort(ipas);
+            }
+            return varToRandomIPAs;
+        }
+        
+        private double calculateIPA(List<Double> priorProbs,
+                                    List<Double> postProbs) {
             if (priorProbs == null || postProbs == null || priorProbs.size() < 3 || postProbs.size() < 3)
                 return 0.0d;
             List<Double> ratios = new ArrayList<Double>(3);

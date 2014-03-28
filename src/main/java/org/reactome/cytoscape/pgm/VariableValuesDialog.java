@@ -94,7 +94,7 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
         JLabel label = new JLabel("Marginal probabilities in samples:");
         posteriorPane.add(label, BorderLayout.NORTH);
         
-        posteriorValuePane = new PlotTablePanel("Probability");
+        posteriorValuePane = new PlotTablePanel("Probability", false);
         posteriorPane.add(posteriorValuePane, BorderLayout.CENTER);
         
         JTable posteriorTable = new JTable();

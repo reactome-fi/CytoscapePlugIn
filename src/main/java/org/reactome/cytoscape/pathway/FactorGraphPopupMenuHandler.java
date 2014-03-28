@@ -6,6 +6,7 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -229,13 +230,20 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
      * @param target
      * @return true if values are shown.
      */
-    private boolean showIPAValues(List<InferenceResults> resultsList,
-                                  PGMFactorGraph factorGraph) {
+    private boolean showIPAValues(List<InferenceResults> resultsList) {
         if (resultsList.size() == 1) // Just prior probabilities
             return false; 
         IPAValueTablePane valuePane = new IPAValueTablePane("IPA Values");
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        valuePane.setResultsList(resultsList);
+        List<String> samples = new ArrayList<String>();
+        // Filter out random samples
+        for (InferenceResults results : resultsList) {
+            String sample = results.getSample();
+            if (sample == null || sample.startsWith(ObservationDataHelper.RANDOM_SAMPLE_PREFIX))
+                continue;
+            samples.add(sample);
+        }
+        valuePane.setSamples(samples);
         // Need to select it
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
@@ -264,9 +272,12 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             varIdToProbs = results.getResults();
             for (PGMVariable var : target.getVariables()) {
                 List<Double> probs = varIdToProbs.get(var.getId());
-                if (probs == null)
+                if (probs == null) 
                     continue;
-                var.addPosteriorValues(sample, probs);
+                if (sample.startsWith(ObservationDataHelper.RANDOM_SAMPLE_PREFIX))
+                    var.addRandomPosteriorValues(sample, probs);
+                else
+                    var.addPosteriorValues(sample, probs);
             }
         }
     }
@@ -298,7 +309,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             // my gut feeling.
             copyVariableValues(inferenceResults,
                                fg);
-            showIPAValues(inferenceResults, fg);
+            showIPAValues(inferenceResults);
             frame.getGlassPane().setVisible(false);
             if (needFinishDialog) {
                 String message = "Inference has finished successfully. You may use \"View Marginal Probabilities\"\n" + 
@@ -500,9 +511,8 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             return new CyMenuItem(menuItem, 1001.0f);
         }
         
-        @SuppressWarnings("unchecked")
-        private void loadObservationData(CyNetworkView netView) {
-            PGMFactorGraph pfg = NetworkToFactorGraphMap.getMap().get(netView.getModel());
+        private void loadObservationData(final CyNetworkView netView) {
+            final PGMFactorGraph pfg = NetworkToFactorGraphMap.getMap().get(netView.getModel());
             if (pfg == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Cannot find a matched factor graph for the network!", 
@@ -510,7 +520,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                               JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            ObservationDataLoadDialog dialog = new ObservationDataLoadDialog();
+            final ObservationDataLoadDialog dialog = new ObservationDataLoadDialog();
             dialog.setLocationRelativeTo(dialog.getOwner());
             dialog.setModal(true);
             dialog.setVisible(true);
@@ -518,20 +528,45 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 return;
             if (dialog.getDNAFile() == null && dialog.getGeneExpFile() == null)
                 return;
+            Thread t = new Thread() {
+                public void run() {
+                    loadObservationData(pfg, netView, dialog);
+                }
+            };
+            t.start();
+        }
+
+        @SuppressWarnings("unchecked")
+        private void loadObservationData(PGMFactorGraph pfg,
+                                         CyNetworkView netView,
+                                         ObservationDataLoadDialog dialog) {
             ObservationDataHelper helper = new ObservationDataHelper(pfg, netView);
+            JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
             try {
+                ProgressPane progressPane = new ProgressPane();
+                progressPane.setTitle("Load Observation Data");
+                progressPane.setIndeterminate(true);
+                frame.setGlassPane(progressPane);
+                frame.getGlassPane().setVisible(true);
                 Map<PGMVariable, Map<String, Integer>> dnaVarToSampleToState = null;
-                if (dialog.getDNAFile() != null)
+                if (dialog.getDNAFile() != null) {
+                    progressPane.setText("Loading CNV data...");
                     dnaVarToSampleToState = helper.loadData(dialog.getDNAFile(), 
                                                             ObservationType.CNV,
                                                             dialog.getDNAThresholdValues());
+                }
                 Map<PGMVariable, Map<String, Integer>> geneExpVarToSampleToState = null;
-                if (dialog.getGeneExpFile() != null)
+                if (dialog.getGeneExpFile() != null) {
+                    progressPane.setText("Loading mRNA expression data...");
                     geneExpVarToSampleToState = helper.loadData(dialog.getGeneExpFile(),
                                                                 ObservationType.GENE_EXPRESSION,
                                                                 dialog.getGeneExpThresholdValues());
-                if (dnaVarToSampleToState == null && geneExpVarToSampleToState == null)
+                }
+                if (dnaVarToSampleToState == null && geneExpVarToSampleToState == null) {
+                    frame.getGlassPane().setVisible(false);
                     return;
+                }
+                progressPane.setText("Generating observations...");
                 List<Observation> observations = null;
                 if (dnaVarToSampleToState != null && geneExpVarToSampleToState != null)
                     observations = helper.generateObservations(dnaVarToSampleToState,
@@ -540,11 +575,25 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                     observations = helper.generateObservations(dnaVarToSampleToState);
                 else if (geneExpVarToSampleToState != null)
                     observations = helper.generateObservations(geneExpVarToSampleToState);
-                pfg.setObservations(observations);    
-                // Give the user an information
-                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                pfg.setObservations(observations);  
+//                System.out.println("Real data:");
+//                checkObservations(observations);
+                progressPane.setText("Generating random data...");
+                List<Observation> randomData = null;
+                if (dnaVarToSampleToState != null && geneExpVarToSampleToState != null)
+                    randomData = helper.generateRandomObservations(dnaVarToSampleToState,
+                                                                   geneExpVarToSampleToState);
+                else if (dnaVarToSampleToState != null)
+                    randomData = helper.generateRandomObservations(dnaVarToSampleToState);
+                else if (geneExpVarToSampleToState != null)
+                    randomData = helper.generateRandomObservations(geneExpVarToSampleToState);
+//                System.out.println("\nRandom data:");
+//                checkObservations(randomData);
+                pfg.setRandomObservations(randomData);
+                frame.getGlassPane().setVisible(false);
+                JOptionPane.showMessageDialog(frame,
                                               "The data has been loaded successfully.",
-                                              "Data Loaded",
+                                              "Loading Data",
                                               JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
@@ -554,11 +603,24 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                               "Error in loading observation data: " + e.getMessage(),
                                               "Error in Loading Data",
                                               JOptionPane.ERROR_MESSAGE);
+                if (frame.getGlassPane() != null)
+                    frame.getGlassPane().setVisible(false);
                 return;
             }
         }
-        
     }
+    
+//    /**
+//     * This method is used for debugging purpose.
+//     * @param observations
+//     */
+//    private void checkObservations(List<Observation> observations) {
+//        for (Observation observation : observations) {
+//            System.out.println(observation.getSample());
+//            Map<String, Integer> obsToState = observation.getObserved();
+//            System.out.println(obsToState);
+//        }
+//    }
     
     private class ConvertToDiagramMenu implements CyNetworkViewContextMenuFactory {
 
