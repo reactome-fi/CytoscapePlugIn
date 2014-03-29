@@ -46,10 +46,15 @@ import org.jfree.data.general.DatasetChangeEvent;
  *
  */
 public class PlotTablePanel extends JPanel {
+    private final String EMPTY_DATA_MESSAGE = "Select one or more variables having no \"INFINITY\" value to plot.";
+    private final String TOO_MANY_LINES_MESSAGE = "Too many columns in the table to draw lines!";
+    private final int MAXIMUM_COLUMNS_FOR_PLOT = 13;
+    static final String FDR_COL_NAME_AFFIX = "(FDR)";
+    static final String P_VALUE_COL_NAME_AFFIX = "(pValue)";
     // Used to draw
     private DefaultCategoryDataset dataset;
     // For p-values
-    private DefaultCategoryDataset pValueDataset;
+    private DefaultCategoryDataset fdrDataset;
     private CategoryPlot plot;
     // To control selection synchronization
     private boolean isFromMouse;
@@ -61,9 +66,9 @@ public class PlotTablePanel extends JPanel {
      * Default constructor.
      */
     public PlotTablePanel(String axisName,
-                          boolean needPValuePlot) {
+                          boolean needFDRAxis) {
         init(axisName, 
-             needPValuePlot);
+             needFDRAxis);
     }
 
     private void init(String axisName,
@@ -121,12 +126,15 @@ public class PlotTablePanel extends JPanel {
     }
     
     /**
-     * Set the p-value axis visible or invisible.
+     * Set the FDR axis visible or invisible. This method
+     * cannot be called even though a p-value axis is not initialized
+     * using a false parameter in its object's constructor.
      * @param isVisible
      */
-    public void setPValueAxisVisible(boolean isVisible) {
-        ValueAxis pvalueAxis = plot.getRangeAxis(1);
-        pvalueAxis.setVisible(isVisible);
+    public void setFDRAxisVisible(boolean isVisible) {
+        ValueAxis fdrAxis = plot.getRangeAxis(1);
+        if (fdrAxis != null)
+            fdrAxis.setVisible(isVisible);
     }
     
     private void doTableSelection() {
@@ -165,9 +173,9 @@ public class PlotTablePanel extends JPanel {
                                 renderer);
         
         if (needPValuePlot) {
-            pValueDataset = new DefaultCategoryDataset();
-            plot.setDataset(1, pValueDataset);
-            NumberAxis pValueAxis = new NumberAxis("P-Value");
+            fdrDataset = new DefaultCategoryDataset();
+            plot.setDataset(1, fdrDataset);
+            NumberAxis pValueAxis = new NumberAxis("p-Value/FDR");
             plot.setRangeAxis(1, pValueAxis);
             LineAndShapeRenderer renderer1 = new LineAndShapeRenderer(true, 
                                                                       false);
@@ -176,7 +184,7 @@ public class PlotTablePanel extends JPanel {
             plot.mapDatasetToRangeAxis(1, 1);
         }
         
-        plot.setNoDataMessage("Select one or more variables having no \"INFINITY\" value to plot.");
+        plot.setNoDataMessage(EMPTY_DATA_MESSAGE);
         
         JFreeChart chart = new JFreeChart(plot);
         ChartPanel panel = new ChartPanel(chart);
@@ -241,45 +249,52 @@ public class PlotTablePanel extends JPanel {
     
     private void resetPlotDataset() {
         dataset.clear();
-        if (pValueDataset != null)
-            pValueDataset.clear();
+        if (fdrDataset != null)
+            fdrDataset.clear();
         TableModel model = contentTable.getModel();
-        // In the following, use the model, instead of the table,
-        // to get values. For some reason, the table's data is not correct!
-        // Most likely, this is because the use of a RowSorter.
-        for (int col = 1; col < model.getColumnCount(); col++) {
-            List<Double> values = readValues(model, col);
-            if (values == null)
-                continue;
-            String colName = model.getColumnName(col);
-            for (int row = 0; row < model.getRowCount(); row++) {
-                int index = contentTable.convertRowIndexToModel(row);
-                String sample = (String) model.getValueAt(index, 0);
-                if (colName.endsWith("(pvalue)"))
-                    pValueDataset.addValue(values.get(index),
-                                           colName,
-                                           sample);
-                else
-                    dataset.addValue(values.get(index),
-                                     colName,
-                                     sample);
-            }
-        }
-        // The following code is used to control performance:
-        // 16 is arbitrary
-        CategoryAxis axis = plot.getDomainAxis();
-        if (model.getRowCount() > 16) {
-            axis.setTickLabelsVisible(false);
-            axis.setTickMarksVisible(false);
+        if (model.getColumnCount() > MAXIMUM_COLUMNS_FOR_PLOT) {
+            plot.setNoDataMessage(TOO_MANY_LINES_MESSAGE);
         }
         else {
-            axis.setTickLabelsVisible(true);
-            axis.setTickMarksVisible(true);
+            plot.setNoDataMessage(EMPTY_DATA_MESSAGE);
+            // In the following, use the model, instead of the table,
+            // to get values. For some reason, the table's data is not correct!
+            // Most likely, this is because the use of a RowSorter.
+            for (int col = 1; col < model.getColumnCount(); col++) {
+                List<Double> values = readValues(model, col);
+                if (values == null)
+                    continue;
+                String colName = model.getColumnName(col);
+                for (int row = 0; row < model.getRowCount(); row++) {
+                    int index = contentTable.convertRowIndexToModel(row);
+                    String sample = (String) model.getValueAt(index, 0);
+                    if (colName.endsWith(P_VALUE_COL_NAME_AFFIX) ||
+                        colName.endsWith(FDR_COL_NAME_AFFIX))
+                        fdrDataset.addValue(values.get(index),
+                                            colName,
+                                            sample);
+                    else
+                        dataset.addValue(values.get(index),
+                                         colName,
+                                         sample);
+                }
+            }
+            // The following code is used to control performance:
+            // 16 is arbitrary
+            CategoryAxis axis = plot.getDomainAxis();
+            if (model.getRowCount() > 16) {
+                axis.setTickLabelsVisible(false);
+                axis.setTickMarksVisible(false);
+            }
+            else {
+                axis.setTickLabelsVisible(true);
+                axis.setTickMarksVisible(true);
+            }
         }
         DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
         plot.datasetChanged(event);
-        if (pValueDataset != null) {
-            DatasetChangeEvent pValueEvent = new DatasetChangeEvent(this, pValueDataset);
+        if (fdrDataset != null) {
+            DatasetChangeEvent pValueEvent = new DatasetChangeEvent(this, fdrDataset);
             plot.datasetChanged(pValueEvent);
         }
     }

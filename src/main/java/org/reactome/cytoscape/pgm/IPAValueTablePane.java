@@ -33,6 +33,7 @@ import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.pgm.PGMFactorGraph;
 import org.reactome.pgm.PGMVariable;
+import org.reactome.r3.util.MathUtilities;
 
 /**
  * This panel is used to list IPA values for a selected factor graph.
@@ -84,18 +85,18 @@ public class IPAValueTablePane extends NetworkModulePanel {
     protected void doContentTablePopup(MouseEvent e) {
         JPopupMenu popupMenu = createExportAnnotationPopup();
         final IPAValueTableModel tableModel = (IPAValueTableModel) contentPane.getTableModel();
-        final boolean hidePValues = tableModel.hidePValues;
+        final boolean hidePValues = tableModel.getHideFDRs();
         String text = null;
         if (hidePValues)
-            text = "Show Column(s) for PValues";
+            text = "Show Columns for pValues/FDRs";
         else
-            text = "Hide Column(s) for PValues";
+            text = "Hide Columns for pValues/FDRs";
         JMenuItem item = new JMenuItem(text);
         item.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                tableModel.setHidePValues(!hidePValues);
-                contentPane.setPValueAxisVisible(hidePValues);
+                tableModel.setHideFDRs(!hidePValues);
+                contentPane.setFDRAxisVisible(hidePValues);
             }
         });
         popupMenu.add(item);
@@ -210,7 +211,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
         // Cache the list of variables for different view
         private List<PGMVariable> variables;
         // A flag to indicate if p-values should be displayed
-        private boolean hidePValues;
+        private boolean hideFDRs;
         
         public IPAValueTableModel() {
             columnHeaders = ORIGINAL_HEADERS; // Just some test data
@@ -228,9 +229,13 @@ public class IPAValueTablePane extends NetworkModulePanel {
             fireTableStructureChanged();
         }
         
-        public void setHidePValues(boolean hidePValues) {
-            this.hidePValues = hidePValues;
+        public void setHideFDRs(boolean hidePValues) {
+            this.hideFDRs = hidePValues;
             resetData();
+        }
+        
+        public boolean getHideFDRs() {
+            return this.hideFDRs;
         }
         
         public void setVariables(List<PGMVariable> variables) {
@@ -246,17 +251,18 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
         
         private void resetDataWithPValues(List<String> sampleList) {
-            columnHeaders = new String[variables.size() * 2 + 1];
+            columnHeaders = new String[variables.size() * 3 + 1];
             columnHeaders[0] = "Sample";
             for (int i = 0; i < variables.size(); i++) {
                 String label = variables.get(i).getLabel();
-                columnHeaders[2 * i + 1] = label;
-                columnHeaders[2 * i + 2] = label + "(pvalue)";
+                columnHeaders[3 * i + 1] = label;
+                columnHeaders[3 * i + 2] = label + PlotTablePanel.P_VALUE_COL_NAME_AFFIX;
+                columnHeaders[3 * i + 3] = label + PlotTablePanel.FDR_COL_NAME_AFFIX;
             }
             // In order to caclualte p-values
             Map<PGMVariable, List<Double>> varToRandomIPAs = generateRandomIPAs(variables);
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[variables.size() * 2 + 1];
+                String[] rowData = new String[variables.size() * 3 + 1];
                 rowData[0] = sampleList.get(i);
                 for (int j = 0; j < variables.size(); j++) {
                     PGMVariable var = variables.get(j);
@@ -264,13 +270,46 @@ public class IPAValueTablePane extends NetworkModulePanel {
                     List<Double> postProbs = posteriors.get(rowData[0]);
                     double ipa = calculateIPA(var.getValues(),
                                               postProbs);
-                    rowData[2 * j + 1] = PlugInUtilities.formatProbability(ipa);
+                    rowData[3 * j + 1] = PlugInUtilities.formatProbability(ipa);
                     List<Double> randomIPAs = varToRandomIPAs.get(var);
-                    String pvalue = calculatePValue(ipa, randomIPAs);
-                    rowData[2 * j + 2] = pvalue;
+                    double pvalue = calculatePValue(ipa, randomIPAs);
+                    rowData[3 * j + 2] = pvalue + "";
                 }
                 tableData.add(rowData);
             }
+            int totalPermutation = variables.get(0).getRandomPosteriorValues().size();
+            // Add FDR values
+            for (int j = 0; j < variables.size(); j++) {
+                List<Double> pvalues = new ArrayList<Double>();
+                // Sort the rows based on p-values
+                final int index = j;
+                Collections.sort(tableData, new Comparator<String[]>() {
+                    public int compare(String[] row1, String[] row2) {
+                        Double pvalue1 = new Double(row1[3 * index + 2]);
+                        Double pvalue2 = new Double(row2[3 * index + 2]);   
+                        return pvalue1.compareTo(pvalue2);
+                    }
+                });
+                for (int i = 0; i < tableData.size(); i++) {
+                    String[] row = tableData.get(i);
+                    Double pvalue = new Double(row[3 * j + 2]);
+                    if (pvalue.equals(0.0d)) 
+                        pvalue = 1.0d / (totalPermutation + 1); // Use the closest double value for a conservative calculation
+                    pvalues.add(pvalue);
+                }
+                List<Double> fdrs = MathUtilities.calculateFDRWithBenjaminiHochberg(pvalues);
+                // Replace p-values with FDRs
+                for (int i = 0; i < tableData.size(); i++) {
+                    String[] row = tableData.get(i);
+                    row[3 * j + 3] = String.format("%.3f", fdrs.get(i));
+                }
+            }
+            // Need to sort the table back as the original
+            Collections.sort(tableData, new Comparator<String[]>() {
+                public int compare(String[] row1, String[] row2) {
+                    return row1[0].compareTo(row2[0]);
+                }
+            });
         }
         
         private void resetDataWithoutPValues(List<String> sampleList) {
@@ -315,7 +354,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
             Collections.sort(sampleList);
             tableData.clear();
             
-            if (hidePValues)
+            if (hideFDRs)
                 resetDataWithoutPValues(sampleList);
             else
                 resetDataWithPValues(sampleList);
@@ -331,9 +370,9 @@ public class IPAValueTablePane extends NetworkModulePanel {
          * @param randomValues
          * @return
          */
-        private String calculatePValue(double value, List<Double> randomValues) {
+        private double calculatePValue(double value, List<Double> randomValues) {
             if (value == 0.0d)
-                return "1.0"; // Always
+                return 1.0; // Always
             if (value > 0.0d) {
                 return calculatePValueRightTail(value, randomValues);
             }
@@ -342,7 +381,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
             }
         }
         
-        private String calculatePValueRightTail(double value, List<Double> randomValues) {
+        private double calculatePValueRightTail(double value, List<Double> randomValues) {
             // Values in copy should be sorted already.
             int index = -1;
             for (int i = randomValues.size() - 1; i >= 0; i--) {
@@ -355,12 +394,12 @@ public class IPAValueTablePane extends NetworkModulePanel {
 //            if (index == randomValues.size() - 1)
 //                return "<" + (1.0d / randomValues.size());
             if (index == -1)
-                return "1.0";
+                return 1.0d;
             // Move the count one position ahead
-            return (double) (randomValues.size() - index - 1) / randomValues.size() + "";
+            return (double) (randomValues.size() - index - 1) / randomValues.size();
         }
         
-        private String calculatePValueLeftTail(double value, List<Double> randomValues) {
+        private double calculatePValueLeftTail(double value, List<Double> randomValues) {
             // Values in copy should be sorted already.
             int index = -1;
             for (int i = 0; i < randomValues.size(); i++) {
@@ -373,8 +412,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
 //            if (index == 0)
 //                return "<" + (1.0d / randomValues.size());
             if (index == -1)
-                return "1.0";
-            return (double) index / randomValues.size() + "";
+                return 1.0;
+            return (double) index / randomValues.size();
         }
         
         private Map<PGMVariable, List<Double>> generateRandomIPAs(List<PGMVariable> variables) {
