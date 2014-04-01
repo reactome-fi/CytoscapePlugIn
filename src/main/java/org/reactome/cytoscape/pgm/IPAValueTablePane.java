@@ -44,7 +44,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
     // Cache a map from CyNode to PGMVariable for a very quick access
     private Map<CyNode, PGMVariable> nodeToVar;
     // Used to draw
-    private PlotTablePanel contentPane;
+    protected PlotTablePanel contentPane;
     // For some reason, a single selection fire too many selection event.
     // Use this member variable to block multiple handling of the same
     // selection event.
@@ -60,7 +60,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
         modifyContentPane();
     }
     
-    private void modifyContentPane() {
+    protected void modifyContentPane() {
         // Add a JSplitPane for the table and a new graph pane to display graphs
         for (int i = 0; i < getComponentCount(); i++) {
             Component comp = getComponent(i);
@@ -205,11 +205,11 @@ public class IPAValueTablePane extends NetworkModulePanel {
     protected void doTableSelection() {
         // Do nothing for the super class.
     }
-
-    private class IPAValueTableModel extends NetworkModuleTableModel {
+    
+    protected class IPAValueTableModel extends NetworkModuleTableModel {
         private final String[] ORIGINAL_HEADERS = new String[]{"Sample", "Select Nodes to View"};
         // Cache the list of variables for different view
-        private List<PGMVariable> variables;
+        protected List<PGMVariable> variables;
         // A flag to indicate if p-values should be displayed
         private boolean hideFDRs;
         
@@ -250,7 +250,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
             resetData();
         }
         
-        private void resetDataWithPValues(List<String> sampleList) {
+        protected void resetDataWithPValues(List<String> sampleList) {
             columnHeaders = new String[variables.size() * 3 + 1];
             columnHeaders[0] = "Sample";
             for (int i = 0; i < variables.size(); i++) {
@@ -268,8 +268,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
                     PGMVariable var = variables.get(j);
                     Map<String, List<Double>> posteriors = var.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
-                    double ipa = calculateIPA(var.getValues(),
-                                              postProbs);
+                    double ipa = PlugInUtilities.calculateIPA(var.getValues(), postProbs);
                     rowData[3 * j + 1] = PlugInUtilities.formatProbability(ipa);
                     List<Double> randomIPAs = varToRandomIPAs.get(var);
                     double pvalue = calculatePValue(ipa, randomIPAs);
@@ -312,7 +311,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
             });
         }
         
-        private void resetDataWithoutPValues(List<String> sampleList) {
+        protected void resetDataWithoutPValues(List<String> sampleList) {
             columnHeaders = new String[variables.size() + 1];
             columnHeaders[0] = "Sample";
             for (int i = 0; i < variables.size(); i++) {
@@ -326,15 +325,14 @@ public class IPAValueTablePane extends NetworkModulePanel {
                     PGMVariable var = variables.get(j);
                     Map<String, List<Double>> posteriors = var.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
-                    double ipa = calculateIPA(var.getValues(),
-                                              postProbs);
+                    double ipa = PlugInUtilities.calculateIPA(var.getValues(), postProbs);
                     rowData[j + 1] = PlugInUtilities.formatProbability(ipa);
                 }
                 tableData.add(rowData);
             }
         }
         
-        private void resetData() {
+        protected void resetData() {
             if (variables == null || variables.size() == 0) {
                 columnHeaders = ORIGINAL_HEADERS;
                 // Refresh the tableData
@@ -370,7 +368,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
          * @param randomValues
          * @return
          */
-        private double calculatePValue(double value, List<Double> randomValues) {
+        protected double calculatePValue(double value, List<Double> randomValues) {
             if (value == 0.0d)
                 return 1.0; // Always
             if (value > 0.0d) {
@@ -423,43 +421,12 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 varToRandomIPAs.put(var, ipas);
                 Map<String, List<Double>> randomPosts = var.getRandomPosteriorValues();
                 for (String sample : randomPosts.keySet()) {
-                    double ipa = calculateIPA(var.getValues(),
-                                              randomPosts.get(sample));
+                    double ipa = PlugInUtilities.calculateIPA(var.getValues(), randomPosts.get(sample));
                     ipas.add(ipa);
                 }
                 Collections.sort(ipas);
             }
             return varToRandomIPAs;
-        }
-        
-        private double calculateIPA(List<Double> priorProbs,
-                                    List<Double> postProbs) {
-            if (priorProbs == null || postProbs == null || priorProbs.size() < 3 || postProbs.size() < 3)
-                return 0.0d;
-            List<Double> ratios = new ArrayList<Double>(3);
-            for (int i = 0; i < 3; i++) {
-                double ratio = calculateLogRatio(priorProbs.get(i),
-                                                 postProbs.get(i));
-                ratios.add(ratio);
-            }
-            return calculateIPA(ratios);
-        }
-        
-        private double calculateIPA(List<Double> ratios) {
-            double down = ratios.get(0);
-            double normal = ratios.get(1);
-            double up = ratios.get(2);
-            if (up > down && up > normal)
-                return up;
-            if (down > up && down > normal)
-                return -down;
-            return 0;
-        }
-        
-        private double calculateLogRatio(double priorValue,
-                                         double postValue) {
-            double value = Math.log10(postValue / (1.0d - postValue) * (1.0d - priorValue) / priorValue);
-            return value;
         }
         
     }

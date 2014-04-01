@@ -34,6 +34,7 @@ import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.pgm.FactorValuesDialog;
+import org.reactome.cytoscape.pgm.IPAPathwayAnalysisPane;
 import org.reactome.cytoscape.pgm.IPAValueTablePane;
 import org.reactome.cytoscape.pgm.NetworkToFactorGraphMap;
 import org.reactome.cytoscape.pgm.ObservationDataHelper;
@@ -230,10 +231,10 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
      * @param target
      * @return true if values are shown.
      */
-    private boolean showIPAValues(List<InferenceResults> resultsList) {
-        if (resultsList.size() == 1) // Just prior probabilities
-            return false; 
-        IPAValueTablePane valuePane = new IPAValueTablePane("IPA Values");
+    private void showIPANodeValues(List<InferenceResults> resultsList) {
+        if (resultsList.size() <= 1) // Just prior probabilities
+            return ; 
+        IPAValueTablePane valuePane = new IPAValueTablePane("IPA Node Values");
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
         List<String> samples = new ArrayList<String>();
         // Filter out random samples
@@ -244,13 +245,29 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             samples.add(sample);
         }
         valuePane.setSamples(samples);
+        // Don't select it. Let the overview panel to be selected.
+//        // Need to select it
+//        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+//        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
+//        int index = tableBrowserPane.indexOfComponent(valuePane);
+//        if (index >= 0)
+//            tableBrowserPane.setSelectedIndex(index);
+    }
+    
+    private void showIPAPathwayValues(List<InferenceResults> resultsList,
+                                      PGMFactorGraph fg) {
+        if (resultsList.size() <= 1)
+            return; 
+        IPAPathwayAnalysisPane valuePane = new IPAPathwayAnalysisPane("IPA Pathway Analysis");
+        valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
+        valuePane.setFactorGraph(fg);
+        // Don't select it
         // Need to select it
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
         int index = tableBrowserPane.indexOfComponent(valuePane);
         if (index >= 0)
             tableBrowserPane.setSelectedIndex(index);
-        return true;
     }
     
     private void copyVariableValues(List<InferenceResults> resultsList, 
@@ -309,15 +326,18 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             // my gut feeling.
             copyVariableValues(inferenceResults,
                                fg);
-            showIPAValues(inferenceResults);
+            showIPANodeValues(inferenceResults);
+            showIPAPathwayValues(inferenceResults,
+                                 fg);
             frame.getGlassPane().setVisible(false);
             if (needFinishDialog) {
-                String message = "Inference has finished successfully. You may use \"View Marginal Probabilities\"\n" + 
-                                 "by selecting a variable node";
+                String message = "Inference has finished successfully. You may use \"View Marginal Probabilities\" by\n" + 
+                                 "selecting a variable node";
                 if (inferenceResults.size() == 1)
                     message += ".";
                 else
-                    message += ", and view IPA values at the table panel.";
+                    message += ", and view IPA values at the bottom \"IPA Node Values\" tab. \n" + 
+                               "You may also view pathway level results at the \"IPA Pathway Analysis\" tab";
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               message,
                                               "Inference Finished",

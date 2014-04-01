@@ -6,8 +6,6 @@ package org.reactome.cytoscape.pgm;
 
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,29 +14,23 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.RowSorterListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
-import org.jfree.chart.ChartMouseEvent;
-import org.jfree.chart.ChartMouseListener;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
-import org.jfree.chart.entity.CategoryItemEntity;
-import org.jfree.chart.entity.ChartEntity;
 import org.jfree.chart.labels.StandardCategoryToolTipGenerator;
-import org.jfree.chart.plot.CategoryMarker;
 import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.renderer.category.LineAndShapeRenderer;
 import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DatasetChangeEvent;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * This customized JPanel is used to plot contents in a table using JFreeChart.
@@ -56,8 +48,7 @@ public class PlotTablePanel extends JPanel {
     // For p-values
     private DefaultCategoryDataset fdrDataset;
     private CategoryPlot plot;
-    // To control selection synchronization
-    private boolean isFromMouse;
+    private ChartPanel chartPane;
     // Table content
     private JTable contentTable;
     private JScrollPane tableJsp;
@@ -108,13 +99,10 @@ public class PlotTablePanel extends JPanel {
                 resetPlotDataset();
             }
         });
-        contentTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                doTableSelection();
-            }
-        });
+        
+        // A simple object to link marking together for both table and plot.
+        TableAndPlotActionSynchronizer tpSync = new TableAndPlotActionSynchronizer(contentTable,
+                                                                                   chartPane);
     }
     
     public void setTableModel(TableModel model) {
@@ -137,24 +125,6 @@ public class PlotTablePanel extends JPanel {
             fdrAxis.setVisible(isVisible);
     }
     
-    private void doTableSelection() {
-        if (isFromMouse)
-            return; // No need
-        // Need to clear all markers first
-        plot.clearDomainMarkers();
-        int[] rows = contentTable.getSelectedRows();
-        if (rows == null || rows.length == 0) {
-            return;
-        }
-        TableModel model = contentTable.getModel();
-        for (int i = 0; i < rows.length; i++) {
-            int index = contentTable.convertRowIndexToModel(rows[i]);
-            String sample = (String) model.getValueAt(index, 0);
-            CategoryMarker marker = createMarker(sample);
-            plot.addDomainMarker(marker);
-        }
-    }
-    
     private JPanel createGraphPane(String axisName,
                                    boolean needPValuePlot) {
         dataset = new DefaultCategoryDataset();
@@ -166,6 +136,7 @@ public class PlotTablePanel extends JPanel {
         // in the fly. So the choice is not so critical.
         LineAndShapeRenderer renderer = new LineAndShapeRenderer(true, 
                                                                  false);
+        renderer.setBaseStroke(new BasicStroke(2.0f)); // Give it a little more stroke
         renderer.setBaseToolTipGenerator(new StandardCategoryToolTipGenerator());
         plot = new CategoryPlot(dataset,
                                 axisX,
@@ -187,64 +158,10 @@ public class PlotTablePanel extends JPanel {
         plot.setNoDataMessage(EMPTY_DATA_MESSAGE);
         
         JFreeChart chart = new JFreeChart(plot);
-        ChartPanel panel = new ChartPanel(chart);
-        // For mouse selection
-        panel.addChartMouseListener(new ChartMouseListener() {
-            
-            @Override
-            public void chartMouseMoved(ChartMouseEvent event) {
-            }
-            
-            @Override
-            public void chartMouseClicked(ChartMouseEvent event) {
-                doChartMouseClicked(event);
-            }
-        });
-        
-        panel.setBorder(BorderFactory.createEtchedBorder());
+        chartPane = new ChartPanel(chart);
+        chartPane.setBorder(BorderFactory.createEtchedBorder());
 
-        return panel;
-    }
-    
-    private void doChartMouseClicked(ChartMouseEvent event) {
-        ChartEntity entity = event.getEntity();
-        if (entity == null || !(entity instanceof CategoryItemEntity))
-            return;
-        CategoryItemEntity caEntity = (CategoryItemEntity) entity;
-        plot.clearDomainMarkers();
-        CategoryMarker marker = createMarker(caEntity.getColumnKey());
-        plot.addDomainMarker(marker);
-        // Need to select the row in the table
-        isFromMouse = true;
-        selectSampleInTable((String)caEntity.getColumnKey());
-        isFromMouse = false;
-    }
-    
-    private void selectSampleInTable(String sample) {
-        contentTable.clearSelection();
-        // Find the row index in the table model
-        TableModel model = contentTable.getModel();
-        int selected = -1;
-        for (int i = 0; i < model.getRowCount(); i++) {
-            String tmp = (String) model.getValueAt(i, 0);
-            if (tmp.equals(sample)) {
-                selected = i;
-                break;
-            }
-        }
-        if (selected == -1)
-            return;
-        int index = contentTable.convertRowIndexToView(selected);
-        contentTable.setRowSelectionInterval(index, index);
-        Rectangle rect = contentTable.getCellRect(index, 0, false);
-        contentTable.scrollRectToVisible(rect);
-    }
-    
-    private CategoryMarker createMarker(Comparable<?> category) {
-        CategoryMarker marker = new CategoryMarker(category);
-        marker.setStroke(new BasicStroke(2.0f)); // Give it an enough stroke
-        marker.setPaint(Color.BLACK);
-        return marker;
+        return chartPane;
     }
     
     private void resetPlotDataset() {
@@ -282,7 +199,7 @@ public class PlotTablePanel extends JPanel {
             // The following code is used to control performance:
             // 16 is arbitrary
             CategoryAxis axis = plot.getDomainAxis();
-            if (model.getRowCount() > 16) {
+            if (model.getRowCount() > PlugInUtilities.PLOT_CATEGORY_AXIX_LABEL_CUT_OFF) {
                 axis.setTickLabelsVisible(false);
                 axis.setTickMarksVisible(false);
             }
