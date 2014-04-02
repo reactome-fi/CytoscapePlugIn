@@ -5,11 +5,16 @@
 package org.reactome.cytoscape.pgm;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -181,9 +186,19 @@ public class TTestDetailDialog extends JDialog {
         panel.setBorder(BorderFactory.createEtchedBorder());
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
         
-        JLabel titleLabel = new JLabel("Combined p-value using Fisher's method: ");
+        JLabel titleLabel = new JLabel("Combined p-value using an extended Fisher's method: ");
+        titleLabel.setToolTipText("Click to view the reference");
+        titleLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         combinedPValueLabel = new JLabel("1.0");
-        
+        titleLabel.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                String url = "http://www.sciencedirect.com/science/article/pii/S0167715202003103";
+                PlugInUtilities.openURL(url);
+            }
+            
+        });
         panel.add(titleLabel);
         panel.add(combinedPValueLabel);
         
@@ -274,7 +289,12 @@ public class TTestDetailDialog extends JDialog {
      * @throws MathException
      */
     private void setCombinedPValue(List<Double> pvalues) throws MathException {
-        double combinedPValue = MathUtilities.combinePValuesWithFisherMethod(pvalues);
+//        double combinedPValue = MathUtilities.combinePValuesWithFisherMethod(pvalues);
+        // Since it is pretty sure, variables are dependent in pathway, use another method
+        // to combine p-values
+        PValueCombiner combiner = new PValueCombiner();
+        double combinedPValue = combiner.combinePValue(new ArrayList<List<Double>>(realSampleToIPAs.values()),
+                                                        pvalues);
         combinedPValueLabel.setText(PlugInUtilities.formatProbability(combinedPValue));
     }
     

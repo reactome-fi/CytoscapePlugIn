@@ -103,6 +103,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         List<Double> realIPAs = new ArrayList<Double>();
         List<Double> randomIPAs = new ArrayList<Double>();
         List<Double> pvalues = new ArrayList<Double>();
+        List<List<Double>> allRealIPAs = new ArrayList<List<Double>>();
         for (PGMVariable var : variables) {
             realIPAs.clear();
             randomIPAs.clear();
@@ -127,10 +128,12 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
                     posPerturbedOutputs ++;
             }
             pvalues.add(pvalue);
+            allRealIPAs.add(new ArrayList<Double>(realIPAs));
         }
         builder.append(" (").append(negPerturbedOutputs).append(" down perturbed, ");
         builder.append(posPerturbedOutputs).append(" up perturbed. Combined p-values: ");
-        double combinedPValue = MathUtilities.combinePValuesWithFisherMethod(pvalues);
+        PValueCombiner combiner = new PValueCombiner();
+        double combinedPValue = combiner.combinePValue(allRealIPAs, pvalues);
         builder.append(PlugInUtilities.formatProbability(combinedPValue)).append(")  ");
     }
     
