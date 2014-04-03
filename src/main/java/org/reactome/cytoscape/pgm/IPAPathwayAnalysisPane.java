@@ -142,6 +142,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         try {
             IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
             dialog.setVariables(model.variables);
+            dialog.setNetworkView(view);
             dialog.setLocationRelativeTo(dialog.getOwner());
             dialog.setSize(800, 600);
             // Make this dialog modaless so that the user can interact with 
@@ -184,8 +185,8 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
     }
 
     private class IPAPathwayTableModel extends IPAValueTableModel {
-        private String np = "UpPerturbation";
-        private String pp = "DownPerturbation";
+        private String np = "DownPerturbation";
+        private String pp = "UpPerturbation";
         private String[] columns_with_pvalues = new String[] {
                 "Sample",
                 np,

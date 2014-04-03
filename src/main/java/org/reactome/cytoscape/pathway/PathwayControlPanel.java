@@ -386,14 +386,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                 }
             }
         }
-        // The following method should not be called.
-        // It is used to do the whole screen fit as in the menu.
-        if (totalSelected > 0) {
-            networkView.fitSelected();
-            if (totalSelected == 1)
-                PlugInUtilities.zoomOut(networkView.getModel(),
-                                        20); // 20 is rather arbitrary
-        }
+        PlugInUtilities.zoomToSelected(networkView, 
+                                       totalSelected);
         networkView.updateView();
         selectFromPathway = false;
     }

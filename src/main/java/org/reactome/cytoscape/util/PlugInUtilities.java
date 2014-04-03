@@ -42,6 +42,7 @@ import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.NetworkTaskFactory;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.util.swing.OpenBrowser;
+import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.AbstractTask;
@@ -121,6 +122,24 @@ public class PlugInUtilities {
                                      double postValue) {
         double value = Math.log10(postValue / (1.0d - postValue) * (1.0d - priorValue) / priorValue);
         return value;
+    }
+    
+    /**
+     * A customized method to zoom into a list of selected node. If there is only
+     * one node is selected, some zoom-out is done to provide some context.
+     * @param networkView
+     * @param totalSelected
+     */
+    public static void zoomToSelected(CyNetworkView networkView,
+                                      int totalSelected) {
+        if (networkView == null || networkView.getModel() == null)
+            return;
+        if (totalSelected > 0) {
+            networkView.fitSelected();
+            if (totalSelected == 1)
+                PlugInUtilities.zoomOut(networkView.getModel(),
+                                        20); // 20 is rather arbitrary
+        }
     }
     
     /**

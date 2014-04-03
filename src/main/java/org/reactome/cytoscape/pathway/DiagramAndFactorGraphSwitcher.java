@@ -7,9 +7,11 @@ package org.reactome.cytoscape.pathway;
 import java.beans.PropertyChangeEvent;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.cytoscape.model.CyNetwork;
@@ -23,7 +25,10 @@ import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
+import org.gk.render.Node;
+import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
+import org.gk.render.RenderableReaction;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.FactorGraphVisualStyle;
@@ -57,6 +62,8 @@ public class DiagramAndFactorGraphSwitcher {
     public void convertToFactorGraph(final Long pathwayId,
                                      final RenderablePathway pathway,
                                      final PathwayInternalFrame pathwayFrame) throws Exception {
+        if (!canConvertToFactorGraph(pathway))
+            return;
         Task task = new AbstractTask() {
             
             @Override
@@ -70,6 +77,48 @@ public class DiagramAndFactorGraphSwitcher {
         @SuppressWarnings("rawtypes")
         TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
         taskManager.execute(new TaskIterator(task)); 
+    }
+
+    /**
+     * Check if a displayed RenderablePathway can be converted into a 
+     * factor graph. If a pathway contains sub-pathways only, it cannot
+     * be converted into a factor graph.
+     * @param pathway
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    private boolean canConvertToFactorGraph(RenderablePathway pathway) {
+        JFrame parentFrame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+        List<Renderable> components = pathway.getComponents();
+        // An empty diagram cannot be converted into a factor graph.
+        if (components == null || components.size() == 0) {
+            JOptionPane.showMessageDialog(parentFrame,
+                                          "This is an empty pathway diagram and cannot be converted into a factor graph.",
+                                          "Empty Diagram",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return false;
+        }
+        // Make sure there is at least one reaction is drawn and has
+        // at least one entity is linked to it.
+        boolean isSuperPathway = true;
+        for (Renderable r : components) {
+            if (r instanceof RenderableReaction) {
+                RenderableReaction rxt = (RenderableReaction) r;
+                List<Node> nodes = rxt.getConnectedNodes();
+                if (nodes != null && nodes.size() > 0) {
+                    isSuperPathway = false;
+                }
+            }
+        }
+        if (isSuperPathway) {
+            JOptionPane.showMessageDialog(parentFrame,
+                                          "The selected pathway diagram doesn't have any reaction drawn. Try to use its contained\n" +
+                                          "sub-pathway for factor graph data analysis.",
+                                          "Super Pathway Choosing",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return false;
+        }
+        return true;
     }
     
     private void convertPathwayToFactorGraph(Long pathwayId,

@@ -5,23 +5,26 @@
 package org.reactome.cytoscape.pgm;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -32,13 +35,23 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.RowSorterListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.apache.commons.math.MathException;
 import org.apache.commons.math.stat.inference.TestUtils;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTableUtil;
+import org.cytoscape.model.events.RowsSetEvent;
+import org.cytoscape.model.events.RowsSetListener;
+import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
@@ -49,6 +62,10 @@ import org.jfree.chart.renderer.category.BoxAndWhiskerRenderer;
 import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.general.DatasetChangeEvent;
 import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
+import org.reactome.cytoscape.service.TableHelper;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.pgm.PGMVariable;
 import org.reactome.r3.util.MathUtilities;
@@ -64,15 +81,25 @@ public class TTestDetailDialog extends JDialog {
     private CategoryPlot plot;
     private ChartPanel chartPanel;
     private JTable tTestResultTable;
+    // For node selection sync between table and network view
+    private boolean isFromTable;
+    private boolean isFromNetwork;
     // For combined p-value
     private JLabel combinedPValueLabel;
     // Cache calculated IPA values for sorting purpose
     private Map<String, List<Double>> realSampleToIPAs;
     private Map<String, List<Double>> randomSampleToIPAs;
+    // Used for selecting a node
+    private CyNetworkView networkView;
+    private ServiceRegistration networkSelectionRegistration;
     
     public TTestDetailDialog(JFrame frame) {
         super(frame);
         init();
+    }
+    
+    public void setNetworkView(CyNetworkView networkView) {
+        this.networkView = networkView;
     }
     
     private void init() {
@@ -121,8 +148,125 @@ public class TTestDetailDialog extends JDialog {
             }
         });
         // Use this simple method to make sure marker is syncrhonized between two views.
-        TableAndPlotActionSynchronizer tpSyncHelper = new TableAndPlotActionSynchronizer(tTestResultTable,
-                                                                                         chartPanel);
+        TableAndPlotActionSynchronizer tpSyncHelper = new TableAndPlotActionSynchronizer(tTestResultTable, chartPanel);
+        
+        tTestResultTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                doTableSelection();
+            }
+        });
+        
+        // Synchronize selection from network to pathway overview
+        RowsSetListener selectionListener = new RowsSetListener() {
+            
+            @Override
+            public void handleEvent(RowsSetEvent event) {
+                if (!event.containsColumn(CyNetwork.SELECTED) || 
+                        networkView == null ||
+                        networkView.getModel() == null || 
+                        networkView.getModel().getDefaultEdgeTable() == null ||
+                        networkView.getModel().getDefaultNodeTable() == null) {
+                    return;
+                }
+                List<CyNode> nodes = CyTableUtil.getNodesInState(networkView.getModel(),
+                                                                 CyNetwork.SELECTED,
+                                                                 true);
+                handleNetworkSelection(nodes);
+            }
+            
+        };
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        networkSelectionRegistration = context.registerService(RowsSetListener.class.getName(),
+                                                               selectionListener, 
+                                                               null);
+        
+        addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                // Unregistered registered service for easy GC.
+                if (networkSelectionRegistration != null) {
+                    networkSelectionRegistration.unregister();
+                    networkSelectionRegistration = null; 
+                }
+            }
+            
+        });
+    }
+    
+    private void handleNetworkSelection(List<CyNode> selectedNodes) {
+        if (isFromTable)
+            return;
+        isFromNetwork = true;
+        Set<String> rowKeys = new HashSet<String>();
+        TableHelper helper = new TableHelper();
+        for (CyNode node : selectedNodes) {
+            String label = helper.getStoredNodeAttribute(networkView.getModel(),
+                                                         node,
+                                                         "nodeLabel",
+                                                         String.class);
+            rowKeys.add(label);
+        }
+        tTestResultTable.clearSelection();
+        if (rowKeys.size() > 0) {
+            // Find the row index in the table model
+            TableModel model = tTestResultTable.getModel();
+            int selected = -1;
+            for (int i = 0; i < model.getRowCount(); i++) {
+                String tmp = (String) model.getValueAt(i, 0);
+                if (rowKeys.contains(tmp)) {
+                    int viewIndex = tTestResultTable.convertRowIndexToView(i);
+                    tTestResultTable.getSelectionModel().addSelectionInterval(viewIndex, viewIndex);
+                    if (selected == -1)
+                        selected = viewIndex;
+                }
+            }
+            if (selected > -1) {
+                Rectangle rect = tTestResultTable.getCellRect(selected, 0, false);
+                tTestResultTable.scrollRectToVisible(rect);
+            }
+        }
+        isFromNetwork = false;
+    }
+    
+    private void doTableSelection() {
+        if (networkView == null || isFromNetwork)
+            return;
+        isFromTable = true;
+        // Get the selected variable labels
+        Set<String> variables = new HashSet<String>();
+        TTestTableModel model = (TTestTableModel) tTestResultTable.getModel();
+        if (tTestResultTable.getSelectedRowCount() > 0) {
+            for (int row : tTestResultTable.getSelectedRows()) {
+                int modelIndex = tTestResultTable.convertRowIndexToModel(row);
+                String variable = (String) model.getValueAt(modelIndex, 0);
+                variables.add(variable);
+            }
+        }
+        // Clear all selection
+        TableHelper tableHelper = new TableHelper();
+        CyNetwork network = networkView.getModel();
+        int totalSelected = 0;
+        for (View<CyNode> nodeView : networkView.getNodeViews()) {
+            CyNode node = nodeView.getModel();
+            Long nodeSUID = node.getSUID();
+            String nodeLabel = tableHelper.getStoredNodeAttribute(network,
+                                                                  node, 
+                                                                  "nodeLabel", 
+                                                                  String.class);
+            boolean isSelected = variables.contains(nodeLabel);
+            if (isSelected)
+                totalSelected ++;
+            tableHelper.setNodeSelected(network, 
+                                        node,
+                                        isSelected);
+        }
+        PlugInUtilities.zoomToSelected(networkView,
+                                       totalSelected);
+        networkView.updateView();
+        isFromTable = false;
     }
     
     private void rePlotData() {
@@ -186,7 +330,7 @@ public class TTestDetailDialog extends JDialog {
         panel.setBorder(BorderFactory.createEtchedBorder());
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
         
-        JLabel titleLabel = new JLabel("Combined p-value using an extended Fisher's method: ");
+        JLabel titleLabel = new JLabel("Combined p-value using an extension of Fisher's method (click to see the reference): ");
         titleLabel.setToolTipText("Click to view the reference");
         titleLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         combinedPValueLabel = new JLabel("1.0");
@@ -278,6 +422,8 @@ public class TTestDetailDialog extends JDialog {
         }
         DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
         plot.datasetChanged(event);
+        // Make a copy to avoid modifying by the called method
+        tableModel.calculateFDRs(new ArrayList<Double>(pvalues));
         tableModel.fireTableStructureChanged();
         setCombinedPValue(pvalues);
     }
@@ -321,7 +467,8 @@ public class TTestDetailDialog extends JDialog {
                     "RandomMean",
                     "MeanDiff",
                     "t-statistic",
-                    "p-value"
+                    "p-value",
+                    "FDR"
             };
             colHeaders = Arrays.asList(headers);
             data = new ArrayList<String[]>();
@@ -364,6 +511,40 @@ public class TTestDetailDialog extends JDialog {
             data.add(row);
             
             return pvalue;
+        }
+        
+        /**
+         * A method to calcualte FDRs. The order in the passed List should be the same
+         * as p-values stored in the data object. Otherwise, the calculated FDRs assignment
+         * will be wrong.
+         * @param pvalues
+         */
+        void calculateFDRs(List<Double> pvalues) {
+            if (data.size() != pvalues.size())
+                throw new IllegalArgumentException("Passed pvalues list has different size to the stored table data.");
+            List<String[]> pvalueSortedList = new ArrayList<String[]>(data);
+            // Just copy pvalues into rowdata for the time being
+            for (int i = 0; i < pvalueSortedList.size(); i++) {
+                Double pvalue = pvalues.get(i);
+                String[] rowData = pvalueSortedList.get(i);
+                rowData[6] = pvalue + "";
+            }
+            Collections.sort(pvalueSortedList, new Comparator<String[]>() {
+                public int compare(String[] row1, String[] row2) {
+                    Double pvalue1 = new Double(row1[6]);
+                    Double pvalue2 = new Double(row2[6]);
+                    return pvalue1.compareTo(pvalue2);
+                }
+            });
+            // pvalues will be sorted 
+            List<Double> fdrs = MathUtilities.calculateFDRWithBenjaminiHochberg(pvalues);
+            // Modify pvalues into FDRs for the last column. Since the same String[] objects are
+            // used in the sorted list and the original data, there is no need to do anything for
+            // table display purpose.
+            for (int i = 0; i < pvalueSortedList.size(); i++) {
+                String[] rowData = pvalueSortedList.get(i);
+                rowData[6] = PlugInUtilities.formatProbability(fdrs.get(i));
+            }
         }
 
         @Override
