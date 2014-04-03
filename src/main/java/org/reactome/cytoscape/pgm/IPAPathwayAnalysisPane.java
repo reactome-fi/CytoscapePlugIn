@@ -62,7 +62,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         controlToolBar.add(viewDetailsBtn);
         controlToolBar.add(closeGlue);
         controlToolBar.add(closeBtn);
-        super.modifyContentPane();
+        super.addTablePlotPane();
     }
     
     private void resetOverview() {

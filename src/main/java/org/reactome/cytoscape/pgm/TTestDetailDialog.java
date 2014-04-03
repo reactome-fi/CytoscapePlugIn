@@ -374,7 +374,7 @@ public class TTestDetailDialog extends JDialog {
                                 xAxis, 
                                 yAxis,
                                 renderer);
-        JFreeChart chart = new JFreeChart("Boxplot for Output IPAs", 
+        JFreeChart chart = new JFreeChart("Boxplot for Integrated Pathway Activities (IPAs) of Outputs", 
                                           plot);
         chartPanel = new ChartPanel(chart);
         chartPanel.setBorder(BorderFactory.createEtchedBorder());

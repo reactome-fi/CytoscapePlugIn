@@ -270,7 +270,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     
     private void doPathwayPopup(MouseEvent e) {
         JPopupMenu popup = new JPopupMenu();
-        JMenuItem convertToFINetwork = new JMenuItem("Convert as FI Network");
+        JMenuItem convertToFINetwork = new JMenuItem("Convert to FI Network");
         convertToFINetwork.addActionListener(new ActionListener() {
             
             @Override
@@ -286,7 +286,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         popup.add(convertToFINetwork);
         
         // Convert as a factor graph
-        JMenuItem convertAsFactorGraph = new JMenuItem("Convert as Factor Graph");
+        JMenuItem convertAsFactorGraph = new JMenuItem("Convert to Graphical Model");
         convertAsFactorGraph.addActionListener(new ActionListener() {
             
             @Override

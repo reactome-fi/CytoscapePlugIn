@@ -337,7 +337,8 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                     message += ".";
                 else
                     message += ", and view IPA values at the bottom \"IPA Node Values\" tab. \n" + 
-                               "You may also view pathway level results at the \"IPA Pathway Analysis\" tab";
+                               "You may also view pathway level results at the \"IPA Pathway Analysis\" tab.\n" +
+                               "Note: IPA stands for \"Integrated Pathway Activity\".";
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               message,
                                               "Inference Finished",

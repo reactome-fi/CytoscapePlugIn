@@ -31,6 +31,8 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
@@ -74,6 +76,25 @@ public class PlugInUtilities {
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * Get the index for a CytoPanelComponent specified by its name in the passed
+     * CytoPanel object. If nothing can be found, -1 is going to be returned.
+     * @param cytoPanel
+     * @param title
+     * @return
+     */
+    public static int getCytoPanelComponent(CytoPanel cytoPanel,
+                                            String title) {
+        int numComps = cytoPanel.getCytoPanelComponentCount();
+        for (int i = 0; i < numComps; i++) {
+            CytoPanelComponent aComp = (CytoPanelComponent) cytoPanel.getComponentAt(i);
+            if (aComp.getTitle().equalsIgnoreCase(title)) {
+                return i;
+            }
+        }
+        return -1;
     }
     
     /**

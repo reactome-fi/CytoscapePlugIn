@@ -6,8 +6,10 @@ package org.reactome.cytoscape.pgm;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -61,6 +64,29 @@ public class IPAValueTablePane extends NetworkModulePanel {
     }
     
     protected void modifyContentPane() {
+        // Re-create control tool bars
+        for (int i = 0; i < controlToolBar.getComponentCount(); i++) {
+            controlToolBar.remove(i);
+        }
+        // Add a label
+        JLabel ipaLabel = new JLabel("Note: IPA stands for \"Integrated Pathway Activity\" (click for details).");
+        ipaLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        ipaLabel.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                String url = "http://bioinformatics.oxfordjournals.org/content/26/12/i237.full";
+                PlugInUtilities.openURL(url);
+            }
+            
+        });
+        controlToolBar.add(ipaLabel);
+        controlToolBar.add(closeGlue);
+        controlToolBar.add(closeBtn);
+        addTablePlotPane();
+    }
+
+    protected void addTablePlotPane() {
         // Add a JSplitPane for the table and a new graph pane to display graphs
         for (int i = 0; i < getComponentCount(); i++) {
             Component comp = getComponent(i);

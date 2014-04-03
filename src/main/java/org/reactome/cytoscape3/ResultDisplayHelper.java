@@ -39,9 +39,9 @@ public class ResultDisplayHelper
      * @param view
      */
     protected void showModuleInTab(Map<String, Integer> nodeToCluster,
-            Map<String, Set<String>> nodeToSampleSet, Double modularity,
-            CyNetworkView view)
-    {
+                                   Map<String, Set<String>> nodeToSampleSet,
+                                   Double modularity,
+                                   CyNetworkView view) {
         String title = "Network Module Browser";
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp
