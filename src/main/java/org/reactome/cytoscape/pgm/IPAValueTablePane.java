@@ -34,6 +34,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.pgm.IPACalculator;
 import org.reactome.pgm.PGMFactorGraph;
 import org.reactome.pgm.PGMVariable;
 import org.reactome.r3.util.MathUtilities;
@@ -294,7 +295,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
                     PGMVariable var = variables.get(j);
                     Map<String, List<Double>> posteriors = var.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
-                    double ipa = PlugInUtilities.calculateIPA(var.getValues(), postProbs);
+                    double ipa = IPACalculator.calculateIPA(var.getValues(), postProbs);
                     rowData[3 * j + 1] = PlugInUtilities.formatProbability(ipa);
                     List<Double> randomIPAs = varToRandomIPAs.get(var);
                     double pvalue = calculatePValue(ipa, randomIPAs);
@@ -351,7 +352,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
                     PGMVariable var = variables.get(j);
                     Map<String, List<Double>> posteriors = var.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
-                    double ipa = PlugInUtilities.calculateIPA(var.getValues(), postProbs);
+                    double ipa = IPACalculator.calculateIPA(var.getValues(), postProbs);
                     rowData[j + 1] = PlugInUtilities.formatProbability(ipa);
                 }
                 tableData.add(rowData);
@@ -447,7 +448,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 varToRandomIPAs.put(var, ipas);
                 Map<String, List<Double>> randomPosts = var.getRandomPosteriorValues();
                 for (String sample : randomPosts.keySet()) {
-                    double ipa = PlugInUtilities.calculateIPA(var.getValues(), randomPosts.get(sample));
+                    double ipa = IPACalculator.calculateIPA(var.getValues(), randomPosts.get(sample));
                     ipas.add(ipa);
                 }
                 Collections.sort(ipas);

@@ -44,7 +44,7 @@ import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.apache.commons.math.MathException;
-import org.apache.commons.math.stat.inference.TestUtils;
+import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
@@ -67,16 +67,19 @@ import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.pgm.IPACalculator;
 import org.reactome.pgm.PGMVariable;
 import org.reactome.r3.util.MathUtilities;
 
 /**
- * This customized JDialog is used to show details information based on t-test for
- * IPA values.
+ * This customized JDialog is used to show details information for IPA values.
+ * Boxplots are used to show distributions of IPA values for real samples and random samples.
+ * P-values are calculated based on Mann-Whitney U test though TTest has been used originally
+ * (see many TTest labeled code).
  * @author gwu
  *
  */
-public class TTestDetailDialog extends JDialog {
+public class PathwayAnalysisDetailsDialog extends JDialog {
     private DefaultBoxAndWhiskerCategoryDataset dataset;
     private CategoryPlot plot;
     private ChartPanel chartPanel;
@@ -93,7 +96,7 @@ public class TTestDetailDialog extends JDialog {
     private CyNetworkView networkView;
     private ServiceRegistration networkSelectionRegistration;
     
-    public TTestDetailDialog(JFrame frame) {
+    public PathwayAnalysisDetailsDialog(JFrame frame) {
         super(frame);
         init();
     }
@@ -103,6 +106,7 @@ public class TTestDetailDialog extends JDialog {
     }
     
     private void init() {
+        setTitle("Output Analysis Results");
         JPanel boxPlotPane = createBoxPlotPane();
         JPanel ttestResultPane = createTTestResultTable();
         JPanel combinedPValuePane = createCombinedPValuePane();
@@ -289,7 +293,7 @@ public class TTestDetailDialog extends JDialog {
         panel.setLayout(new BorderLayout());
         panel.setBorder(BorderFactory.createEtchedBorder());
         
-        JLabel label = new JLabel("T-Test Results");
+        JLabel label = new JLabel("Mean Value Comparison Results");
         Font font = label.getFont();
         label.setFont(font.deriveFont(Font.BOLD, font.getSize() + 2.0f));
         // Want to make sure label is in the middle, so
@@ -403,7 +407,7 @@ public class TTestDetailDialog extends JDialog {
                                                         "Random Samples",
                                                         var);
             double pvalue = tableModel.addRow(realIPAs, 
-                                              randomIPAs, 
+                                              randomIPAs,
                                               var.getLabel());
             pvalues.add(pvalue);
             realSampleToIPAs.put(var.getLabel(), realIPAs);
@@ -449,7 +453,7 @@ public class TTestDetailDialog extends JDialog {
                                            PGMVariable var) {
         List<Double> ipas = new ArrayList<Double>();
         for (List<Double> probs : sampleToProbs.values()) {
-            double ipa = PlugInUtilities.calculateIPA(var.getValues(), probs);
+            double ipa = IPACalculator.calculateIPA(var.getValues(), probs);
             ipas.add(ipa);
         }
         dataset.add(ipas, label, var.getLabel());
@@ -466,7 +470,7 @@ public class TTestDetailDialog extends JDialog {
                     "RealMean",
                     "RandomMean",
                     "MeanDiff",
-                    "t-statistic",
+//                    "t-statistic",
                     "p-value",
                     "FDR"
             };
@@ -495,18 +499,19 @@ public class TTestDetailDialog extends JDialog {
             double[] randomArray = new double[randomIPAs.size()];
             for (int i = 0; i < randomIPAs.size(); i++)
                 randomArray[i] = randomIPAs.get(i);
-            double t = TestUtils.t(realArray,
-                                   randomArray);
-            double pvalue = TestUtils.tTest(realArray,
-                                            randomArray);
+//            double t = TestUtils.t(realArray,
+//                                   randomArray);
+//            double pvalue = TestUtils.tTest(realArray,
+//                                            randomArray);
+            double pvalue = new MannWhitneyUTest().mannWhitneyUTest(realArray, randomArray);
             
             String[] row = new String[colHeaders.size()];
             row[0] = varLabel;
             row[1] = PlugInUtilities.formatProbability(realMean);
             row[2] = PlugInUtilities.formatProbability(randomMean);
             row[3] = PlugInUtilities.formatProbability(diff);
-            row[4] = PlugInUtilities.formatProbability(t);
-            row[5] = PlugInUtilities.formatProbability(pvalue);
+//            row[4] = PlugInUtilities.formatProbability(t);
+            row[4] = PlugInUtilities.formatProbability(pvalue);
             
             data.add(row);
             
@@ -527,12 +532,12 @@ public class TTestDetailDialog extends JDialog {
             for (int i = 0; i < pvalueSortedList.size(); i++) {
                 Double pvalue = pvalues.get(i);
                 String[] rowData = pvalueSortedList.get(i);
-                rowData[6] = pvalue + "";
+                rowData[5] = pvalue + "";
             }
             Collections.sort(pvalueSortedList, new Comparator<String[]>() {
                 public int compare(String[] row1, String[] row2) {
-                    Double pvalue1 = new Double(row1[6]);
-                    Double pvalue2 = new Double(row2[6]);
+                    Double pvalue1 = new Double(row1[5]);
+                    Double pvalue2 = new Double(row2[5]);
                     return pvalue1.compareTo(pvalue2);
                 }
             });
@@ -543,7 +548,7 @@ public class TTestDetailDialog extends JDialog {
             // table display purpose.
             for (int i = 0; i < pvalueSortedList.size(); i++) {
                 String[] rowData = pvalueSortedList.get(i);
-                rowData[6] = PlugInUtilities.formatProbability(fdrs.get(i));
+                rowData[5] = PlugInUtilities.formatProbability(fdrs.get(i));
             }
         }
 

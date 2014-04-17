@@ -4,15 +4,19 @@
  */
 package org.reactome.cytoscape.pathway;
 
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
+import javax.swing.*;
+import javax.swing.border.Border;
 
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
@@ -29,6 +33,7 @@ import org.gk.render.Node;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.gk.render.RenderableReaction;
+import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.FactorGraphVisualStyle;
@@ -64,6 +69,9 @@ public class DiagramAndFactorGraphSwitcher {
                                      final PathwayInternalFrame pathwayFrame) throws Exception {
         if (!canConvertToFactorGraph(pathway))
             return;
+        final String escapeNames = getEscapeNames();
+        if (escapeNames == null)
+            return;  // Aborted
         Task task = new AbstractTask() {
             
             @Override
@@ -71,6 +79,7 @@ public class DiagramAndFactorGraphSwitcher {
                 convertPathwayToFactorGraph(pathwayId,
                                             pathway,
                                             pathwayFrame,
+                                            escapeNames,
                                             taskMonitor);
             }
         }; 
@@ -121,15 +130,34 @@ public class DiagramAndFactorGraphSwitcher {
         return true;
     }
     
+    private String getEscapeNames() {
+        final EscapeNameDialog dialog = new EscapeNameDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
+        SwingUtilities.invokeLater(new Runnable() {
+            
+            @Override
+            public void run() {
+                dialog.okBtn.requestFocus();
+            }
+        });
+        dialog.setSize(400, 275);
+        dialog.setModal(true);
+        dialog.setVisible(true);
+        if (!dialog.isOkClicked)
+            return null;
+        return dialog.getEscapeList();
+    }
+    
     private void convertPathwayToFactorGraph(Long pathwayId,
                                              RenderablePathway pathway,
                                              PathwayInternalFrame pathwayFrame,
+                                             String escapeNames,
                                              TaskMonitor taskMonitor) throws Exception {
         taskMonitor.setTitle("Convert Pathway to Factor Graph");
         taskMonitor.setStatusMessage("Converting to factor graph...");
         taskMonitor.setProgress(0.0d);
         RESTFulFIService fiService = new RESTFulFIService();
-        PGMFactorGraph fg = fiService.convertPathwayToFactorGraph(pathwayId);
+        PGMFactorGraph fg = fiService.convertPathwayToFactorGraph(pathwayId,
+                                                                  escapeNames);
         if (fg == null || fg.getFactors() == null || fg.getFactors().size() == 0) {
             JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
                                           "Pathway" + "\"" + pathway.getDisplayName() + "\"" + 
@@ -304,4 +332,107 @@ public class DiagramAndFactorGraphSwitcher {
         return edges;
     }
     
+    /**
+     * Use this customized JDialog for the user to enter a list of names for small molecules
+     * for escaping during a pathway converting to a factor graph.
+     * @author gwu
+     *
+     */
+    private class EscapeNameDialog extends JDialog {
+        private JTextArea listTA;
+        private boolean isOkClicked;
+        private JButton okBtn;
+        
+        public EscapeNameDialog(JFrame parentFrame) {
+            super(parentFrame);
+            init();
+        }
+        
+        private void init() {
+            setTitle("Escape Names");
+            
+            JPanel contentPane = new JPanel();
+            Border border1 = BorderFactory.createEtchedBorder();
+            Border border2 = BorderFactory.createEmptyBorder(8, 8, 8, 8);
+            contentPane.setBorder(BorderFactory.createCompoundBorder(border1, border2));
+            contentPane.setLayout(new BorderLayout(2, 2));
+            JLabel label = new JLabel("<html>The following list of small molecules will be excluded"
+                    + " from converting into the factor graph:</html>");
+            contentPane.add(label, BorderLayout.NORTH);
+            String preDefinedList = getPredefinedList();
+            listTA = new JTextArea(preDefinedList);
+            listTA.setLineWrap(true);
+            listTA.setWrapStyleWord(true);
+            contentPane.add(new JScrollPane(listTA), BorderLayout.CENTER);
+            label = new JLabel("<html>Note: You can edit the above list. Use \", \" to delimit names.</html>");
+            contentPane.add(label, BorderLayout.SOUTH);
+            
+            // Control pane
+            JPanel controlPane = new JPanel();
+            okBtn = new JButton("OK");
+            okBtn.setDefaultCapable(true);
+            getRootPane().setDefaultButton(okBtn);
+            okBtn.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    isOkClicked = true;
+                    dispose();
+                }
+            });
+            controlPane.add(okBtn);
+            
+            JButton cancelBtn = new JButton("Cancel");
+            cancelBtn.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    isOkClicked = false;
+                    dispose();
+                }
+            });
+            controlPane.add(cancelBtn);
+            
+            JButton resetBtn = new JButton("Reset");
+            resetBtn.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    reset();
+                }
+            });
+            controlPane.add(resetBtn);
+            
+            getContentPane().add(contentPane, BorderLayout.CENTER);
+            getContentPane().add(controlPane, BorderLayout.SOUTH);
+            
+            setLocationRelativeTo(getOwner());
+        }
+        
+        public String getEscapeList() {
+            String text = listTA.getText().trim();
+            String[] tokens = text.split(",( )?");
+            return StringUtils.join(",", Arrays.asList(tokens));
+        }
+        
+        private void reset() {
+            listTA.setText(getPredefinedList());
+        }
+        
+        private String getPredefinedList() {
+            String[] escapeNames = new String[] {
+                    "ATP",
+                    "ADP",
+                    "Pi",
+                    "H2O",
+                    "GTP",
+                    "GDP",
+                    "CO2",
+                    "H+"
+            };
+            List<String> escapeList = Arrays.asList(escapeNames);
+            return StringUtils.join(", ", escapeList);
+        }
+        
+    }
 }

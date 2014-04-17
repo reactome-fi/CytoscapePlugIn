@@ -18,9 +18,11 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.math.MathException;
+import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.pgm.IPACalculator;
 import org.reactome.pgm.PGMFactorGraph;
 import org.reactome.pgm.PGMVariable;
 import org.reactome.r3.util.MathUtilities;
@@ -51,7 +53,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
             
             @Override
             public void actionPerformed(ActionEvent e) {
-                viewTTestDetails();
+                viewDetails();
             }
         });
         // Re-create control tool bars
@@ -78,67 +80,74 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
             viewDetailsBtn.setVisible(false); // Nothing to be viewed
             return; 
         }
-        double pvalueCutoff = 0.05d;
+        double pvalueCutoff = 0.01d;
+        double ipaDiffCutoff = 0.30d; // 2 fold difference
         try {
-            performTTest(variables, pvalueCutoff, builder);
+            generateOverview(variables, pvalueCutoff, ipaDiffCutoff, builder);
             outputResultLabel.setText(builder.toString());
             viewDetailsBtn.setVisible(true);
         }
-        catch(MathException e) {
+        catch(Exception e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Error in doing t-test: " + e,
-                                          "Error in T-Test",
+                                          "Error in generating details: " + e,
+                                          "Error in Generating Details",
                                           JOptionPane.ERROR_MESSAGE);
             outputResultLabel.setText(builder.toString());
             viewDetailsBtn.setVisible(false);
         }
     }
     
-    private void performTTest(List<PGMVariable> variables,
-                              double pvalueCutoff,
-                              StringBuilder builder) throws MathException {
+    private void generateOverview(List<PGMVariable> variables,
+                                  double pvalueCutoff,
+                                  double ipaDiffCutoff,
+                                  StringBuilder builder) throws Exception {
         // Do a test
         int negPerturbedOutputs = 0;
         int posPerturbedOutputs = 0;
         List<Double> realIPAs = new ArrayList<Double>();
         List<Double> randomIPAs = new ArrayList<Double>();
-        List<Double> pvalues = new ArrayList<Double>();
         List<List<Double>> allRealIPAs = new ArrayList<List<Double>>();
+        MannWhitneyUTest uTest = new MannWhitneyUTest();
+        List<Double> pvalues = new ArrayList<Double>();
         for (PGMVariable var : variables) {
             realIPAs.clear();
             randomIPAs.clear();
             Map<String, List<Double>> realProbs = var.getPosteriorValues();
             for (List<Double> probs : realProbs.values()) {
-                double ipa = PlugInUtilities.calculateIPA(var.getValues(), probs);
+                double ipa = IPACalculator.calculateIPA(var.getValues(), probs);
                 realIPAs.add(ipa);
             }
             Map<String, List<Double>> randomProbs = var.getRandomPosteriorValues();
             for (List<Double> probs : randomProbs.values()) {
-                double ipa = PlugInUtilities.calculateIPA(var.getValues(), probs);
+                double ipa = IPACalculator.calculateIPA(var.getValues(), probs);
                 randomIPAs.add(ipa);
             }
-            Double pvalue = MathUtilities.calculateTTest(realIPAs, 
-                                                         randomIPAs);
+            double realMean = MathUtilities.calculateMean(realIPAs);
+            double randomMean = MathUtilities.calculateMean(randomIPAs);
+            double meanDiff = realMean - randomMean;
+            if (Math.abs(meanDiff) < ipaDiffCutoff)
+                continue;
+            double pvalue = uTest.mannWhitneyUTest(PlugInUtilities.convertDoubleListToArray(realIPAs),
+                                                   PlugInUtilities.convertDoubleListToArray(randomIPAs));
             if (pvalue < pvalueCutoff) {
-                double realMean = MathUtilities.calculateMean(realIPAs);
-                double randomMean = MathUtilities.calculateMean(randomIPAs);
-                if (realMean < randomMean)
+                if (meanDiff < 0.0d)
                     negPerturbedOutputs ++;
-                else if (realMean > randomMean)
+                else if (meanDiff > 0.0d)
                     posPerturbedOutputs ++;
             }
-            pvalues.add(pvalue);
-            allRealIPAs.add(new ArrayList<Double>(realIPAs));
         }
         builder.append(" (").append(negPerturbedOutputs).append(" down perturbed, ");
-        builder.append(posPerturbedOutputs).append(" up perturbed. Combined p-values: ");
-        PValueCombiner combiner = new PValueCombiner();
-        double combinedPValue = combiner.combinePValue(allRealIPAs, pvalues);
-        builder.append(PlugInUtilities.formatProbability(combinedPValue)).append(")  ");
+        builder.append(posPerturbedOutputs).append(" up perturbed, based on pvalue < ");
+        builder.append(pvalueCutoff).append(" and IPA mean diff > ");
+        builder.append(ipaDiffCutoff).append(".)  ");
+        // Will not run combining pvalue: Not that interesting here!
+        //            PValueCombiner combiner = new PValueCombiner();
+        //            double combinedPValue = combiner.combinePValue(allRealIPAs, pvalues);
+        //            builder.append(PlugInUtilities.formatProbability(combinedPValue)).append(")  ");
     }
     
-    private void viewTTestDetails() {
-        TTestDetailDialog dialog = new TTestDetailDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
+    private void viewDetails() {
+        PathwayAnalysisDetailsDialog dialog = new PathwayAnalysisDetailsDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
         try {
             IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
             dialog.setVariables(model.variables);
@@ -151,8 +160,8 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         }
         catch(MathException e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Error in viewing t-test details: " + e.getMessage(),
-                                          "Error in T-Test",
+                                          "Error in viewing pathway analysis details: " + e.getMessage(),
+                                          "Error in Detail View",
                                           JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -214,7 +223,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
                 Map<String, List<Double>> sampleToProbs = var.getRandomPosteriorValues();
                 for (String sample : sampleToProbs.keySet()) {
                     List<Double> probs = sampleToProbs.get(sample);
-                    double ipa = PlugInUtilities.calculateIPA(var.getValues(), probs);
+                    double ipa = IPACalculator.calculateIPA(var.getValues(), probs);
                     if (ipa < 0.0d) {
                         Double value = sampleToNegative.get(sample);
                         if (value == null)
@@ -255,7 +264,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
                     PGMVariable var = variables.get(j);
                     Map<String, List<Double>> posteriors = var.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
-                    double ipa = PlugInUtilities.calculateIPA(var.getValues(), postProbs);
+                    double ipa = IPACalculator.calculateIPA(var.getValues(), postProbs);
                     if (ipa < 0.0d)
                         negative += ipa;
                     else if (ipa > 0.0d)
@@ -317,7 +326,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
                     PGMVariable var = variables.get(j);
                     Map<String, List<Double>> posteriors = var.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
-                    double ipa = PlugInUtilities.calculateIPA(var.getValues(), postProbs);
+                    double ipa = IPACalculator.calculateIPA(var.getValues(), postProbs);
                     if (ipa < 0.0d)
                         negativePerturbations += ipa;
                     else if (ipa > 0.0d)

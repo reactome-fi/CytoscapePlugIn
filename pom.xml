@@ -302,12 +302,19 @@
 			<artifactId>com.springsource.org.hamcrest.core</artifactId>
 			 <version>1.1.0</version>
 	  	</dependency>
-
+        
+        <!-- math 2.2 should be replaced by 3.2 in the future. For the time being, both of them are used -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math</artifactId>
 			<version>2.2</version>
 		</dependency>
+        
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.2</version>
+        </dependency>
 		
 		<dependency>
 			<groupId>org.kegg</groupId>

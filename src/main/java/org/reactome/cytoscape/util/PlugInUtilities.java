@@ -14,7 +14,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -78,6 +77,17 @@ public class PlugInUtilities {
     public PlugInUtilities() {
     }
     
+    public static double[] convertDoubleListToArray(List<Double> list) {
+        double[] rtn = new double[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            Double value = list.get(i);
+            if (value == null)
+                throw new IllegalArgumentException("Double List contains a null value!");
+            rtn[i] = value;
+        }
+        return rtn;
+    }
+    
     /**
      * Get the index for a CytoPanelComponent specified by its name in the passed
      * CytoPanel object. If nothing can be found, -1 is going to be returned.
@@ -107,42 +117,6 @@ public class PlugInUtilities {
         marker.setStroke(new BasicStroke(2.0f)); // Give it an enough stroke
         marker.setPaint(new Color(0.0f, 0.0f, 0.0f, 0.5f));
         return marker;
-    }
-    
-    /**
-     * Calculate IPA values for factor graph based data analysis.
-     * @param priorProbs
-     * @param postProbs
-     * @return
-     */
-    public static double calculateIPA(List<Double> priorProbs,
-                                  List<Double> postProbs) {
-        if (priorProbs == null || postProbs == null || priorProbs.size() < 3 || postProbs.size() < 3)
-            return 0.0d;
-        List<Double> ratios = new ArrayList<Double>(3);
-        for (int i = 0; i < 3; i++) {
-            double ratio = calculateLogRatio(priorProbs.get(i),
-                                             postProbs.get(i));
-            ratios.add(ratio);
-        }
-        return calculateIPA(ratios);
-    }
-    
-    private static double calculateIPA(List<Double> ratios) {
-        double down = ratios.get(0);
-        double normal = ratios.get(1);
-        double up = ratios.get(2);
-        if (up > down && up > normal)
-            return up;
-        if (down > up && down > normal)
-            return -down;
-        return 0;
-    }
-    
-    private static double calculateLogRatio(double priorValue,
-                                     double postValue) {
-        double value = Math.log10(postValue / (1.0d - postValue) * (1.0d - priorValue) / priorValue);
-        return value;
     }
     
     /**

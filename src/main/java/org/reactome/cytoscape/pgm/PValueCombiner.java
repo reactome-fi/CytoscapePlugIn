@@ -4,6 +4,7 @@
  */
 package org.reactome.cytoscape.pgm;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math.MathException;
@@ -39,19 +40,21 @@ public class PValueCombiner {
      */
     public double combinePValue(List<List<Double>> realValuesList,
                                 List<Double> pvalues) throws MathException {
+        // Use a copy so that a minimum pvalues can be used
+        List<Double> pvaluesCopy = new ArrayList<Double>(pvalues);
         // Have to make sure there is no zero in the pvalues collection. Otherwise,
         // log will throw an exception
-        for (Double pvalue : pvalues) {
-            if (pvalue.equals(0.0d)) {
-                throw new IllegalArgumentException("The pvalue list contains 0, which is not allowed!");
-            }
+        for (int i = 0; i < pvaluesCopy.size(); i++) {
+            Double pvalue = pvaluesCopy.get(i);
+            if (pvalue.equals(0.0d)) 
+                pvaluesCopy.set(i, 1.0E-16); // As the minimum value
         }
         int size = pvalues.size();
         double mean = calculateMean(size);
         double var = calculateVar(realValuesList, size);
         double f = 2.0d * mean * mean / var;
         double c = var / (2.0d * mean);
-        double fisher = calculateFisherValue(pvalues);
+        double fisher = calculateFisherValue(pvaluesCopy);
         ChiSquaredDistribution distribution = new ChiSquaredDistributionImpl(f);
         return 1.0d - distribution.cumulativeProbability(c * fisher);
     }

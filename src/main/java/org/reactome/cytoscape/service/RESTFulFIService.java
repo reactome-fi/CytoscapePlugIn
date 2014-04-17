@@ -158,9 +158,10 @@ public class RESTFulFIService implements FINetworkService
         return queryInteractions(url);
     }
 
-    public PGMFactorGraph convertPathwayToFactorGraph(Long pathwayId) throws Exception {
+    public PGMFactorGraph convertPathwayToFactorGraph(Long pathwayId,
+                                                      String escapeNames) throws Exception {
         String url = restfulURL + "network/convertPathwayToFactorGraph/" + pathwayId;
-        Element root = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
+        Element root = PlugInUtilities.callHttpInXML(url, HTTP_POST, escapeNames);
         // Convert it into org.w3.dom.Document to be used in JAXB
         org.w3c.dom.Document document = new DOMOutputter().output(root.getDocument());
         org.w3c.dom.Node docRoot = document.getDocumentElement();
@@ -168,6 +169,23 @@ public class RESTFulFIService implements FINetworkService
         Unmarshaller unmarshaller = jc.createUnmarshaller();
         PGMFactorGraph fg = (PGMFactorGraph) unmarshaller.unmarshal(docRoot);
         return fg;
+    }
+    
+    /**
+     * Perform a KS test using a RESTful API.
+     * @param query a formatted String that contains multiple pairs of double arrays.
+     * @return
+     * @throws Exception
+     */
+    public List<Double> performKSTest(String query) throws Exception {
+        String url = restfulURL + "network/ksTest";
+        String result = callHttp(url, HTTP_POST, query);
+        List<Double> rtn = new ArrayList<Double>();
+        String[] tokens = result.split(",");
+        for (String token : tokens) {
+            rtn.add(new Double(token));
+        }
+        return rtn;
     }
     
     public List<InferenceResults> runInferenceOnFactorGraph(PGMFactorGraph pfg) throws Exception {
