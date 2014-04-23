@@ -36,6 +36,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.pgm.FactorValuesDialog;
 import org.reactome.cytoscape.pgm.IPAPathwayAnalysisPane;
 import org.reactome.cytoscape.pgm.IPAValueTablePane;
+import org.reactome.cytoscape.pgm.InferenceAlgorithmDialog;
 import org.reactome.cytoscape.pgm.NetworkToFactorGraphMap;
 import org.reactome.cytoscape.pgm.ObservationDataHelper;
 import org.reactome.cytoscape.pgm.ObservationDataLoadDialog;
@@ -49,9 +50,11 @@ import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.pgm.InferenceResults;
+import org.reactome.pgm.InferenceStatus;
 import org.reactome.pgm.Observation;
 import org.reactome.pgm.PGMFactor;
 import org.reactome.pgm.PGMFactorGraph;
+import org.reactome.pgm.PGMInferenceAlgorithm;
 import org.reactome.pgm.PGMVariable;
 
 /**
@@ -311,44 +314,113 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             return ;
         }
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+        // Set up an inference algorithm
+        InferenceAlgorithmDialog infAlgDialog = new InferenceAlgorithmDialog(frame);
+        infAlgDialog.setLocationRelativeTo(frame);
+        infAlgDialog.setSize(400, 355);
+        infAlgDialog.setModal(true);
+        infAlgDialog.setVisible(true);
+        if (!infAlgDialog.isOkClicked())
+            return; // Cancelled
+        PGMInferenceAlgorithm algorithm = infAlgDialog.getSelectedAlgorithm();
+        if (algorithm == null) {
+            JOptionPane.showMessageDialog(frame, 
+                                          "Cannot perform inference: no algorithm has been specified.", 
+                                          "No Inference Algorithm", 
+                                          JOptionPane.ERROR_MESSAGE);
+            return; // Algorithm has not been selected
+        }
+        fg.setInferenceAlgorithm(algorithm);
         try {
             ProgressPane progressPane = new ProgressPane();
             frame.setGlassPane(progressPane);
             progressPane.setTitle("Run Inference");
-            progressPane.setText("Run inference on factor graph...");
+            progressPane.setText("Sending data to the server...");
             progressPane.setIndeterminate(true);
             frame.getGlassPane().setVisible(true);
-            RESTFulFIService fiService = new RESTFulFIService();
-            List<InferenceResults> inferenceResults = fiService.runInferenceOnFactorGraph(fg);
-            // Want to copy values from pfgWithValues to the original factor graph.
-            // The original factor graph can be replaced by the returned new factor graph
-            // too. However, it is felt that copying values is more reliable, which is just
-            // my gut feeling.
-            copyVariableValues(inferenceResults,
-                               fg);
-            showIPANodeValues(inferenceResults);
-            showIPAPathwayValues(inferenceResults,
-                                 fg);
-            frame.getGlassPane().setVisible(false);
-            if (needFinishDialog) {
-                String message = "Inference has finished successfully. You may use \"View Marginal Probabilities\" by\n" + 
-                                 "selecting a variable node";
-                if (inferenceResults.size() == 1)
-                    message += ".";
-                else
-                    message += ", and view IPA values at the bottom \"IPA Node Values\" tab. \n" + 
-                               "You may also view pathway level results at the \"IPA Pathway Analysis\" tab.\n" +
-                               "Note: IPA stands for \"Integrated Pathway Activity\".";
+            final RESTFulFIService fiService = new RESTFulFIService();
+            final String processId = fiService.runInferenceOnFGViaProcess(fg);
+            if (processId == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                              message,
-                                              "Inference Finished",
-                                              JOptionPane.INFORMATION_MESSAGE);
+                                              "Cannot run inference at the server.",
+                                              "Inference Error",
+                                              JOptionPane.ERROR_MESSAGE);
+                if (frame.getGlassPane() != null)
+                    frame.getGlassPane().setVisible(false);
+                return;
+            }
+            // A special case
+            if (processId.equals(InferenceStatus.SERVER_BUSY.toString())) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "The server is busy right now. Please try again later on.",
+                                              "Server Busy",
+                                              JOptionPane.ERROR_MESSAGE);
+                if (frame.getGlassPane() != null)
+                    frame.getGlassPane().setVisible(false);
+                return;
+            }
+            progressPane.setText("Performing inference...");
+            progressPane.enableCancelAction(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        fiService.abortInferenceProcess(processId);
+                    }
+                    catch(Exception e1) {
+                        
+                    }
+                }
+            });
+            InferenceStatus status = null;
+            while (!progressPane.isCancelled()) {
+                status = fiService.checkInferenceStatus(processId);
+                if (status == InferenceStatus.DONE || status == InferenceStatus.ERROR) {
+                    break;
+                }
+                // Sleep for 2 seconds
+                Thread.sleep(2000);
+            }
+            if (progressPane.isCancelled()) {
+                if (frame.getGlassPane() != null)
+                    frame.getGlassPane().setVisible(false);
+                return;
+            }
+            if (status == InferenceStatus.DONE) {
+//                List<InferenceResults> inferenceResults = fiService.runInferenceOnFactorGraph(fg);
+                List<InferenceResults> inferenceResults = fiService.getInferenceResults(processId);
+                // Want to copy values from pfgWithValues to the original factor graph.
+                // The original factor graph can be replaced by the returned new factor graph
+                // too. However, it is felt that copying values is more reliable, which is just
+                // my gut feeling.
+                copyVariableValues(inferenceResults,
+                                   fg);
+                showIPANodeValues(inferenceResults);
+                showIPAPathwayValues(inferenceResults,
+                                     fg);
+                frame.getGlassPane().setVisible(false);
+                if (needFinishDialog) {
+                    String message = "Inference has finished successfully. You may use \"View Marginal Probabilities\" by\n" + 
+                            "selecting a variable node";
+                    if (inferenceResults.size() == 1)
+                        message += ".";
+                    else
+                        message += ", and view IPA values at the bottom \"IPA Node Values\" tab. \n" + 
+                                "You may also view pathway level results at the \"IPA Pathway Analysis\" tab.\n" +
+                                "Note: IPA stands for \"Integrated Pathway Activity\".";
+                    JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                  message,
+                                                  "Inference Finished",
+                                                  JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+            else if (status == InferenceStatus.ERROR) {
+                throw new IllegalStateException(fiService.getInferenceError(processId));
             }
         }
         catch(Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Error in running infernece on factor graph: " + e.getMessage(),
+                                          "Error in running inference on factor graph: " + e.getMessage(),
                                           "Error in Inference",
                                           JOptionPane.ERROR_MESSAGE);
             if (frame.getGlassPane() != null)

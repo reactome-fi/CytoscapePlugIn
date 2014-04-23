@@ -238,7 +238,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
         // Cache the list of variables for different view
         protected List<PGMVariable> variables;
         // A flag to indicate if p-values should be displayed
-        private boolean hideFDRs;
+        // Default is hide for a simply drawing
+        private boolean hideFDRs = true;
         
         public IPAValueTableModel() {
             columnHeaders = ORIGINAL_HEADERS; // Just some test data

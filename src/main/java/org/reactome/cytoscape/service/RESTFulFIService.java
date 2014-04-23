@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
@@ -38,6 +39,7 @@ import org.gk.render.RenderablePathway;
 import org.gk.util.StringUtils;
 import org.jdom.Document;
 import org.jdom.Element;
+import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.DOMOutputter;
 import org.jdom.output.Format;
@@ -52,6 +54,7 @@ import org.reactome.funcInt.Interaction;
 import org.reactome.funcInt.Protein;
 import org.reactome.funcInt.ReactomeSource;
 import org.reactome.pgm.InferenceResults;
+import org.reactome.pgm.InferenceStatus;
 import org.reactome.pgm.PGMFactorGraph;
 import org.reactome.r3.graph.NetworkClusterResult;
 import org.reactome.r3.util.InteractionUtilities;
@@ -191,13 +194,53 @@ public class RESTFulFIService implements FINetworkService
     public List<InferenceResults> runInferenceOnFactorGraph(PGMFactorGraph pfg) throws Exception {
         String url = restfulURL + "network/runInferenceOnFactorGraph";
         // Need to marshal the factor graph into an XML string
-        JAXBContext context = JAXBContext.newInstance(PGMFactorGraph.class,
-                                                      InferenceResults.class);
+        String fgText = generateFGText(pfg);
+        String rtn = PlugInUtilities.postHttpInXML(url, fgText);
+        List<InferenceResults> resultsList = parseInferenceResults(rtn);
+        return resultsList;
+    }
+    
+    public String runInferenceOnFGViaProcess(PGMFactorGraph pfg) throws Exception {
+        String url = restfulURL + "network/runInferenceOnFGViaProcess";
+        String fgText = generateFGText(pfg);
+        String rtn = PlugInUtilities.postHttpInXML(url, fgText);
+        return rtn;
+    }
+    
+    public InferenceStatus checkInferenceStatus(String processId) throws Exception {
+        String url = restfulURL + "network/checkInferenceStatus/" + processId;
+        String status = PlugInUtilities.callHttpInText(url, HTTP_GET, null);
+        return InferenceStatus.valueOf(status);
+    }
+    
+    public List<InferenceResults> getInferenceResults(String processId) throws Exception {
+        String url = restfulURL + "network/getInferenceResults/" + processId;
+        String text = PlugInUtilities.callHttpInText(url, HTTP_GET, null);
+        return parseInferenceResults(text);
+    }
+    
+    public String getInferenceError(String processId) throws Exception {
+        String url = restfulURL + "network/getInferenceError/" + processId;
+        return PlugInUtilities.callHttpInText(url, HTTP_GET, null);
+    }
+    
+    public void abortInferenceProcess(String processId) throws Exception {
+        String url = restfulURL + "network/abortInferenceProcess/" + processId;
+        PlugInUtilities.callHttpInText(url, HTTP_GET, null);
+    }
+    
+    private String generateFGText(PGMFactorGraph pfg) throws JAXBException, IOException {
+        JAXBContext context = JAXBContext.newInstance(PGMFactorGraph.class);
         StringWriter writer = new StringWriter();
         Marshaller marshaller = context.createMarshaller();
         marshaller.marshal(pfg, writer);
-        String rtn = PlugInUtilities.postHttpInXML(url, writer.getBuffer().toString());
+        String fgText = writer.getBuffer().toString();
         writer.close();
+        return fgText;
+    }
+
+    private List<InferenceResults> parseInferenceResults(String rtn) throws JDOMException, IOException, JAXBException {
+        JAXBContext context = JAXBContext.newInstance(InferenceResults.class);
         StringReader reader = new StringReader(rtn);
         SAXBuilder builder = new SAXBuilder();
         Document doc = builder.build(reader);
@@ -213,7 +256,6 @@ public class RESTFulFIService implements FINetworkService
             InferenceResults results = (InferenceResults) unmarshaller.unmarshal(child);
             resultsList.add(results);
         }
-        
         return resultsList;
     }
     
