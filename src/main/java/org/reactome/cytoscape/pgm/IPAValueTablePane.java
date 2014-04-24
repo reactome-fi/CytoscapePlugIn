@@ -26,13 +26,18 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.table.TableRowSorter;
 
+import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
+import org.cytoscape.application.events.SetCurrentNetworkViewListener;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.model.CyNetworkView;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.cytoscape.service.TableHelper;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.pgm.IPACalculator;
 import org.reactome.pgm.PGMFactorGraph;
@@ -53,6 +58,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
     // Use this member variable to block multiple handling of the same
     // selection event.
     private List<CyNode> preSelectedNodes;
+    // Keep this registration so that it can be unregister if this panel is closed
+    private ServiceRegistration currentViewRegistration;
     
     /**
      * In order to show title, have to set the title in the constructor.
@@ -62,8 +69,30 @@ public class IPAValueTablePane extends NetworkModulePanel {
         hideOtherNodesBox.setVisible(false);
         nodeToVar = new HashMap<CyNode, PGMVariable>();
         modifyContentPane();
+        // Add the following event listener in order to support multiple network views
+        SetCurrentNetworkViewListener listener = new SetCurrentNetworkViewListener() {
+            
+            @Override
+            public void handleEvent(SetCurrentNetworkViewEvent e) {
+                CyNetworkView networkView = e.getNetworkView();
+                setNetworkView(networkView);
+            }
+        };
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        currentViewRegistration = context.registerService(SetCurrentNetworkViewListener.class.getName(),
+                                                          listener,
+                                                          null);
     }
     
+    @Override
+    public void close() {
+        if (currentViewRegistration != null) {
+            // Unregister it so that this object can be GC.
+            currentViewRegistration.unregister();
+        }
+        super.close();
+    }
+
     protected void modifyContentPane() {
         // Re-create control tool bars
         for (int i = 0; i < controlToolBar.getComponentCount(); i++) {
@@ -105,9 +134,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
     public void setNetworkView(CyNetworkView view) {
         super.setNetworkView(view);
         initNodeToVarMap();
+        setSamplesFromFG();
     }
-    
-    
     @Override
     protected void doContentTablePopup(MouseEvent e) {
         JPopupMenu popupMenu = createExportAnnotationPopup();
@@ -134,6 +162,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
 
     private void initNodeToVarMap() {
         nodeToVar.clear();
+        if (view == null)
+            return;
         PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(view.getModel());
         if (fg != null) {
             Map<String, PGMVariable> labelToVar = new HashMap<String, PGMVariable>();
@@ -152,6 +182,23 @@ public class IPAValueTablePane extends NetworkModulePanel {
                     nodeToVar.put(node, var);
             }
         }
+    }
+    
+    private void setSamplesFromFG() {
+        // Get a list of samples from posteriors from all variables
+        Set<String> sampleSet = new HashSet<String>();
+        if (view != null) {// If a pathway view is selected, network view will be null.
+            PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(view.getModel());
+            if (fg != null) {
+                for (PGMVariable var : fg.getVariables()) {
+                    Map<String, List<Double>> posteriors = var.getPosteriorValues();
+                    sampleSet.addAll(posteriors.keySet());
+                }
+            }
+        }
+        List<String> sampleList = new ArrayList<String>(sampleSet);
+        IPAValueTableModel model = (IPAValueTableModel) contentPane.getTableModel();
+        model.setSamples(sampleList);
     }
 
     @Override
@@ -187,11 +234,6 @@ public class IPAValueTablePane extends NetworkModulePanel {
         model.setVariables(variables);
     }
 
-    public void setSamples(List<String> samples) {
-        IPAValueTableModel model = (IPAValueTableModel) contentPane.getTableModel();
-        model.setSamples(samples);
-    }
-    
     /* (non-Javadoc)
      * @see org.reactome.cytoscape.service.NetworkModulePanel#createTableModel()
      */

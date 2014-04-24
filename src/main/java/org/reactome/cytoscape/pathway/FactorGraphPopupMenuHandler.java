@@ -6,7 +6,6 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +48,7 @@ import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.pgm.InferenceResults;
 import org.reactome.pgm.InferenceStatus;
 import org.reactome.pgm.Observation;
@@ -236,18 +236,17 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
      */
     private void showIPANodeValues(List<InferenceResults> resultsList) {
         if (resultsList.size() <= 1) // Just prior probabilities
-            return ; 
-        IPAValueTablePane valuePane = new IPAValueTablePane("IPA Node Values");
+            return ;
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
+        String title = "IPA Node Values";
+        int index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);
+        IPAValueTablePane valuePane = null;
+        if (index < 0)
+            valuePane = new IPAValueTablePane(title);
+        else
+            valuePane = (IPAValueTablePane) tableBrowserPane.getComponentAt(index);
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        List<String> samples = new ArrayList<String>();
-        // Filter out random samples
-        for (InferenceResults results : resultsList) {
-            String sample = results.getSample();
-            if (sample == null || sample.startsWith(ObservationDataHelper.RANDOM_SAMPLE_PREFIX))
-                continue;
-            samples.add(sample);
-        }
-        valuePane.setSamples(samples);
         // Don't select it. Let the overview panel to be selected.
 //        // Need to select it
 //        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
@@ -261,15 +260,23 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                       PGMFactorGraph fg) {
         if (resultsList.size() <= 1)
             return; 
-        IPAPathwayAnalysisPane valuePane = new IPAPathwayAnalysisPane("IPA Pathway Analysis");
-        valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        valuePane.setFactorGraph(fg);
-        // Don't select it
-        // Need to select it
+        String title = "IPA Pathway Analysis";
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
-        int index = tableBrowserPane.indexOfComponent(valuePane);
-        if (index >= 0)
+        
+        int index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane,
+                                                                    title);
+        IPAPathwayAnalysisPane valuePane = null;
+        if (index > -1)
+            valuePane = (IPAPathwayAnalysisPane) tableBrowserPane.getComponentAt(index);
+        else
+            valuePane = new IPAPathwayAnalysisPane(title);
+        valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
+        // The following should be taken care of by the above method invocation.
+//        valuePane.setFactorGraph(fg);
+        if (index == -1)
+            index = tableBrowserPane.indexOfComponent(valuePane);
+        if (index >= 0) // Select this as the default table for viewing the results
             tableBrowserPane.setSelectedIndex(index);
     }
     
@@ -282,6 +289,13 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             List<Double> probs = varIdToProbs.get(var.getId());
             if (probs != null)
                 var.setValues(probs); // Just use the original List object directly
+        }
+        if (resultsList.size() < 2)
+            return; // Only prior information
+        // Need to reset the previously assigned values
+        for (PGMVariable var : target.getVariables()) {
+            var.clearPosteriorValues();
+            var.clearRandomPosteriorValues();
         }
         // All others should be posterior probabilities
         for (int i = 1; i < resultsList.size(); i++) {

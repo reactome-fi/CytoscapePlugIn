@@ -20,6 +20,7 @@ import javax.swing.JOptionPane;
 import org.apache.commons.math.MathException;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 import org.cytoscape.model.events.RowsSetEvent;
+import org.cytoscape.view.model.CyNetworkView;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.pgm.IPACalculator;
@@ -83,9 +84,9 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         double pvalueCutoff = 0.01d;
         double ipaDiffCutoff = 0.30d; // 2 fold difference
         try {
-            generateOverview(variables, pvalueCutoff, ipaDiffCutoff, builder);
+            boolean hasData = generateOverview(variables, pvalueCutoff, ipaDiffCutoff, builder);
             outputResultLabel.setText(builder.toString());
-            viewDetailsBtn.setVisible(true);
+            viewDetailsBtn.setVisible(hasData);
         }
         catch(Exception e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
@@ -97,7 +98,15 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         }
     }
     
-    private void generateOverview(List<PGMVariable> variables,
+    /**
+     * @param variables
+     * @param pvalueCutoff
+     * @param ipaDiffCutoff
+     * @param builder
+     * @return true if outputs are checked actually; false for no data available.
+     * @throws Exception
+     */
+    private boolean generateOverview(List<PGMVariable> variables,
                                   double pvalueCutoff,
                                   double ipaDiffCutoff,
                                   StringBuilder builder) throws Exception {
@@ -109,6 +118,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         List<List<Double>> allRealIPAs = new ArrayList<List<Double>>();
         MannWhitneyUTest uTest = new MannWhitneyUTest();
         List<Double> pvalues = new ArrayList<Double>();
+        boolean hasData = false;
         for (PGMVariable var : variables) {
             realIPAs.clear();
             randomIPAs.clear();
@@ -122,6 +132,9 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
                 double ipa = IPACalculator.calculateIPA(var.getValues(), probs);
                 randomIPAs.add(ipa);
             }
+            if (realIPAs.size() == 0 || randomIPAs.size() == 0)
+                continue;
+            hasData = true;
             double realMean = MathUtilities.calculateMean(realIPAs);
             double randomMean = MathUtilities.calculateMean(randomIPAs);
             double meanDiff = realMean - randomMean;
@@ -136,10 +149,15 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
                     posPerturbedOutputs ++;
             }
         }
+        if (!hasData) {
+            builder.append(" (No inference results are available.) ");
+            return false;
+        }
         builder.append(" (").append(negPerturbedOutputs).append(" down perturbed, ");
         builder.append(posPerturbedOutputs).append(" up perturbed, based on pvalue < ");
         builder.append(pvalueCutoff).append(" and IPA mean diff > ");
         builder.append(ipaDiffCutoff).append(".)  ");
+        return true;
         // Will not run combining pvalue: Not that interesting here!
         //            PValueCombiner combiner = new PValueCombiner();
         //            double combinedPValue = combiner.combinePValue(allRealIPAs, pvalues);
@@ -178,15 +196,26 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
     @Override
     public void handleEvent(RowsSetEvent event) {
     }
+    
+    @Override
+    public void setNetworkView(CyNetworkView view) {
+        this.view = view;
+        PGMFactorGraph pfg = null;
+        if (view != null)
+            pfg = NetworkToFactorGraphMap.getMap().get(view.getModel());
+        setFactorGraph(pfg);
+    }
 
-    public void setFactorGraph(PGMFactorGraph fg) {
+    private void setFactorGraph(PGMFactorGraph fg) {
         // Want to get a list of variables having output roles since
         // we want to focus on outputs for pathway perturbation study
         List<PGMVariable> outputs = new ArrayList<PGMVariable>();
-        for (PGMVariable var : fg.getVariables()) {
-            if (var.getRoles() == null || !var.getRoles().contains(PGMVariable.VariableRole.OUTPUT))
-                continue;
-            outputs.add(var);
+        if (fg != null) {
+            for (PGMVariable var : fg.getVariables()) {
+                if (var.getRoles() == null || !var.getRoles().contains(PGMVariable.VariableRole.OUTPUT))
+                    continue;
+                outputs.add(var);
+            }
         }
         IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
         model.setVariables(outputs);

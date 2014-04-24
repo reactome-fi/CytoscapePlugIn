@@ -11,6 +11,7 @@ import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -203,7 +204,13 @@ public class InferenceAlgorithmDialog extends JDialog {
     }
     
     private void reset() {
-        
+        PGMInferenceAlgorithm alg = (PGMInferenceAlgorithm) algBox.getSelectedItem();
+        // Get the original copy
+        PGMInferenceAlgorithm original = PGMInfAlgManager.getManager().getAlgorithm(alg.getAlgorithm());
+        Map<String, String> originalProps = original.getProperties();
+        alg.setProperties(originalProps);
+        // Reset the GUIs
+        chooseAlgorithm(alg);
     }
     
     /**
