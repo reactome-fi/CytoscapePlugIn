@@ -666,6 +666,17 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
      * @param annotations
      */
     public void showPathwayEnrichments(List<GeneSetAnnotation> annotations) {      
+        if (annotations == null || annotations.size() == 0) {
+            // Show a message
+            JOptionPane.showMessageDialog(this,
+                                          "It appears that there is no gene in your list can be mapped into any\n"
+                                          + "Reactome pathway. Please make sure your file format is correct and\n"
+                                          + "note that this app can support human genes only.",
+                                          "Empty Result",
+                                          JOptionPane.INFORMATION_MESSAGE);
+                                                  
+            return;
+        }
         // Call this method first so that scrollPathToVisible may work correctly.
         fdrColorBar.setVisible(true);
         pathwayToAnnotation.clear();
