@@ -168,14 +168,14 @@ public class IPAValueTablePane extends NetworkModulePanel {
         if (fg != null) {
             Map<String, PGMVariable> labelToVar = new HashMap<String, PGMVariable>();
             for (PGMVariable var : fg.getVariables()) {
-                labelToVar.put(var.getLabel(), var);
+                labelToVar.put(var.getLabel(), var); // PGMVariable's label has been saved as name.
             }
             // Do a simple mapping
             TableHelper tableHelper = new TableHelper();
             for (CyNode node : view.getModel().getNodeList()) {
                 String label = tableHelper.getStoredNodeAttribute(view.getModel(),
                                                                   node, 
-                                                                  "nodeLabel", 
+                                                                  "name", 
                                                                   String.class);
                 PGMVariable var = labelToVar.get(label);
                 if (var != null)
@@ -227,7 +227,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
         Collections.sort(variables, new Comparator<PGMVariable>() {
             public int compare(PGMVariable var1, PGMVariable var2) {
-                return var1.getLabel().compareTo(var2.getLabel());
+                return var1.getName().compareTo(var2.getName());
             }
         });
         IPAValueTableModel model = (IPAValueTableModel) contentPane.getTableModel();
@@ -313,7 +313,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
             if (variables != null) {
                 Collections.sort(variables, new Comparator<PGMVariable>() {
                     public int compare(PGMVariable var1, PGMVariable var2) {
-                        return var1.getLabel().compareTo(var2.getLabel());
+                        return var1.getShortName().compareTo(var2.getShortName());
                     }
                 });
             }
@@ -324,7 +324,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
             columnHeaders = new String[variables.size() * 3 + 1];
             columnHeaders[0] = "Sample";
             for (int i = 0; i < variables.size(); i++) {
-                String label = variables.get(i).getLabel();
+                String label = variables.get(i).getShortName();
                 columnHeaders[3 * i + 1] = label;
                 columnHeaders[3 * i + 2] = label + PlotTablePanel.P_VALUE_COL_NAME_AFFIX;
                 columnHeaders[3 * i + 3] = label + PlotTablePanel.FDR_COL_NAME_AFFIX;
@@ -385,8 +385,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
             columnHeaders = new String[variables.size() + 1];
             columnHeaders[0] = "Sample";
             for (int i = 0; i < variables.size(); i++) {
-                String label = variables.get(i).getLabel();
-                columnHeaders[i + 1] = label;
+                String name = variables.get(i).getShortName();
+                columnHeaders[i + 1] = name;
             }
             for (int i = 0; i < sampleList.size(); i++) {
                 String[] rowData = new String[variables.size() + 1];

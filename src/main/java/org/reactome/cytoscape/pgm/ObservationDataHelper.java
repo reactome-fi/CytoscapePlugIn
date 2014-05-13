@@ -50,8 +50,8 @@ public class ObservationDataHelper {
     private CyNetworkView networkView;
     private PGMFactorGraph fg;
     // For quick find variables
-    private Map<String, PGMVariable> labelToVar;
-    private Map<String, CyNode> labelToNode;
+    private Map<String, PGMVariable> nameToVar;
+    private Map<String, CyNode> nameToNode;
     // In order to assign ids to new variable
     private long maxId;
     private Map<String, List<Long>> geneToDbIds;
@@ -71,9 +71,11 @@ public class ObservationDataHelper {
     }
 
     private void initializeProperties() {
-        labelToVar = new HashMap<String, PGMVariable>();
+        nameToVar = new HashMap<String, PGMVariable>();
         for (PGMVariable var : fg.getVariables()) {
-            labelToVar.put(var.getLabel(), var);
+            if (var.getName() == null)
+                continue; // This should not occur
+            nameToVar.put(var.getName(), var);
         }
         // Get the maximum ids, which should be long, in order to assign to new variables
         List<PGMVariable> variables = new ArrayList<PGMVariable>(fg.getVariables());
@@ -85,11 +87,11 @@ public class ObservationDataHelper {
             }
         });
         maxId = new Long(variables.get(variables.size() - 1).getId());
-        labelToNode = new HashMap<String, CyNode>();
+        nameToNode = new HashMap<String, CyNode>();
         TableHelper tableHelper = new TableHelper();
         for (CyNode node : networkView.getModel().getNodeList()) {
             String label = tableHelper.getStoredNodeAttribute(networkView.getModel(), node, "nodeLabel", String.class);
-            labelToNode.put(label, node);
+            nameToNode.put(label, node);
         }
         data = new GeneSampleDataPoints();
     }
@@ -150,23 +152,12 @@ public class ObservationDataHelper {
      * @return
      */
     public List<Observation> generateRandomObservations(Map<PGMVariable, Map<String, Integer>>... varToSampleToStates) {
-        Map<Long, String> dbIdToGene = new HashMap<Long, String>();
-        for (String gene : geneToDbIds.keySet()) {
-            List<Long> dbIds = geneToDbIds.get(gene);
-            if (dbIds == null || dbIds.size() == 0)
-                continue; 
-            // Just need the first DB_ID
-            dbIdToGene.put(dbIds.get(0), gene);
-        }
         Set<String> genes = new HashSet<String>();
         for (Map<PGMVariable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
             for (PGMVariable var : varToSampleToState.keySet()) {
-                String label = var.getLabel();
+                String label = var.getName();
                 String[] tokens = label.split("_");
-                Long dbId = new Long(tokens[0]);
-                String gene = dbIdToGene.get(dbId);
-                if (gene != null)
-                    genes.add(gene);
+                genes.add(tokens[0]);
             }
         }
         List<Observation> rtn = new ArrayList<Observation>();
@@ -178,12 +169,9 @@ public class ObservationDataHelper {
             observation.setSample(sample);
             for (Map<PGMVariable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
                 for (PGMVariable var : varToSampleToState.keySet()) {
-                    String label  = var.getLabel();
+                    String label  = var.getName();
                     String[] tokens = label.split("_");
-                    Long dbId = new Long(tokens[0]);
-                    String gene = dbIdToGene.get(dbId);
-                    if (gene == null)
-                        continue;
+                    String gene = tokens[0];
                     Integer state = randomData.getState(gene, sample, tokens[1]);
                     if (state == null)
                         continue;
@@ -224,51 +212,53 @@ public class ObservationDataHelper {
         final Map<CyNode, CyNode> factorNodeToObsNode = new HashMap<CyNode, CyNode>();
         Map<PGMVariable, Map<String, Integer>> variableToSampleToState = new HashMap<PGMVariable, Map<String,Integer>>();
         while ((line = fu.readLine()) != null) {
-            index = line.indexOf("\t");
-            String gene = line.substring(0, index);
+            // Cache data for randomization purpose
             cacheData(line, 
                       samples,
                       nodeType, 
                       thresholdValues);
-            List<Long> dbIds = geneToDbIds.get(gene);
-            if (dbIds == null || dbIds.size() == 0)
-                continue;
+            index = line.indexOf("\t");
+            String gene = line.substring(0, index);
+            String varName = gene + "_" + nodeType;
+            // Check if a Variable node exists
+            PGMVariable var = nameToVar.get(varName);
+            if (var == null)
+                continue; // Nothing to be done
             // Just use the first DB_ID as its label
-            PGMVariable obsVar = createObsVariable(dbIds.get(0), 
+            PGMVariable obsVar = createObsVariable(gene, 
                                                    nodeType);
             // Add this observation variable into the network.
             CyNode obsNode = fiHelper.createNode(network,
                                                  obsVar.getLabel(), 
                                                  "observation", 
                                                  obsVar.getLabel());
-            for (Long dbId : dbIds) {
-                PGMVariable var = labelToVar.get(dbId + "_" + nodeType);
-                if (var == null)
-                    continue;
-                PGMFactor factor = createObsFactor(obsVar, 
-                                                   var, 
-                                                   factorValues);
-                CyNode factorNode = fiHelper.createNode(network,
-                                                        factor.getLabel(), 
-                                                        "factor",
-                                                        factor.getLabel());
-                // Don't want to show label for factor node. So
-                // a simple fix
-                nodeTable.getRow(factorNode.getSUID()).set("nodeLabel", null);
-                CyEdge edge = fiHelper.createEdge(network,
-                                                  obsNode,
-                                                  factorNode,
-                                                  "FI");
-                CyNode varNode = labelToNode.get(dbId + "_" + nodeType);
-                edge = fiHelper.createEdge(network, 
-                                           varNode, 
-                                           factorNode,
-                                           "FI");
-                varNodeToFactorNode.put(varNode, factorNode);
-                factorNodeToObsNode.put(factorNode, obsNode);
-            }
-            nodeTable.getRow(obsNode.getSUID()).set("sourceIds", StringUtils.join(",", dbIds));
-            Map<String, Integer> sampleToState = data.getSampleToState(gene, nodeType);
+            PGMFactor factor = createObsFactor(obsVar, 
+                                               var, 
+                                               factorValues);
+            CyNode factorNode = fiHelper.createNode(network,
+                                                    factor.getLabel(), 
+                                                    "factor",
+                                                    factor.getLabel());
+            // Don't want to show label for factor node. So
+            // a simple fix
+            nodeTable.getRow(factorNode.getSUID()).set("nodeLabel", null);
+            CyEdge edge = fiHelper.createEdge(network,
+                                              obsNode,
+                                              factorNode,
+                                              "FI");
+            CyNode varNode = nameToNode.get(varName);
+            edge = fiHelper.createEdge(network, 
+                                       varNode, 
+                                       factorNode,
+                                       "FI");
+            varNodeToFactorNode.put(varNode, factorNode);
+            factorNodeToObsNode.put(factorNode, obsNode);
+            List<Long> dbIds = geneToDbIds.get(gene);
+            if (dbIds != null)
+                nodeTable.getRow(obsNode.getSUID()).set("sourceIds", 
+                                                        StringUtils.join(",", dbIds));
+            Map<String, Integer> sampleToState = data.getSampleToState(gene,
+                                                                       nodeType);
             variableToSampleToState.put(obsVar, sampleToState);
         }
         fu.close();
@@ -343,20 +333,21 @@ public class ObservationDataHelper {
         factor.addVariable(obsVar);
         factor.addVariable(hiddenVar);
         obsVar.setStates(hiddenVar.getStates());
-        String factorLabel = hiddenVar.getLabel() + "," + obsVar.getLabel();
+        String factorLabel = hiddenVar.getLabel() + ", " + obsVar.getLabel();
         factor.setLabel(factorLabel);
-        factor.setName(factorLabel);
+        String factorName = hiddenVar.getName() + ", " + obsVar.getName();
+        factor.setName(factorName);
         for (Double value : factorValues)
             factor.addValue(value);
         fg.addFactor(factor);
         return factor;
     }
     
-    private PGMVariable createObsVariable(Long dbId,
+    private PGMVariable createObsVariable(String gene,
                                           String type) {
         PGMVariable obsVar = new PGMVariable();
         obsVar.setId(++maxId + "");
-        String label = dbId + "_" + type + "_obs";
+        String label = gene + "_" + type + "_obs";
         obsVar.setLabel(label);
         obsVar.setName(label);
         return obsVar;
@@ -386,7 +377,7 @@ public class ObservationDataHelper {
         for (PGMVariable variable : fg.getVariables()) {
             String label = variable.getLabel();
             if (label.matches("\\d+_DNA") || label.matches("\\d+_mRNA")) {
-                index = label.indexOf("_");
+                index = label.lastIndexOf("_");
                 dbIds.add(new Long(label.substring(0, index)));
             }
         }

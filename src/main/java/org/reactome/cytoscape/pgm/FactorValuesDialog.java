@@ -86,7 +86,7 @@ public class FactorValuesDialog extends PGMNodeValuesDialog {
     @Override
     public void setPGMNode(PGMNode factor) {
         if (factor instanceof PGMFactor) {
-            textLabel.setText("<html><u><b>Values for Factor \"" + factor.getLabel() + "\"</b></u></html>\"");
+            textLabel.setText("<html><u><b>Values for Factor \"" + factor.getName() + "\"</b></u></html>\"");
             FactorValueTableModel model = (FactorValueTableModel) table.getModel();
             model.setFactor((PGMFactor)factor);
         }

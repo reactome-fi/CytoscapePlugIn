@@ -7,13 +7,13 @@ userGuideURL=http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin_4
 # A list of FI network versions available for selection
 FINetworkVersions=2013,2012,2009
 # For local test
-#2009_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
-#2012_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
-#2013_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+2009_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+2012_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+2013_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 # For Production site
-2009_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp/FIService/
-2012_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2012/FIService/
-2013_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2013/FIService/
+#2009_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp/FIService/
+#2012_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2012/FIService/
+#2013_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2013/FIService/
 # Source data bases
 2009_sourceDb=test_reactome_28_plus_i_myisam
 2012_sourceDb=test_reactome_41_plus_i
@@ -22,8 +22,8 @@ FINetworkVersions=2013,2012,2009
 evidenceProperties=humanInteraction,scePPI,dmePPI,celPPI,mousePPI,genewaysPPI,pavlidisGeneExp,carlosGeneExp,pfamDomainInt,goBPSharing,probability
 evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interaction,Mouse Interaction,Geneways Interaction,Pavlidis Gene Exp,Carlos Gene Exp,PfamDomain Interaction,GO BP Sharing,Score
 # In order to query Reactome pathway diagrams: most likely this should be delegated via the FI service WS?
-#ReactomeRESTfulAPI=http://localhost:8080/ReactomeRESTfulAPI/RESTfulWS/
-ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/ReactomeRESTfulAPI_PathX/RESTfulWS/
+ReactomeRESTfulAPI=http://localhost:8080/ReactomeRESTfulAPI/RESTfulWS/
+#ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/ReactomeRESTfulAPI_PathX/RESTfulWS/
 ReactomeURL=http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&ID=
 # Pre-learned probabilities between gene expression nodes and mRNA nodes
 expressionFactorValues=0.02,0.89,0.09,0.01,0.92,0.07,0.03,0.76,0.21

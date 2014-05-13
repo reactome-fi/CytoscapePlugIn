@@ -14,6 +14,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -53,6 +55,10 @@ import org.reactome.pgm.PGMVariable;
 /**
  * A similar class to DiagramAndNetworkSwitcher. This class is used to switch between a pathway diagram view and its
  * factor graph view.
+ * Note the following mappings from factor's properties to node's attributes:
+ * factor.id: not mapped
+ * factor.label: node's name, common name, shared name
+ * factor.name: node label (changed), node tool tip (the type of node is added, e.g., variable, factor).
  * @author gwu
  *
  */
@@ -174,7 +180,7 @@ public class DiagramAndFactorGraphSwitcher {
         taskMonitor.setProgress(0.50d);
         // Need to create a new CyNetwork
         FINetworkGenerator generator = new FINetworkGenerator();
-        Set<String> interactions = createEdgesFromFG(fg);
+        Set<String> interactions = createInteractionsFromFactorGraph(fg);
         CyNetwork network = generator.constructFINetwork(interactions);
         // Add some meta information
         CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
@@ -280,7 +286,11 @@ public class DiagramAndFactorGraphSwitcher {
             nodeLabelInfo.put(factor.getLabel(), null);
         }
         for (PGMVariable variable : fg.getVariables()) {
-            nodeLabelInfo.put(variable.getLabel(), variable.getLabel());
+            String label = variable.getShortName();
+            if (label == null)
+                label = variable.getLabel();
+            nodeLabelInfo.put(variable.getLabel(), 
+                              label);
         }
         return nodeLabelInfo;
     }
@@ -322,11 +332,11 @@ public class DiagramAndFactorGraphSwitcher {
      * @param fg
      * @return
      */
-    private Set<String> createEdgesFromFG(PGMFactorGraph fg) {
+    private Set<String> createInteractionsFromFactorGraph(PGMFactorGraph fg) {
         Set<String> edges = new HashSet<String>();
         for (PGMFactor factor : fg.getFactors()) {
             for (PGMVariable var : factor.getVariables()) {
-                edges.add(factor.getLabel() + "\t" + var.getLabel());
+                edges.add(factor.getLabel() + "\t" + var.getLabel()); // Use labels instead of names since names may be duplciated, but lablels should not.
             }
         }
         return edges;

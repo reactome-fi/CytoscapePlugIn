@@ -151,7 +151,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
                 rePlotData();
             }
         });
-        // Use this simple method to make sure marker is syncrhonized between two views.
+        // Use this simple method to make sure marker is synchronized between two views.
         TableAndPlotActionSynchronizer tpSyncHelper = new TableAndPlotActionSynchronizer(tTestResultTable, chartPanel);
         
         tTestResultTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -209,7 +209,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
         for (CyNode node : selectedNodes) {
             String label = helper.getStoredNodeAttribute(networkView.getModel(),
                                                          node,
-                                                         "nodeLabel",
+                                                         "name",
                                                          String.class);
             rowKeys.add(label);
         }
@@ -258,7 +258,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
             Long nodeSUID = node.getSUID();
             String nodeLabel = tableHelper.getStoredNodeAttribute(network,
                                                                   node, 
-                                                                  "nodeLabel", 
+                                                                  "name", 
                                                                   String.class);
             boolean isSelected = variables.contains(nodeLabel);
             if (isSelected)
@@ -309,7 +309,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
 
             @Override
             public Comparator<?> getComparator(int column) {
-                if (column == 0) // Just use the String comparator.
+                if (column == 1) // Just use the String comparator for name
                     return super.getComparator(0);
                 Comparator<String> rtn = new Comparator<String>() {
                     public int compare(String var1, String var2) {
@@ -320,7 +320,6 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
                 };
                 return rtn;
             }
-            
         };
         tTestResultTable.setRowSorter(sorter);
         
@@ -408,6 +407,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
                                                         var);
             double pvalue = tableModel.addRow(realIPAs, 
                                               randomIPAs,
+                                              var.getShortName(),
                                               var.getLabel());
             pvalues.add(pvalue);
             realSampleToIPAs.put(var.getLabel(), realIPAs);
@@ -466,7 +466,8 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
         
         public TTestTableModel() {
             String[] headers = new String[]{
-                    "Variable",
+                    "DB_ID",
+                    "Name",
                     "RealMean",
                     "RandomMean",
                     "MeanDiff",
@@ -488,6 +489,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
          */
         public double addRow(List<Double> realIPAs,
                              List<Double> randomIPAs,
+                             String name,
                              String varLabel) throws MathException {
             double realMean = MathUtilities.calculateMean(realIPAs);
             double randomMean = MathUtilities.calculateMean(randomIPAs);
@@ -506,12 +508,13 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
             double pvalue = new MannWhitneyUTest().mannWhitneyUTest(realArray, randomArray);
             
             String[] row = new String[colHeaders.size()];
+            row[1] = name;
             row[0] = varLabel;
-            row[1] = PlugInUtilities.formatProbability(realMean);
-            row[2] = PlugInUtilities.formatProbability(randomMean);
-            row[3] = PlugInUtilities.formatProbability(diff);
+            row[2] = PlugInUtilities.formatProbability(realMean);
+            row[3] = PlugInUtilities.formatProbability(randomMean);
+            row[4] = PlugInUtilities.formatProbability(diff);
 //            row[4] = PlugInUtilities.formatProbability(t);
-            row[4] = PlugInUtilities.formatProbability(pvalue);
+            row[5] = PlugInUtilities.formatProbability(pvalue);
             
             data.add(row);
             
@@ -528,16 +531,17 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
             if (data.size() != pvalues.size())
                 throw new IllegalArgumentException("Passed pvalues list has different size to the stored table data.");
             List<String[]> pvalueSortedList = new ArrayList<String[]>(data);
+            final int fdrIndex = 6;
             // Just copy pvalues into rowdata for the time being
             for (int i = 0; i < pvalueSortedList.size(); i++) {
                 Double pvalue = pvalues.get(i);
                 String[] rowData = pvalueSortedList.get(i);
-                rowData[5] = pvalue + "";
+                rowData[fdrIndex] = pvalue + "";
             }
             Collections.sort(pvalueSortedList, new Comparator<String[]>() {
                 public int compare(String[] row1, String[] row2) {
-                    Double pvalue1 = new Double(row1[5]);
-                    Double pvalue2 = new Double(row2[5]);
+                    Double pvalue1 = new Double(row1[fdrIndex]);
+                    Double pvalue2 = new Double(row2[fdrIndex]);
                     return pvalue1.compareTo(pvalue2);
                 }
             });
@@ -548,7 +552,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
             // table display purpose.
             for (int i = 0; i < pvalueSortedList.size(); i++) {
                 String[] rowData = pvalueSortedList.get(i);
-                rowData[5] = PlugInUtilities.formatProbability(fdrs.get(i));
+                rowData[fdrIndex] = PlugInUtilities.formatProbability(fdrs.get(i));
             }
         }
 
