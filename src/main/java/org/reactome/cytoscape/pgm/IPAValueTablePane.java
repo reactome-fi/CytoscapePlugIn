@@ -313,7 +313,13 @@ public class IPAValueTablePane extends NetworkModulePanel {
             if (variables != null) {
                 Collections.sort(variables, new Comparator<PGMVariable>() {
                     public int compare(PGMVariable var1, PGMVariable var2) {
-                        return var1.getShortName().compareTo(var2.getShortName());
+                        String name1 = var1.getShortName();
+                        if (name1 == null)
+                            name1 = var1.getName();
+                        String name2 = var2.getShortName();
+                        if (name2 == null)
+                            name2 = var2.getName();
+                        return name1.compareTo(name2);
                     }
                 });
             }
