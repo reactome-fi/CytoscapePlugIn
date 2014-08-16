@@ -332,7 +332,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference reference = context.getServiceReference(FileUtil.class.getName());
         FileUtil fileUtil = (FileUtil) context.getService(reference);
-        File file = fileUtil.getFile(this, 
+        File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), 
                                      "Save Annotation File", 
                                      FileUtil.SAVE,
                                      filters);
