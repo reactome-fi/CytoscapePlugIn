@@ -14,8 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -39,7 +37,7 @@ import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.FactorGraphVisualStyle;
-import org.reactome.cytoscape.pgm.NetworkToFactorGraphMap;
+import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -48,9 +46,9 @@ import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.pgm.PGMFactor;
-import org.reactome.pgm.PGMFactorGraph;
-import org.reactome.pgm.PGMVariable;
+import org.reactome.factorgraph.Factor;
+import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.Variable;
 
 /**
  * A similar class to DiagramAndNetworkSwitcher. This class is used to switch between a pathway diagram view and its
@@ -162,8 +160,8 @@ public class DiagramAndFactorGraphSwitcher {
         taskMonitor.setStatusMessage("Converting to factor graph...");
         taskMonitor.setProgress(0.0d);
         RESTFulFIService fiService = new RESTFulFIService();
-        PGMFactorGraph fg = fiService.convertPathwayToFactorGraph(pathwayId,
-                                                                  escapeNames);
+        FactorGraph fg = fiService.convertPathwayToFactorGraph(pathwayId,
+                                                               escapeNames);
         if (fg == null || fg.getFactors() == null || fg.getFactors().size() == 0) {
             JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
                                           "Pathway" + "\"" + pathway.getDisplayName() + "\"" + 
@@ -252,24 +250,18 @@ public class DiagramAndFactorGraphSwitcher {
                                                             null);
         PathwayDiagramRegistry.getRegistry().firePropertyChange(event);
         
-        NetworkToFactorGraphMap.getMap().put(network, fg);
+        FactorGraphRegistry.getRegistry().registerNetworkToFactorGraph(network, fg);
     }
     
-    private Map<String, String> generateNodeToolTip(PGMFactorGraph fg) {
+    private Map<String, String> generateNodeToolTip(FactorGraph fg) {
         Map<String, String> nodeToolTipInfo = new HashMap<String, String>();
-        for (PGMFactor factor : fg.getFactors()) {
-            String name = factor.getName();
-            if (name == null)
-                name = factor.getLabel();
-            nodeToolTipInfo.put(factor.getLabel(), 
-                                "factor: " + name);
+        for (Factor factor : fg.getFactors()) {
+            nodeToolTipInfo.put("factor:" + factor.getId(), 
+                                "factor: " + factor.getName());
         }
-        for (PGMVariable variable : fg.getVariables()) {
-            String name = variable.getName();
-            if (name == null)
-                name = variable.getLabel();
-            nodeToolTipInfo.put(variable.getLabel(), 
-                                "variable: " + name);
+        for (Variable variable : fg.getVariables()) {
+            nodeToolTipInfo.put("variable:" + variable.getId(), 
+                                "variable: " + variable.getName());
         }
         return nodeToolTipInfo;
     }
@@ -279,50 +271,43 @@ public class DiagramAndFactorGraphSwitcher {
      * @param fg
      * @return
      */
-    private Map<String, String> generateNodeLabel(PGMFactorGraph fg) {
+    private Map<String, String> generateNodeLabel(FactorGraph fg) {
         Map<String, String> nodeLabelInfo = new HashMap<String, String>();
-        for (PGMFactor factor : fg.getFactors()) {
+        for (Factor factor : fg.getFactors()) {
             // Don't want to display anything for factors
-            nodeLabelInfo.put(factor.getLabel(), null);
+            nodeLabelInfo.put("factor:" + factor.getId(), null);
         }
-        for (PGMVariable variable : fg.getVariables()) {
-            String label = variable.getShortName();
-            if (label == null)
-                label = variable.getLabel();
-            nodeLabelInfo.put(variable.getLabel(), 
-                              label);
+        for (Variable variable : fg.getVariables()) {
+            nodeLabelInfo.put("variable:" + variable.getId(), 
+                              variable.getName());
         }
         return nodeLabelInfo;
     }
     
-    private Map<String, String> generateNodeTypeInfo(PGMFactorGraph fg) {
+    private Map<String, String> generateNodeTypeInfo(FactorGraph fg) {
         Map<String, String> nodeTypeInfo = new HashMap<String, String>();
-        for (PGMFactor factor : fg.getFactors()) {
-            nodeTypeInfo.put(factor.getLabel(), "factor");
+        for (Factor factor : fg.getFactors()) {
+            nodeTypeInfo.put("factor:" + factor.getId(), "factor");
         }
-        for (PGMVariable variable : fg.getVariables()) {
-            nodeTypeInfo.put(variable.getLabel(), "variable");
+        for (Variable variable : fg.getVariables()) {
+            nodeTypeInfo.put("variable:" + variable.getId(), "variable");
         }
         return nodeTypeInfo;
     }
     
-    private Map<String, String> generateSourceIdInfo(PGMFactorGraph fg) {
+    private Map<String, String> generateSourceIdInfo(FactorGraph fg) {
         Map<String, String> sourceIdInfo = new HashMap<String, String>();
-        for (PGMFactor factor : fg.getFactors()) {
-            String label = factor.getLabel();
-            // A Reactome Id
-            if (label.matches("\\d+")) {
-                sourceIdInfo.put(label, label);
-            }
+        for (Factor factor : fg.getFactors()) {
+            if (factor.getCustomizedInfo() == null)
+                continue;
+            sourceIdInfo.put("factor:" + factor.getId(), 
+                             factor.getCustomizedInfo());
         }
-        for (PGMVariable variable : fg.getVariables()) {
-            String label = variable.getLabel();
-            if (label.matches("\\d+"))
-                sourceIdInfo.put(label, label);
-            else if (label.matches("(\\d+)_(protein|mRNA|DNA)")) {// Central dogma node
-                int index = label.indexOf("_");
-                sourceIdInfo.put(label, label.substring(0, index));
-            }
+        for (Variable variable : fg.getVariables()) {
+            if (variable.getCustomizedInfo() == null)
+                continue;
+            sourceIdInfo.put("variable:" + variable.getId(),
+                             variable.getCustomizedInfo());
         }
         return sourceIdInfo;
     }
@@ -332,11 +317,13 @@ public class DiagramAndFactorGraphSwitcher {
      * @param fg
      * @return
      */
-    private Set<String> createInteractionsFromFactorGraph(PGMFactorGraph fg) {
+    private Set<String> createInteractionsFromFactorGraph(FactorGraph fg) {
         Set<String> edges = new HashSet<String>();
-        for (PGMFactor factor : fg.getFactors()) {
-            for (PGMVariable var : factor.getVariables()) {
-                edges.add(factor.getLabel() + "\t" + var.getLabel()); // Use labels instead of names since names may be duplciated, but lablels should not.
+        for (Factor factor : fg.getFactors()) {
+            for (Variable var : factor.getVariables()) {
+                // Use IDs for creating interactions, which are unique.
+                edges.add("factor:" + factor.getId() + "\t" + 
+                          "variable:" + var.getId()); 
             }
         }
         return edges;

@@ -32,30 +32,20 @@ import org.cytoscape.work.ServiceProperties;
 import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
-import org.reactome.cytoscape.pgm.FactorValuesDialog;
-import org.reactome.cytoscape.pgm.IPAPathwayAnalysisPane;
-import org.reactome.cytoscape.pgm.IPAValueTablePane;
-import org.reactome.cytoscape.pgm.InferenceAlgorithmDialog;
-import org.reactome.cytoscape.pgm.NetworkToFactorGraphMap;
-import org.reactome.cytoscape.pgm.ObservationDataHelper;
-import org.reactome.cytoscape.pgm.ObservationDataLoadDialog;
-import org.reactome.cytoscape.pgm.ObservationType;
-import org.reactome.cytoscape.pgm.VariableValuesDialog;
+import org.reactome.cytoscape.pgm.*;
 import org.reactome.cytoscape.service.AbstractPopupMenuHandler;
 import org.reactome.cytoscape.service.PopupMenuManager;
-import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.pgm.InferenceResults;
-import org.reactome.pgm.InferenceStatus;
-import org.reactome.pgm.Observation;
-import org.reactome.pgm.PGMFactor;
-import org.reactome.pgm.PGMFactorGraph;
-import org.reactome.pgm.PGMInferenceAlgorithm;
-import org.reactome.pgm.PGMVariable;
+import org.reactome.factorgraph.Factor;
+import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.Inferencer;
+import org.reactome.factorgraph.Observation;
+import org.reactome.factorgraph.Variable;
+import org.reactome.factorgraph.common.DataType;
 
 /**
  * This PopupMenuHandler is used for a factor graph network.
@@ -234,8 +224,8 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
      * @param target
      * @return true if values are shown.
      */
-    private void showIPANodeValues(List<InferenceResults> resultsList) {
-        if (resultsList.size() <= 1) // Just prior probabilities
+    private void showIPANodeValues(FactorGraphInferenceResults fgResults) {
+        if (!fgResults.hasPosteriorResults()) // Just prior probabilities
             return ;
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
@@ -256,9 +246,8 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
 //            tableBrowserPane.setSelectedIndex(index);
     }
     
-    private void showIPAPathwayValues(List<InferenceResults> resultsList,
-                                      PGMFactorGraph fg) {
-        if (resultsList.size() <= 1)
+    private void showIPAPathwayValues(FactorGraphInferenceResults fgResults) {
+        if (!fgResults.hasPosteriorResults())
             return; 
         String title = "IPA Pathway Analysis";
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
@@ -280,45 +269,9 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             tableBrowserPane.setSelectedIndex(index);
     }
     
-    private void copyVariableValues(List<InferenceResults> resultsList, 
-                                    PGMFactorGraph target) {
-        // The first results should be the prior marginals
-        InferenceResults results = resultsList.get(0);
-        Map<String, List<Double>> varIdToProbs = results.getResults();
-        for (PGMVariable var : target.getVariables()) {
-            List<Double> probs = varIdToProbs.get(var.getId());
-            if (probs != null)
-                var.setValues(probs); // Just use the original List object directly
-        }
-        if (resultsList.size() < 2)
-            return; // Only prior information
-        // Need to reset the previously assigned values
-        for (PGMVariable var : target.getVariables()) {
-            var.clearPosteriorValues();
-            var.clearRandomPosteriorValues();
-        }
-        // All others should be posterior probabilities
-        for (int i = 1; i < resultsList.size(); i++) {
-            results = resultsList.get(i);
-            if (results.getSample() == null)
-                continue;
-            String sample = results.getSample();
-            varIdToProbs = results.getResults();
-            for (PGMVariable var : target.getVariables()) {
-                List<Double> probs = varIdToProbs.get(var.getId());
-                if (probs == null) 
-                    continue;
-                if (sample.startsWith(ObservationDataHelper.RANDOM_SAMPLE_PREFIX))
-                    var.addRandomPosteriorValues(sample, probs);
-                else
-                    var.addPosteriorValues(sample, probs);
-            }
-        }
-    }
-    
     private void _runInference(final CyNetwork network,
                                final boolean needFinishDialog) {
-        PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(network);
+        FactorGraph fg = FactorGraphRegistry.getRegistry().get(network);
         if (fg == null) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "There is no factor graph found for the displayed network.\n" + 
@@ -331,12 +284,12 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         // Set up an inference algorithm
         InferenceAlgorithmDialog infAlgDialog = new InferenceAlgorithmDialog(frame);
         infAlgDialog.setLocationRelativeTo(frame);
-        infAlgDialog.setSize(400, 355);
+        infAlgDialog.setSize(500, 300);
         infAlgDialog.setModal(true);
         infAlgDialog.setVisible(true);
         if (!infAlgDialog.isOkClicked())
             return; // Cancelled
-        PGMInferenceAlgorithm algorithm = infAlgDialog.getSelectedAlgorithm();
+        final Inferencer algorithm = infAlgDialog.getSelectedAlgorithm();
         if (algorithm == null) {
             JOptionPane.showMessageDialog(frame, 
                                           "Cannot perform inference: no algorithm has been specified.", 
@@ -344,78 +297,52 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                           JOptionPane.ERROR_MESSAGE);
             return; // Algorithm has not been selected
         }
-        fg.setInferenceAlgorithm(algorithm);
         try {
             ProgressPane progressPane = new ProgressPane();
             frame.setGlassPane(progressPane);
             progressPane.setTitle("Run Inference");
-            progressPane.setText("Sending data to the server...");
             progressPane.setIndeterminate(true);
             frame.getGlassPane().setVisible(true);
-            final RESTFulFIService fiService = new RESTFulFIService();
-            final String processId = fiService.runInferenceOnFGViaProcess(fg);
-            if (processId == null) {
-                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                              "Cannot run inference at the server.",
-                                              "Inference Error",
-                                              JOptionPane.ERROR_MESSAGE);
-                if (frame.getGlassPane() != null)
-                    frame.getGlassPane().setVisible(false);
-                return;
-            }
-            // A special case
-            if (processId.equals(InferenceStatus.SERVER_BUSY.toString())) {
-                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                              "The server is busy right now. Please try again later on.",
-                                              "Server Busy",
-                                              JOptionPane.ERROR_MESSAGE);
-                if (frame.getGlassPane() != null)
-                    frame.getGlassPane().setVisible(false);
-                return;
-            }
             progressPane.setText("Performing inference...");
+            final InferenceThread inferenceThread = new InferenceThread();
             progressPane.enableCancelAction(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    try {
-                        fiService.abortInferenceProcess(processId);
-                    }
-                    catch(Exception e1) {
-                        
-                    }
+                    inferenceThread.abort();
+                    // Need a interface to abort inference.
+//                    if (algorithm instanceof LoopyBeliefPropagation)
+//                        ((LoopyBeliefPropagation)algorithm).setMaxIteration(0);
+//                    else if (algorithm instanceof GibbsSampling)
+//                        ((GibbsSampling)algorithm).setMaxIteration(0);
                 }
             });
-            InferenceStatus status = null;
+            algorithm.setFactorGraph(fg);
+            inferenceThread.setInferencer(algorithm);
+            inferenceThread.setProgressPane(progressPane);
+            inferenceThread.start();
             while (!progressPane.isCancelled()) {
-                status = fiService.checkInferenceStatus(processId);
-                if (status == InferenceStatus.DONE || status == InferenceStatus.ERROR) {
+                InferenceStatus status = inferenceThread.getStatus();
+                if (status == InferenceStatus.DONE || status == InferenceStatus.ERROR || status == InferenceStatus.ABORT) {
                     break;
                 }
                 // Sleep for 2 seconds
                 Thread.sleep(2000);
             }
-            if (progressPane.isCancelled()) {
-                if (frame.getGlassPane() != null)
-                    frame.getGlassPane().setVisible(false);
+            if (frame.getGlassPane() != null)
+                frame.getGlassPane().setVisible(false);
+            InferenceStatus status = inferenceThread.getStatus();
+            if (progressPane.isCancelled() || status != InferenceStatus.DONE) {
                 return;
             }
             if (status == InferenceStatus.DONE) {
-//                List<InferenceResults> inferenceResults = fiService.runInferenceOnFactorGraph(fg);
-                List<InferenceResults> inferenceResults = fiService.getInferenceResults(processId);
-                // Want to copy values from pfgWithValues to the original factor graph.
-                // The original factor graph can be replaced by the returned new factor graph
-                // too. However, it is felt that copying values is more reliable, which is just
-                // my gut feeling.
-                copyVariableValues(inferenceResults,
-                                   fg);
-                showIPANodeValues(inferenceResults);
-                showIPAPathwayValues(inferenceResults,
-                                     fg);
-                frame.getGlassPane().setVisible(false);
+                FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(fg);
+                showIPANodeValues(fgResults);
+                showIPAPathwayValues(fgResults);
                 if (needFinishDialog) {
                     String message = "Inference has finished successfully. You may use \"View Marginal Probabilities\" by\n" + 
                             "selecting a variable node";
-                    if (inferenceResults.size() == 1)
+                    // Check if any posterior inference is done
+                    if (!fgResults.hasPosteriorResults())
                         message += ".";
                     else
                         message += ", and view IPA values at the bottom \"IPA Node Values\" tab. \n" + 
@@ -426,9 +353,6 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                                   "Inference Finished",
                                                   JOptionPane.INFORMATION_MESSAGE);
                 }
-            }
-            else if (status == InferenceStatus.ERROR) {
-                throw new IllegalStateException(fiService.getInferenceError(processId));
             }
         }
         catch(Exception e) {
@@ -461,7 +385,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         private void viewFactorValues(CyNetworkView netView,
                                       View<CyNode> nodeView) {
             // Need to find the factor first
-            PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(netView.getModel());
+            FactorGraph fg = FactorGraphRegistry.getRegistry().get(netView.getModel());
             if (fg == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Cannot find a matched factor graph for the network!", 
@@ -469,7 +393,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                               JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            PGMFactor factor = getFactor(fg, netView.getModel(), nodeView.getModel());
+            Factor factor = getFactor(fg, netView.getModel(), nodeView.getModel());
             if (factor == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Cannot find a matched factor for the selected node!", 
@@ -478,7 +402,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 return;
             }
             FactorValuesDialog dialog = new FactorValuesDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
-            dialog.setPGMNode(factor);
+            dialog.setFactor(factor);
             
             dialog.setSize(500, 350);
             dialog.setModal(false);
@@ -486,12 +410,12 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             dialog.setVisible(true);
         }
         
-        private PGMFactor getFactor(PGMFactorGraph fg,
-                                    CyNetwork network,
-                                    CyNode node) {
+        private Factor getFactor(FactorGraph fg,
+                                 CyNetwork network,
+                                 CyNode node) {
             String name = new TableHelper().getStoredNodeAttribute(network, node, "name", String.class);
-            for (PGMFactor factor : fg.getFactors()) {
-                if (factor.getLabel().equals(name))
+            for (Factor factor : fg.getFactors()) {
+                if (name.equals("factor:" + factor.getId()))
                     return factor;
             }
             return null;
@@ -534,7 +458,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         private void viewVariableMarginal(final CyNetworkView netView,
                                           View<CyNode> nodeView) {
             // Need to find the factor first
-            PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(netView.getModel());
+            FactorGraph fg = FactorGraphRegistry.getRegistry().get(netView.getModel());
             if (fg == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Cannot find a matched factor graph for the network!", 
@@ -542,7 +466,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                               JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            final PGMVariable variable = getVariable(fg, netView.getModel(), nodeView.getModel());
+            final Variable variable = getVariable(fg, netView.getModel(), nodeView.getModel());
             if (variable == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Cannot find a matched variable for the selected node!", 
@@ -552,7 +476,9 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             }
             // Check if the found variable has values associated. If not, 
             // ask the user to do an inference first
-            if (variable.getValues() == null) {
+            final FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(fg);
+            VariableInferenceResults varResults = fgResults.getVariableInferenceResults(variable);
+            if (varResults == null || varResults.getPriorValues() == null) {
                 int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                                           "In order to view the marginal probabilities for a variable, please \n" + 
                                                           "run an inference first. Do you want to run inference?",
@@ -563,7 +489,8 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 Thread t = new Thread() {
                     public void run() {
                         _runInference(netView.getModel(), false);
-                        if (variable.getValues() == null) {
+                        VariableInferenceResults varResults = fgResults.getVariableInferenceResults(variable);
+                        if (varResults == null || varResults.getPriorValues() == null) {
                             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                                           "Cannot find marginal probabilities for the selected variable.",
                                                           "No Marginal Probabilities", 
@@ -575,13 +502,13 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 t.start();
             }
             else
-                viewVariableMarginal(variable);
+                viewVariableMarginal(varResults);
         }
 
-        private void viewVariableMarginal(PGMVariable variable) {
+        private void viewVariableMarginal(VariableInferenceResults varResults) {
             VariableValuesDialog dialog = new VariableValuesDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
-            dialog.setPGMNode(variable);
-            if (variable.getPosteriorValues() == null || variable.getPosteriorValues().size() == 0)
+            dialog.setVariableValues(varResults);
+            if (varResults.getPosteriorValues() == null || varResults.getPosteriorValues().size() == 0)
                 dialog.setSize(300, 250);
             else
                 dialog.setSize(600, 500);
@@ -591,12 +518,17 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             dialog.setVisible(true);
         }
         
-        private PGMVariable getVariable(PGMFactorGraph fg,
-                                        CyNetwork network,
-                                        CyNode node) {
-            String name = new TableHelper().getStoredNodeAttribute(network, node, "name", String.class);
-            for (PGMVariable variable : fg.getVariables()) {
-                if (variable.getLabel().equals(name))
+        private Variable getVariable(FactorGraph fg,
+                                     CyNetwork network,
+                                     CyNode node) {
+            String name = new TableHelper().getStoredNodeAttribute(network, 
+                                                                   node,
+                                                                   "name",
+                                                                   String.class);
+            if (name == null)
+                return null;
+            for (Variable variable : fg.getVariables()) {
+                if (name.equals("variable:" + variable.getId()))
                     return variable;
             }
             return null;
@@ -619,8 +551,8 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         }
         
         private void loadObservationData(final CyNetworkView netView) {
-            final PGMFactorGraph pfg = NetworkToFactorGraphMap.getMap().get(netView.getModel());
-            if (pfg == null) {
+            final FactorGraph fg = FactorGraphRegistry.getRegistry().get(netView.getModel());
+            if (fg == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Cannot find a matched factor graph for the network!", 
                                               "No Factor Graph", 
@@ -637,17 +569,17 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 return;
             Thread t = new Thread() {
                 public void run() {
-                    loadObservationData(pfg, netView, dialog);
+                    loadObservationData(fg, netView, dialog);
                 }
             };
             t.start();
         }
 
         @SuppressWarnings("unchecked")
-        private void loadObservationData(PGMFactorGraph pfg,
+        private void loadObservationData(FactorGraph fg,
                                          CyNetworkView netView,
                                          ObservationDataLoadDialog dialog) {
-            ObservationDataHelper helper = new ObservationDataHelper(pfg, netView);
+            ObservationDataHelper helper = new ObservationDataHelper(fg, netView);
             JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
             try {
                 ProgressPane progressPane = new ProgressPane();
@@ -655,18 +587,18 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 progressPane.setIndeterminate(true);
                 frame.setGlassPane(progressPane);
                 frame.getGlassPane().setVisible(true);
-                Map<PGMVariable, Map<String, Integer>> dnaVarToSampleToState = null;
+                Map<Variable, Map<String, Integer>> dnaVarToSampleToState = null;
                 if (dialog.getDNAFile() != null) {
                     progressPane.setText("Loading CNV data...");
                     dnaVarToSampleToState = helper.loadData(dialog.getDNAFile(), 
-                                                            ObservationType.CNV,
+                                                            DataType.CNV,
                                                             dialog.getDNAThresholdValues());
                 }
-                Map<PGMVariable, Map<String, Integer>> geneExpVarToSampleToState = null;
+                Map<Variable, Map<String, Integer>> geneExpVarToSampleToState = null;
                 if (dialog.getGeneExpFile() != null) {
                     progressPane.setText("Loading mRNA expression data...");
                     geneExpVarToSampleToState = helper.loadData(dialog.getGeneExpFile(),
-                                                                ObservationType.GENE_EXPRESSION,
+                                                                DataType.mRNA_EXP,
                                                                 dialog.getGeneExpThresholdValues());
                 }
                 if (dnaVarToSampleToState == null && geneExpVarToSampleToState == null) {
@@ -682,9 +614,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                     observations = helper.generateObservations(dnaVarToSampleToState);
                 else if (geneExpVarToSampleToState != null)
                     observations = helper.generateObservations(geneExpVarToSampleToState);
-                pfg.setObservations(observations);  
-//                System.out.println("Real data:");
-//                checkObservations(observations);
+                FactorGraphRegistry.getRegistry().setObservations(fg, observations);
                 progressPane.setText("Generating random data...");
                 List<Observation> randomData = null;
                 if (dnaVarToSampleToState != null && geneExpVarToSampleToState != null)
@@ -694,9 +624,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                     randomData = helper.generateRandomObservations(dnaVarToSampleToState);
                 else if (geneExpVarToSampleToState != null)
                     randomData = helper.generateRandomObservations(geneExpVarToSampleToState);
-//                System.out.println("\nRandom data:");
-//                checkObservations(randomData);
-                pfg.setRandomObservations(randomData);
+                FactorGraphRegistry.getRegistry().setRandomObservations(fg, randomData);
                 frame.getGlassPane().setVisible(false);
                 JOptionPane.showMessageDialog(frame,
                                               "The data has been loaded successfully.",
@@ -716,18 +644,6 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             }
         }
     }
-    
-//    /**
-//     * This method is used for debugging purpose.
-//     * @param observations
-//     */
-//    private void checkObservations(List<Observation> observations) {
-//        for (Observation observation : observations) {
-//            System.out.println(observation.getSample());
-//            Map<String, Integer> obsToState = observation.getObserved();
-//            System.out.println(obsToState);
-//        }
-//    }
     
     private class ConvertToDiagramMenu implements CyNetworkViewContextMenuFactory {
 
@@ -790,7 +706,6 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                               JOptionPane.INFORMATION_MESSAGE);
             }
         }
-        
     }
     
 }

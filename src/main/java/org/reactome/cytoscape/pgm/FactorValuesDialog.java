@@ -18,9 +18,8 @@ import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
-import org.reactome.pgm.PGMFactor;
-import org.reactome.pgm.PGMNode;
-import org.reactome.pgm.PGMVariable;
+import org.reactome.factorgraph.Factor;
+import org.reactome.factorgraph.Variable;
 
 /**
  * This customized JDialg is used to show factor graph values (aka factor
@@ -83,17 +82,14 @@ public class FactorValuesDialog extends PGMNodeValuesDialog {
      * The client should call this method to set the values for display.
      * @param factor
      */
-    @Override
-    public void setPGMNode(PGMNode factor) {
-        if (factor instanceof PGMFactor) {
-            textLabel.setText("<html><u><b>Values for Factor \"" + factor.getName() + "\"</b></u></html>\"");
-            FactorValueTableModel model = (FactorValueTableModel) table.getModel();
-            model.setFactor((PGMFactor)factor);
-        }
+    public void setFactor(Factor factor) {
+        textLabel.setText("<html><u><b>Values for Factor \"" + factor.getName() + "\"</b></u></html>\"");
+        FactorValueTableModel model = (FactorValueTableModel) table.getModel();
+        model.setFactor((Factor)factor);
     }
     
     private class FactorValueTableModel extends AbstractTableModel {
-        private PGMFactor factor;
+        private Factor factor;
         // For quick display
         private String[][] values;
         // The maximum state of a variable: this should be the same
@@ -109,10 +105,10 @@ public class FactorValuesDialog extends PGMNodeValuesDialog {
                 return super.getColumnName(column);
             if (column == 0)
                 return "Index";
-            List<PGMVariable> variables = factor.getVariables();
+            List<Variable> variables = factor.getVariables();
             if (column > variables.size())
                 return "Value";
-            return variables.get(column - 1).getLabel();
+            return variables.get(column - 1).getName();
         }
 
         @Override
@@ -120,19 +116,19 @@ public class FactorValuesDialog extends PGMNodeValuesDialog {
             return String.class;
         }
 
-        public void setFactor(PGMFactor factor) {
+        public void setFactor(Factor factor) {
             this.factor = factor;
             int rowCount = getRowCount();
             int colCount = getColumnCount();
             values = new String[rowCount][colCount];
             
             int index = 0;
-            List<PGMVariable> variables = factor.getVariables();
-            List<Double> factorValues = factor.getValues();
+            List<Variable> variables = factor.getVariables();
+            double[] factorValues = factor.getValues();
             maxState = variables.get(0).getStates() - 1;
             
             List<Integer> states = new ArrayList<Integer>(variables.size());
-            for (PGMVariable variable : variables) {
+            for (Variable variable : variables) {
                 states.add(0);
             }
             
@@ -158,7 +154,7 @@ public class FactorValuesDialog extends PGMNodeValuesDialog {
         
         private void setRowValues(List<Integer> states,
                                   int row,
-                                  List<Double> factorValues) {
+                                  double[] factorValues) {
             values[row] = new String[states.size() + 2];
             values[row][0] = row + "";
             int index = 1;
@@ -166,14 +162,14 @@ public class FactorValuesDialog extends PGMNodeValuesDialog {
                 values[row][index] = state + "";
                 index ++;
             }
-            values[row][states.size() + 1] = factorValues.get(row) + "";
+            values[row][states.size() + 1] = factorValues[row] + "";
         }
 
         @Override
         public int getRowCount() {
             if (factor == null)
                 return 0;
-            return factor.getValues().size(); 
+            return factor.getValues().length; 
         }
 
         @Override

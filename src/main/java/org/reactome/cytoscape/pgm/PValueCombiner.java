@@ -40,7 +40,7 @@ public class PValueCombiner {
      */
     public double combinePValue(List<List<Double>> realValuesList,
                                 List<Double> pvalues) throws MathException {
-        // Use a copy so that a minimum pvalues can be used
+        // Use a copy so that a minimum pvalue can be used
         List<Double> pvaluesCopy = new ArrayList<Double>(pvalues);
         // Have to make sure there is no zero in the pvalues collection. Otherwise,
         // log will throw an exception

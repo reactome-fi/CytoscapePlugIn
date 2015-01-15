@@ -14,7 +14,7 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 
-import org.reactome.pgm.PGMNode;
+import org.reactome.factorgraph.FGNode;
 
 /**
  * A customized JDialog to show values saved in a PGMNode.
@@ -48,11 +48,5 @@ public abstract class PGMNodeValuesDialog extends JDialog {
     }
     
     protected abstract JComponent createContentPane();
-    
-    /**
-     * The client should call this method to set the values for display.
-     * @param factor
-     */
-    public abstract void setPGMNode(PGMNode node);
     
 }

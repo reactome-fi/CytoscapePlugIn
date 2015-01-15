@@ -8,32 +8,30 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.border.Border;
 
-import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.pgm.PGMInfAlgManager;
-import org.reactome.pgm.PGMInferenceAlgorithm;
-import org.reactome.pgm.PGMInferenceAlgorithm.PropertyItem;
+import org.reactome.factorgraph.GibbsSampling;
+import org.reactome.factorgraph.Inferencer;
+import org.reactome.factorgraph.LoopyBeliefPropagation;
+import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 
 /**
  * This customized JDialog is used to set up an inference algorithm for factor graphs.
  * @author gwu
  *
  */
+@SuppressWarnings("rawtypes")
 public class InferenceAlgorithmDialog extends JDialog {
     private boolean isOkClicked;
     // For changes based on selection
@@ -55,9 +53,10 @@ public class InferenceAlgorithmDialog extends JDialog {
      * PGMInferenceAlgorithm object.
      * @return
      */
-    public PGMInferenceAlgorithm getSelectedAlgorithm() {
-        if (isOkClicked)
-            return (PGMInferenceAlgorithm) algBox.getSelectedItem();
+    public Inferencer getSelectedAlgorithm() {
+        if (isOkClicked) {
+            return (Inferencer) algBox.getSelectedItem();
+        }
         return null;
     }
     
@@ -90,40 +89,59 @@ public class InferenceAlgorithmDialog extends JDialog {
     }
     
     private JPanel createAlgListPane() {
-        List<PGMInferenceAlgorithm> algorithms = PGMInfAlgManager.getManager().getAlgorithms();
         JLabel algLabel = new JLabel("Choose an inference algorithm:");
         algBox = new JComboBox();
+        DefaultListCellRenderer renderer = new DefaultListCellRenderer() {
+
+            @Override
+            public Component getListCellRendererComponent(JList<?> list,
+                                                          Object value,
+                                                          int index,
+                                                          boolean isSelected,
+                                                          boolean cellHasFocus) {
+                // Just want to display a simple name for inferrers
+                return super.getListCellRendererComponent(list, value.getClass().getSimpleName(), index, isSelected,
+                                                          cellHasFocus);
+            }
+        };
+        algBox.setRenderer(renderer);
         algBox.setEditable(false);
-        for (PGMInferenceAlgorithm alg : algorithms) {
-            // Don't make a copy in order to keep changes stuck in memory.
-            algBox.addItem(alg);
-        }
+        // There are only two algorithms are supported
+        PathwayPGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        algBox.addItem(config.getLBP());
+        algBox.addItem(config.getGibbsSampling());
         algBox.addActionListener(new ActionListener() {
             
             @Override
             public void actionPerformed(ActionEvent e) {
-                chooseAlgorithm((PGMInferenceAlgorithm)algBox.getSelectedItem());
+                chooseAlgorithm((Inferencer)algBox.getSelectedItem());
             }
             
         });
         JPanel panel = new JPanel();
-        panel.add(algLabel);
-        panel.add(algBox);
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.insets = new Insets(4, 4, 4, 4);
+        panel.add(algLabel, constraints);
+        constraints.gridx = 1;
+        panel.add(algBox, constraints);
         // Choose the first one as the default
-        chooseAlgorithm((PGMInferenceAlgorithm)algBox.getItemAt(0));
+        chooseAlgorithm((Inferencer)algBox.getItemAt(0));
         return panel;
     }
     
-    private void chooseAlgorithm(PGMInferenceAlgorithm alg) {
+    private void chooseAlgorithm(Inferencer alg) {
         propertyPane.removeAll();
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = -1;
-        for (PropertyItem item : alg.getPropertyItems()) {
-            if (!item.isEditable())
-                continue;
+        Map<String, Object> keyToValue = getInferencerProps(alg);
+        List<String> keys = new ArrayList<String>(keyToValue.keySet());
+        Collections.sort(keys);
+        for (String key : keys) {
             PropertyItemPane itemPane = new PropertyItemPane();
-            itemPane.setPropertyItem(item);
+            itemPane.setPropertyItem(key,
+                                     keyToValue.get(key));
             constraints.gridy ++;
             propertyPane.add(itemPane, constraints);
         }
@@ -132,14 +150,70 @@ public class InferenceAlgorithmDialog extends JDialog {
         propertyPane.getParent().validate();
     }
     
+    private Map<String, Object> getInferencerProps(Inferencer alg) {
+        Map<String, Object> keyToValue = new HashMap<String, Object>();
+        if (alg instanceof LoopyBeliefPropagation) {
+            LoopyBeliefPropagation lbp = (LoopyBeliefPropagation) alg;
+            keyToValue.put("maxIteration", lbp.getMaxIteration());
+            keyToValue.put("tolerance", lbp.getTolerance());
+            keyToValue.put("useLogSpace", lbp.getUseLogSpace());
+            keyToValue.put("dumping", lbp.getDumping());
+        }
+        else if (alg instanceof GibbsSampling) {
+            GibbsSampling gibbs = (GibbsSampling) alg;
+            keyToValue.put("maxIteration", gibbs.getMaxIteration());
+            keyToValue.put("burnin", gibbs.getBurnin());
+            keyToValue.put("restart", gibbs.getRestart());
+        }
+        return keyToValue;
+    }
+    
     private boolean commitValues() {
+        Map<String, Object> keyToValue = new HashMap<String, Object>();
         for (int i = 0; i < propertyPane.getComponentCount(); i++) {
             Component comp = propertyPane.getComponent(i);
             if (comp instanceof PropertyItemPane) {
                 PropertyItemPane propPane = (PropertyItemPane) comp;
-                if (!propPane.assignPropertyValue())
+                if (!propPane.assignPropertyValue()) 
                     return false;
+                keyToValue.put(propPane.key,
+                               propPane.value);
             }
+        }
+        if (!commitValues(keyToValue))
+            return false;
+        return true;
+    }
+    
+    private boolean commitValues(Map<String, Object> keyToValue) {
+        Inferencer alg = (Inferencer) algBox.getSelectedItem();
+        for (String key : keyToValue.keySet()) {
+            Object value = keyToValue.get(key);
+            if(!setProperty(key, value, alg))
+                return false;
+        }
+        return true;
+    }
+    
+    private boolean setProperty(String key,
+                             Object value,
+                             Object target) {
+        String methodName = "set" + key.substring(0, 1).toUpperCase() + key.substring(1);
+        try {
+            for (Method method : target.getClass().getMethods()) {
+                if (method.getName().equals(methodName)) {
+                    method.invoke(target, value);
+                    break;
+                }
+            }
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                                          "Cannot set property for " + target.getClass().getSimpleName() + ": " + key + " with value " + value,
+                                          "Error in Configuring Algorithm", 
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
         }
         return true;
     }
@@ -148,7 +222,6 @@ public class InferenceAlgorithmDialog extends JDialog {
         JPanel controlPane = new JPanel();
         JButton okBtn = new JButton("OK");
         okBtn.addActionListener(new ActionListener() {
-            
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!commitValues())
@@ -159,7 +232,6 @@ public class InferenceAlgorithmDialog extends JDialog {
         });
         JButton cancelBtn = new JButton("Cancel");
         cancelBtn.addActionListener(new ActionListener() {
-            
             @Override
             public void actionPerformed(ActionEvent e) {
                 isOkClicked = false;
@@ -168,33 +240,15 @@ public class InferenceAlgorithmDialog extends JDialog {
         });
         JButton resetBtn = new JButton("Reset");
         resetBtn.addActionListener(new ActionListener() {
-            
             @Override
             public void actionPerformed(ActionEvent e) {
                 reset();
             }
         });
-        // View the detailed information about the algorithm from the libdai page
-        JButton helpBtn = new JButton("Help");
-        helpBtn.addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                PGMInferenceAlgorithm alg = (PGMInferenceAlgorithm) algBox.getSelectedItem();
-                if (alg.getUrl() == null) {
-                    JOptionPane.showMessageDialog(InferenceAlgorithmDialog.this,
-                                                  "No URL for help is defined for the selected algorithm, " + alg.getAlgorithm() + ".",
-                                                  "No Help",
-                                                  JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                PlugInUtilities.openURL(alg.getUrl());
-            }
-        });
+
         controlPane.add(okBtn);
         controlPane.add(cancelBtn);
         controlPane.add(resetBtn);
-        controlPane.add(helpBtn);
         
         // Set okBtn as the default
         okBtn.setDefaultCapable(true);
@@ -204,11 +258,7 @@ public class InferenceAlgorithmDialog extends JDialog {
     }
     
     private void reset() {
-        PGMInferenceAlgorithm alg = (PGMInferenceAlgorithm) algBox.getSelectedItem();
-        // Get the original copy
-        PGMInferenceAlgorithm original = PGMInfAlgManager.getManager().getAlgorithm(alg.getAlgorithm());
-        Map<String, String> originalProps = original.getProperties();
-        alg.setProperties(originalProps);
+        Inferencer alg = (Inferencer) algBox.getSelectedItem();
         // Reset the GUIs
         chooseAlgorithm(alg);
     }
@@ -219,7 +269,9 @@ public class InferenceAlgorithmDialog extends JDialog {
      *
      */
     private class PropertyItemPane extends JPanel {
-        private PropertyItem propertyItem;
+        // Property to be displayed
+        private String key;
+        private Object value;
         // One of the following should be used.
         // But not both.
         private JTextField valueTF;
@@ -228,63 +280,45 @@ public class InferenceAlgorithmDialog extends JDialog {
         public PropertyItemPane() {
         }
         
-        public void setPropertyItem(PropertyItem item) {
-            this.propertyItem = item;
+        public void setPropertyItem(String key,
+                                    Object value) {
+            this.key = key;
+            this.value = value;
             setUpGUIs();
         }
         
         private void setUpGUIs() {
-            String label = propertyItem.getName();
-            JLabel nameLabel = new JLabel(label);
+            JLabel nameLabel = new JLabel(key);
             add(nameLabel);
-            if (propertyItem.getType() == Boolean.class) {
+            if (value.getClass() == Boolean.class) {
                 // A special case
                 valueBox = new JComboBox();
-                valueBox.addItem("false");
-                valueBox.addItem("true");
-                if (propertyItem.getValue().equals("0"))
-                    valueBox.setSelectedItem("false");
-                else if (propertyItem.getValue().equals("1"))
-                    valueBox.setSelectedItem("true");
-                add(valueBox);
-            }
-            else if (propertyItem.getChoices() != null && propertyItem.getChoices().size() > 0) {
-                // Set up a JComboBox
-                valueBox = new JComboBox();
-                valueBox.setEditable(false);
-                for (String choice : propertyItem.getChoices())
-                    valueBox.addItem(choice);
-                valueBox.setSelectedItem(propertyItem.getValue());
+                valueBox.addItem(Boolean.TRUE);
+                valueBox.addItem(Boolean.FALSE);
+                valueBox.setSelectedItem(value);
                 add(valueBox);
             }
             else {
-                valueTF = new JTextField(propertyItem.getValue());
+                valueTF = new JTextField(value + "");
                 valueTF.setColumns(4);
                 add(valueTF);
-            }
-            if (propertyItem.getUnit() != null) {
-                label = "(" + propertyItem.getUnit() + ")";
-                JLabel unitLabel = new JLabel(label);
-                add(unitLabel);
             }
         }
         
         public boolean assignPropertyValue() {
             if (!validValue())
                 return false;
-            String value = null;
-            if (valueTF == null)
-                value = valueBox.getSelectedItem().toString();
-            else 
-                value = valueTF.getText().trim();
-            // A special case
-            if (propertyItem.getType() == Boolean.class) {
-                if (value.equals("true"))
-                    value = "1";
+            if (valueBox != null)
+                value = valueBox.getSelectedItem();
+            else {
+                String text = valueTF.getText().trim();
+                if (value instanceof Integer)
+                    value = new Integer(text);
+                else if (value instanceof Double)
+                    value = new Double(text);
                 else
-                    value = "0";
+                    value = text; // General case
             }
-            propertyItem.setValue(value);
             return true;
         }
         
@@ -297,49 +331,32 @@ public class InferenceAlgorithmDialog extends JDialog {
             if (valueTF == null)
                 return true;
             String text = valueTF.getText().trim();
-            String propName = propertyItem.getName();
             if (text.length() == 0) {
                 JOptionPane.showMessageDialog(this,
-                                              "Value for " + propName + " should not be empty.",
+                                              "Value for " + key + " should not be empty.",
                                               "Empty Value",
                                               JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-            if (propertyItem.getType() == Integer.class) {
+            if (value.getClass() == Integer.class) {
                 try {
                     Integer value = new Integer(text);
-                    if (propertyItem.getMaxValue() != null && value > propertyItem.getMaxValue()) {
-                        // Cast a double value to integer to avoid confusing
-                        Integer maxValue = (int) propertyItem.getMaxValue().doubleValue();
-                        JOptionPane.showMessageDialog(this,
-                                                      "Value for " + propName + " should not exceed " + maxValue + ".",
-                                                      "Invalid Value",
-                                                      JOptionPane.ERROR_MESSAGE);
-                        return false;
-                    }
                 }
                 catch(NumberFormatException e) {
                     JOptionPane.showMessageDialog(this,
-                                                  "Value for " + propertyItem.getName() + " should be an integer.",
+                                                  "Value for " + key + " should be an integer.",
                                                   "Integer Required",
                                                   JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
             }
-            else if (propertyItem.getType() == Double.class) {
+            else if (value.getClass() == Double.class) {
                 try {
                     Double value = new Double(text);
-                    if (propertyItem.getMaxValue() != null && value > propertyItem.getMaxValue()) {
-                        JOptionPane.showMessageDialog(this,
-                                                      "Value for " + propName + " should not exceed " + propertyItem.getMaxValue() + ".",
-                                                      "Invalid Value",
-                                                      JOptionPane.ERROR_MESSAGE);
-                        return false;
-                    }
                 }
                 catch(NumberFormatException e) {
                     JOptionPane.showMessageDialog(this,
-                                                  "Value for " + propertyItem.getName() + " should ne a number.",
+                                                  "Value for " + key + " should ne a number.",
                                                   "Number equired",
                                                   JOptionPane.ERROR_MESSAGE);
                     return false;

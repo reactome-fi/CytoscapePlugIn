@@ -26,8 +26,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.pgm.PGMNode;
-import org.reactome.pgm.PGMVariable;
 
 /**
  * A customized JDialog for showing values (aka marginal properties) of a variable.
@@ -121,30 +119,30 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
         posteriorValuePane.setTable(posteriorTable);
     }
     
-    @Override
-    public void setPGMNode(PGMNode variable) {
-        if (!(variable instanceof PGMVariable))
-            return;
-        List<Double> values = variable.getValues();
+    public void setVariableValues(VariableInferenceResults varValues) {
+        List<Double> values = varValues.getPriorValues();
         if (values == null || values.size() == 0) {
-            textLabel.setText("<html><center><b><u>Unknown marginal probabilities for variable \"" + variable.getLabel() + "\".</u></b></center></html>");
+            textLabel.setText("<html><center><b><u>Unknown marginal probabilities for variable \"" + varValues.getVariable().getName() + "\".</u></b></center></html>");
             return;
         }
-        textLabel.setText("<html><center><b><u>Marginal Probabilities for Variable \"" + variable.getLabel() + "\"</u></b></center></html>");
-        state0Value.setText(PlugInUtilities.formatProbability(values.get(0)));
-        if (values.size() > 1)
-            state1Value.setText(PlugInUtilities.formatProbability(values.get(1)));
-        if (values.size() > 2)
-            state2Value.setText(PlugInUtilities.formatProbability(values.get(2)));  
+        textLabel.setText("<html><center><b><u>Marginal Probabilities for Variable \"" + varValues.getVariable().getName() + "\"</u></b></center></html>");
+        List<JLabel> labels = new ArrayList<JLabel>();
+        labels.add(state0Value);
+        labels.add(state1Value);
+        labels.add(state2Value);
+        for (int i = 0; i < values.size(); i++) {
+            Double value = values.get(i);
+            JLabel label = labels.get(i);
+            label.setText(PlugInUtilities.formatProbability(value));
+        }
         // Display posterior probabilities if existing
-        PGMVariable pVar = (PGMVariable) variable;
-        if (pVar.getPosteriorValues() == null || pVar.getPosteriorValues().size() == 0) {
+        if (varValues.getPosteriorValues() == null || varValues.getPosteriorValues().size() == 0) {
             posteriorPane.setVisible(false);
         }
         else {
             posteriorPane.setVisible(true);
             PosteriorTableModel model = (PosteriorTableModel) posteriorValuePane.getTableModel();
-            model.setData(pVar);
+            model.setData(varValues.getPosteriorValues());
         }
     }
     
@@ -204,8 +202,7 @@ public class VariableValuesDialog extends PGMNodeValuesDialog {
             return colNames[column];
         }
         
-        public void setData(PGMVariable variable) {
-            Map<String, List<Double>> sampleToValues = variable.getPosteriorValues();
+        public void setData(Map<String, List<Double>> sampleToValues) {
             if (sampleToValues == null)
                 return;
             sampleList = new ArrayList<String>(sampleToValues.keySet());

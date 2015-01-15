@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -23,9 +24,9 @@ import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.model.CyNetworkView;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.pgm.IPACalculator;
-import org.reactome.pgm.PGMFactorGraph;
-import org.reactome.pgm.PGMVariable;
+import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.Variable;
+import org.reactome.pathway.factorgraph.IPACalculator;
 import org.reactome.r3.util.MathUtilities;
 
 /**
@@ -70,7 +71,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
     
     private void resetOverview() {
         IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
-        List<PGMVariable> variables = model.variables;
+        List<VariableInferenceResults> variables = model.varResults;
         StringBuilder builder = new StringBuilder();
         int size = 0;
         if (variables != null)
@@ -106,10 +107,10 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
      * @return true if outputs are checked actually; false for no data available.
      * @throws Exception
      */
-    private boolean generateOverview(List<PGMVariable> variables,
-                                  double pvalueCutoff,
-                                  double ipaDiffCutoff,
-                                  StringBuilder builder) throws Exception {
+    private boolean generateOverview(List<VariableInferenceResults> varResults,
+                                     double pvalueCutoff,
+                                     double ipaDiffCutoff,
+                                     StringBuilder builder) throws Exception {
         // Do a test
         int negPerturbedOutputs = 0;
         int posPerturbedOutputs = 0;
@@ -119,17 +120,17 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         MannWhitneyUTest uTest = new MannWhitneyUTest();
         List<Double> pvalues = new ArrayList<Double>();
         boolean hasData = false;
-        for (PGMVariable var : variables) {
+        for (VariableInferenceResults varResult : varResults) {
             realIPAs.clear();
             randomIPAs.clear();
-            Map<String, List<Double>> realProbs = var.getPosteriorValues();
+            Map<String, List<Double>> realProbs = varResult.getPosteriorValues();
             for (List<Double> probs : realProbs.values()) {
-                double ipa = IPACalculator.calculateIPA(var.getValues(), probs);
+                double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), probs);
                 realIPAs.add(ipa);
             }
-            Map<String, List<Double>> randomProbs = var.getRandomPosteriorValues();
+            Map<String, List<Double>> randomProbs = varResult.getRandomPosteriorValues();
             for (List<Double> probs : randomProbs.values()) {
-                double ipa = IPACalculator.calculateIPA(var.getValues(), probs);
+                double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), probs);
                 randomIPAs.add(ipa);
             }
             if (realIPAs.size() == 0 || randomIPAs.size() == 0)
@@ -168,7 +169,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         PathwayAnalysisDetailsDialog dialog = new PathwayAnalysisDetailsDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
         try {
             IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
-            dialog.setVariables(model.variables);
+            dialog.setVariableResults(model.varResults);
             dialog.setNetworkView(view);
             dialog.setLocationRelativeTo(dialog.getOwner());
             dialog.setSize(800, 600);
@@ -200,25 +201,24 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
     @Override
     public void setNetworkView(CyNetworkView view) {
         this.view = view;
-        PGMFactorGraph pfg = null;
+        FactorGraph pfg = null;
         if (view != null)
-            pfg = NetworkToFactorGraphMap.getMap().get(view.getModel());
+            pfg = FactorGraphRegistry.getRegistry().get(view.getModel());
         setFactorGraph(pfg);
     }
 
-    private void setFactorGraph(PGMFactorGraph fg) {
-        // Want to get a list of variables having output roles since
-        // we want to focus on outputs for pathway perturbation study
-        List<PGMVariable> outputs = new ArrayList<PGMVariable>();
+    private void setFactorGraph(FactorGraph fg) {
+        // We want to focus on outputs for pathway perturbation study
+        List<VariableInferenceResults> outputVarResults = null;
         if (fg != null) {
-            for (PGMVariable var : fg.getVariables()) {
-                if (var.getRoles() == null || !var.getRoles().contains(PGMVariable.VariableRole.OUTPUT))
-                    continue;
-                outputs.add(var);
+            FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(fg);
+            if (fgResults != null) {
+                Set<Variable> outputVars = PlugInUtilities.getOutputVariables(fg);
+                outputVarResults = fgResults.getVariableInferenceResults(outputVars);
             }
         }
         IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
-        model.setVariables(outputs);
+        model.setVarResults(outputVarResults);
         resetOverview();
     }
 
@@ -248,11 +248,11 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
             List<Double> ipas = new ArrayList<Double>();
             Map<String, Double> sampleToNegative = new HashMap<String, Double>();
             Map<String, Double> sampleToPositive = new HashMap<String, Double>();
-            for (PGMVariable var : variables) {
-                Map<String, List<Double>> sampleToProbs = var.getRandomPosteriorValues();
+            for (VariableInferenceResults varResult : varResults) {
+                Map<String, List<Double>> sampleToProbs = varResult.getRandomPosteriorValues();
                 for (String sample : sampleToProbs.keySet()) {
                     List<Double> probs = sampleToProbs.get(sample);
-                    double ipa = IPACalculator.calculateIPA(var.getValues(), probs);
+                    double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), probs);
                     if (ipa < 0.0d) {
                         Double value = sampleToNegative.get(sample);
                         if (value == null)
@@ -285,15 +285,15 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
             // In order to calculate p-values
             List<List<Double>> randomPerturbs = generateRandomPerturbations();
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[variables.size() * 3 + 1];
+                String[] rowData = new String[varResults.size() * 3 + 1];
                 rowData[0] = sampleList.get(i);
                 double negative = 0.0d;
                 double positive = 0.0d;
-                for (int j = 0; j < variables.size(); j++) {
-                    PGMVariable var = variables.get(j);
-                    Map<String, List<Double>> posteriors = var.getPosteriorValues();
+                for (int j = 0; j < varResults.size(); j++) {
+                    VariableInferenceResults varResult = varResults.get(j);
+                    Map<String, List<Double>> posteriors = varResult.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
-                    double ipa = IPACalculator.calculateIPA(var.getValues(), postProbs);
+                    double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), postProbs);
                     if (ipa < 0.0d)
                         negative += ipa;
                     else if (ipa > 0.0d)
@@ -307,7 +307,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
                 rowData[5] = PlugInUtilities.formatProbability(pvalue);
                 tableData.add(rowData);
             }
-            int totalPermutation = variables.get(0).getRandomPosteriorValues().size();
+            int totalPermutation = varResults.get(0).getRandomPosteriorValues().size();
             // Add FDR values
             int[] indices = new int[]{2, 5};
             for (int index : indices) {
@@ -347,15 +347,15 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         protected void resetDataWithoutPValues(List<String> sampleList) {
             columnHeaders = colums_without_pvalues;
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[variables.size() + 1];
+                String[] rowData = new String[varResults.size() + 1];
                 rowData[0] = sampleList.get(i);
                 double negativePerturbations = 0.0d;
                 double positivePerturbations = 0.0d;
-                for (int j = 0; j < variables.size(); j++) {
-                    PGMVariable var = variables.get(j);
-                    Map<String, List<Double>> posteriors = var.getPosteriorValues();
+                for (int j = 0; j < varResults.size(); j++) {
+                    VariableInferenceResults varResult = varResults.get(j);
+                    Map<String, List<Double>> posteriors = varResult.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
-                    double ipa = IPACalculator.calculateIPA(var.getValues(), postProbs);
+                    double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), postProbs);
                     if (ipa < 0.0d)
                         negativePerturbations += ipa;
                     else if (ipa > 0.0d)

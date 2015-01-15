@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,6 +60,9 @@ import org.jfree.chart.plot.CategoryMarker;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.reactome.factorgraph.Factor;
+import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.Variable;
 
 /**
  * Utility methods that can be used by Reactome FI plug-in have been grouped
@@ -77,6 +81,43 @@ public class PlugInUtilities {
     public PlugInUtilities() {
     }
     
+    /**
+     * Get a set of Variables that have been linked to outputs for the passed
+     * FactorGraph object.
+     * @param fg
+     * @return
+     */
+    public static Set<Variable> getOutputVariables(FactorGraph fg) {
+        Set<Variable> outputs = new HashSet<Variable>();
+        for (Variable var : fg.getVariables()) {
+            if (isCentralDogmaVariable(var))
+                continue;
+            List<Factor> factors = var.getFactors();
+            for (Factor factor : factors) {
+                List<Variable> variables = factor.getVariables();
+                // If the first variable is a reaction output
+                if (variables == null || variables.size() == 0)
+                    continue;
+                Variable var1 = variables.get(0);
+                if (var1 == var)
+                    break; // Don't count itself
+                String varName1 = var1.getName();
+                if (varName1.matches("(\\d+)_OUTPUT"))
+                    outputs.add(var);
+            }
+        }
+        return outputs;
+    }
+    
+    private static boolean isCentralDogmaVariable(Variable var) {
+        String varName = var.getName();
+        if (varName.endsWith("_protein") ||
+            varName.endsWith("_DNA") ||
+            varName.endsWith("_mRNA"))
+            return true;
+        return false;
+    }
+    
     public static double[] convertDoubleListToArray(List<Double> list) {
         double[] rtn = new double[list.size()];
         for (int i = 0; i < list.size(); i++) {
@@ -86,6 +127,13 @@ public class PlugInUtilities {
             rtn[i] = value;
         }
         return rtn;
+    }
+    
+    public static List<Double> convertArrayToList(double[] values) {
+        List<Double> list = new ArrayList<Double>(values.length);
+        for (int i = 0; i < values.length; i++)
+            list.add(values[i]);
+        return list;
     }
     
     /**

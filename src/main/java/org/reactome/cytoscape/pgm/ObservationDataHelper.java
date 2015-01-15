@@ -8,8 +8,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,20 +23,23 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
-import org.gk.util.StringUtils;
+import org.gk.gkEditor.PathwayComponentTree;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
-import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableHelper;
-import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.pgm.Observation;
-import org.reactome.pgm.PGMFactor;
-import org.reactome.pgm.PGMFactorGraph;
-import org.reactome.pgm.PGMVariable;
+import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.factorgraph.Factor;
+import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.Observation;
+import org.reactome.factorgraph.Variable;
+import org.reactome.factorgraph.common.DataType;
+import org.reactome.factorgraph.common.PGMConfiguration;
+import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 import org.reactome.r3.util.FileUtility;
 
+
 /**
- * This class is used to process observation data for a displayed PGMFactorGraph object.
+ * This class is used to process observation data for a displayed FactorGraph object.
  * An object of this class should not be cached for multiple data loading since loaded
  * data is cached for one loading in order to keep the performance.
  * @author gwu
@@ -48,20 +49,19 @@ public class ObservationDataHelper {
     // Hope this is a unique random sample prefix
     public static final String RANDOM_SAMPLE_PREFIX = "org.reactome.fi.random_";
     private CyNetworkView networkView;
-    private PGMFactorGraph fg;
+    private FactorGraph fg;
     // For quick find variables
-    private Map<String, PGMVariable> nameToVar;
+    private Map<String, Variable> nameToVar;
     private Map<String, CyNode> nameToNode;
     // In order to assign ids to new variable
-    private long maxId;
-    private Map<String, List<Long>> geneToDbIds;
+    private int maxId;
     // Kept loaded data for randomization: data has been discretized already
     private GeneSampleDataPoints data;
     
     /**
      * Default constructor.
      */
-    public ObservationDataHelper(PGMFactorGraph fg,
+    public ObservationDataHelper(FactorGraph fg,
                                  CyNetworkView netView) {
         if (fg == null || netView == null)
             throw new IllegalArgumentException("Factor graph and network view cannot be null!");
@@ -71,22 +71,28 @@ public class ObservationDataHelper {
     }
 
     private void initializeProperties() {
-        nameToVar = new HashMap<String, PGMVariable>();
-        for (PGMVariable var : fg.getVariables()) {
+        nameToVar = new HashMap<String, Variable>();
+        for (Variable var : fg.getVariables()) {
             if (var.getName() == null)
                 continue; // This should not occur
             nameToVar.put(var.getName(), var);
         }
         // Get the maximum ids, which should be long, in order to assign to new variables
-        List<PGMVariable> variables = new ArrayList<PGMVariable>(fg.getVariables());
-        Collections.sort(variables, new Comparator<PGMVariable>() {
-            public int compare(PGMVariable var1, PGMVariable var2) {
-                Long id1 = new Long(var1.getId());
-                Long id2 = new Long(var2.getId());
-                return id1.compareTo(id2);
+        maxId = Integer.MIN_VALUE;
+        for (Variable var : fg.getVariables()) {
+            if (var.getId().matches("(\\d+)")) { // Make sure used id is an integer
+                Integer id = new Integer(var.getId());
+                if (id > maxId)
+                    maxId = id;
             }
-        });
-        maxId = new Long(variables.get(variables.size() - 1).getId());
+        }
+        for (Factor factor : fg.getFactors()) {
+            if (factor.getId().matches("(\\d+)")) {
+                Integer id = new Integer(factor.getId());
+                if (id > maxId)
+                    maxId = id;
+            }
+        }
         nameToNode = new HashMap<String, CyNode>();
         TableHelper tableHelper = new TableHelper();
         for (CyNode node : networkView.getModel().getNodeList()) {
@@ -96,21 +102,19 @@ public class ObservationDataHelper {
         data = new GeneSampleDataPoints();
     }
     
-    public Map<PGMVariable, Map<String, Integer>> loadData(File file,
-                                                           ObservationType type,
-                                                           double[] thresholdValues) throws Exception {
-        if (geneToDbIds == null)
-            loadGeneToDdIds();
-        if (type == ObservationType.CNV) {
+    public Map<Variable, Map<String, Integer>> loadData(File file,
+                                                        DataType type,
+                                                        double[] thresholdValues) throws Exception {
+        if (type == DataType.CNV) {
             return loadData(file, 
                             "DNA", 
-                            getCNVFactorValues(),
+                            getFactorValues(type),
                             thresholdValues);
         }
-        else if (type == ObservationType.GENE_EXPRESSION)
+        else if (type == DataType.mRNA_EXP)
             return loadData(file, 
                             "mRNA",
-                            getExpressionFactorValues(),
+                            getFactorValues(type),
                             thresholdValues);
         return null;
     }
@@ -120,24 +124,24 @@ public class ObservationDataHelper {
      * @param varToSampleToStates
      * @return
      */
-    public List<Observation> generateObservations(Map<PGMVariable, Map<String, Integer>>... varToSampleToStates) {
+    public List<Observation> generateObservations(Map<Variable, Map<String, Integer>>... varToSampleToStates) {
         // Get all samples mentioned in the parameters.
         Set<String> samples = new HashSet<String>();
-        for (Map<PGMVariable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
-            for (PGMVariable var : varToSampleToState.keySet()) {
+        for (Map<Variable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
+            for (Variable var : varToSampleToState.keySet()) {
                 samples.addAll(varToSampleToState.get(var).keySet());
             }
         }
         List<Observation> observations = new ArrayList<Observation>();
         for (String sample : samples) {
             Observation observation = new Observation();
-            observation.setSample(sample);
-            for (Map<PGMVariable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
-                for (PGMVariable var : varToSampleToState.keySet()) {
+            observation.setName(sample);
+            for (Map<Variable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
+                for (Variable var : varToSampleToState.keySet()) {
                     Map<String, Integer> sampleToState = varToSampleToState.get(var);
                     if (sampleToState.containsKey(sample)) {
-                        observation.addObserved(var.getId(), 
-                                                sampleToState.get(sample));
+                        observation.addAssignment(var,
+                                                  sampleToState.get(sample));
                     }
                 }
             }
@@ -151,10 +155,10 @@ public class ObservationDataHelper {
      * @param varToSampleToStates
      * @return
      */
-    public List<Observation> generateRandomObservations(Map<PGMVariable, Map<String, Integer>>... varToSampleToStates) {
+    public List<Observation> generateRandomObservations(Map<Variable, Map<String, Integer>>... varToSampleToStates) {
         Set<String> genes = new HashSet<String>();
-        for (Map<PGMVariable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
-            for (PGMVariable var : varToSampleToState.keySet()) {
+        for (Map<Variable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
+            for (Variable var : varToSampleToState.keySet()) {
                 String label = var.getName();
                 String[] tokens = label.split("_");
                 genes.add(tokens[0]);
@@ -166,17 +170,16 @@ public class ObservationDataHelper {
         for (String sample : samples) {
             Observation observation = new Observation();
             rtn.add(observation);
-            observation.setSample(sample);
-            for (Map<PGMVariable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
-                for (PGMVariable var : varToSampleToState.keySet()) {
+            observation.setName(sample);
+            for (Map<Variable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
+                for (Variable var : varToSampleToState.keySet()) {
                     String label  = var.getName();
                     String[] tokens = label.split("_");
                     String gene = tokens[0];
                     Integer state = randomData.getState(gene, sample, tokens[1]);
                     if (state == null)
                         continue;
-                    observation.addObserved(var.getId(),
-                                            state);
+                    observation.addAssignment(var, state);
                 }
             }
         }
@@ -191,10 +194,10 @@ public class ObservationDataHelper {
         return samples;
     }
 
-    private Map<PGMVariable, Map<String, Integer>> loadData(File file, 
-                                                            String nodeType, 
-                                                            List<Double> factorValues,
-                                                            double[] thresholdValues) throws IOException {
+    private Map<Variable, Map<String, Integer>> loadData(File file, 
+                                                         String nodeType, 
+                                                         List<Double> factorValues,
+                                                         double[] thresholdValues) throws IOException {
         FileUtility fu = new FileUtility();
         fu.setInput(file.getAbsolutePath());
         // First line should be header
@@ -210,7 +213,7 @@ public class ObservationDataHelper {
         // is no view for newly added CyNode
         final Map<CyNode, CyNode> varNodeToFactorNode = new HashMap<CyNode, CyNode>();
         final Map<CyNode, CyNode> factorNodeToObsNode = new HashMap<CyNode, CyNode>();
-        Map<PGMVariable, Map<String, Integer>> variableToSampleToState = new HashMap<PGMVariable, Map<String,Integer>>();
+        Map<Variable, Map<String, Integer>> variableToSampleToState = new HashMap<Variable, Map<String,Integer>>();
         while ((line = fu.readLine()) != null) {
             // Cache data for randomization purpose
             cacheData(line, 
@@ -221,24 +224,24 @@ public class ObservationDataHelper {
             String gene = line.substring(0, index);
             String varName = gene + "_" + nodeType;
             // Check if a Variable node exists
-            PGMVariable var = nameToVar.get(varName);
+            Variable var = nameToVar.get(varName);
             if (var == null)
                 continue; // Nothing to be done
             // Just use the first DB_ID as its label
-            PGMVariable obsVar = createObsVariable(gene, 
-                                                   nodeType);
+            Variable obsVar = createObsVariable(gene, 
+                                                nodeType);
             // Add this observation variable into the network.
             CyNode obsNode = fiHelper.createNode(network,
-                                                 obsVar.getLabel(), 
+                                                 obsVar.getName(), 
                                                  "observation", 
-                                                 obsVar.getLabel());
-            PGMFactor factor = createObsFactor(obsVar, 
-                                               var, 
-                                               factorValues);
+                                                 obsVar.getName());
+            Factor factor = createObsFactor(obsVar, 
+                                            var, 
+                                            factorValues);
             CyNode factorNode = fiHelper.createNode(network,
-                                                    factor.getLabel(), 
+                                                    factor.getName(), 
                                                     "factor",
-                                                    factor.getLabel());
+                                                    factor.getName());
             // Don't want to show label for factor node. So
             // a simple fix
             nodeTable.getRow(factorNode.getSUID()).set("nodeLabel", null);
@@ -253,10 +256,6 @@ public class ObservationDataHelper {
                                        "FI");
             varNodeToFactorNode.put(varNode, factorNode);
             factorNodeToObsNode.put(factorNode, obsNode);
-            List<Long> dbIds = geneToDbIds.get(gene);
-            if (dbIds != null)
-                nodeTable.getRow(obsNode.getSUID()).set("sourceIds", 
-                                                        StringUtils.join(",", dbIds));
             Map<String, Integer> sampleToState = data.getSampleToState(gene,
                                                                        nodeType);
             variableToSampleToState.put(obsVar, sampleToState);
@@ -326,64 +325,35 @@ public class ObservationDataHelper {
         }
     }
     
-    private PGMFactor createObsFactor(PGMVariable obsVar,
-                                      PGMVariable hiddenVar,
-                                      List<Double> factorValues) {
-        PGMFactor factor = new PGMFactor();
-        factor.addVariable(obsVar);
-        factor.addVariable(hiddenVar);
-        obsVar.setStates(hiddenVar.getStates());
-        String factorLabel = hiddenVar.getLabel() + ", " + obsVar.getLabel();
-        factor.setLabel(factorLabel);
-        String factorName = hiddenVar.getName() + ", " + obsVar.getName();
+    private Factor createObsFactor(Variable obsVar,
+                                   Variable hiddenVar,
+                                   List<Double> factorValues) {
+        Factor factor = new Factor();
+        List<Variable> varList = new ArrayList<Variable>();
+        varList.add(obsVar);
+        varList.add(hiddenVar);
+        factor.setVariables(varList);
+        factor.setValues(factorValues);
+        String factorName = hiddenVar.getName() + "->" + obsVar.getName();
         factor.setName(factorName);
-        for (Double value : factorValues)
-            factor.addValue(value);
         fg.addFactor(factor);
         return factor;
     }
     
-    private PGMVariable createObsVariable(String gene,
-                                          String type) {
-        PGMVariable obsVar = new PGMVariable();
+    private Variable createObsVariable(String gene,
+                                       String type) {
+        Variable obsVar = new Variable(PathwayPGMConfiguration.getConfig().getNumberOfStates());
         obsVar.setId(++maxId + "");
         String label = gene + "_" + type + "_obs";
-        obsVar.setLabel(label);
         obsVar.setName(label);
         return obsVar;
     }
     
-    private List<Double> getExpressionFactorValues() {
-        String values = PlugInObjectManager.getManager().getProperties().getProperty("expressionFactorValues");
-        return getFactorValues(values);
-    }
-
-    private List<Double> getFactorValues(String values) {
-        String[] tokens = values.split(",");
-        List<Double> rtn = new ArrayList<Double>();
-        for (String token : tokens)
-            rtn.add(new Double(token));
-        return rtn;
-    }
-    
-    private List<Double> getCNVFactorValues() {
-        String values = PlugInObjectManager.getManager().getProperties().getProperty("cnvFactorValues");
-        return getFactorValues(values);
-    }
-    
-    private void loadGeneToDdIds() throws Exception {
-        Set<Long> dbIds = new HashSet<Long>();
-        int index = 0;
-        for (PGMVariable variable : fg.getVariables()) {
-            String label = variable.getLabel();
-            if (label.matches("\\d+_DNA") || label.matches("\\d+_mRNA")) {
-                index = label.lastIndexOf("_");
-                dbIds.add(new Long(label.substring(0, index)));
-            }
-        }
-        Set<Long> ewasIds = dbIds;
-        RESTFulFIService restfulAPI = new RESTFulFIService();
-        geneToDbIds = restfulAPI.getGeneToEWASIds(ewasIds);
+    private List<Double> getFactorValues(DataType dataType) {
+        PGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        Map<DataType, double[]> typeToFactorValue = config.getTypeToFactorValues();
+        double[] values = typeToFactorValue.get(dataType);
+        return PlugInUtilities.convertArrayToList(values);
     }
     
     /**

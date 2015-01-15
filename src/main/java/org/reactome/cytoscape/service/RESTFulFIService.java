@@ -10,8 +10,6 @@ package org.reactome.cytoscape.service;
  */
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -26,8 +24,6 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.cytoscape.model.CyEdge;
@@ -37,10 +33,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.RenderablePathway;
 import org.gk.util.StringUtils;
-import org.jdom.Document;
 import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
 import org.jdom.output.DOMOutputter;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
@@ -49,13 +42,11 @@ import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.Sentence;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.factorgraph.FactorGraph;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.funcInt.Protein;
 import org.reactome.funcInt.ReactomeSource;
-import org.reactome.pgm.InferenceResults;
-import org.reactome.pgm.InferenceStatus;
-import org.reactome.pgm.PGMFactorGraph;
 import org.reactome.r3.graph.NetworkClusterResult;
 import org.reactome.r3.util.InteractionUtilities;
 import org.w3c.dom.NodeList;
@@ -161,16 +152,16 @@ public class RESTFulFIService implements FINetworkService
         return queryInteractions(url);
     }
 
-    public PGMFactorGraph convertPathwayToFactorGraph(Long pathwayId,
-                                                      String escapeNames) throws Exception {
+    public FactorGraph convertPathwayToFactorGraph(Long pathwayId,
+                                                   String escapeNames) throws Exception {
         String url = restfulURL + "network/convertPathwayToFactorGraph/" + pathwayId;
         Element root = PlugInUtilities.callHttpInXML(url, HTTP_POST, escapeNames);
         // Convert it into org.w3.dom.Document to be used in JAXB
         org.w3c.dom.Document document = new DOMOutputter().output(root.getDocument());
         org.w3c.dom.Node docRoot = document.getDocumentElement();
-        JAXBContext jc = JAXBContext.newInstance(PGMFactorGraph.class);
+        JAXBContext jc = JAXBContext.newInstance(FactorGraph.class);
         Unmarshaller unmarshaller = jc.createUnmarshaller();
-        PGMFactorGraph fg = (PGMFactorGraph) unmarshaller.unmarshal(docRoot);
+        FactorGraph fg = (FactorGraph) unmarshaller.unmarshal(docRoot);
         return fg;
     }
     
@@ -191,73 +182,73 @@ public class RESTFulFIService implements FINetworkService
         return rtn;
     }
     
-    public List<InferenceResults> runInferenceOnFactorGraph(PGMFactorGraph pfg) throws Exception {
-        String url = restfulURL + "network/runInferenceOnFactorGraph";
-        // Need to marshal the factor graph into an XML string
-        String fgText = generateFGText(pfg);
-        String rtn = PlugInUtilities.postHttpInXML(url, fgText);
-        List<InferenceResults> resultsList = parseInferenceResults(rtn);
-        return resultsList;
-    }
-    
-    public String runInferenceOnFGViaProcess(PGMFactorGraph pfg) throws Exception {
-        String url = restfulURL + "network/runInferenceOnFGViaProcess";
-        String fgText = generateFGText(pfg);
-        String rtn = PlugInUtilities.postHttpInXML(url, fgText);
-        return rtn;
-    }
-    
-    public InferenceStatus checkInferenceStatus(String processId) throws Exception {
-        String url = restfulURL + "network/checkInferenceStatus/" + processId;
-        String status = PlugInUtilities.callHttpInText(url, HTTP_GET, null);
-        return InferenceStatus.valueOf(status);
-    }
-    
-    public List<InferenceResults> getInferenceResults(String processId) throws Exception {
-        String url = restfulURL + "network/getInferenceResults/" + processId;
-        String text = PlugInUtilities.callHttpInText(url, HTTP_GET, null);
-        return parseInferenceResults(text);
-    }
-    
-    public String getInferenceError(String processId) throws Exception {
-        String url = restfulURL + "network/getInferenceError/" + processId;
-        return PlugInUtilities.callHttpInText(url, HTTP_GET, null);
-    }
-    
-    public void abortInferenceProcess(String processId) throws Exception {
-        String url = restfulURL + "network/abortInferenceProcess/" + processId;
-        PlugInUtilities.callHttpInText(url, HTTP_GET, null);
-    }
-    
-    private String generateFGText(PGMFactorGraph pfg) throws JAXBException, IOException {
-        JAXBContext context = JAXBContext.newInstance(PGMFactorGraph.class);
-        StringWriter writer = new StringWriter();
-        Marshaller marshaller = context.createMarshaller();
-        marshaller.marshal(pfg, writer);
-        String fgText = writer.getBuffer().toString();
-        writer.close();
-        return fgText;
-    }
-
-    private List<InferenceResults> parseInferenceResults(String rtn) throws JDOMException, IOException, JAXBException {
-        JAXBContext context = JAXBContext.newInstance(InferenceResults.class);
-        StringReader reader = new StringReader(rtn);
-        SAXBuilder builder = new SAXBuilder();
-        Document doc = builder.build(reader);
-        // Convert it into org.w3.dom.Document to be used in JAXB
-        org.w3c.dom.Document document = new DOMOutputter().output(doc);
-        org.w3c.dom.Node docRoot = document.getDocumentElement();
-        NodeList children = docRoot.getChildNodes();
-        List<InferenceResults> resultsList = new ArrayList<InferenceResults>();
-        Unmarshaller unmarshaller = context.createUnmarshaller();
-        
-        for (int i = 0; i < children.getLength(); i++) {
-            org.w3c.dom.Node child = children.item(i);
-            InferenceResults results = (InferenceResults) unmarshaller.unmarshal(child);
-            resultsList.add(results);
-        }
-        return resultsList;
-    }
+//    public List<InferenceResults> runInferenceOnFactorGraph(PGMFactorGraph pfg) throws Exception {
+//        String url = restfulURL + "network/runInferenceOnFactorGraph";
+//        // Need to marshal the factor graph into an XML string
+//        String fgText = generateFGText(pfg);
+//        String rtn = PlugInUtilities.postHttpInXML(url, fgText);
+//        List<InferenceResults> resultsList = parseInferenceResults(rtn);
+//        return resultsList;
+//    }
+//    
+//    public String runInferenceOnFGViaProcess(PGMFactorGraph pfg) throws Exception {
+//        String url = restfulURL + "network/runInferenceOnFGViaProcess";
+//        String fgText = generateFGText(pfg);
+//        String rtn = PlugInUtilities.postHttpInXML(url, fgText);
+//        return rtn;
+//    }
+//    
+//    public InferenceStatus checkInferenceStatus(String processId) throws Exception {
+//        String url = restfulURL + "network/checkInferenceStatus/" + processId;
+//        String status = PlugInUtilities.callHttpInText(url, HTTP_GET, null);
+//        return InferenceStatus.valueOf(status);
+//    }
+//    
+//    public List<InferenceResults> getInferenceResults(String processId) throws Exception {
+//        String url = restfulURL + "network/getInferenceResults/" + processId;
+//        String text = PlugInUtilities.callHttpInText(url, HTTP_GET, null);
+//        return parseInferenceResults(text);
+//    }
+//    
+//    public String getInferenceError(String processId) throws Exception {
+//        String url = restfulURL + "network/getInferenceError/" + processId;
+//        return PlugInUtilities.callHttpInText(url, HTTP_GET, null);
+//    }
+//    
+//    public void abortInferenceProcess(String processId) throws Exception {
+//        String url = restfulURL + "network/abortInferenceProcess/" + processId;
+//        PlugInUtilities.callHttpInText(url, HTTP_GET, null);
+//    }
+//    
+//    private String generateFGText(PGMFactorGraph pfg) throws JAXBException, IOException {
+//        JAXBContext context = JAXBContext.newInstance(PGMFactorGraph.class);
+//        StringWriter writer = new StringWriter();
+//        Marshaller marshaller = context.createMarshaller();
+//        marshaller.marshal(pfg, writer);
+//        String fgText = writer.getBuffer().toString();
+//        writer.close();
+//        return fgText;
+//    }
+//
+//    private List<InferenceResults> parseInferenceResults(String rtn) throws JDOMException, IOException, JAXBException {
+//        JAXBContext context = JAXBContext.newInstance(InferenceResults.class);
+//        StringReader reader = new StringReader(rtn);
+//        SAXBuilder builder = new SAXBuilder();
+//        Document doc = builder.build(reader);
+//        // Convert it into org.w3.dom.Document to be used in JAXB
+//        org.w3c.dom.Document document = new DOMOutputter().output(doc);
+//        org.w3c.dom.Node docRoot = document.getDocumentElement();
+//        NodeList children = docRoot.getChildNodes();
+//        List<InferenceResults> resultsList = new ArrayList<InferenceResults>();
+//        Unmarshaller unmarshaller = context.createUnmarshaller();
+//        
+//        for (int i = 0; i < children.getLength(); i++) {
+//            org.w3c.dom.Node child = children.item(i);
+//            InferenceResults results = (InferenceResults) unmarshaller.unmarshal(child);
+//            resultsList.add(results);
+//        }
+//        return resultsList;
+//    }
     
     @SuppressWarnings("unchecked")
     private List<Interaction> queryInteractions(String url) throws Exception {

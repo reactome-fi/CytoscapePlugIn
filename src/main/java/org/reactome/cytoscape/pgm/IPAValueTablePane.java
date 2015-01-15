@@ -39,9 +39,9 @@ import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.pgm.IPACalculator;
-import org.reactome.pgm.PGMFactorGraph;
-import org.reactome.pgm.PGMVariable;
+import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.Variable;
+import org.reactome.pathway.factorgraph.IPACalculator;
 import org.reactome.r3.util.MathUtilities;
 
 /**
@@ -50,8 +50,8 @@ import org.reactome.r3.util.MathUtilities;
  *
  */
 public class IPAValueTablePane extends NetworkModulePanel {
-    // Cache a map from CyNode to PGMVariable for a very quick access
-    private Map<CyNode, PGMVariable> nodeToVar;
+    // Cache a map from CyNode to Variable for very quick access
+    private Map<CyNode, Variable> nodeToVar;
     // Used to draw
     protected PlotTablePanel contentPane;
     // For some reason, a single selection fire too many selection event.
@@ -60,6 +60,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
     private List<CyNode> preSelectedNodes;
     // Keep this registration so that it can be unregister if this panel is closed
     private ServiceRegistration currentViewRegistration;
+    // Inference results for a selected FactorGraph
+    private FactorGraphInferenceResults fgInfResults;
     
     /**
      * In order to show title, have to set the title in the constructor.
@@ -67,7 +69,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
     public IPAValueTablePane(String title) {
         super(title);
         hideOtherNodesBox.setVisible(false);
-        nodeToVar = new HashMap<CyNode, PGMVariable>();
+        nodeToVar = new HashMap<CyNode, Variable>();
         modifyContentPane();
         // Add the following event listener in order to support multiple network views
         SetCurrentNetworkViewListener listener = new SetCurrentNetworkViewListener() {
@@ -134,8 +136,9 @@ public class IPAValueTablePane extends NetworkModulePanel {
     public void setNetworkView(CyNetworkView view) {
         super.setNetworkView(view);
         initNodeToVarMap();
-        setSamplesFromFG();
+        setInferenceResults();
     }
+    
     @Override
     protected void doContentTablePopup(MouseEvent e) {
         JPopupMenu popupMenu = createExportAnnotationPopup();
@@ -164,11 +167,12 @@ public class IPAValueTablePane extends NetworkModulePanel {
         nodeToVar.clear();
         if (view == null)
             return;
-        PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(view.getModel());
+        FactorGraph fg = FactorGraphRegistry.getRegistry().get(view.getModel());
         if (fg != null) {
-            Map<String, PGMVariable> labelToVar = new HashMap<String, PGMVariable>();
-            for (PGMVariable var : fg.getVariables()) {
-                labelToVar.put(var.getLabel(), var); // PGMVariable's label has been saved as name.
+            Map<String, Variable> labelToVar = new HashMap<String, Variable>();
+            for (Variable var : fg.getVariables()) {
+                labelToVar.put("variable:" + var.getId(), 
+                               var); // PGMVariable's label has been saved as name.
             }
             // Do a simple mapping
             TableHelper tableHelper = new TableHelper();
@@ -177,23 +181,23 @@ public class IPAValueTablePane extends NetworkModulePanel {
                                                                   node, 
                                                                   "name", 
                                                                   String.class);
-                PGMVariable var = labelToVar.get(label);
+                Variable var = labelToVar.get(label);
                 if (var != null)
                     nodeToVar.put(node, var);
             }
         }
     }
     
-    private void setSamplesFromFG() {
+    private void setInferenceResults() {
         // Get a list of samples from posteriors from all variables
-        Set<String> sampleSet = new HashSet<String>();
+        Set<String> sampleSet = null;
         if (view != null) {// If a pathway view is selected, network view will be null.
-            PGMFactorGraph fg = NetworkToFactorGraphMap.getMap().get(view.getModel());
+            FactorGraph fg = FactorGraphRegistry.getRegistry().get(view.getModel());
             if (fg != null) {
-                for (PGMVariable var : fg.getVariables()) {
-                    Map<String, List<Double>> posteriors = var.getPosteriorValues();
-                    sampleSet.addAll(posteriors.keySet());
-                }
+                FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(fg);
+                if (fgResults != null)
+                    sampleSet = fgResults.getSamples();
+                this.fgInfResults = fgResults;
             }
         }
         List<String> sampleList = new ArrayList<String>(sampleSet);
@@ -217,21 +221,26 @@ public class IPAValueTablePane extends NetworkModulePanel {
         if (selectedNodes.equals(preSelectedNodes))
             return;
         preSelectedNodes = selectedNodes;
-        List<PGMVariable> variables = new ArrayList<PGMVariable>();
-        if (selectedNodes != null && selectedNodes.size() > 0) {
-            for (CyNode node : selectedNodes) {
-                PGMVariable var = nodeToVar.get(node);
-                if (var != null)
-                    variables.add(var);
+        List<VariableInferenceResults> varResults = new ArrayList<VariableInferenceResults>();
+        if (fgInfResults != null) {
+            if (selectedNodes != null && selectedNodes.size() > 0) {
+                for (CyNode node : selectedNodes) {
+                    Variable var = nodeToVar.get(node);
+                    if (var != null) {
+                        VariableInferenceResults varResult = fgInfResults.getVariableInferenceResults(var);
+                        if (varResult != null)
+                            varResults.add(varResult);
+                    }
+                }
             }
+            Collections.sort(varResults, new Comparator<VariableInferenceResults>() {
+                public int compare(VariableInferenceResults varResults1, VariableInferenceResults varResults2) {
+                    return varResults1.getVariable().getName().compareTo(varResults2.getVariable().getName());
+                }
+            });
         }
-        Collections.sort(variables, new Comparator<PGMVariable>() {
-            public int compare(PGMVariable var1, PGMVariable var2) {
-                return var1.getName().compareTo(var2.getName());
-            }
-        });
         IPAValueTableModel model = (IPAValueTableModel) contentPane.getTableModel();
-        model.setVariables(variables);
+        model.setVarResults(varResults);
     }
 
     /* (non-Javadoc)
@@ -278,7 +287,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
     protected class IPAValueTableModel extends NetworkModuleTableModel {
         private final String[] ORIGINAL_HEADERS = new String[]{"Sample", "Select Nodes to View"};
         // Cache the list of variables for different view
-        protected List<PGMVariable> variables;
+        protected List<VariableInferenceResults> varResults;
         // A flag to indicate if p-values should be displayed
         // Default is hide for a simply drawing
         private boolean hideFDRs = true;
@@ -308,17 +317,14 @@ public class IPAValueTablePane extends NetworkModulePanel {
             return this.hideFDRs;
         }
         
-        public void setVariables(List<PGMVariable> variables) {
-            this.variables = variables;
-            if (variables != null) {
-                Collections.sort(variables, new Comparator<PGMVariable>() {
-                    public int compare(PGMVariable var1, PGMVariable var2) {
-                        String name1 = var1.getShortName();
-                        if (name1 == null)
-                            name1 = var1.getName();
-                        String name2 = var2.getShortName();
-                        if (name2 == null)
-                            name2 = var2.getName();
+        public void setVarResults(List<VariableInferenceResults> varResults) {
+            this.varResults = varResults;
+            if (varResults != null) {
+                Collections.sort(varResults, new Comparator<VariableInferenceResults>() {
+                    public int compare(VariableInferenceResults varResults1,
+                                       VariableInferenceResults varResults2) {
+                        String name1 = varResults1.getVariable().getName();
+                        String name2 = varResults2.getVariable().getName();
                         return name1.compareTo(name2);
                     }
                 });
@@ -327,34 +333,35 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
         
         protected void resetDataWithPValues(List<String> sampleList) {
-            columnHeaders = new String[variables.size() * 3 + 1];
+            columnHeaders = new String[varResults.size() * 3 + 1];
             columnHeaders[0] = "Sample";
-            for (int i = 0; i < variables.size(); i++) {
-                String label = variables.get(i).getShortName();
+            for (int i = 0; i < varResults.size(); i++) {
+                String label = varResults.get(i).getVariable().getName();
                 columnHeaders[3 * i + 1] = label;
                 columnHeaders[3 * i + 2] = label + PlotTablePanel.P_VALUE_COL_NAME_AFFIX;
                 columnHeaders[3 * i + 3] = label + PlotTablePanel.FDR_COL_NAME_AFFIX;
             }
-            // In order to caclualte p-values
-            Map<PGMVariable, List<Double>> varToRandomIPAs = generateRandomIPAs(variables);
+            // In order to calculate p-values
+            Map<Variable, List<Double>> varToRandomIPAs = generateRandomIPAs(varResults);
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[variables.size() * 3 + 1];
+                String[] rowData = new String[varResults.size() * 3 + 1];
                 rowData[0] = sampleList.get(i);
-                for (int j = 0; j < variables.size(); j++) {
-                    PGMVariable var = variables.get(j);
-                    Map<String, List<Double>> posteriors = var.getPosteriorValues();
+                for (int j = 0; j < varResults.size(); j++) {
+                    VariableInferenceResults varResult = varResults.get(j);
+                    Map<String, List<Double>> posteriors = varResult.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
-                    double ipa = IPACalculator.calculateIPA(var.getValues(), postProbs);
+                    double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(),
+                                                            postProbs);
                     rowData[3 * j + 1] = PlugInUtilities.formatProbability(ipa);
-                    List<Double> randomIPAs = varToRandomIPAs.get(var);
+                    List<Double> randomIPAs = varToRandomIPAs.get(varResult.getVariable());
                     double pvalue = calculatePValue(ipa, randomIPAs);
                     rowData[3 * j + 2] = pvalue + "";
                 }
                 tableData.add(rowData);
             }
-            int totalPermutation = variables.get(0).getRandomPosteriorValues().size();
+            int totalPermutation = varResults.get(0).getRandomPosteriorValues().size();
             // Add FDR values
-            for (int j = 0; j < variables.size(); j++) {
+            for (int j = 0; j < varResults.size(); j++) {
                 List<Double> pvalues = new ArrayList<Double>();
                 // Sort the rows based on p-values
                 final int index = j;
@@ -388,20 +395,21 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
         
         protected void resetDataWithoutPValues(List<String> sampleList) {
-            columnHeaders = new String[variables.size() + 1];
+            columnHeaders = new String[varResults.size() + 1];
             columnHeaders[0] = "Sample";
-            for (int i = 0; i < variables.size(); i++) {
-                String name = variables.get(i).getShortName();
+            for (int i = 0; i < varResults.size(); i++) {
+                String name = varResults.get(i).getVariable().getName();
                 columnHeaders[i + 1] = name;
             }
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[variables.size() + 1];
+                String[] rowData = new String[varResults.size() + 1];
                 rowData[0] = sampleList.get(i);
-                for (int j = 0; j < variables.size(); j++) {
-                    PGMVariable var = variables.get(j);
-                    Map<String, List<Double>> posteriors = var.getPosteriorValues();
+                for (int j = 0; j < varResults.size(); j++) {
+                    VariableInferenceResults varResult = varResults.get(j);
+                    Map<String, List<Double>> posteriors = varResult.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
-                    double ipa = IPACalculator.calculateIPA(var.getValues(), postProbs);
+                    double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(),
+                                                            postProbs);
                     rowData[j + 1] = PlugInUtilities.formatProbability(ipa);
                 }
                 tableData.add(rowData);
@@ -409,7 +417,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
         
         protected void resetData() {
-            if (variables == null || variables.size() == 0) {
+            if (varResults == null || varResults.size() == 0) {
                 columnHeaders = ORIGINAL_HEADERS;
                 // Refresh the tableData
                 for (String[] values : tableData) {
@@ -421,8 +429,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
             }
             // Get a list of all samples
             Set<String> samples = new HashSet<String>();
-            for (PGMVariable var : variables) {
-                samples.addAll(var.getPosteriorValues().keySet());
+            for (VariableInferenceResults varResults : varResults) {
+                samples.addAll(varResults.getPosteriorValues().keySet());
             }
             List<String> sampleList = new ArrayList<String>(samples);
             Collections.sort(sampleList);
@@ -490,14 +498,16 @@ public class IPAValueTablePane extends NetworkModulePanel {
             return (double) index / randomValues.size();
         }
         
-        private Map<PGMVariable, List<Double>> generateRandomIPAs(List<PGMVariable> variables) {
-            Map<PGMVariable, List<Double>> varToRandomIPAs = new HashMap<PGMVariable, List<Double>>();
-            for (PGMVariable var : variables) {
+        private Map<Variable, List<Double>> generateRandomIPAs(List<VariableInferenceResults> varResults) {
+            Map<Variable, List<Double>> varToRandomIPAs = new HashMap<Variable, List<Double>>();
+            for (VariableInferenceResults varResult : varResults) {
                 List<Double> ipas = new ArrayList<Double>();
-                varToRandomIPAs.put(var, ipas);
-                Map<String, List<Double>> randomPosts = var.getRandomPosteriorValues();
+                varToRandomIPAs.put(varResult.getVariable(),
+                                    ipas);
+                Map<String, List<Double>> randomPosts = varResult.getRandomPosteriorValues();
                 for (String sample : randomPosts.keySet()) {
-                    double ipa = IPACalculator.calculateIPA(var.getValues(), randomPosts.get(sample));
+                    double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(),
+                                                            randomPosts.get(sample));
                     ipas.add(ipa);
                 }
                 Collections.sort(ipas);

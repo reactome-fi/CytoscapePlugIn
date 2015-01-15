@@ -67,8 +67,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.pgm.IPACalculator;
-import org.reactome.pgm.PGMVariable;
+import org.reactome.pathway.factorgraph.IPACalculator;
 import org.reactome.r3.util.MathUtilities;
 
 /**
@@ -258,7 +257,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
             Long nodeSUID = node.getSUID();
             String nodeLabel = tableHelper.getStoredNodeAttribute(network,
                                                                   node, 
-                                                                  "name", 
+                                                                  "SourceIds", 
                                                                   String.class);
             boolean isSelected = variables.contains(nodeLabel);
             if (isSelected)
@@ -384,12 +383,13 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
         return chartPanel;
     }
     
-    public void setVariables(List<PGMVariable> variables) throws MathException {
+    public void setVariableResults(List<VariableInferenceResults> varResults) throws MathException {
         // Do a sort
-        List<PGMVariable> sortedVars = new ArrayList<PGMVariable>(variables);
-        Collections.sort(sortedVars, new Comparator<PGMVariable>() {
-            public int compare(PGMVariable var1, PGMVariable var2) {
-                return var1.getLabel().compareTo(var2.getLabel());
+        List<VariableInferenceResults> sortedResults = new ArrayList<VariableInferenceResults>(varResults);
+        Collections.sort(sortedResults, new Comparator<VariableInferenceResults>() {
+            public int compare(VariableInferenceResults varResults1,
+                               VariableInferenceResults varResults2) {
+                return varResults1.getVariable().getName().compareTo(varResults2.getVariable().getName());
             }
         });
         dataset.clear();
@@ -397,7 +397,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
         randomSampleToIPAs.clear();
         TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
         List<Double> pvalues = new ArrayList<Double>();
-        for (PGMVariable var : sortedVars) {
+        for (VariableInferenceResults var : sortedResults) {
             Map<String, List<Double>> sampleToProbs = var.getPosteriorValues();
             List<Double> realIPAs = addValueToDataset(sampleToProbs, 
                                                       "Real Samples",
@@ -407,16 +407,16 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
                                                         var);
             double pvalue = tableModel.addRow(realIPAs, 
                                               randomIPAs,
-                                              var.getShortName(),
-                                              var.getLabel());
+                                              var.getVariable().getName(),
+                                              var.getVariable().getCustomizedInfo());
             pvalues.add(pvalue);
-            realSampleToIPAs.put(var.getLabel(), realIPAs);
-            randomSampleToIPAs.put(var.getLabel(), randomIPAs);
+            realSampleToIPAs.put(var.getVariable().getCustomizedInfo(), realIPAs);
+            randomSampleToIPAs.put(var.getVariable().getCustomizedInfo(), randomIPAs);
         }
         // The following code is used to control performance:
         // 16 is arbitrary
         CategoryAxis axis = plot.getDomainAxis();
-        if (variables.size() > PlugInUtilities.PLOT_CATEGORY_AXIX_LABEL_CUT_OFF) {
+        if (varResults.size() > PlugInUtilities.PLOT_CATEGORY_AXIX_LABEL_CUT_OFF) {
             axis.setTickLabelsVisible(false);
             axis.setTickMarksVisible(false);
         }
@@ -450,13 +450,15 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
     
     private List<Double> addValueToDataset(Map<String, List<Double>> sampleToProbs,
                                            String label,
-                                           PGMVariable var) {
+                                           VariableInferenceResults varResults) {
         List<Double> ipas = new ArrayList<Double>();
         for (List<Double> probs : sampleToProbs.values()) {
-            double ipa = IPACalculator.calculateIPA(var.getValues(), probs);
+            double ipa = IPACalculator.calculateIPA(varResults.getPriorValues(), probs);
             ipas.add(ipa);
         }
-        dataset.add(ipas, label, var.getLabel());
+        dataset.add(ipas, 
+                    label,
+                    varResults.getVariable().getCustomizedInfo());
         return ipas;
     }
     
@@ -483,13 +485,13 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
          * Add a new column to the table model. P-value will be returned from this method.
          * @param realIPAs
          * @param randomIPAs
-         * @param varLabel
+         * @param varLabel it should the DB_ID for a Reactome PhysicalEntity instance.
          * @return
          * @throws MathException
          */
         public double addRow(List<Double> realIPAs,
                              List<Double> randomIPAs,
-                             String name,
+                             String varName,
                              String varLabel) throws MathException {
             double realMean = MathUtilities.calculateMean(realIPAs);
             double randomMean = MathUtilities.calculateMean(randomIPAs);
@@ -508,8 +510,8 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
             double pvalue = new MannWhitneyUTest().mannWhitneyUTest(realArray, randomArray);
             
             String[] row = new String[colHeaders.size()];
-            row[1] = name;
             row[0] = varLabel;
+            row[1] = varName;
             row[2] = PlugInUtilities.formatProbability(realMean);
             row[3] = PlugInUtilities.formatProbability(randomMean);
             row[4] = PlugInUtilities.formatProbability(diff);
@@ -522,7 +524,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
         }
         
         /**
-         * A method to calcualte FDRs. The order in the passed List should be the same
+         * A method to calculate FDRs. The order in the passed List should be the same
          * as p-values stored in the data object. Otherwise, the calculated FDRs assignment
          * will be wrong.
          * @param pvalues
