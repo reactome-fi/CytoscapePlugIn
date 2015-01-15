@@ -29,10 +29,12 @@ import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
+import org.gk.model.InstanceUtilities;
 import org.gk.render.Node;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.gk.render.RenderableReaction;
+import org.gk.util.GKApplicationUtilities;
 import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -256,12 +258,12 @@ public class DiagramAndFactorGraphSwitcher {
     private Map<String, String> generateNodeToolTip(FactorGraph fg) {
         Map<String, String> nodeToolTipInfo = new HashMap<String, String>();
         for (Factor factor : fg.getFactors()) {
-            nodeToolTipInfo.put("factor:" + factor.getId(), 
-                                "factor: " + factor.getName());
+            nodeToolTipInfo.put(factor.getId(), 
+                                factor.getName());
         }
         for (Variable variable : fg.getVariables()) {
-            nodeToolTipInfo.put("variable:" + variable.getId(), 
-                                "variable: " + variable.getName());
+            nodeToolTipInfo.put(variable.getId(), 
+                                variable.getName());
         }
         return nodeToolTipInfo;
     }
@@ -275,11 +277,18 @@ public class DiagramAndFactorGraphSwitcher {
         Map<String, String> nodeLabelInfo = new HashMap<String, String>();
         for (Factor factor : fg.getFactors()) {
             // Don't want to display anything for factors
-            nodeLabelInfo.put("factor:" + factor.getId(), null);
+            nodeLabelInfo.put(factor.getId(), null);
         }
         for (Variable variable : fg.getVariables()) {
-            nodeLabelInfo.put("variable:" + variable.getId(), 
-                              variable.getName());
+            String name = variable.getName();
+            // Want to remove the compartment information
+            if (name.endsWith("]")) {
+                int index = name.lastIndexOf("[");
+                if (index > 0)
+                    name = name.substring(0, index);
+            }
+            nodeLabelInfo.put(variable.getId(), 
+                              name);
         }
         return nodeLabelInfo;
     }
@@ -287,10 +296,10 @@ public class DiagramAndFactorGraphSwitcher {
     private Map<String, String> generateNodeTypeInfo(FactorGraph fg) {
         Map<String, String> nodeTypeInfo = new HashMap<String, String>();
         for (Factor factor : fg.getFactors()) {
-            nodeTypeInfo.put("factor:" + factor.getId(), "factor");
+            nodeTypeInfo.put(factor.getId(), "factor");
         }
         for (Variable variable : fg.getVariables()) {
-            nodeTypeInfo.put("variable:" + variable.getId(), "variable");
+            nodeTypeInfo.put(variable.getId(), "variable");
         }
         return nodeTypeInfo;
     }
@@ -300,13 +309,13 @@ public class DiagramAndFactorGraphSwitcher {
         for (Factor factor : fg.getFactors()) {
             if (factor.getCustomizedInfo() == null)
                 continue;
-            sourceIdInfo.put("factor:" + factor.getId(), 
+            sourceIdInfo.put(factor.getId(), 
                              factor.getCustomizedInfo());
         }
         for (Variable variable : fg.getVariables()) {
             if (variable.getCustomizedInfo() == null)
                 continue;
-            sourceIdInfo.put("variable:" + variable.getId(),
+            sourceIdInfo.put(variable.getId(),
                              variable.getCustomizedInfo());
         }
         return sourceIdInfo;
@@ -322,8 +331,8 @@ public class DiagramAndFactorGraphSwitcher {
         for (Factor factor : fg.getFactors()) {
             for (Variable var : factor.getVariables()) {
                 // Use IDs for creating interactions, which are unique.
-                edges.add("factor:" + factor.getId() + "\t" + 
-                          "variable:" + var.getId()); 
+                edges.add(factor.getId() + "\t" + 
+                          var.getId()); 
             }
         }
         return edges;

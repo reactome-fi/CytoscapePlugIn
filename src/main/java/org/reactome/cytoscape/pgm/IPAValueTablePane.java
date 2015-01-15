@@ -167,11 +167,11 @@ public class IPAValueTablePane extends NetworkModulePanel {
         nodeToVar.clear();
         if (view == null)
             return;
-        FactorGraph fg = FactorGraphRegistry.getRegistry().get(view.getModel());
+        FactorGraph fg = FactorGraphRegistry.getRegistry().getFactorGraph(view.getModel());
         if (fg != null) {
             Map<String, Variable> labelToVar = new HashMap<String, Variable>();
             for (Variable var : fg.getVariables()) {
-                labelToVar.put("variable:" + var.getId(), 
+                labelToVar.put(var.getId(), 
                                var); // PGMVariable's label has been saved as name.
             }
             // Do a simple mapping
@@ -192,7 +192,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
         // Get a list of samples from posteriors from all variables
         Set<String> sampleSet = null;
         if (view != null) {// If a pathway view is selected, network view will be null.
-            FactorGraph fg = FactorGraphRegistry.getRegistry().get(view.getModel());
+            FactorGraph fg = FactorGraphRegistry.getRegistry().getFactorGraph(view.getModel());
             if (fg != null) {
                 FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(fg);
                 if (fgResults != null)

@@ -203,7 +203,7 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         this.view = view;
         FactorGraph pfg = null;
         if (view != null)
-            pfg = FactorGraphRegistry.getRegistry().get(view.getModel());
+            pfg = FactorGraphRegistry.getRegistry().getFactorGraph(view.getModel());
         setFactorGraph(pfg);
     }
 

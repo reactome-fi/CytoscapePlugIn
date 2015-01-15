@@ -138,12 +138,20 @@ public class FINetworkGenerator implements NetworkGenerator {
                              String label,
                              String type,
                              String tooltip) {
+        return createNode(network, label, label, type, tooltip);
+    }
+    
+    public CyNode createNode(CyNetwork network,
+                             String name,
+                             String label,
+                             String type,
+                             String tooltip) {
         CyNode node = network.addNode();
         Long nodeSUID = node.getSUID();
         // Add node labels, tooltips, common names, etc.
         CyTable nodeTable = network.getDefaultNodeTable();
         nodeTable.getRow(nodeSUID).set("nodeType", type);
-        nodeTable.getRow(nodeSUID).set("name", label);
+        nodeTable.getRow(nodeSUID).set("name", name);
         nodeTable.getRow(nodeSUID).set("nodeLabel", label);
         nodeTable.getRow(nodeSUID).set("commonName", label);
         nodeTable.getRow(nodeSUID).set("nodeToolTip", tooltip);

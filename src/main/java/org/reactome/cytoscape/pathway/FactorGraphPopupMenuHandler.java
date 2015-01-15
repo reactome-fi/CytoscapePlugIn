@@ -271,7 +271,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
     
     private void _runInference(final CyNetwork network,
                                final boolean needFinishDialog) {
-        FactorGraph fg = FactorGraphRegistry.getRegistry().get(network);
+        FactorGraph fg = FactorGraphRegistry.getRegistry().getFactorGraph(network);
         if (fg == null) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "There is no factor graph found for the displayed network.\n" + 
@@ -385,7 +385,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         private void viewFactorValues(CyNetworkView netView,
                                       View<CyNode> nodeView) {
             // Need to find the factor first
-            FactorGraph fg = FactorGraphRegistry.getRegistry().get(netView.getModel());
+            FactorGraph fg = FactorGraphRegistry.getRegistry().getFactorGraph(netView.getModel());
             if (fg == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Cannot find a matched factor graph for the network!", 
@@ -415,7 +415,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                                  CyNode node) {
             String name = new TableHelper().getStoredNodeAttribute(network, node, "name", String.class);
             for (Factor factor : fg.getFactors()) {
-                if (name.equals("factor:" + factor.getId()))
+                if (name.equals(factor.getId()))
                     return factor;
             }
             return null;
@@ -458,7 +458,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         private void viewVariableMarginal(final CyNetworkView netView,
                                           View<CyNode> nodeView) {
             // Need to find the factor first
-            FactorGraph fg = FactorGraphRegistry.getRegistry().get(netView.getModel());
+            FactorGraph fg = FactorGraphRegistry.getRegistry().getFactorGraph(netView.getModel());
             if (fg == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Cannot find a matched factor graph for the network!", 
@@ -528,7 +528,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             if (name == null)
                 return null;
             for (Variable variable : fg.getVariables()) {
-                if (name.equals("variable:" + variable.getId()))
+                if (name.equals(variable.getId()))
                     return variable;
             }
             return null;
@@ -551,7 +551,7 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
         }
         
         private void loadObservationData(final CyNetworkView netView) {
-            final FactorGraph fg = FactorGraphRegistry.getRegistry().get(netView.getModel());
+            final FactorGraph fg = FactorGraphRegistry.getRegistry().getFactorGraph(netView.getModel());
             if (fg == null) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Cannot find a matched factor graph for the network!", 
@@ -689,13 +689,13 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
             // Get the label for the node
             CyNode node = nodeView.getModel();
             TableHelper tableHelper = new TableHelper();
-            String nodeLabel = tableHelper.getStoredNodeAttribute(netView.getModel(),
+            String sourceId = tableHelper.getStoredNodeAttribute(netView.getModel(),
                                                                   node,
-                                                                  "name", 
+                                                                  "SourceIds", 
                                                                   String.class);
-            if (nodeLabel.matches("(\\d+)")) {
+            if (sourceId != null && sourceId.matches("(\\d+)")) {
                 ReactomeSourceView sourceView = new ReactomeSourceView();
-                sourceView.viewReactomeSource(new Long(nodeLabel),
+                sourceView.viewReactomeSource(new Long(sourceId),
                                               PlugInObjectManager.getManager().getCytoscapeDesktop());
             }
             else {

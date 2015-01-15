@@ -23,7 +23,6 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
-import org.gk.gkEditor.PathwayComponentTree;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableHelper;
@@ -232,6 +231,7 @@ public class ObservationDataHelper {
                                                 nodeType);
             // Add this observation variable into the network.
             CyNode obsNode = fiHelper.createNode(network,
+                                                 obsVar.getId(),
                                                  obsVar.getName(), 
                                                  "observation", 
                                                  obsVar.getName());
@@ -239,6 +239,7 @@ public class ObservationDataHelper {
                                             var, 
                                             factorValues);
             CyNode factorNode = fiHelper.createNode(network,
+                                                    factor.getId(),
                                                     factor.getName(), 
                                                     "factor",
                                                     factor.getName());
@@ -329,6 +330,7 @@ public class ObservationDataHelper {
                                    Variable hiddenVar,
                                    List<Double> factorValues) {
         Factor factor = new Factor();
+        factor.setId(++maxId + "");
         List<Variable> varList = new ArrayList<Variable>();
         varList.add(obsVar);
         varList.add(hiddenVar);

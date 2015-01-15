@@ -208,7 +208,7 @@ public class PathwayAnalysisDetailsDialog extends JDialog {
         for (CyNode node : selectedNodes) {
             String label = helper.getStoredNodeAttribute(networkView.getModel(),
                                                          node,
-                                                         "name",
+                                                         "SourceIds",
                                                          String.class);
             rowKeys.add(label);
         }

@@ -81,7 +81,7 @@ public class FactorGraphRegistry {
         networkToFg.put(network, pfg);
     }
     
-    public FactorGraph get(CyNetwork network) {
+    public FactorGraph getFactorGraph(CyNetwork network) {
         return networkToFg.get(network);
     }
     
