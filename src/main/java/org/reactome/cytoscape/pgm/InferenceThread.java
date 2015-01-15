@@ -115,8 +115,10 @@ public class InferenceThread extends Thread {
                 status = InferenceStatus.DONE;
         }
         catch(InferenceCannotConvergeException e) {
+            String message = "Inference cannot converge. You may try to run inference again, which may converge\n" + 
+                             "because of its stochastic feature, or try the Gibbs sampling algorithm.";
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Inference cannot converge. Please try the Gibbs sampling algorithm.",
+                                          "Inference cannot converge. You may try run inferencePlease try the Gibbs sampling algorithm.",
                                           "Inference Cannot Converge",
                                           JOptionPane.ERROR_MESSAGE);
             status = InferenceStatus.ERROR;

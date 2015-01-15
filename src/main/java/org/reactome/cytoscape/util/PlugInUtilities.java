@@ -100,7 +100,7 @@ public class PlugInUtilities {
                     continue;
                 Variable var1 = variables.get(0);
                 if (var1 == var)
-                    break; // Don't count itself
+                    continue; // Don't count itself
                 String varName1 = var1.getName();
                 if (varName1.matches("(\\d+)_OUTPUT"))
                     outputs.add(var);
