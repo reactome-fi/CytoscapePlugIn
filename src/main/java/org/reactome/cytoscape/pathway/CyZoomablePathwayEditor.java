@@ -13,8 +13,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyVetoException;
@@ -40,15 +38,7 @@ import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.render.HyperEdge;
-import org.gk.render.Node;
-import org.gk.render.ProcessNode;
-import org.gk.render.Renderable;
-import org.gk.render.RenderableCompartment;
-import org.gk.render.RenderableComplex;
-import org.gk.render.RenderableEntitySet;
-import org.gk.render.RenderableInteraction;
-import org.gk.render.RenderableProtein;
+import org.gk.render.*;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
@@ -741,6 +731,17 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         GKApplicationUtilities.center(dialog);
         dialog.setModal(true);
         dialog.setVisible(true);
+        if (dialog.isOkClicked()) {
+            final FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
+            analyzer.setPathwayId(pathwayEditor.getRenderable().getReactomeId());
+            analyzer.setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
+            Thread t = new Thread() {
+                public void run() {
+                    analyzer.runFactorGraphAnalysis();
+                }
+            };
+            t.run();
+        }
     }
     
     private String formatGenesText(String genes) {
