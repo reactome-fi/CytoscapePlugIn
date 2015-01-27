@@ -13,6 +13,8 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyVetoException;
@@ -284,10 +286,11 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             }
         });
         popup.add(convertToFINetwork);
-        
-        // Convert as a factor graph
-        JMenuItem convertAsFactorGraph = new JMenuItem("Convert to Graphical Model");
-        convertAsFactorGraph.addActionListener(new ActionListener() {
+        // As of January 26, 2015, we will not display the converted Factor Graph for normal use.
+        // The old factor graph based visualization will be enabled for advanced users only and will
+        // be developed along the normal use.
+        JMenuItem runPGMAnalysis = new JMenuItem("Run Graphical Model Analysis");
+        runPGMAnalysis.addActionListener(new ActionListener() {
             
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -295,20 +298,45 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 // Use the JFrame so that the position is the same as other dialog
                 int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                                           "Features related to probabilistic graphical models are still experimental,\n"
-                                                        + "and will be changed in the future. Please use inferred results with \n"
-                                                        + "caution. Do you still want to continue?",
-                                                          "Experimental Feature Warning",
-                                                          JOptionPane.OK_CANCEL_OPTION,
-                                                          JOptionPane.WARNING_MESSAGE);
+                                                                  + "and will be changed in the future. Please use inferred results with \n"
+                                                                  + "caution. Do you still want to continue?",
+                                                                  "Experimental Feature Warning",
+                                                                  JOptionPane.OK_CANCEL_OPTION,
+                                                                  JOptionPane.WARNING_MESSAGE);
                 if (reply == JOptionPane.CANCEL_OPTION)
                     return;
-                // A kind of hack
-                CyZoomablePathwayEditor.this.firePropertyChange("convertAsFactorGraph", 
-                                                                false,
-                                                                true);
+                runFactorGraphAnalysis();
             }
         });
-        popup.add(convertAsFactorGraph);
+        popup.addSeparator();
+        popup.add(runPGMAnalysis);
+        String pgmDebug = PlugInObjectManager.getManager().getProperties().getProperty("PGMDebug");
+        if (pgmDebug != null && pgmDebug.equalsIgnoreCase("true")) {
+            // Convert as a factor graph
+            JMenuItem convertAsFactorGraph = new JMenuItem("Convert to Graphical Model");
+            convertAsFactorGraph.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // Show a warning
+                    // Use the JFrame so that the position is the same as other dialog
+                    int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                              "Features related to probabilistic graphical models are still experimental,\n"
+                                                                      + "and will be changed in the future. Please use inferred results with \n"
+                                                                      + "caution. Do you still want to continue?",
+                                                                      "Experimental Feature Warning",
+                                                                      JOptionPane.OK_CANCEL_OPTION,
+                                                                      JOptionPane.WARNING_MESSAGE);
+                    if (reply == JOptionPane.CANCEL_OPTION)
+                        return;
+                    // A kind of hack
+                    CyZoomablePathwayEditor.this.firePropertyChange("convertAsFactorGraph", 
+                                                                    false,
+                                                                    true);
+                }
+            });
+            popup.add(convertAsFactorGraph);
+        }
         popup.addSeparator();
         
         final CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
@@ -703,13 +731,25 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         }
     }
     
+    /**
+     * Perform factor graph analysis without displaying the converted factor graph in Cytoscape's
+     * desktop as the normal function.
+     */
+    private void runFactorGraphAnalysis() {
+        FactorGraphAnalysisDialog dialog = new FactorGraphAnalysisDialog();
+        dialog.setSize(600, 525);
+        GKApplicationUtilities.center(dialog);
+        dialog.setModal(true);
+        dialog.setVisible(true);
+    }
+    
     private String formatGenesText(String genes) {
         PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
         Set<String> hitGenes = hiliter.getHitGenes();
         // Add an extra space before delimit , and |
         StringBuilder builder = new StringBuilder();
         String gene = "";
-        builder.append("<center><a href=\">");
+        builder.append("<center><a href=\"");
         for (char c : genes.toCharArray()) {
             if (c == '|' || c == ',') {
                 builder.append(gene).append("\">").append(gene).append("</a>").append(c).append(" <a ");

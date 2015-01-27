@@ -71,7 +71,7 @@ public class DiagramAndNetworkSwitcher {
             PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
             hiliter.highlightPathway(frame.getZoomablePathwayEditor());
         }
-        // If the following code is invoked before the above statment is finished (it is possible since
+        // If the following code is invoked before the above statement is finished (it is possible since
         // a new thread is going to be used), a null exception may be thrown. So wrap it in an invokeLater method
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {

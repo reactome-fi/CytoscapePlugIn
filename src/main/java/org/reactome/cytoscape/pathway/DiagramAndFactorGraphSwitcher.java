@@ -29,17 +29,15 @@ import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
-import org.gk.model.InstanceUtilities;
 import org.gk.render.Node;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.gk.render.RenderableReaction;
-import org.gk.util.GKApplicationUtilities;
 import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.reactome.cytoscape.pgm.FactorGraphVisualStyle;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
+import org.reactome.cytoscape.pgm.FactorGraphVisualStyle;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -92,6 +90,25 @@ public class DiagramAndFactorGraphSwitcher {
         @SuppressWarnings("rawtypes")
         TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
         taskManager.execute(new TaskIterator(task)); 
+    }
+    
+    /**
+     * Call this method to convert a Pathway and its associated PathwayDiagram into a
+     * FactorGraph without using an Asynchronous Task object. The converted FactorGraph
+     * will not be displayed in the main Cytoscape desktop.
+     * @param pathwayId
+     * @param pathway
+     * @return
+     * @throws Exception
+     */
+    public FactorGraph convertPathwayToFactorGraph(Long pathwayId,
+                                                   RenderablePathway pathway) throws Exception {
+        if (!canConvertToFactorGraph(pathway))
+            return null;
+        String escapeNames = getEscapeNames();
+        if (escapeNames == null)
+            return null; // Aborted
+        return convertPathwayToFactorGraph(pathwayId, pathway, escapeNames);
     }
 
     /**
@@ -161,18 +178,11 @@ public class DiagramAndFactorGraphSwitcher {
         taskMonitor.setTitle("Convert Pathway to Factor Graph");
         taskMonitor.setStatusMessage("Converting to factor graph...");
         taskMonitor.setProgress(0.0d);
-        RESTFulFIService fiService = new RESTFulFIService();
-        FactorGraph fg = fiService.convertPathwayToFactorGraph(pathwayId,
-                                                               escapeNames);
-        if (fg == null || fg.getFactors() == null || fg.getFactors().size() == 0) {
-            JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
-                                          "Pathway" + "\"" + pathway.getDisplayName() + "\"" + 
-                                          " cannot be converted into a factor graph.",
-                                          "No Factor Graph",
-                                          JOptionPane.INFORMATION_MESSAGE);
+        FactorGraph fg = convertPathwayToFactorGraph(pathwayId,
+                                                     pathway,
+                                                     escapeNames);
+        if (fg == null)
             return;
-        }
-        
         // Make sure this PathwayInternalFrame should be closed
         pathwayFrame.setVisible(false);
         pathwayFrame.dispose();
@@ -253,6 +263,23 @@ public class DiagramAndFactorGraphSwitcher {
         PathwayDiagramRegistry.getRegistry().firePropertyChange(event);
         
         FactorGraphRegistry.getRegistry().registerNetworkToFactorGraph(network, fg);
+    }
+
+    private FactorGraph convertPathwayToFactorGraph(Long pathwayId,
+                                                    RenderablePathway pathway,
+                                                    String escapeNames) throws Exception {
+        RESTFulFIService fiService = new RESTFulFIService();
+        FactorGraph fg = fiService.convertPathwayToFactorGraph(pathwayId,
+                                                               escapeNames);
+        if (fg == null || fg.getFactors() == null || fg.getFactors().size() == 0) {
+            JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
+                                          "Pathway" + "\"" + pathway.getDisplayName() + "\"" + 
+                                          " cannot be converted into a factor graph.",
+                                          "No Factor Graph",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return null;
+        }
+        return fg;
     }
     
     private Map<String, String> generateNodeToolTip(FactorGraph fg) {
