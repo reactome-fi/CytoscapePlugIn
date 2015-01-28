@@ -96,7 +96,7 @@ public class ObservationDataLoadDialog extends FIActionDialog {
 
     @Override
     protected void doOKAction() {
-        if (!dataPanel.validateDNAParameters() || !dataPanel.validateGeneExpParameters())
+        if (!dataPanel.validateValues())
             return;
         super.doOKAction();
     }

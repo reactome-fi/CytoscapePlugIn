@@ -228,7 +228,8 @@ public abstract class FIActionDialog extends JDialog {
             }
         });
 
-        loadPanel.add(browseButton);
+        constraints.gridx = 2;
+        loadPanel.add(browseButton, constraints);
         // Disable okBtn as default
         okBtn.setEnabled(false);
     }

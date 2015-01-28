@@ -8,21 +8,31 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+
+import org.reactome.r3.util.FileUtility;
+import org.reactome.r3.util.InteractionUtilities;
 
 /**
  * A customized JPanel used for entering data files.
@@ -32,6 +42,8 @@ import javax.swing.event.DocumentListener;
 public abstract class ObservationDataLoadPanel extends JPanel {
     private List<JTextField> dnaTFs;
     private List<JTextField> geneExpTFs;
+    private JCheckBox useTwoCasesBox;
+    private JTextField twoCaseFileTF;
     
     public ObservationDataLoadPanel() {
         init(getFont());
@@ -42,7 +54,7 @@ public abstract class ObservationDataLoadPanel extends JPanel {
     }
     
     private void init(Font font) {
-        this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         
         dnaTFs = new ArrayList<JTextField>();
         JPanel dnaPane = createDataPane("CNV", 
@@ -54,7 +66,7 @@ public abstract class ObservationDataLoadPanel extends JPanel {
                                                               TitledBorder.CENTER,
                                                               font);
         dnaPane.setBorder(titleBorder);
-        this.add(dnaPane);
+        add(dnaPane);
         
         geneExpTFs = new ArrayList<JTextField>();
         JPanel geneExpressionPane = createDataPane("gene expression", 
@@ -66,12 +78,73 @@ public abstract class ObservationDataLoadPanel extends JPanel {
                                                        TitledBorder.CENTER,
                                                        font);
         geneExpressionPane.setBorder(titleBorder);
-        this.add(geneExpressionPane);
+        add(geneExpressionPane);
+        
+        JPanel twoCasesPane = createTwoCasesPane();
+        twoCasesPane.setBorder(BorderFactory.createEtchedBorder());
+        add(twoCasesPane);
     }
     
-    protected abstract void createFileChooserGui(final JTextField fileTF,
-                                                 final JLabel fileChooseLabel,
-                                                 final JButton browseButton, 
+    private JPanel createTwoCasesPane() {
+        JPanel pane = new JPanel();
+        pane.setLayout(new GridBagLayout());
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.insets = new Insets(4, 4, 4, 4);
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.weightx = 0.5d;
+        
+        useTwoCasesBox = new JCheckBox("Used for pathway analysis for samples with two cases.");
+        constraints.gridwidth = 3;
+        pane.add(useTwoCasesBox, constraints);
+        
+        constraints.gridy = 1;
+        constraints.gridwidth = 1;
+        final JLabel label = new JLabel("Choose a sample information file:");
+        twoCaseFileTF = new JTextField();
+        final JButton browseBtn = new JButton("Browse");
+        createFileChooserGui(twoCaseFileTF, label, browseBtn, pane, constraints);
+        // Add a note
+        final JTextArea ta = new JTextArea();
+        ta.setEditable(false);
+        ta.setBackground(getBackground());
+        ta.setWrapStyleWord(true);
+        ta.setLineWrap(true);
+        Font font = ta.getFont();
+        font = font.deriveFont(Font.ITALIC, font.getSize() - 1);
+        ta.setFont(font);
+        ta.setText("Note: A sample information file should be a text file: one line for one sample containing "
+                 + "sample name and type separated by a tab, two types only, and no title line.");
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        constraints.gridwidth = 3;
+        pane.add(ta, constraints);
+        
+        useTwoCasesBox.addItemListener(new ItemListener() {
+            
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                boolean enabled = useTwoCasesBox.isSelected();
+                label.setEnabled(enabled);
+                twoCaseFileTF.setEnabled(enabled);
+                browseBtn.setEnabled(enabled);
+                ta.setEnabled(enabled);
+            }
+        });
+        // The following should be disabled first
+        label.setEnabled(false);
+        twoCaseFileTF.setEnabled(false);
+        browseBtn.setEnabled(false);
+        ta.setEnabled(false);
+        
+        return pane;
+    }
+    
+    protected abstract void createFileChooserGui(JTextField fileTF,
+                                                 JLabel fileChooseLabel,
+                                                 JButton browseButton, 
                                                  JPanel loadPanel,
                                                  GridBagConstraints constraints);
     
@@ -151,6 +224,18 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         return stateTF;
     }
     
+    public boolean isTwoCasesAnalysisSelected() {
+        return useTwoCasesBox.isSelected();
+    }
+    
+    public File getTwoCasesSampleInfoFile() {
+        String text = twoCaseFileTF.getText().trim();
+        if (text.length() == 0)
+            return null;
+        File file = new File(text);
+        return file;
+    }
+    
     public File getDNAFile() {
         return getFile(dnaTFs);
     }
@@ -181,16 +266,82 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         return getFile(geneExpTFs);
     }
     
-    public boolean validateDNAParameters() {
+    public boolean validateValues() {
+        return validateDNAParameters() & validateGeneExpParameters() & validateTwoCasesParameters();
+    }
+    
+    private boolean validateDNAParameters() {
         if (getDNAFile() == null)
             return true; // Nothing is needed
         return validateThresholdValues(dnaTFs);
     }
     
-    public boolean validateGeneExpParameters() {
+    private boolean validateGeneExpParameters() {
         if (getGeneExpFile() == null)
             return true;
         return validateThresholdValues(geneExpTFs);
+    }
+    
+    private boolean validateTwoCasesParameters() {
+        if (!isTwoCasesAnalysisSelected())
+            return true;
+        // Check if a file has been selected
+        File file = getTwoCasesSampleInfoFile();
+        if (file == null) {
+            JOptionPane.showMessageDialog(this,
+                                          "Please choose a sample information file for two cases analysis.",
+                                          "Empty File Name", 
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        if (!file.exists()) {
+            JOptionPane.showMessageDialog(this,
+                                          "The entered file doesn't exist: " + file.getAbsolutePath(),
+                                          "Empty File", 
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        if(!validateTwoCaseFile(file))
+            return false;
+        return true;
+    }
+    
+    private boolean validateTwoCaseFile(File file) {
+        try {
+            FileUtility fu = new FileUtility();
+            fu.setInput(file.getAbsolutePath());
+            String line = null;
+            Set<String> types = new HashSet<String>();
+            while ((line = fu.readLine()) != null) {
+                String[] tokens = line.split("\t");
+                if (tokens.length != 2) {
+                    JOptionPane.showMessageDialog(this,
+                                                  "The number of fields in a line is not two in the sample information file: \n" + 
+                                                   line,
+                                                  "File Error", 
+                                                  JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+                types.add(tokens[1]);
+            }
+            fu.close();
+            if (types.size() > 2) {
+                JOptionPane.showMessageDialog(this,
+                                              "More than two types exist in the sample information file:\n" + 
+                                              InteractionUtilities.joinStringElements(", ", types),
+                                              "Empty File", 
+                                              JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            return true;
+        }
+        catch(IOException e) {
+            JOptionPane.showMessageDialog(this,
+                                          "Error in reading file: " + file.getAbsolutePath(),
+                                          "File Error", 
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
     }
     
     private boolean validateThresholdValues(List<JTextField> tfs) {

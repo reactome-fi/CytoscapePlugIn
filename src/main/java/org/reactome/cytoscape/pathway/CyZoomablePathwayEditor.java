@@ -708,7 +708,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
      */
     private void runFactorGraphAnalysis() {
         FactorGraphAnalysisDialog dialog = new FactorGraphAnalysisDialog();
-        dialog.setSize(600, 525);
+        dialog.setSize(625, 630);
         GKApplicationUtilities.center(dialog);
         dialog.setModal(true);
         dialog.setVisible(true);

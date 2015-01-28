@@ -176,14 +176,14 @@ public class InferenceRunner {
             showIPANodeValues(fgResults);
             showIPAPathwayValues(fgResults);
             if (needFinishDialog) {
-                String message = "Inference has finished successfully. You may use \"View Marginal Probabilities\" by\n" + 
-                        "selecting a variable node";
+                String message = "Inference has finished successfully. ";
                 // Check if any posterior inference is done
                 if (!fgResults.hasPosteriorResults())
-                    message += ".";
+                    message += "You may use \"View Marginal Probabilities\" by\n" + 
+                        "selecting a variable node.";
                 else
-                    message += ", and view IPA values at the bottom \"IPA Node Values\" tab. \n" + 
-                            "You may also view pathway level results at the \"IPA Pathway Analysis\" tab.\n" +
+                    message += "You may view IPA values at the bottom \"IPA Node Values\" tab. \n" + 
+                            "You may also view pathway level results at the \"IPA Pathway Analysis\" and \"IPA Sample Analysis\" tab.\n" +
                             "Note: IPA stands for \"Integrated Pathway Activity\".";
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               message,

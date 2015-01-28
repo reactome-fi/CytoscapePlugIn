@@ -127,7 +127,7 @@ public class FactorGraphAnalysisDialog extends FIActionDialog {
     
     @Override
     protected void doOKAction() {
-        if (!dataPane.validateDNAParameters() || !dataPane.validateGeneExpParameters())
+        if (!dataPane.validateValues())
             return;
         super.doOKAction();
     }
