@@ -10,6 +10,7 @@ import java.util.List;
 
 import javax.swing.JOptionPane;
 
+import org.apache.commons.math.MathException;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
@@ -102,35 +103,37 @@ public class InferenceRunner {
             valuePane = (IPAValueTablePane) tableBrowserPane.getComponentAt(index);
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
         valuePane.setInferenceResults(fgResults);
-        // Don't select it. Let the overview panel to be selected.
-//        // Need to select it
-//        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-//        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
-//        int index = tableBrowserPane.indexOfComponent(valuePane);
-//        if (index >= 0)
-//            tableBrowserPane.setSelectedIndex(index);
     }
     
-    private void showIPAPathwayValues(FactorGraphInferenceResults fgResults) {
+    private void showIPAPathwayValues(FactorGraphInferenceResults fgResults) throws MathException {
         if (!fgResults.hasPosteriorResults())
             return; 
-        String title = "IPA Pathway Analysis";
+        String title = "IPA Sample Analysis";
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
         
         int index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane,
                                                                     title);
-        IPAPathwayAnalysisPane valuePane = null;
+        IPASampleAnalysisPane valuePane = null;
         if (index > -1)
-            valuePane = (IPAPathwayAnalysisPane) tableBrowserPane.getComponentAt(index);
+            valuePane = (IPASampleAnalysisPane) tableBrowserPane.getComponentAt(index);
         else
-            valuePane = new IPAPathwayAnalysisPane(title);
+            valuePane = new IPASampleAnalysisPane(title);
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
         valuePane.setFactorGraph(fgResults.getFactorGraph());
-        // The following should be taken care of by the above method invocation.
-//        valuePane.setFactorGraph(fg);
+
+        // Show outputs results
+        title = "IPA Pathway Analysis";
+        index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);
+        IPAPathwayOutputsPane outputPane = null;
+        if (index > -1)
+            outputPane = (IPAPathwayOutputsPane) tableBrowserPane.getComponentAt(index);
+        else
+            outputPane = new IPAPathwayOutputsPane(title);
+        outputPane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
+        outputPane.setVariableResults(valuePane.getOutputVariableResults());
         if (index == -1)
-            index = tableBrowserPane.indexOfComponent(valuePane);
+            index = tableBrowserPane.indexOfComponent(outputPane);
         if (index >= 0) // Select this as the default table for viewing the results
             tableBrowserPane.setSelectedIndex(index);
     }

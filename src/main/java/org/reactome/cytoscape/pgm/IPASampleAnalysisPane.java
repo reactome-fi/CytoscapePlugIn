@@ -4,8 +4,6 @@
  */
 package org.reactome.cytoscape.pgm;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -14,15 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-
-import org.apache.commons.math.MathException;
-import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.model.CyNetworkView;
-import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
@@ -34,156 +25,15 @@ import org.reactome.r3.util.MathUtilities;
  * @author gwu
  *
  */
-public class IPAPathwayAnalysisPane extends IPAValueTablePane {
-    // For the whole data set label pathway analysis results
-    private JLabel outputResultLabel;
-    private JButton viewDetailsBtn;
-    
+public class IPASampleAnalysisPane extends IPAValueTablePane {
+
     /**
      * Default constructor.
      */
-    public IPAPathwayAnalysisPane(String title) {
+    public IPASampleAnalysisPane(String title) {
         super(title);
     }
 
-    @Override
-    protected void modifyContentPane() {
-        outputResultLabel = new JLabel("Total checked outputs:");
-        viewDetailsBtn = new JButton("View Details");
-        viewDetailsBtn.setToolTipText("Click to view details...");
-        viewDetailsBtn.addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                viewDetails();
-            }
-        });
-        // Re-create control tool bars
-        for (int i = 0; i < controlToolBar.getComponentCount(); i++) {
-            controlToolBar.remove(i);
-        }
-        controlToolBar.add(outputResultLabel);
-        controlToolBar.add(viewDetailsBtn);
-        controlToolBar.add(closeGlue);
-        controlToolBar.add(closeBtn);
-        super.addTablePlotPane();
-    }
-    
-    private void resetOverview() {
-        IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
-        List<VariableInferenceResults> variables = model.varResults;
-        StringBuilder builder = new StringBuilder();
-        int size = 0;
-        if (variables != null)
-            size = variables.size();
-        builder.append("Total checked outputs: " + variables.size());
-        if (size == 0) {
-            outputResultLabel.setText(builder.toString());
-            viewDetailsBtn.setVisible(false); // Nothing to be viewed
-            return; 
-        }
-        double pvalueCutoff = 0.01d;
-        double ipaDiffCutoff = 0.30d; // 2 fold difference
-        try {
-            boolean hasData = generateOverview(variables, pvalueCutoff, ipaDiffCutoff, builder);
-            outputResultLabel.setText(builder.toString());
-            viewDetailsBtn.setVisible(hasData);
-        }
-        catch(Exception e) {
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Error in generating details: " + e,
-                                          "Error in Generating Details",
-                                          JOptionPane.ERROR_MESSAGE);
-            outputResultLabel.setText(builder.toString());
-            viewDetailsBtn.setVisible(false);
-        }
-    }
-    
-    /**
-     * @param variables
-     * @param pvalueCutoff
-     * @param ipaDiffCutoff
-     * @param builder
-     * @return true if outputs are checked actually; false for no data available.
-     * @throws Exception
-     */
-    private boolean generateOverview(List<VariableInferenceResults> varResults,
-                                     double pvalueCutoff,
-                                     double ipaDiffCutoff,
-                                     StringBuilder builder) throws Exception {
-        // Do a test
-        int negPerturbedOutputs = 0;
-        int posPerturbedOutputs = 0;
-        List<Double> realIPAs = new ArrayList<Double>();
-        List<Double> randomIPAs = new ArrayList<Double>();
-        List<List<Double>> allRealIPAs = new ArrayList<List<Double>>();
-        MannWhitneyUTest uTest = new MannWhitneyUTest();
-        List<Double> pvalues = new ArrayList<Double>();
-        boolean hasData = false;
-        for (VariableInferenceResults varResult : varResults) {
-            realIPAs.clear();
-            randomIPAs.clear();
-            Map<String, List<Double>> realProbs = varResult.getPosteriorValues();
-            for (List<Double> probs : realProbs.values()) {
-                double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), probs);
-                realIPAs.add(ipa);
-            }
-            Map<String, List<Double>> randomProbs = varResult.getRandomPosteriorValues();
-            for (List<Double> probs : randomProbs.values()) {
-                double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), probs);
-                randomIPAs.add(ipa);
-            }
-            if (realIPAs.size() == 0 || randomIPAs.size() == 0)
-                continue;
-            hasData = true;
-            double realMean = MathUtilities.calculateMean(realIPAs);
-            double randomMean = MathUtilities.calculateMean(randomIPAs);
-            double meanDiff = realMean - randomMean;
-            if (Math.abs(meanDiff) < ipaDiffCutoff)
-                continue;
-            double pvalue = uTest.mannWhitneyUTest(PlugInUtilities.convertDoubleListToArray(realIPAs),
-                                                   PlugInUtilities.convertDoubleListToArray(randomIPAs));
-            if (pvalue < pvalueCutoff) {
-                if (meanDiff < 0.0d)
-                    negPerturbedOutputs ++;
-                else if (meanDiff > 0.0d)
-                    posPerturbedOutputs ++;
-            }
-        }
-        if (!hasData) {
-            builder.append(" (No inference results are available.) ");
-            return false;
-        }
-        builder.append(" (").append(negPerturbedOutputs).append(" down perturbed, ");
-        builder.append(posPerturbedOutputs).append(" up perturbed, based on pvalue < ");
-        builder.append(pvalueCutoff).append(" and IPA mean diff > ");
-        builder.append(ipaDiffCutoff).append(".)  ");
-        return true;
-        // Will not run combining pvalue: Not that interesting here!
-        //            PValueCombiner combiner = new PValueCombiner();
-        //            double combinedPValue = combiner.combinePValue(allRealIPAs, pvalues);
-        //            builder.append(PlugInUtilities.formatProbability(combinedPValue)).append(")  ");
-    }
-    
-    private void viewDetails() {
-        PathwayAnalysisDetailsDialog dialog = new PathwayAnalysisDetailsDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
-        try {
-            IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
-            dialog.setVariableResults(model.varResults);
-            dialog.setNetworkView(view);
-            dialog.setLocationRelativeTo(dialog.getOwner());
-            dialog.setSize(800, 600);
-            // Make this dialog modaless so that the user can interact with 
-            // other GUIs still.
-            dialog.setVisible(true);
-        }
-        catch(MathException e) {
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Error in viewing pathway analysis details: " + e.getMessage(),
-                                          "Error in Detail View",
-                                          JOptionPane.ERROR_MESSAGE);
-        }
-    }
     
     @Override
     protected NetworkModuleTableModel createTableModel() {
@@ -222,7 +72,11 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
         }
         IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
         model.setVarResults(outputVarResults);
-        resetOverview();
+    }
+    
+    public List<VariableInferenceResults> getOutputVariableResults() {
+        IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
+        return model.varResults;
     }
 
     private class IPAPathwayTableModel extends IPAValueTableModel {

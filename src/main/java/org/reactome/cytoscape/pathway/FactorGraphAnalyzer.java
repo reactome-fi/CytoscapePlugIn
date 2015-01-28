@@ -129,7 +129,7 @@ public class FactorGraphAnalyzer {
                                        progressPane);
             progressPane.setText("Data loading is done.");
             
-            progressPane.setText("Perform inference...");
+            progressPane.setTitle("Perform inference...");
             InferenceRunner inferenceRunner = new InferenceRunner();
             inferenceRunner.setFactorGraph(factorGraph);
             inferenceRunner.setProgressPane(progressPane);

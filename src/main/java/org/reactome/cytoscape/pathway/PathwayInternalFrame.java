@@ -7,18 +7,27 @@ package org.reactome.cytoscape.pathway;
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Dictionary;
+import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
 import javax.swing.JInternalFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JTable;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
+import javax.swing.table.TableModel;
 
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
+import org.reactome.cytoscape.pgm.IPAPathwayOutputsPane;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +39,8 @@ import org.slf4j.LoggerFactory;
 public class PathwayInternalFrame extends JInternalFrame {
     private final Logger logger = LoggerFactory.getLogger(PathwayInternalFrame.class);
     private CyZoomablePathwayEditor pathwayEditor;
+    // To be unregsiter
+    private ServiceRegistration tableSelectionRegistration;
     
     /**
      * Default constructor.
@@ -43,7 +54,7 @@ public class PathwayInternalFrame extends JInternalFrame {
         getContentPane().add(pathwayEditor, BorderLayout.CENTER);
         // Fire an event selection
         addInternalFrameListener(new InternalFrameAdapter() {
-
+            
             @Override
             public void internalFrameActivated(InternalFrameEvent e) {
                 EventSelectionEvent selectionEvent = new EventSelectionEvent();
@@ -55,6 +66,12 @@ public class PathwayInternalFrame extends JInternalFrame {
                 selectionEvent.setIsPathway(true);
                 PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(pathwayEditor,
                                                                                                             selectionEvent);
+            }
+
+            @Override
+            public void internalFrameClosing(InternalFrameEvent e) {
+                if (tableSelectionRegistration != null)
+                    tableSelectionRegistration.unregister();
             }
             
         });
@@ -68,6 +85,40 @@ public class PathwayInternalFrame extends JInternalFrame {
                     convertAsFactorGraph();
             }
         });
+        
+        // This is more like a hack in order to get the selection in a table
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        PropertyChangeListener listener = new PropertyChangeListener() {
+            
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getPropertyName().equals("tableSelection") && 
+                    evt.getSource() instanceof JTable) {
+                    handleTableSelection((JTable)evt.getSource());
+                }
+            }
+        };
+        
+        Dictionary<String, String> props = new Hashtable<String, String>();
+        props.put("target", IPAPathwayOutputsPane.class.getSimpleName());
+        tableSelectionRegistration = context.registerService(PropertyChangeListener.class.getName(), 
+                                                             listener,
+                                                             props);
+    }
+    
+    private void handleTableSelection(JTable table) {
+        // Get the selected variable labels
+        Set<Long> dbIds = new HashSet<Long>();
+        if (table.getSelectedRowCount() > 0) {
+            TableModel model = table.getModel();
+            for (int row : table.getSelectedRows()) {
+                int modelIndex = table.convertRowIndexToModel(row);
+                String sourceId = (String) model.getValueAt(modelIndex, 0);
+                if (sourceId.matches("\\d++"))
+                    dbIds.add(new Long(sourceId));
+            }
+        }
+        pathwayEditor.selectBySourceIds(dbIds);
     }
     
     public PathwayEditor getPathwayEditor() {

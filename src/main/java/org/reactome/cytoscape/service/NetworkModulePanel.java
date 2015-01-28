@@ -128,7 +128,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         add(new JScrollPane(contentTable), BorderLayout.CENTER);
         tableSelectionListener = new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                doTableSelection();
+                doTableSelection(e);
             }
         };
         contentTable.getSelectionModel().addListSelectionListener(tableSelectionListener);
@@ -182,7 +182,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
             showAllEdges();
             showAllNodes();
         }
-        doTableSelection();
+        doTableSelection(null);
     }
     
     private void showAllEdges()
@@ -207,7 +207,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         }
     }
     
-    protected void doTableSelection() {
+    protected void doTableSelection(ListSelectionEvent event) {
         //Check if there is a network view.
         if (this.view == null)
             return;

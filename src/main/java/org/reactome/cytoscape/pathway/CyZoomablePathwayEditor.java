@@ -257,29 +257,32 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         // As of January 26, 2015, we will not display the converted Factor Graph for normal use.
         // The old factor graph based visualization will be enabled for advanced users only and will
         // be developed along the normal use.
-        JMenuItem runPGMAnalysis = new JMenuItem("Run Graphical Model Analysis");
-        runPGMAnalysis.addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Show a warning
-                // Use the JFrame so that the position is the same as other dialog
-                int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                                          "Features related to probabilistic graphical models are still experimental,\n"
-                                                                  + "and will be changed in the future. Please use inferred results with \n"
-                                                                  + "caution. Do you still want to continue?",
-                                                                  "Experimental Feature Warning",
-                                                                  JOptionPane.OK_CANCEL_OPTION,
-                                                                  JOptionPane.WARNING_MESSAGE);
-                if (reply == JOptionPane.CANCEL_OPTION)
-                    return;
-                runFactorGraphAnalysis();
-            }
-        });
-        popup.addSeparator();
-        popup.add(runPGMAnalysis);
         String pgmDebug = PlugInObjectManager.getManager().getProperties().getProperty("PGMDebug");
-        if (pgmDebug != null && pgmDebug.equalsIgnoreCase("true")) {
+        // This is the default. We will use only one choice.
+        if (pgmDebug == null || !pgmDebug.equalsIgnoreCase("true")) {
+            JMenuItem runPGMAnalysis = new JMenuItem("Run Graphical Model Analysis");
+            runPGMAnalysis.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    // Show a warning
+                    // Use the JFrame so that the position is the same as other dialog
+                    int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                              "Features related to probabilistic graphical models are still experimental,\n"
+                                                                      + "and will be changed in the future. Please use inferred results with \n"
+                                                                      + "caution. Do you still want to continue?",
+                                                                      "Experimental Feature Warning",
+                                                                      JOptionPane.OK_CANCEL_OPTION,
+                                                                      JOptionPane.WARNING_MESSAGE);
+                    if (reply == JOptionPane.CANCEL_OPTION)
+                        return;
+                    runFactorGraphAnalysis();
+                }
+            });
+            popup.addSeparator();
+            popup.add(runPGMAnalysis);
+        }
+        else {
             // Convert as a factor graph
             JMenuItem convertAsFactorGraph = new JMenuItem("Convert to Graphical Model");
             convertAsFactorGraph.addActionListener(new ActionListener() {
@@ -783,6 +786,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 for (ServiceReference reference : references) {
                     GraphEditorActionListener l = (GraphEditorActionListener) context.getService(reference);
                     l.graphEditorAction(event);
+                    context.ungetService(reference);
                 }
             }
         }

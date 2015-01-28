@@ -24,6 +24,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
@@ -36,7 +37,6 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
-import org.gk.graphEditor.GraphEditorPane;
 import org.gk.graphEditor.GraphEditorSelectionModel;
 import org.gk.render.Renderable;
 import org.osgi.framework.BundleContext;
@@ -337,7 +337,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
     }
     
     @Override
-    protected void doTableSelection() {
+    protected void doTableSelection(ListSelectionEvent e) {
         // Do nothing for the super class.
     }
     
