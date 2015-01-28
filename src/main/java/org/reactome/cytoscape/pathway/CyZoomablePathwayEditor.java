@@ -41,6 +41,11 @@ import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.*;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
+import org.reactome.cytoscape.pgm.ObservationDataLoadPanel;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeSourceView;
@@ -77,34 +82,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             public void graphEditorAction(GraphEditorActionEvent e) {
                 if (e.getID() != ActionType.SELECTION)
                     return;
-                @SuppressWarnings("unchecked")
-                List<Renderable> selection = getPathwayEditor().getSelection();
-                EventSelectionEvent selectionEvent = new EventSelectionEvent();
-                List<Long> relatedIds = getRelatedPathwaysIds();
-                Long pathwayId = null;
-                if (relatedIds.size() > 0)
-                    pathwayId = relatedIds.get(0);
-                selectionEvent.setParentId(pathwayId);
-                // Get the first selected event
-                Renderable firstEvent = null;
-                if (selection != null && selection.size() > 0) {
-                    for (Renderable r : selection) {
-                        if (r.getReactomeId() != null && (r instanceof HyperEdge || r instanceof ProcessNode)) {
-                            firstEvent = r;
-                            break;
-                        }
-                    }
-                }
-                if (firstEvent == null) {
-                    selectionEvent.setEventId(pathwayId);
-                    selectionEvent.setIsPathway(true);
-                }
-                else {
-                    selectionEvent.setEventId(firstEvent.getReactomeId());
-                    selectionEvent.setIsPathway(firstEvent instanceof ProcessNode);
-                }
-                PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(CyZoomablePathwayEditor.this,
-                                                                                                            selectionEvent);
+                handleGraphSelectionEvent(e);
             }
         });
         
@@ -732,15 +710,25 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         dialog.setModal(true);
         dialog.setVisible(true);
         if (dialog.isOkClicked()) {
+            // Initialize FactorGraphAnalyzer and set up its required member variables
+            // for performing analysis.
             final FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
             analyzer.setPathwayId(pathwayEditor.getRenderable().getReactomeId());
             analyzer.setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
+            ObservationDataLoadPanel dataPane = dialog.getDataLoadPane();
+            analyzer.setGeneExpFile(dataPane.getGeneExpFile());
+            analyzer.setGeneExpThresholdValues(dataPane.getGeneExpThresholdValues());
+            analyzer.setCnvFile(dataPane.getDNAFile());
+            analyzer.setCnvThresholdValues(dataPane.getDNAThresholdValues());
+            InferenceAlgorithmPane algPane = dialog.getAlgorithmPane();
+            analyzer.setAlgorithms(algPane.getSelectedAlgorithms());
+            
             Thread t = new Thread() {
                 public void run() {
                     analyzer.runFactorGraphAnalysis();
                 }
             };
-            t.run();
+            t.start();
         }
     }
     
@@ -786,6 +774,51 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         return new CyPathwayEditor();
     }
     
+    private void handleGraphSelectionEvent(GraphEditorActionEvent event) {
+        // Delegate this event to other registered listeners
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        try {
+            ServiceReference[] references = context.getServiceReferences(GraphEditorActionListener.class.getName(), null);
+            if (references != null && references.length > 0) {
+                for (ServiceReference reference : references) {
+                    GraphEditorActionListener l = (GraphEditorActionListener) context.getService(reference);
+                    l.graphEditorAction(event);
+                }
+            }
+        }
+        catch(InvalidSyntaxException e) {
+            e.printStackTrace();
+        }
+        @SuppressWarnings("unchecked")
+        List<Renderable> selection = getPathwayEditor().getSelection();
+        EventSelectionEvent selectionEvent = new EventSelectionEvent();
+        List<Long> relatedIds = getRelatedPathwaysIds();
+        Long pathwayId = null;
+        if (relatedIds.size() > 0)
+            pathwayId = relatedIds.get(0);
+        selectionEvent.setParentId(pathwayId);
+        // Get the first selected event
+        Renderable firstEvent = null;
+        if (selection != null && selection.size() > 0) {
+            for (Renderable r : selection) {
+                if (r.getReactomeId() != null && (r instanceof HyperEdge || r instanceof ProcessNode)) {
+                    firstEvent = r;
+                    break;
+                }
+            }
+        }
+        if (firstEvent == null) {
+            selectionEvent.setEventId(pathwayId);
+            selectionEvent.setIsPathway(true);
+        }
+        else {
+            selectionEvent.setEventId(firstEvent.getReactomeId());
+            selectionEvent.setIsPathway(firstEvent instanceof ProcessNode);
+        }
+        PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(CyZoomablePathwayEditor.this,
+                                                                                                    selectionEvent);
+    }
+
     /**
      * A customized PathwayEditor in order to do something specifial for PathwayDiagram displayed in
      * Cytoscape.

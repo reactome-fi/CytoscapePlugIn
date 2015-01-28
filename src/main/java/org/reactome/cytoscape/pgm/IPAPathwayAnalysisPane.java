@@ -198,16 +198,19 @@ public class IPAPathwayAnalysisPane extends IPAValueTablePane {
     public void handleEvent(RowsSetEvent event) {
     }
     
+    /**
+     * Nothing needs to be done here.
+     */
+    @Override
+    protected void handleGraphEditorSelection(List<?> selection) {
+    }
+
     @Override
     public void setNetworkView(CyNetworkView view) {
         this.view = view;
-        FactorGraph pfg = null;
-        if (view != null)
-            pfg = FactorGraphRegistry.getRegistry().getFactorGraph(view.getModel());
-        setFactorGraph(pfg);
     }
 
-    private void setFactorGraph(FactorGraph fg) {
+    public void setFactorGraph(FactorGraph fg) {
         // We want to focus on outputs for pathway perturbation study
         List<VariableInferenceResults> outputVarResults = null;
         if (fg != null) {

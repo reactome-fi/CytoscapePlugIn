@@ -7,6 +7,7 @@ package org.reactome.cytoscape.pgm;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -39,11 +40,8 @@ public class InferenceAlgorithmDialog extends JDialog {
      * PGMInferenceAlgorithm object.
      * @return
      */
-    public Inferencer getSelectedAlgorithm() {
-        if (isOkClicked) {
-            return (Inferencer) algPane.getSelectedAlgorithm();
-        }
-        return null;
+    public List<Inferencer> getSelectedAlgorithms() {
+        return algPane.getSelectedAlgorithms();
     }
     
     private void init() {

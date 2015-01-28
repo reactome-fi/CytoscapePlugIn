@@ -4,13 +4,19 @@
  */
 package org.reactome.cytoscape.pathway;
 
+import java.io.File;
+import java.util.List;
+
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.gk.render.RenderablePathway;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.pgm.InferenceRunner;
+import org.reactome.cytoscape.pgm.ObservationDataHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.Inferencer;
 
 /**
  * This class is used to perform factor graph based pathway analysis.
@@ -22,6 +28,12 @@ public class FactorGraphAnalyzer {
     // variables should be provided
     private Long pathwayId;
     private RenderablePathway pathwayDiagram;
+    // Information entered by the user
+    private File geneExpFile;
+    private double[] geneExpThresholdValues;
+    private File cnvFile;
+    private double[] cnvThresholdValues;
+    private List<Inferencer> algorithms;
     
     /**
      * Default constructor.
@@ -29,6 +41,42 @@ public class FactorGraphAnalyzer {
     public FactorGraphAnalyzer() {
     }
     
+    public File getGeneExpFile() {
+        return geneExpFile;
+    }
+
+    public void setGeneExpFile(File geneExpFile) {
+        this.geneExpFile = geneExpFile;
+    }
+
+    public double[] getGeneExpThresholdValues() {
+        return geneExpThresholdValues;
+    }
+
+    public void setGeneExpThresholdValues(double[] geneExpThresholdValues) {
+        this.geneExpThresholdValues = geneExpThresholdValues;
+    }
+
+    public File getCnvFile() {
+        return cnvFile;
+    }
+
+    public void setCnvFile(File cnvFile) {
+        this.cnvFile = cnvFile;
+    }
+
+    public double[] getCnvThresholdValues() {
+        return cnvThresholdValues;
+    }
+
+    public void setCnvThresholdValues(double[] cnvThresholdValues) {
+        this.cnvThresholdValues = cnvThresholdValues;
+    }
+
+    public void setAlgorithms(List<Inferencer> algorithms) {
+        this.algorithms = algorithms;
+    }
+
     public Long getPathwayId() {
         return pathwayId;
     }
@@ -61,16 +109,33 @@ public class FactorGraphAnalyzer {
         progressPane.setTitle("Run Graphical Model Analysis");
         progressPane.setIndeterminate(true);
         frame.setGlassPane(progressPane);
-        progressPane.setVisible(true);
+        frame.getGlassPane().setVisible(true);
         // Convert to a FactorGraph using this object
         DiagramAndFactorGraphSwitcher switcher = new DiagramAndFactorGraphSwitcher();
         try {
-            progressPane.setText("Converting pathway into a graphical model...");
+            progressPane.setText("Converting pathway into graphical model...");
             FactorGraph factorGraph = switcher.convertPathwayToFactorGraph(pathwayId, pathwayDiagram);
             if (factorGraph == null) {
                 progressPane.setVisible(false);
                 return; // Something may be wrong
             }
+            
+            progressPane.setText("Loading observation data...");
+            ObservationDataHelper dataHelper = new ObservationDataHelper(factorGraph);
+            dataHelper.performLoadData(cnvFile,
+                                       cnvThresholdValues, 
+                                       geneExpFile, 
+                                       geneExpThresholdValues,
+                                       progressPane);
+            progressPane.setText("Data loading is done.");
+            
+            progressPane.setText("Perform inference...");
+            InferenceRunner inferenceRunner = new InferenceRunner();
+            inferenceRunner.setFactorGraph(factorGraph);
+            inferenceRunner.setProgressPane(progressPane);
+            inferenceRunner.setAlgorithms(algorithms);
+            inferenceRunner.performInference(true);
+            
             progressPane.setText("Analysis is done!");
             progressPane.setVisible(false);
         }
@@ -80,6 +145,7 @@ public class FactorGraphAnalyzer {
                                           "Error in Graphical Model Analysis",
                                           JOptionPane.ERROR_MESSAGE);
             progressPane.setVisible(false);
+            System.err.println(e);
         }
     }
     

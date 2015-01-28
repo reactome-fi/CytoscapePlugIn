@@ -33,6 +33,12 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.model.CyNetworkView;
+import org.gk.graphEditor.GraphEditorActionEvent;
+import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
+import org.gk.graphEditor.GraphEditorActionListener;
+import org.gk.graphEditor.GraphEditorPane;
+import org.gk.graphEditor.GraphEditorSelectionModel;
+import org.gk.render.Renderable;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.service.NetworkModulePanel;
@@ -62,6 +68,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
     private ServiceRegistration currentViewRegistration;
     // Inference results for a selected FactorGraph
     private FactorGraphInferenceResults fgInfResults;
+    // So that it can be unregister
+    private ServiceRegistration graphSelectionRegistration;
     
     /**
      * In order to show title, have to set the title in the constructor.
@@ -84,6 +92,19 @@ public class IPAValueTablePane extends NetworkModulePanel {
         currentViewRegistration = context.registerService(SetCurrentNetworkViewListener.class.getName(),
                                                           listener,
                                                           null);
+        GraphEditorActionListener graphListener = new GraphEditorActionListener() {
+            
+            @Override
+            public void graphEditorAction(GraphEditorActionEvent e) {
+                if (e.getID() == ActionType.SELECTION && (e.getSource() instanceof GraphEditorSelectionModel)) {
+                    GraphEditorSelectionModel model = (GraphEditorSelectionModel) e.getSource();
+                    handleGraphEditorSelection(model.getSelection());
+                }
+            }
+        };
+        graphSelectionRegistration = context.registerService(GraphEditorActionListener.class.getName(),
+                                                             graphListener,
+                                                             null);
     }
     
     @Override
@@ -92,6 +113,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
             // Unregister it so that this object can be GC.
             currentViewRegistration.unregister();
         }
+        if (graphSelectionRegistration != null)
+            graphSelectionRegistration.unregister();
         super.close();
     }
 
@@ -136,7 +159,6 @@ public class IPAValueTablePane extends NetworkModulePanel {
     public void setNetworkView(CyNetworkView view) {
         super.setNetworkView(view);
         initNodeToVarMap();
-        setInferenceResults();
     }
     
     @Override
@@ -188,18 +210,15 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
     }
     
-    private void setInferenceResults() {
+    public void setInferenceResults(FactorGraphInferenceResults fgResults) {
         // Get a list of samples from posteriors from all variables
         Set<String> sampleSet = null;
-        if (view != null) {// If a pathway view is selected, network view will be null.
-            FactorGraph fg = FactorGraphRegistry.getRegistry().getFactorGraph(view.getModel());
-            if (fg != null) {
-                FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(fg);
-                if (fgResults != null)
-                    sampleSet = fgResults.getSamples();
-                this.fgInfResults = fgResults;
-            }
+        if (fgResults != null) {// If a pathway view is selected, network view will be null.
+            sampleSet = fgResults.getSamples();
+            this.fgInfResults = fgResults;
         }
+        if (sampleSet == null)
+            sampleSet = new HashSet<String>(); // To avoid a null exception
         List<String> sampleList = new ArrayList<String>(sampleSet);
         IPAValueTableModel model = (IPAValueTableModel) contentPane.getTableModel();
         model.setSamples(sampleList);
@@ -221,17 +240,55 @@ public class IPAValueTablePane extends NetworkModulePanel {
         if (selectedNodes.equals(preSelectedNodes))
             return;
         preSelectedNodes = selectedNodes;
+        // Get the selected Variables
+        List<Variable> selectedVars = new ArrayList<Variable>();
+        if (selectedNodes != null && selectedNodes.size() > 0) {
+            for (CyNode node : selectedNodes) {
+                Variable var = nodeToVar.get(node);
+                if (var != null) {
+                    selectedVars.add(var);
+                }
+            }
+        }
+        setVariables(selectedVars);
+    }
+    
+    protected void handleGraphEditorSelection(List<?> selection) {
+        // Selection should be processed via another route
+        if (view != null && view.getModel() != null && view.getModel().getDefaultNodeTable() != null)
+            return; // To be handled by handleEvent() method.
+        if (fgInfResults == null)
+            return;
+        FactorGraph fg = fgInfResults.getFactorGraph();
+        List<Variable> selectedVars = new ArrayList<Variable>();
+        if (selection != null && selection.size() > 0) {
+            Map<String, Variable> dbIdToVar = new HashMap<String, Variable>();
+            for (Variable var : fg.getVariables()) {
+                if (var.getCustomizedInfo() == null)
+                    continue;
+                dbIdToVar.put(var.getCustomizedInfo(), var);
+            }
+            for (Object obj : selection) {
+                Renderable r = (Renderable) obj;
+                Variable var = dbIdToVar.get(r.getReactomeId() + "");
+                if (var != null)
+                    selectedVars.add(var);
+            }
+        }
+        setVariables(selectedVars);
+    }
+    
+    /**
+     * Display results for a list of Variables.
+     * @param variables
+     */
+    public void setVariables(List<Variable> variables) {
         List<VariableInferenceResults> varResults = new ArrayList<VariableInferenceResults>();
         if (fgInfResults != null) {
-            if (selectedNodes != null && selectedNodes.size() > 0) {
-                for (CyNode node : selectedNodes) {
-                    Variable var = nodeToVar.get(node);
-                    if (var != null) {
-                        VariableInferenceResults varResult = fgInfResults.getVariableInferenceResults(var);
-                        if (varResult != null)
-                            varResults.add(varResult);
-                    }
-                }
+            for (Variable var : variables) {
+                VariableInferenceResults varResult = fgInfResults.getVariableInferenceResults(var);
+                if (varResult != null)
+                    varResults.add(varResult);
             }
             Collections.sort(varResults, new Comparator<VariableInferenceResults>() {
                 public int compare(VariableInferenceResults varResults1, VariableInferenceResults varResults2) {

@@ -49,11 +49,18 @@ public class InferenceAlgorithmPane extends JPanel {
      * PGMInferenceAlgorithm object.
      * @return
      */
-    public Inferencer getSelectedAlgorithm() {
+    public List<Inferencer> getSelectedAlgorithms() {
+        List<Inferencer> rtn = new ArrayList<Inferencer>();
         if (selectedAlgBtn.isSelected()) {
-            return (Inferencer) algBox.getSelectedItem();
+            Inferencer selected = (Inferencer) algBox.getSelectedItem();
+            rtn.add(selected);
         }
-        return null;
+        else {
+            for (int i = 0; i < algBox.getItemCount(); i++) {
+                rtn.add(algBox.getItemAt(i));
+            }
+        }
+        return rtn;
     }
     
     private void init() {

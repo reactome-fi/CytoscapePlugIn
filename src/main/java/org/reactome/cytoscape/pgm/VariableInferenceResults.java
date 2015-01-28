@@ -74,7 +74,7 @@ public class VariableInferenceResults {
         Map<String, List<Double>> rtn = new HashMap<String, List<Double>>();
         if (sampleToValues != null) {
             for (String sample : sampleToValues.keySet()) {
-                if (!sample.startsWith(ObservationDataHelper.RANDOM_SAMPLE_PREFIX))
+                if (!sample.startsWith(NetworkObservationDataHelper.RANDOM_SAMPLE_PREFIX))
                     rtn.put(sample, sampleToValues.get(sample));
             }
         }
@@ -85,7 +85,7 @@ public class VariableInferenceResults {
         Map<String, List<Double>> rtn = new HashMap<String, List<Double>>();
         if (sampleToValues != null) {
             for (String sample : sampleToValues.keySet()) {
-                if (sample.startsWith(ObservationDataHelper.RANDOM_SAMPLE_PREFIX))
+                if (sample.startsWith(NetworkObservationDataHelper.RANDOM_SAMPLE_PREFIX))
                     rtn.put(sample, sampleToValues.get(sample));
             }
         }

@@ -44,6 +44,14 @@ public class FactorGraphAnalysisDialog extends FIActionDialog {
         init();
     }
     
+    public ObservationDataLoadPanel getDataLoadPane() {
+        return dataPane;
+    }
+    
+    public InferenceAlgorithmPane getAlgorithmPane() {
+        return this.algPane;
+    }
+    
     private void init() {
         setTitle("Run Graphical Model Analysis");
         final JTabbedPane tabbedPane = new JTabbedPane();

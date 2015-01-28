@@ -14,18 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.SwingUtilities;
-
 import org.apache.commons.math.random.RandomData;
 import org.apache.commons.math.random.RandomDataImpl;
-import org.cytoscape.model.CyEdge;
-import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
-import org.cytoscape.model.CyTable;
-import org.cytoscape.view.model.CyNetworkView;
-import org.reactome.cytoscape.service.FINetworkGenerator;
-import org.reactome.cytoscape.service.FIVisualStyle;
-import org.reactome.cytoscape.service.TableHelper;
+import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Factor;
 import org.reactome.factorgraph.FactorGraph;
@@ -47,29 +39,28 @@ import org.reactome.r3.util.FileUtility;
 public class ObservationDataHelper {
     // Hope this is a unique random sample prefix
     public static final String RANDOM_SAMPLE_PREFIX = "org.reactome.fi.random_";
-    private CyNetworkView networkView;
-    private FactorGraph fg;
+    protected FactorGraph fg;
     // For quick find variables
-    private Map<String, Variable> nameToVar;
-    private Map<String, CyNode> nameToNode;
+    protected Map<String, Variable> nameToVar;
     // In order to assign ids to new variable
     private int maxId;
     // Kept loaded data for randomization: data has been discretized already
     private GeneSampleDataPoints data;
     
     /**
-     * Default constructor.
+     * Default constructor is used only for subclassing.
      */
-    public ObservationDataHelper(FactorGraph fg,
-                                 CyNetworkView netView) {
-        if (fg == null || netView == null)
-            throw new IllegalArgumentException("Factor graph and network view cannot be null!");
+    protected ObservationDataHelper() {
+    }
+    
+    public ObservationDataHelper(FactorGraph fg) {
+        if (fg == null)
+            throw new IllegalArgumentException("Factor graph cannot be null!");
         this.fg = fg;
-        this.networkView = netView;
         initializeProperties();
     }
 
-    private void initializeProperties() {
+    protected void initializeProperties() {
         nameToVar = new HashMap<String, Variable>();
         for (Variable var : fg.getVariables()) {
             if (var.getName() == null)
@@ -92,13 +83,59 @@ public class ObservationDataHelper {
                     maxId = id;
             }
         }
-        nameToNode = new HashMap<String, CyNode>();
-        TableHelper tableHelper = new TableHelper();
-        for (CyNode node : networkView.getModel().getNodeList()) {
-            String label = tableHelper.getStoredNodeAttribute(networkView.getModel(), node, "nodeLabel", String.class);
-            nameToNode.put(label, node);
-        }
         data = new GeneSampleDataPoints();
+    }
+    
+    @SuppressWarnings("unchecked")
+    public void performLoadData(File dnaFile,
+                                double[] dnaThresholdValues,
+                                File geneExpFile,
+                                double[] geneExpThresholdValues,
+                                ProgressPane progressPane) throws Exception {
+        if (progressPane != null) {
+            progressPane.setTitle("Load Observation Data");
+            progressPane.setIndeterminate(true);
+        }
+        Map<Variable, Map<String, Integer>> dnaVarToSampleToState = null;
+        if (dnaFile != null) {
+            if (progressPane != null)
+                progressPane.setText("Loading CNV data...");
+            dnaVarToSampleToState = loadData(dnaFile, 
+                                             DataType.CNV,
+                                             dnaThresholdValues);
+        }
+        Map<Variable, Map<String, Integer>> geneExpVarToSampleToState = null;
+        if (geneExpFile != null) {
+            progressPane.setText("Loading mRNA expression data...");
+            geneExpVarToSampleToState = loadData(geneExpFile,
+                                                 DataType.mRNA_EXP,
+                                                 geneExpThresholdValues);
+        }
+        if (dnaVarToSampleToState == null && geneExpVarToSampleToState == null) {
+            return;
+        }
+        if (progressPane != null)
+            progressPane.setText("Generating observations...");
+        List<Observation> observations = null;
+        if (dnaVarToSampleToState != null && geneExpVarToSampleToState != null)
+            observations = generateObservations(dnaVarToSampleToState,
+                                                geneExpVarToSampleToState);
+        else if (dnaVarToSampleToState != null)
+            observations = generateObservations(dnaVarToSampleToState);
+        else if (geneExpVarToSampleToState != null)
+            observations = generateObservations(geneExpVarToSampleToState);
+        FactorGraphRegistry.getRegistry().setObservations(fg, observations);
+        if (progressPane != null)
+            progressPane.setText("Generating random data...");
+        List<Observation> randomData = null;
+        if (dnaVarToSampleToState != null && geneExpVarToSampleToState != null)
+            randomData = generateRandomObservations(dnaVarToSampleToState,
+                                                           geneExpVarToSampleToState);
+        else if (dnaVarToSampleToState != null)
+            randomData = generateRandomObservations(dnaVarToSampleToState);
+        else if (geneExpVarToSampleToState != null)
+            randomData = generateRandomObservations(geneExpVarToSampleToState);
+        FactorGraphRegistry.getRegistry().setRandomObservations(fg, randomData);
     }
     
     public Map<Variable, Map<String, Integer>> loadData(File file,
@@ -185,7 +222,7 @@ public class ObservationDataHelper {
         return rtn;
     }
     
-    private List<String> parseSamples(String line) {
+    protected List<String> parseSamples(String line) {
         String[] tokens = line.split("\t");
         List<String> samples = new ArrayList<String>();
         for (int i = 1; i < tokens.length; i++)
@@ -193,20 +230,16 @@ public class ObservationDataHelper {
         return samples;
     }
 
-    private Map<Variable, Map<String, Integer>> loadData(File file, 
-                                                         String nodeType, 
-                                                         List<Double> factorValues,
-                                                         double[] thresholdValues) throws IOException {
+    protected Map<Variable, Map<String, Integer>> loadData(File file, 
+                                                           String nodeType, 
+                                                           List<Double> factorValues,
+                                                           double[] thresholdValues) throws IOException {
         FileUtility fu = new FileUtility();
         fu.setInput(file.getAbsolutePath());
         // First line should be header
         String line = fu.readLine();
         List<String> samples = parseSamples(line);
         int index = 0;
-        // A helper object to create Nodes and Edges
-        final FINetworkGenerator fiHelper = new FINetworkGenerator();
-        CyNetwork network = networkView.getModel();
-        CyTable nodeTable = network.getDefaultNodeTable();
         // Keep these mappings for layout after an updateView.
         // Otherwise, a null exception will be thrown because there
         // is no view for newly added CyNode
@@ -229,59 +262,19 @@ public class ObservationDataHelper {
             // Just use the first DB_ID as its label
             Variable obsVar = createObsVariable(gene, 
                                                 nodeType);
-            // Add this observation variable into the network.
-            CyNode obsNode = fiHelper.createNode(network,
-                                                 obsVar.getId(),
-                                                 obsVar.getName(), 
-                                                 "observation", 
-                                                 obsVar.getName());
             Factor factor = createObsFactor(obsVar, 
                                             var, 
                                             factorValues);
-            CyNode factorNode = fiHelper.createNode(network,
-                                                    factor.getId(),
-                                                    factor.getName(), 
-                                                    "factor",
-                                                    factor.getName());
-            // Don't want to show label for factor node. So
-            // a simple fix
-            nodeTable.getRow(factorNode.getSUID()).set("nodeLabel", null);
-            CyEdge edge = fiHelper.createEdge(network,
-                                              obsNode,
-                                              factorNode,
-                                              "FI");
-            CyNode varNode = nameToNode.get(varName);
-            edge = fiHelper.createEdge(network, 
-                                       varNode, 
-                                       factorNode,
-                                       "FI");
-            varNodeToFactorNode.put(varNode, factorNode);
-            factorNodeToObsNode.put(factorNode, obsNode);
             Map<String, Integer> sampleToState = data.getSampleToState(gene,
                                                                        nodeType);
             variableToSampleToState.put(obsVar, sampleToState);
         }
         fu.close();
         fg.validatVariables();
-        networkView.updateView();
-        // Use a swing thread so that updateView can be done first in order to get
-        // node view with coordinates. Otherwise, a null exception is going to be thrown.
-        // Now do a layout
-        // The order is important
-        SwingUtilities.invokeLater(new Thread() {
-            public void run() {
-                layout(varNodeToFactorNode, fiHelper);
-                layout(factorNodeToObsNode, fiHelper);        
-                // Need to recall visual style in order to make newly added nodes to have
-                // correct visual styles.
-                FIVisualStyle visStyler = new FactorGraphVisualStyle();
-                visStyler.setVisualStyle(networkView);
-            }
-        });
         return variableToSampleToState;
     }
     
-    private void cacheData(String line,
+    protected void cacheData(String line,
                            List<String> samples,
                            String nodeType,
                            double[] thresholdValues) {
@@ -315,18 +308,7 @@ public class ObservationDataHelper {
         return 0;
     }
     
-    private void layout(Map<CyNode, CyNode> anchorToPartner,
-                        FINetworkGenerator fiHelper) {
-        Set<CyNode> parnterNodes = new HashSet<CyNode>();
-        for (CyNode anchor : anchorToPartner.keySet()) {
-            CyNode partner = anchorToPartner.get(anchor);
-            parnterNodes.clear();
-            parnterNodes.add(partner);
-            fiHelper.jiggleLayout(anchor, parnterNodes, networkView);
-        }
-    }
-    
-    private Factor createObsFactor(Variable obsVar,
+    protected Factor createObsFactor(Variable obsVar,
                                    Variable hiddenVar,
                                    List<Double> factorValues) {
         Factor factor = new Factor();
@@ -342,7 +324,7 @@ public class ObservationDataHelper {
         return factor;
     }
     
-    private Variable createObsVariable(String gene,
+    protected Variable createObsVariable(String gene,
                                        String type) {
         Variable obsVar = new Variable(PathwayPGMConfiguration.getConfig().getNumberOfStates());
         obsVar.setId(++maxId + "");
@@ -356,6 +338,10 @@ public class ObservationDataHelper {
         Map<DataType, double[]> typeToFactorValue = config.getTypeToFactorValues();
         double[] values = typeToFactorValue.get(dataType);
         return PlugInUtilities.convertArrayToList(values);
+    }
+    
+    protected Map<String, Integer> getSampleToState(String gene, String nodeType) {
+        return data.getSampleToState(gene, nodeType);
     }
     
     /**
