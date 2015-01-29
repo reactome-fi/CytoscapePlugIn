@@ -60,15 +60,12 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
         this.view = view;
     }
 
-    public void setFactorGraph(FactorGraph fg) {
+    public void setInferenceResults(FactorGraphInferenceResults fgResults) {
         // We want to focus on outputs for pathway perturbation study
         List<VariableInferenceResults> outputVarResults = null;
-        if (fg != null) {
-            FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(fg);
-            if (fgResults != null) {
-                Set<Variable> outputVars = PlugInUtilities.getOutputVariables(fg);
-                outputVarResults = fgResults.getVariableInferenceResults(outputVars);
-            }
+        if (fgResults != null) {
+            Set<Variable> outputVars = PlugInUtilities.getOutputVariables(fgResults.getFactorGraph());
+            outputVarResults = fgResults.getVariableInferenceResults(outputVars);
         }
         IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
         model.setVarResults(outputVarResults);

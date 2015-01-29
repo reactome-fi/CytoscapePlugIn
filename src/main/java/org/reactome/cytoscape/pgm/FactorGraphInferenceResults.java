@@ -23,12 +23,32 @@ import org.reactome.factorgraph.Variable;
 public class FactorGraphInferenceResults {
     private FactorGraph factorGraph;
     private Map<Variable, VariableInferenceResults> varToResults;
+    // A flag indicating this result should be processed based on two cases
+    private boolean usedForTwoCases;
+    // Map samples to types
+    private Map<String, String> sampleToType;
     
     /**
      * Default constructor.
      */
     public FactorGraphInferenceResults() {
         varToResults = new HashMap<Variable, VariableInferenceResults>();
+    }
+
+    public Map<String, String> getSampleToType() {
+        return sampleToType;
+    }
+
+    public void setSampleToType(Map<String, String> sampleToType) {
+        this.sampleToType = sampleToType;
+    }
+
+    public boolean isUsedForTwoCases() {
+        return usedForTwoCases;
+    }
+
+    public void setUsedForTwoCases(boolean usedForTwoCases) {
+        this.usedForTwoCases = usedForTwoCases;
     }
 
     public FactorGraph getFactorGraph() {

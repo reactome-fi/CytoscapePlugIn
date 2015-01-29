@@ -6,6 +6,7 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -493,10 +494,12 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 progressPane.setIndeterminate(true);
                 frame.setGlassPane(progressPane);
                 frame.getGlassPane().setVisible(true);
+                File sampleInfoFile = dialog.isTwoCaseAnalysisSelected() ? dialog.getTwoCasesSampleInfoFile() : null;
                 helper.performLoadData(dialog.getDNAFile(), 
                                        dialog.getDNAThresholdValues(), 
                                        dialog.getGeneExpFile(), 
                                        dialog.getGeneExpThresholdValues(), 
+                                       sampleInfoFile,
                                        progressPane);
                 frame.getGlassPane().setVisible(false);
                 JOptionPane.showMessageDialog(frame,

@@ -723,6 +723,10 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             analyzer.setGeneExpThresholdValues(dataPane.getGeneExpThresholdValues());
             analyzer.setCnvFile(dataPane.getDNAFile());
             analyzer.setCnvThresholdValues(dataPane.getDNAThresholdValues());
+            // If two cases analysis should be performed
+            if (dataPane.isTwoCasesAnalysisSelected())
+                analyzer.setTwoCasesSampleInfoFile(dataPane.getTwoCasesSampleInfoFile());
+                
             InferenceAlgorithmPane algPane = dialog.getAlgorithmPane();
             analyzer.setAlgorithms(algPane.getSelectedAlgorithms());
             

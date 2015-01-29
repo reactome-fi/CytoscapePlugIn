@@ -6,7 +6,9 @@ package org.reactome.cytoscape.pgm;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JOptionPane;
 
@@ -41,6 +43,8 @@ public class InferenceRunner {
     private ProgressPane progressPane;
     // A flag to cancel inference
     private boolean abort;
+    // Flag indicating the final results should be performed based on two cases
+    private boolean usedForTwoCases;
     
     /**
      * Default constructor.
@@ -48,6 +52,14 @@ public class InferenceRunner {
     public InferenceRunner() {
     }
     
+    public boolean isUsedForTwoCases() {
+        return usedForTwoCases;
+    }
+
+    public void setUsedForTwoCases(boolean usedForTwoCases) {
+        this.usedForTwoCases = usedForTwoCases;
+    }
+
     public ProgressPane getProgressPane() {
         return progressPane;
     }
@@ -120,7 +132,7 @@ public class InferenceRunner {
         else
             valuePane = new IPASampleAnalysisPane(title);
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        valuePane.setFactorGraph(fgResults.getFactorGraph());
+        valuePane.setInferenceResults(fgResults);
 
         // Show outputs results
         title = "IPA Pathway Analysis";
@@ -131,7 +143,8 @@ public class InferenceRunner {
         else
             outputPane = new IPAPathwayOutputsPane(title);
         outputPane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        outputPane.setVariableResults(valuePane.getOutputVariableResults());
+        outputPane.setVariableResults(valuePane.getOutputVariableResults(),
+                                      fgResults.isUsedForTwoCases() ? fgResults.getSampleToType() : null);
         if (index == -1)
             index = tableBrowserPane.indexOfComponent(outputPane);
         if (index >= 0) // Select this as the default table for viewing the results
@@ -213,8 +226,11 @@ public class InferenceRunner {
             inferencer.setObservation(null);
             inferencer.runInference();
             FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(factorGraph);
-            fgResults.storeInferenceResults(null);
+            fgResults.setUsedForTwoCases(usedForTwoCases);
+            fgResults.storeInferenceResults(null); // Store prior result
             List<Observation> observations = FactorGraphRegistry.getRegistry().getObservations(factorGraph);
+            Map<String, String> sampleToType = new HashMap<String, String>();
+            fgResults.setSampleToType(sampleToType);
             if (observations != null) {
                 progressPane.setIndeterminate(false);
                 progressPane.setMaximum(observations.size());
@@ -226,26 +242,32 @@ public class InferenceRunner {
                     inferencer.setObservation(observation.getVariableToAssignment());
                     inferencer.runInference();
                     fgResults.storeInferenceResults(observation.getName());
+                    // If there is no sample type, don't include to avoid a new type (null!)
+                    // appears in the further analysis.
+                    if (observation.getAnnoation() != null)
+                        sampleToType.put(observation.getName(), observation.getAnnoation());
                     count ++;
                     progressPane.setValue(count);
                     if (abort)
                         break;
                 }
             }
-            observations = FactorGraphRegistry.getRegistry().getRandomObservations(factorGraph);
-            if (observations != null) {
-                int count = 0;
-                progressPane.setMaximum(observations.size());
-                for (Observation observation : observations) {
-                    count ++;
-                    if (progressPane != null)
-                        progressPane.setText("Random sample: " + count);
-                    inferencer.setObservation(observation.getVariableToAssignment());
-                    inferencer.runInference();
-                    fgResults.storeInferenceResults(observation.getName());
-                    progressPane.setValue(count);
-                    if (abort)
-                        break;
+            if (!abort) { // Maybe abort in the above loop.
+                observations = FactorGraphRegistry.getRegistry().getRandomObservations(factorGraph);
+                if (observations != null) {
+                    int count = 0;
+                    progressPane.setMaximum(observations.size());
+                    for (Observation observation : observations) {
+                        count ++;
+                        if (progressPane != null)
+                            progressPane.setText("Random sample: " + count);
+                        inferencer.setObservation(observation.getVariableToAssignment());
+                        inferencer.runInference();
+                        fgResults.storeInferenceResults(observation.getName());
+                        progressPane.setValue(count);
+                        if (abort)
+                            break;
+                    }
                 }
             }
             if (abort) {
@@ -260,7 +282,7 @@ public class InferenceRunner {
             String message = "Inference cannot converge. You may try to run inference again, which may converge\n" + 
                              "because of its stochastic feature, or try the Gibbs sampling algorithm.";
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Inference cannot converge. You may try run inferencePlease try the Gibbs sampling algorithm.",
+                                          message,
                                           "Inference Cannot Converge",
                                           JOptionPane.ERROR_MESSAGE);
             status = InferenceStatus.ERROR;

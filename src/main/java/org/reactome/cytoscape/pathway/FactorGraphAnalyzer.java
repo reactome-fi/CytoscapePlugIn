@@ -33,6 +33,8 @@ public class FactorGraphAnalyzer {
     private double[] geneExpThresholdValues;
     private File cnvFile;
     private double[] cnvThresholdValues;
+    // If this file is not null, two-cases analysis should be performed
+    private File sampleInfoFile;
     private List<Inferencer> algorithms;
     
     /**
@@ -41,6 +43,14 @@ public class FactorGraphAnalyzer {
     public FactorGraphAnalyzer() {
     }
     
+    public File getSampleInfoFile() {
+        return sampleInfoFile;
+    }
+
+    public void setTwoCasesSampleInfoFile(File sampleInfoFile) {
+        this.sampleInfoFile = sampleInfoFile;
+    }
+
     public File getGeneExpFile() {
         return geneExpFile;
     }
@@ -122,16 +132,23 @@ public class FactorGraphAnalyzer {
             
             progressPane.setText("Loading observation data...");
             ObservationDataHelper dataHelper = new ObservationDataHelper(factorGraph);
-            dataHelper.performLoadData(cnvFile,
-                                       cnvThresholdValues, 
-                                       geneExpFile, 
-                                       geneExpThresholdValues,
-                                       progressPane);
+            boolean correct = dataHelper.performLoadData(cnvFile,
+                                                         cnvThresholdValues, 
+                                                         geneExpFile, 
+                                                         geneExpThresholdValues,
+                                                         sampleInfoFile,
+                                                         progressPane);
+            if (!correct) {
+                progressPane.setText("Wrong in data loading.");
+                progressPane.setVisible(false);
+                return;
+            }
             progressPane.setText("Data loading is done.");
             
             progressPane.setTitle("Perform inference...");
             InferenceRunner inferenceRunner = new InferenceRunner();
             inferenceRunner.setFactorGraph(factorGraph);
+            inferenceRunner.setUsedForTwoCases(sampleInfoFile != null);
             inferenceRunner.setProgressPane(progressPane);
             inferenceRunner.setAlgorithms(algorithms);
             inferenceRunner.performInference(true);

@@ -81,6 +81,14 @@ public class ObservationDataLoadDialog extends FIActionDialog {
         return dataPanel.getGeneExpThresholdValues();
     }
     
+    public boolean isTwoCaseAnalysisSelected() {
+        return dataPanel.isTwoCasesAnalysisSelected();
+    }
+    
+    public File getTwoCasesSampleInfoFile() {
+        return dataPanel.getTwoCasesSampleInfoFile();
+    }
+    
     /**
      * Calling this method will return nothing.
      */

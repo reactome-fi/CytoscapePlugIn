@@ -84,7 +84,7 @@ public class NetworkObservationDataHelper extends ObservationDataHelper {
         Map<Variable, Map<String, Integer>> variableToSampleToState = new HashMap<Variable, Map<String,Integer>>();
         while ((line = fu.readLine()) != null) {
             // Cache data for randomization purpose
-            cacheData(line, 
+            parseData(line, 
                       samples,
                       nodeType, 
                       thresholdValues);

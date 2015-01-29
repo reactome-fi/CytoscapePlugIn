@@ -14,10 +14,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JOptionPane;
+
 import org.apache.commons.math.random.RandomData;
 import org.apache.commons.math.random.RandomDataImpl;
 import org.cytoscape.model.CyNode;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Factor;
 import org.reactome.factorgraph.FactorGraph;
@@ -87,11 +90,12 @@ public class ObservationDataHelper {
     }
     
     @SuppressWarnings("unchecked")
-    public void performLoadData(File dnaFile,
-                                double[] dnaThresholdValues,
-                                File geneExpFile,
-                                double[] geneExpThresholdValues,
-                                ProgressPane progressPane) throws Exception {
+    public boolean performLoadData(File dnaFile,
+                                   double[] dnaThresholdValues,
+                                   File geneExpFile,
+                                   double[] geneExpThresholdValues,
+                                   File sampleInfoFile, // If this file is not null, two-cases analysis should be performed
+                                   ProgressPane progressPane) throws Exception {
         if (progressPane != null) {
             progressPane.setTitle("Load Observation Data");
             progressPane.setIndeterminate(true);
@@ -112,7 +116,16 @@ public class ObservationDataHelper {
                                                  geneExpThresholdValues);
         }
         if (dnaVarToSampleToState == null && geneExpVarToSampleToState == null) {
-            return;
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Cannot load observation data. Inference cannot be performed.",
+                                          "No Observation Data",
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        Map<String, String> sampleToType = null;
+        if (sampleInfoFile != null) {
+            progressPane.setText("Loading sample type info...");
+            sampleToType = loadSampleToType(sampleInfoFile);
         }
         if (progressPane != null)
             progressPane.setText("Generating observations...");
@@ -124,23 +137,94 @@ public class ObservationDataHelper {
             observations = generateObservations(dnaVarToSampleToState);
         else if (geneExpVarToSampleToState != null)
             observations = generateObservations(geneExpVarToSampleToState);
+        if (observations.size() == 0) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "No observation can be created. Inference cannot be performed.",
+                                          "Empty Observation",
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        boolean correct = attachTypesToObservations(sampleToType, observations);
+        if (!correct)
+            return false;
         FactorGraphRegistry.getRegistry().setObservations(fg, observations);
+        // Even though we want to perform two-case analysis, we still need to generate
+        // random samples for p-values and FDRs calculations regrading individual samples
+        // and objects in the pathway.
         if (progressPane != null)
             progressPane.setText("Generating random data...");
         List<Observation> randomData = null;
         if (dnaVarToSampleToState != null && geneExpVarToSampleToState != null)
             randomData = generateRandomObservations(dnaVarToSampleToState,
-                                                           geneExpVarToSampleToState);
+                                                    geneExpVarToSampleToState);
         else if (dnaVarToSampleToState != null)
             randomData = generateRandomObservations(dnaVarToSampleToState);
         else if (geneExpVarToSampleToState != null)
             randomData = generateRandomObservations(geneExpVarToSampleToState);
         FactorGraphRegistry.getRegistry().setRandomObservations(fg, randomData);
+        return true;
+    }
+
+    private boolean attachTypesToObservations(Map<String, String> sampleToType,
+                                           List<Observation> observations) {
+        // Attach sample type information to observation as annotation
+        Map<String, Integer> typeToCount = new HashMap<String, Integer>();
+        for (Observation observation : observations) {
+            String type = sampleToType.get(observation.getName());
+            if (type != null) {
+                observation.setAnnoation(type);
+                Integer count = typeToCount.get(type);
+                if (count == null)
+                    typeToCount.put(type, 1);
+                else
+                    typeToCount.put(type, ++count);
+            }
+        }
+        // Two types only
+        if (typeToCount.size() != 2) { // This should not occure
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Only two sample types are needed for two cases analysis. Your data has " + typeToCount.size() + " type(s).",
+                                          "Wrong Number Of Sample Types",
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        // Check type counts. At least 3 samples are needed.
+        StringBuilder builder = new StringBuilder();
+        for (String type : typeToCount.keySet()) {
+            Integer count = typeToCount.get(type);
+            if (count <= 3) {
+                if (builder.length() > 0)
+                    builder.append("; ");
+                builder.append(type + ": " + count);
+            }
+        }
+        if (builder.length() > 0) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "At least 3 samples are needed for each sample type. Not enough sample: \n" +
+                                           builder.toString(),
+                                          "Not Enough Sample",
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
     }
     
-    public Map<Variable, Map<String, Integer>> loadData(File file,
-                                                        DataType type,
-                                                        double[] thresholdValues) throws Exception {
+    private Map<String, String> loadSampleToType(File sampleFile) throws IOException {
+        FileUtility fu = new FileUtility();
+        Map<String, String> sampleToType = new HashMap<String, String>();
+        fu.setInput(sampleFile.getAbsolutePath());
+        String line = null;
+        while ((line = fu.readLine()) != null) {
+            String[] tokens = line.split("\t");
+            sampleToType.put(tokens[0], tokens[1]);
+        }
+        fu.close();
+        return sampleToType;
+    }
+    
+    private Map<Variable, Map<String, Integer>> loadData(File file,
+                                                         DataType type,
+                                                         double[] thresholdValues) throws Exception {
         if (type == DataType.CNV) {
             return loadData(file, 
                             "DNA", 
@@ -248,7 +332,7 @@ public class ObservationDataHelper {
         Map<Variable, Map<String, Integer>> variableToSampleToState = new HashMap<Variable, Map<String,Integer>>();
         while ((line = fu.readLine()) != null) {
             // Cache data for randomization purpose
-            cacheData(line, 
+            parseData(line, 
                       samples,
                       nodeType, 
                       thresholdValues);
@@ -274,10 +358,10 @@ public class ObservationDataHelper {
         return variableToSampleToState;
     }
     
-    protected void cacheData(String line,
-                           List<String> samples,
-                           String nodeType,
-                           double[] thresholdValues) {
+    protected void parseData(String line,
+                             List<String> samples,
+                             String nodeType,
+                             double[] thresholdValues) {
         String[] tokens = line.split("\t");
         String gene = tokens[0];
         double value = 0.0d;
