@@ -144,9 +144,11 @@ public class ObservationDataHelper {
                                           JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        boolean correct = attachTypesToObservations(sampleToType, observations);
-        if (!correct)
-            return false;
+        if (sampleToType != null && sampleToType.size() > 0) {
+            boolean correct = attachTypesToObservations(sampleToType, observations);
+            if (!correct)
+                return false;
+        }
         FactorGraphRegistry.getRegistry().setObservations(fg, observations);
         // Even though we want to perform two-case analysis, we still need to generate
         // random samples for p-values and FDRs calculations regrading individual samples
@@ -167,6 +169,8 @@ public class ObservationDataHelper {
 
     private boolean attachTypesToObservations(Map<String, String> sampleToType,
                                            List<Observation> observations) {
+        if (sampleToType == null || sampleToType.size() == 0)
+            return true; // Nothing to be done.
         // Attach sample type information to observation as annotation
         Map<String, Integer> typeToCount = new HashMap<String, Integer>();
         for (Observation observation : observations) {

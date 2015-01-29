@@ -26,6 +26,7 @@ import org.reactome.factorgraph.InferenceCannotConvergeException;
 import org.reactome.factorgraph.Inferencer;
 import org.reactome.factorgraph.LoopyBeliefPropagation;
 import org.reactome.factorgraph.Observation;
+import org.reactome.factorgraph.Variable;
 
 /**
  * Use this class for performing actual PGM inference.
@@ -205,26 +206,51 @@ public class InferenceRunner {
             }
         }
     }
+    
+    /**
+     * This is the actual place to run inference
+     */
+    private void performInference(Map<Variable, Integer> varToState,
+                                  String sample) throws InferenceCannotConvergeException {
+        // If LBP is set, we will use it.
+        if (lbp != null) {
+            try {
+                lbp.setObservation(varToState);
+                lbp.runInference();
+            }
+            catch(InferenceCannotConvergeException e) {
+                if (gibbs != null) { // Try switch to Gibbs automatically if it is set.
+                    progressPane.setText("Use Gibbs for " + 
+                                         (sample == null ? " prior." : sample + "."));
+                    gibbs.setObservation(varToState);
+                    gibbs.runInference();
+                }
+                else
+                    throw e;
+            }
+        }
+        else { // Only Gibbs is set
+            gibbs.setObservation(varToState);
+            gibbs.runInference();
+        }
+    }
 
-    private void performInference() {
+    private synchronized void performInference() {
         if (lbp == null && gibbs == null) // We cannot do anything if there is no inferencer is set.
             return;
         if (factorGraph == null)
             return; // Nothing to be inferred
         // If we have lbp, try lbp first. The following check must work
         // since we have already made sure at least one inferencer should be set.
-        Inferencer inferencer = null;
         if (lbp != null)
-            inferencer = lbp;
-        else
-            inferencer = gibbs;
-        inferencer.setFactorGraph(factorGraph);
+            lbp.setFactorGraph(factorGraph);
+        if (gibbs != null)
+            gibbs.setFactorGraph(factorGraph);
         try {
             status = InferenceStatus.WORKING;
             if (progressPane != null)
                 progressPane.setText("Perform prior inference...");
-            inferencer.setObservation(null);
-            inferencer.runInference();
+            performInference(null, null);
             FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(factorGraph);
             fgResults.setUsedForTwoCases(usedForTwoCases);
             fgResults.storeInferenceResults(null); // Store prior result
@@ -239,8 +265,7 @@ public class InferenceRunner {
                 for (Observation observation : observations) {
                     if (progressPane != null)
                         progressPane.setText("Sample: " + observation.getName());
-                    inferencer.setObservation(observation.getVariableToAssignment());
-                    inferencer.runInference();
+                    performInference(observation.getVariableToAssignment(), observation.getName());
                     fgResults.storeInferenceResults(observation.getName());
                     // If there is no sample type, don't include to avoid a new type (null!)
                     // appears in the further analysis.
@@ -261,8 +286,7 @@ public class InferenceRunner {
                         count ++;
                         if (progressPane != null)
                             progressPane.setText("Random sample: " + count);
-                        inferencer.setObservation(observation.getVariableToAssignment());
-                        inferencer.runInference();
+                        performInference(observation.getVariableToAssignment(), "Random sample " + count);
                         fgResults.storeInferenceResults(observation.getName());
                         progressPane.setValue(count);
                         if (abort)

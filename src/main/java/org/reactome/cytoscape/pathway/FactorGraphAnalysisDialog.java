@@ -127,7 +127,7 @@ public class FactorGraphAnalysisDialog extends FIActionDialog {
     
     @Override
     protected void doOKAction() {
-        if (!dataPane.validateValues())
+        if (!dataPane.validateValues() || !algPane.commitValues())
             return;
         super.doOKAction();
     }

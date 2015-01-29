@@ -19,6 +19,7 @@ import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 
 import org.reactome.factorgraph.GibbsSampling;
+import org.reactome.factorgraph.InferenceType;
 import org.reactome.factorgraph.Inferencer;
 import org.reactome.factorgraph.LoopyBeliefPropagation;
 import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
@@ -168,6 +169,7 @@ public class InferenceAlgorithmPane extends JPanel {
             keyToValue.put("tolerance", lbp.getTolerance());
             keyToValue.put("useLogSpace", lbp.getUseLogSpace());
             keyToValue.put("dumping", lbp.getDumping());
+            keyToValue.put("inferenceType", lbp.getInferenceType());
         }
         else if (alg instanceof GibbsSampling) {
             GibbsSampling gibbs = (GibbsSampling) alg;
@@ -268,7 +270,7 @@ public class InferenceAlgorithmPane extends JPanel {
         // One of the following should be used.
         // But not both.
         private JTextField valueTF;
-        private JComboBox<Boolean> valueBox;
+        private JComboBox<Object> valueBox;
         
         public PropertyItemPane() {
         }
@@ -285,9 +287,14 @@ public class InferenceAlgorithmPane extends JPanel {
             add(nameLabel);
             if (value.getClass() == Boolean.class) {
                 // A special case
-                valueBox = new JComboBox<Boolean>();
+                valueBox = new JComboBox<Object>();
                 valueBox.addItem(Boolean.TRUE);
                 valueBox.addItem(Boolean.FALSE);
+                valueBox.setSelectedItem(value);
+                add(valueBox);
+            }
+            else if (value instanceof InferenceType) {
+                valueBox = new JComboBox<Object>(InferenceType.values());
                 valueBox.setSelectedItem(value);
                 add(valueBox);
             }
@@ -299,7 +306,7 @@ public class InferenceAlgorithmPane extends JPanel {
         }
         
         public void resetValue(Object value) {
-            if (value.getClass() == Boolean.class) 
+            if (value.getClass() == Boolean.class || value instanceof InferenceType) 
                 valueBox.setSelectedItem(value);
             else
                 valueTF.setText(value + "");
