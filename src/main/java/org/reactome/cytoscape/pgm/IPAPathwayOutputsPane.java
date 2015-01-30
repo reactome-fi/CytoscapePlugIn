@@ -569,6 +569,7 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
         realSampleToIPAs.clear();
         randomSampleToIPAs.clear();
         TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
+        tableModel.reset(); // Reset the original data if any.
         List<Double> pvalues = new ArrayList<Double>();
         if (sampleToType == null) {
             parseResults(sortedResults, 
@@ -672,8 +673,7 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
 
     private void parseResults(List<VariableInferenceResults> sortedResults,
                               TTestTableModel tableModel,
-                              List<Double> pvalues)
-            throws MathException {
+                              List<Double> pvalues) throws MathException {
         for (VariableInferenceResults varResults : sortedResults) {
             Map<String, List<Double>> sampleToProbs = varResults.getPosteriorValues();
             List<Double> realIPAs = addValueToDataset(sampleToProbs, 
@@ -739,6 +739,14 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
             };
             colHeaders = Arrays.asList(headers);
             data = new ArrayList<String[]>();
+        }
+        
+        /**
+         * Clear up the displayed data if any.
+         */
+        public void reset() {
+            data.clear();
+            fireTableDataChanged();
         }
         
         public void setSampleTypes(List<String> types) {

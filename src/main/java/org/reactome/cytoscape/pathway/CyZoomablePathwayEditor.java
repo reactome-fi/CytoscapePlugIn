@@ -44,6 +44,7 @@ import org.gk.util.GKApplicationUtilities;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
 import org.reactome.cytoscape.pgm.ObservationDataLoadPanel;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
@@ -707,6 +708,20 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
      * desktop as the normal function.
      */
     private void runFactorGraphAnalysis() {
+        // TODO: Add a dialog to ask the user if the data and algorithms should be reloaded
+        if (FactorGraphRegistry.getRegistry().getLoadedData() != null) {
+            final FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
+            analyzer.setPathwayId(pathwayEditor.getRenderable().getReactomeId());
+            analyzer.setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
+            
+            Thread t = new Thread() {
+                public void run() {
+                    analyzer.runFactorGraphAnalysis();
+                }
+            };
+            t.start();
+            return;
+        }
         FactorGraphAnalysisDialog dialog = new FactorGraphAnalysisDialog();
         dialog.setSize(625, 630);
         GKApplicationUtilities.center(dialog);

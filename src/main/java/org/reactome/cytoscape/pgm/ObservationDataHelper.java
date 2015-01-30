@@ -7,7 +7,6 @@ package org.reactome.cytoscape.pgm;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -16,9 +15,6 @@ import java.util.Set;
 
 import javax.swing.JOptionPane;
 
-import org.apache.commons.math.random.RandomData;
-import org.apache.commons.math.random.RandomDataImpl;
-import org.cytoscape.model.CyNode;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -27,6 +23,9 @@ import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Observation;
 import org.reactome.factorgraph.Variable;
 import org.reactome.factorgraph.common.DataType;
+import org.reactome.factorgraph.common.ObservationFileLoader;
+import org.reactome.factorgraph.common.ObservationFileLoader.ObservationData;
+import org.reactome.factorgraph.common.ObservationRandomizer;
 import org.reactome.factorgraph.common.PGMConfiguration;
 import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 import org.reactome.r3.util.FileUtility;
@@ -46,9 +45,8 @@ public class ObservationDataHelper {
     // For quick find variables
     protected Map<String, Variable> nameToVar;
     // In order to assign ids to new variable
-    private int maxId;
-    // Kept loaded data for randomization: data has been discretized already
-    private GeneSampleDataPoints data;
+    protected int maxId;
+    private boolean noRandom;
     
     /**
      * Default constructor is used only for subclassing.
@@ -61,6 +59,14 @@ public class ObservationDataHelper {
             throw new IllegalArgumentException("Factor graph cannot be null!");
         this.fg = fg;
         initializeProperties();
+    }
+
+    public boolean isNoRandom() {
+        return noRandom;
+    }
+
+    public void setNoRandom(boolean noRandom) {
+        this.noRandom = noRandom;
     }
 
     protected void initializeProperties() {
@@ -86,10 +92,8 @@ public class ObservationDataHelper {
                     maxId = id;
             }
         }
-        data = new GeneSampleDataPoints();
     }
     
-    @SuppressWarnings("unchecked")
     public boolean performLoadData(File dnaFile,
                                    double[] dnaThresholdValues,
                                    File geneExpFile,
@@ -100,49 +104,29 @@ public class ObservationDataHelper {
             progressPane.setTitle("Load Observation Data");
             progressPane.setIndeterminate(true);
         }
-        Map<Variable, Map<String, Integer>> dnaVarToSampleToState = null;
-        if (dnaFile != null) {
-            if (progressPane != null)
-                progressPane.setText("Loading CNV data...");
-            dnaVarToSampleToState = loadData(dnaFile, 
-                                             DataType.CNV,
-                                             dnaThresholdValues);
-        }
-        Map<Variable, Map<String, Integer>> geneExpVarToSampleToState = null;
-        if (geneExpFile != null) {
-            progressPane.setText("Loading mRNA expression data...");
-            geneExpVarToSampleToState = loadData(geneExpFile,
-                                                 DataType.mRNA_EXP,
-                                                 geneExpThresholdValues);
-        }
-        if (dnaVarToSampleToState == null && geneExpVarToSampleToState == null) {
+        // We will use a built-in ObservationFileLoader to perform data load
+        ObservationFileLoader dataLoader = new ObservationFileLoader();
+        dataLoader.setPGMConfiguration(PathwayPGMConfiguration.getConfig());
+        List<ObservationData> observationData = loadData(dnaFile,
+                                                         dnaThresholdValues,
+                                                         geneExpFile,
+                                                         geneExpThresholdValues,
+                                                         progressPane,
+                                                         dataLoader);
+        List<Observation> observations = dataLoader.getObservations();
+        if (observationData.size() == 0 || observations.size() == 0) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cannot load observation data. Inference cannot be performed.",
                                           "No Observation Data",
                                           JOptionPane.ERROR_MESSAGE);
             return false;
         }
+        // Need to re-validate FactorGraph since new factors have been added
+        fg.validatVariables();
         Map<String, String> sampleToType = null;
         if (sampleInfoFile != null) {
             progressPane.setText("Loading sample type info...");
             sampleToType = loadSampleToType(sampleInfoFile);
-        }
-        if (progressPane != null)
-            progressPane.setText("Generating observations...");
-        List<Observation> observations = null;
-        if (dnaVarToSampleToState != null && geneExpVarToSampleToState != null)
-            observations = generateObservations(dnaVarToSampleToState,
-                                                geneExpVarToSampleToState);
-        else if (dnaVarToSampleToState != null)
-            observations = generateObservations(dnaVarToSampleToState);
-        else if (geneExpVarToSampleToState != null)
-            observations = generateObservations(geneExpVarToSampleToState);
-        if (observations.size() == 0) {
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "No observation can be created. Inference cannot be performed.",
-                                          "Empty Observation",
-                                          JOptionPane.ERROR_MESSAGE);
-            return false;
         }
         if (sampleToType != null && sampleToType.size() > 0) {
             boolean correct = attachTypesToObservations(sampleToType, observations);
@@ -151,20 +135,72 @@ public class ObservationDataHelper {
         }
         FactorGraphRegistry.getRegistry().setObservations(fg, observations);
         // Even though we want to perform two-case analysis, we still need to generate
-        // random samples for p-values and FDRs calculations regrading individual samples
-        // and objects in the pathway.
-        if (progressPane != null)
-            progressPane.setText("Generating random data...");
-        List<Observation> randomData = null;
-        if (dnaVarToSampleToState != null && geneExpVarToSampleToState != null)
-            randomData = generateRandomObservations(dnaVarToSampleToState,
-                                                    geneExpVarToSampleToState);
-        else if (dnaVarToSampleToState != null)
-            randomData = generateRandomObservations(dnaVarToSampleToState);
-        else if (geneExpVarToSampleToState != null)
-            randomData = generateRandomObservations(geneExpVarToSampleToState);
-        FactorGraphRegistry.getRegistry().setRandomObservations(fg, randomData);
+        // random samples for p-values and FDRs calculations regarding individual samples
+        // and objects in the pathway. But it can be turned off by using a flag.
+        if (!noRandom) {
+            if (progressPane != null)
+                progressPane.setText("Generating random data...");
+            ObservationRandomizer randomizer = new ObservationRandomizer();
+            randomizer.setNumberOfPermutation(100);
+            randomizer.setRandomSamplePrefix(RANDOM_SAMPLE_PREFIX);
+            List<Observation> randomData = randomizer.randomize(observations,
+                                                                observationData);
+            FactorGraphRegistry.getRegistry().setRandomObservations(fg, randomData);
+        }
+        
         return true;
+    }
+
+    private List<ObservationData> loadData(File dnaFile,
+                                           double[] dnaThresholdValues,
+                                           File geneExpFile,
+                                           double[] geneExpThresholdValues,
+                                           ProgressPane progressPane,
+                                           ObservationFileLoader dataLoader) throws IOException {
+        // Check if data has been loaded already
+        List<ObservationData> observationData = FactorGraphRegistry.getRegistry().getLoadedData();
+        if (observationData == null) {
+            observationData = new ArrayList<ObservationFileLoader.ObservationData>();
+            Map<String, Map<String, Integer>> dnaSampleToGeneToState = null;
+            if (dnaFile != null) {
+                if (progressPane != null)
+                    progressPane.setText("Loading CNV data...");
+                dnaSampleToGeneToState = dataLoader.loadObservationData(dnaFile.getAbsolutePath(),
+                                                                        DataType.CNV,
+                                                                        dnaThresholdValues);
+                ObservationData data = new ObservationData();
+                data.setDataType(DataType.CNV);
+                data.setSampleToGeneToValue(dnaSampleToGeneToState);
+                observationData.add(data);
+            }
+            Map<String, Map<String, Integer>> geneExpSampleToGeneToState = null;
+            if (geneExpFile != null) {
+                progressPane.setText("Loading mRNA expression data...");
+                geneExpSampleToGeneToState = dataLoader.loadObservationData(geneExpFile.getAbsolutePath(),
+                                                                            DataType.mRNA_EXP,
+                                                                            geneExpThresholdValues);
+                ObservationData data = new ObservationData();
+                data.setDataType(DataType.mRNA_EXP);
+                data.setSampleToGeneToValue(geneExpSampleToGeneToState);
+                observationData.add(data);
+            }
+            FactorGraphRegistry.getRegistry().setLoadedData(observationData);
+        }
+        Map<String, Variable> nameToVar = getNameToVarInFactorGraph();
+        for (ObservationData data : observationData) {
+            dataLoader.addObservation(data.getSampleToGeneToValue(),
+                                      data.getDataType(),
+                                      nameToVar,
+                                      fg.getFactors());
+        }
+        return observationData;
+    }
+    
+    private Map<String, Variable> getNameToVarInFactorGraph() {
+        Map<String, Variable> nameToVar = new HashMap<String, Variable>();
+        for (Variable var : fg.getVariables())
+            nameToVar.put(var.getName(), var);
+        return nameToVar;
     }
 
     private boolean attachTypesToObservations(Map<String, String> sampleToType,
@@ -214,8 +250,11 @@ public class ObservationDataHelper {
     }
     
     private Map<String, String> loadSampleToType(File sampleFile) throws IOException {
+        Map<String, String> sampleToType = FactorGraphRegistry.getRegistry().getLoadedSampleToType();
+        if (sampleToType != null)
+            return sampleToType;
         FileUtility fu = new FileUtility();
-        Map<String, String> sampleToType = new HashMap<String, String>();
+        sampleToType = new HashMap<String, String>();
         fu.setInput(sampleFile.getAbsolutePath());
         String line = null;
         while ((line = fu.readLine()) != null) {
@@ -223,24 +262,8 @@ public class ObservationDataHelper {
             sampleToType.put(tokens[0], tokens[1]);
         }
         fu.close();
+        FactorGraphRegistry.getRegistry().setLoadedSampleToType(sampleToType);
         return sampleToType;
-    }
-    
-    private Map<Variable, Map<String, Integer>> loadData(File file,
-                                                         DataType type,
-                                                         double[] thresholdValues) throws Exception {
-        if (type == DataType.CNV) {
-            return loadData(file, 
-                            "DNA", 
-                            getFactorValues(type),
-                            thresholdValues);
-        }
-        else if (type == DataType.mRNA_EXP)
-            return loadData(file, 
-                            "mRNA",
-                            getFactorValues(type),
-                            thresholdValues);
-        return null;
     }
     
     /**
@@ -274,42 +297,6 @@ public class ObservationDataHelper {
         return observations;
     }
     
-    /**
-     * Generate a random observation data set for a passed list of variables in the map.
-     * @param varToSampleToStates
-     * @return
-     */
-    public List<Observation> generateRandomObservations(Map<Variable, Map<String, Integer>>... varToSampleToStates) {
-        Set<String> genes = new HashSet<String>();
-        for (Map<Variable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
-            for (Variable var : varToSampleToState.keySet()) {
-                String label = var.getName();
-                String[] tokens = label.split("_");
-                genes.add(tokens[0]);
-            }
-        }
-        List<Observation> rtn = new ArrayList<Observation>();
-        GeneSampleDataPoints randomData = data.generateRandomData(genes, 1000);
-        List<String> samples = randomData.getAllSamples();
-        for (String sample : samples) {
-            Observation observation = new Observation();
-            rtn.add(observation);
-            observation.setName(sample);
-            for (Map<Variable, Map<String, Integer>> varToSampleToState : varToSampleToStates) {
-                for (Variable var : varToSampleToState.keySet()) {
-                    String label  = var.getName();
-                    String[] tokens = label.split("_");
-                    String gene = tokens[0];
-                    Integer state = randomData.getState(gene, sample, tokens[1]);
-                    if (state == null)
-                        continue;
-                    observation.addAssignment(var, state);
-                }
-            }
-        }
-        return rtn;
-    }
-    
     protected List<String> parseSamples(String line) {
         String[] tokens = line.split("\t");
         List<String> samples = new ArrayList<String>();
@@ -318,270 +305,11 @@ public class ObservationDataHelper {
         return samples;
     }
 
-    protected Map<Variable, Map<String, Integer>> loadData(File file, 
-                                                           String nodeType, 
-                                                           List<Double> factorValues,
-                                                           double[] thresholdValues) throws IOException {
-        FileUtility fu = new FileUtility();
-        fu.setInput(file.getAbsolutePath());
-        // First line should be header
-        String line = fu.readLine();
-        List<String> samples = parseSamples(line);
-        int index = 0;
-        // Keep these mappings for layout after an updateView.
-        // Otherwise, a null exception will be thrown because there
-        // is no view for newly added CyNode
-        final Map<CyNode, CyNode> varNodeToFactorNode = new HashMap<CyNode, CyNode>();
-        final Map<CyNode, CyNode> factorNodeToObsNode = new HashMap<CyNode, CyNode>();
-        Map<Variable, Map<String, Integer>> variableToSampleToState = new HashMap<Variable, Map<String,Integer>>();
-        while ((line = fu.readLine()) != null) {
-            // Cache data for randomization purpose
-            parseData(line, 
-                      samples,
-                      nodeType, 
-                      thresholdValues);
-            index = line.indexOf("\t");
-            String gene = line.substring(0, index);
-            String varName = gene + "_" + nodeType;
-            // Check if a Variable node exists
-            Variable var = nameToVar.get(varName);
-            if (var == null)
-                continue; // Nothing to be done
-            // Just use the first DB_ID as its label
-            Variable obsVar = createObsVariable(gene, 
-                                                nodeType);
-            Factor factor = createObsFactor(obsVar, 
-                                            var, 
-                                            factorValues);
-            Map<String, Integer> sampleToState = data.getSampleToState(gene,
-                                                                       nodeType);
-            variableToSampleToState.put(obsVar, sampleToState);
-        }
-        fu.close();
-        fg.validatVariables();
-        return variableToSampleToState;
-    }
-    
-    protected void parseData(String line,
-                             List<String> samples,
-                             String nodeType,
-                             double[] thresholdValues) {
-        String[] tokens = line.split("\t");
-        String gene = tokens[0];
-        double value = 0.0d;
-        for (int i = 1; i < tokens.length; i++) {
-            if (tokens[i].length() == 0 || tokens[i].toLowerCase().equals("na"))
-                continue;
-            String sample = samples.get(i - 1);
-            value = Double.parseDouble(tokens[i]);
-            int state = discretize(value, thresholdValues);
-            data.addGeneSampleDataPoint(gene, 
-                                        sample,
-                                        nodeType,
-                                        (byte)state);
-        }
-    }
-    
-    private int discretize(double value,
-                           double[] thresholdValues) {
-        // A simple discretizing method
-        if (value >= thresholdValues[thresholdValues.length - 1]) {
-            return thresholdValues.length;
-        }
-        for (int j = 0; j < thresholdValues.length; j++) {
-            if (value < thresholdValues[j]) {
-                return j;
-            }
-        }
-        return 0;
-    }
-    
-    protected Factor createObsFactor(Variable obsVar,
-                                   Variable hiddenVar,
-                                   List<Double> factorValues) {
-        Factor factor = new Factor();
-        factor.setId(++maxId + "");
-        List<Variable> varList = new ArrayList<Variable>();
-        varList.add(obsVar);
-        varList.add(hiddenVar);
-        factor.setVariables(varList);
-        factor.setValues(factorValues);
-        String factorName = hiddenVar.getName() + "->" + obsVar.getName();
-        factor.setName(factorName);
-        fg.addFactor(factor);
-        return factor;
-    }
-    
-    protected Variable createObsVariable(String gene,
-                                       String type) {
-        Variable obsVar = new Variable(PathwayPGMConfiguration.getConfig().getNumberOfStates());
-        obsVar.setId(++maxId + "");
-        String label = gene + "_" + type + "_obs";
-        obsVar.setName(label);
-        return obsVar;
-    }
-    
-    private List<Double> getFactorValues(DataType dataType) {
+    protected List<Double> getFactorValues(DataType dataType) {
         PGMConfiguration config = PathwayPGMConfiguration.getConfig();
         Map<DataType, double[]> typeToFactorValue = config.getTypeToFactorValues();
         double[] values = typeToFactorValue.get(dataType);
         return PlugInUtilities.convertArrayToList(values);
-    }
-    
-    protected Map<String, Integer> getSampleToState(String gene, String nodeType) {
-        return data.getSampleToState(gene, nodeType);
-    }
-    
-    /**
-     * The following three simple classes are used to hold loaded gene to sample to states to avoid
-     * to use a complicated parameterized map.
-     * @author gwu
-     *
-     */
-    private class GeneSampleDataPoints {
-        private Map<String, SampleDataPoints> geneToSampleDataPoints;
-        
-        public GeneSampleDataPoints() {
-        }
-        
-        public Map<String, Integer> getSampleToState(String gene, 
-                                                     String type) {
-            Map<String, Integer> sampleToState = new HashMap<String, Integer>();
-            if (geneToSampleDataPoints != null) {
-                SampleDataPoints sampleDataPoints = geneToSampleDataPoints.get(gene);
-                if (sampleDataPoints != null && sampleDataPoints.sampleToDataPoints != null) {
-                    for (String sample : sampleDataPoints.sampleToDataPoints.keySet()) {
-                        DataPoints dataPoints = sampleDataPoints.sampleToDataPoints.get(sample);
-                        if (dataPoints == null || dataPoints.getState(type) == null)
-                            continue;
-                        sampleToState.put(sample, (int)dataPoints.getState(type));
-                    }
-                }
-            }
-            return sampleToState;
-        }
-        
-        public Integer getState(String gene,
-                                String sample,
-                                String type) {
-            SampleDataPoints sampleDataPoints = geneToSampleDataPoints.get(gene);
-            if (sampleDataPoints == null)
-                return null;
-            DataPoints dataPoints = sampleDataPoints.sampleToDataPoints.get(sample);
-            if (dataPoints == null)
-                return null;
-            Byte state = dataPoints.getState(type);
-            if (state == null)
-                return null;
-            return new Integer(state);
-        }
-        
-        /**
-         * Do a random sampling. The implementation of this method doesn't keep the integrity of data in a
-         * sample. In other words, the data in a random sample is mixed from multiple samples.
-         * @return
-         */
-        public GeneSampleDataPoints generateRandomData(Collection<String> checkGenes,
-                                                       int sampleCount) {
-            GeneSampleDataPoints rtn = new GeneSampleDataPoints();
-            List<String> geneList = new ArrayList<String>(geneToSampleDataPoints.keySet());
-            List<String> sampleList = getAllSamples();
-            RandomData randomizer = new RandomDataImpl();
-            Map<String, SampleDataPoints> randomGeneMap = new HashMap<String, ObservationDataHelper.SampleDataPoints>();
-            rtn.geneToSampleDataPoints = randomGeneMap;
-            int randomGeneIndex = 0;
-            int randomSampleIndex = 0;
-            for (String gene : checkGenes) {
-                SampleDataPoints randomSampleDataPoints = new SampleDataPoints();
-                Map<String, DataPoints> randomSampleMap = new HashMap<String, ObservationDataHelper.DataPoints>();
-                randomSampleDataPoints.sampleToDataPoints = randomSampleMap;
-                randomGeneMap.put(gene, randomSampleDataPoints);
-                for (int i = 0; i < sampleCount; i++) {
-                    String sample = RANDOM_SAMPLE_PREFIX + i;
-                    // Pick a random sample
-                    randomSampleIndex = randomizer.nextInt(0, sampleList.size() - 1);
-                    String sample1 = sampleList.get(randomSampleIndex);
-                    // Pick a random gene
-                    randomGeneIndex = randomizer.nextInt(0, geneList.size() - 1);
-                    String gene1 = geneList.get(randomGeneIndex);
-                    // Based on random gene and sample, pick up a DataPoints object, which should be random.
-                    SampleDataPoints sampleDataPoint1 = geneToSampleDataPoints.get(gene1);
-                    DataPoints dataPoint1 = sampleDataPoint1.sampleToDataPoints.get(sample1);
-                    randomSampleMap.put(sample, dataPoint1);
-                }
-            }
-            return rtn;
-        }
-
-        private List<String> getAllSamples() {
-            // Get all samples
-            Set<String> samples = new HashSet<String>();
-            for (String gene : geneToSampleDataPoints.keySet()) {
-                SampleDataPoints sampleDataPoints = geneToSampleDataPoints.get(gene);
-                samples.addAll(sampleDataPoints.sampleToDataPoints.keySet());
-            }
-            List<String> sampleList = new ArrayList<String>(samples);
-            return sampleList;
-        }
-        
-        public void addGeneSampleDataPoint(String gene,
-                                           String sample,
-                                           String type,
-                                           Byte state) {
-            if (geneToSampleDataPoints == null)
-                geneToSampleDataPoints = new HashMap<String, ObservationDataHelper.SampleDataPoints>();
-            SampleDataPoints sampleDataPoints = geneToSampleDataPoints.get(gene);
-            if (sampleDataPoints == null) {
-                sampleDataPoints = new SampleDataPoints();
-                geneToSampleDataPoints.put(gene, sampleDataPoints);
-            }
-            sampleDataPoints.addSampleDataPoint(sample, type, state);
-        }
-    }
-    
-    private class SampleDataPoints {
-        private Map<String, DataPoints> sampleToDataPoints;
-        
-        public SampleDataPoints() {
-        }
-        
-        public void addSampleDataPoint(String sample,
-                                       String type,
-                                       Byte state) {
-            if (sampleToDataPoints == null)
-                sampleToDataPoints = new HashMap<String, ObservationDataHelper.DataPoints>();
-            DataPoints dataPoints = sampleToDataPoints.get(sample);
-            if (dataPoints == null) {
-                dataPoints = new DataPoints();
-                sampleToDataPoints.put(sample, dataPoints);
-            }
-            dataPoints.addTypeToValue(type, state);
-        }
-    }
-    
-    /**
-     * A simple data structure to store a gene based data.
-     * @author gwu
-     *
-     */
-    private class DataPoints {
-        // Type should be DNA or mRNA etc.
-        private Map<String, Byte> typeToState;
-        
-        public DataPoints() {
-        }
-        
-        public void addTypeToValue(String type, Byte state) {
-            if (typeToState == null)
-                typeToState = new HashMap<String, Byte>();
-            typeToState.put(type, state);
-        }
-        
-        public Byte getState(String type) {
-            if (typeToState == null)
-                return null;
-            return typeToState.get(type);
-        }
     }
     
 }

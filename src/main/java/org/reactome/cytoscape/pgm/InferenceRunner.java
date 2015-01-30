@@ -23,6 +23,7 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.GibbsSampling;
 import org.reactome.factorgraph.InferenceCannotConvergeException;
+import org.reactome.factorgraph.InferenceType;
 import org.reactome.factorgraph.Inferencer;
 import org.reactome.factorgraph.LoopyBeliefPropagation;
 import org.reactome.factorgraph.Observation;
@@ -219,14 +220,14 @@ public class InferenceRunner {
                 lbp.runInference();
             }
             catch(InferenceCannotConvergeException e) {
+                if (gibbs == null || ((LoopyBeliefPropagation)lbp).getInferenceType() == InferenceType.MAX_PRODUCT)
+                    throw e; // Gibbs cannot support MAX_PRODUCT now.
                 if (gibbs != null) { // Try switch to Gibbs automatically if it is set.
                     progressPane.setText("Use Gibbs for " + 
-                                         (sample == null ? " prior." : sample + "."));
+                                         (sample == null ? " prior" : sample));
                     gibbs.setObservation(varToState);
                     gibbs.runInference();
                 }
-                else
-                    throw e;
             }
         }
         else { // Only Gibbs is set

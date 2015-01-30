@@ -4,6 +4,7 @@
  */
 package org.reactome.cytoscape.pgm;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +15,9 @@ import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.Inferencer;
 import org.reactome.factorgraph.Observation;
+import org.reactome.factorgraph.common.ObservationFileLoader.ObservationData;
 import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 
 
@@ -32,6 +35,11 @@ public class FactorGraphRegistry {
     // For observations
     private Map<FactorGraph, List<Observation>> fgToObservations;
     private Map<FactorGraph, List<Observation>> fgToRandomObservations;
+    // Cache loaded data
+    private List<ObservationData> loadedData;
+    private Map<String, String> loadedSampleToType;
+    private File sampleInfoFile; // The above map should be loaded from this file
+    private List<Inferencer> loadedInferencer;
     
     public static final FactorGraphRegistry getRegistry() {
         if (registry == null)
@@ -77,6 +85,38 @@ public class FactorGraphRegistry {
         }
     }
     
+    public File getSampleInfoFile() {
+        return sampleInfoFile;
+    }
+
+    public void setTwoCasesSampleInfoFile(File sampleInfoFile) {
+        this.sampleInfoFile = sampleInfoFile;
+    }
+    
+    public List<ObservationData> getLoadedData() {
+        return loadedData;
+    }
+
+    public void setLoadedData(List<ObservationData> loadedData) {
+        this.loadedData = loadedData;
+    }
+
+    public Map<String, String> getLoadedSampleToType() {
+        return loadedSampleToType;
+    }
+
+    public void setLoadedSampleToType(Map<String, String> loadedSampleToType) {
+        this.loadedSampleToType = loadedSampleToType;
+    }
+
+    public List<Inferencer> getLoadedAlgorithms() {
+        return loadedInferencer;
+    }
+
+    public void setLoadedAlgorithms(List<Inferencer> loadedInferencer) {
+        this.loadedInferencer = loadedInferencer;
+    }
+
     public void registerNetworkToFactorGraph(CyNetwork network, FactorGraph pfg) {
         networkToFg.put(network, pfg);
     }

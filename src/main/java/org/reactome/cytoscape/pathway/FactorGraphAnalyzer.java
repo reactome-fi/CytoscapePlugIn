@@ -12,6 +12,7 @@ import javax.swing.JOptionPane;
 
 import org.gk.render.RenderablePathway;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.InferenceRunner;
 import org.reactome.cytoscape.pgm.ObservationDataHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -33,9 +34,6 @@ public class FactorGraphAnalyzer {
     private double[] geneExpThresholdValues;
     private File cnvFile;
     private double[] cnvThresholdValues;
-    // If this file is not null, two-cases analysis should be performed
-    private File sampleInfoFile;
-    private List<Inferencer> algorithms;
     
     /**
      * Default constructor.
@@ -44,11 +42,11 @@ public class FactorGraphAnalyzer {
     }
     
     public File getSampleInfoFile() {
-        return sampleInfoFile;
+        return FactorGraphRegistry.getRegistry().getSampleInfoFile();
     }
 
     public void setTwoCasesSampleInfoFile(File sampleInfoFile) {
-        this.sampleInfoFile = sampleInfoFile;
+        FactorGraphRegistry.getRegistry().setTwoCasesSampleInfoFile(sampleInfoFile);
     }
 
     public File getGeneExpFile() {
@@ -84,7 +82,11 @@ public class FactorGraphAnalyzer {
     }
 
     public void setAlgorithms(List<Inferencer> algorithms) {
-        this.algorithms = algorithms;
+        FactorGraphRegistry.getRegistry().setLoadedAlgorithms(algorithms);
+    }
+    
+    public List<Inferencer> getAlgorithms() {
+        return FactorGraphRegistry.getRegistry().getLoadedAlgorithms();
     }
 
     public Long getPathwayId() {
@@ -132,11 +134,12 @@ public class FactorGraphAnalyzer {
             
             progressPane.setText("Loading observation data...");
             ObservationDataHelper dataHelper = new ObservationDataHelper(factorGraph);
+            dataHelper.setNoRandom(false);
             boolean correct = dataHelper.performLoadData(cnvFile,
                                                          cnvThresholdValues, 
                                                          geneExpFile, 
                                                          geneExpThresholdValues,
-                                                         sampleInfoFile,
+                                                         getSampleInfoFile(),
                                                          progressPane);
             if (!correct) {
                 progressPane.setText("Wrong in data loading.");
@@ -148,9 +151,10 @@ public class FactorGraphAnalyzer {
             progressPane.setTitle("Perform inference...");
             InferenceRunner inferenceRunner = new InferenceRunner();
             inferenceRunner.setFactorGraph(factorGraph);
-            inferenceRunner.setUsedForTwoCases(sampleInfoFile != null);
+            inferenceRunner.setUsedForTwoCases(getSampleInfoFile() != null);
             inferenceRunner.setProgressPane(progressPane);
-            inferenceRunner.setAlgorithms(algorithms);
+            inferenceRunner.setAlgorithms(FactorGraphRegistry.getRegistry().getLoadedAlgorithms());
+            // Now call for inference
             inferenceRunner.performInference(true);
             
             progressPane.setText("Analysis is done!");
