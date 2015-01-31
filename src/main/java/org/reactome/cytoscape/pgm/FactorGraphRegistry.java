@@ -5,7 +5,9 @@
 package org.reactome.cytoscape.pgm;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +19,8 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Inferencer;
 import org.reactome.factorgraph.Observation;
+import org.reactome.factorgraph.common.DataType;
+import org.reactome.factorgraph.common.ObservationFileLoader;
 import org.reactome.factorgraph.common.ObservationFileLoader.ObservationData;
 import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 
@@ -36,7 +40,9 @@ public class FactorGraphRegistry {
     private Map<FactorGraph, List<Observation>> fgToObservations;
     private Map<FactorGraph, List<Observation>> fgToRandomObservations;
     // Cache loaded data
-    private List<ObservationData> loadedData;
+    // Key is a concatenated string based on file name and threshold values
+    // Most likely such a key should be unique.
+    private Map<String, ObservationData> keyToLoadedData;
     private Map<String, String> loadedSampleToType;
     private File sampleInfoFile; // The above map should be loaded from this file
     private List<Inferencer> loadedInferencer;
@@ -55,6 +61,7 @@ public class FactorGraphRegistry {
         fgToResults = new HashMap<FactorGraph, FactorGraphInferenceResults>();
         fgToObservations = new HashMap<FactorGraph, List<Observation>>();
         fgToRandomObservations = new HashMap<FactorGraph, List<Observation>>();
+        keyToLoadedData = new HashMap<String, ObservationFileLoader.ObservationData>();
         // If a network is deleted, the cached factor graph should be 
         // removed automatically. Use the following listener, instead of
         // NetworkDestroyedListener so that the Network to be destroyed can be
@@ -94,11 +101,61 @@ public class FactorGraphRegistry {
     }
     
     public List<ObservationData> getLoadedData() {
-        return loadedData;
+        return new ArrayList<ObservationData>(keyToLoadedData.values());
     }
-
-    public void setLoadedData(List<ObservationData> loadedData) {
-        this.loadedData = loadedData;
+    
+    /**
+     * Call this method to check if data and algorithm have been set.
+     * @return
+     */
+    public boolean isDataLoaded() {
+        return keyToLoadedData.size() > 0 && loadedInferencer != null && loadedInferencer.size() > 0;
+    }
+    
+    public void cacheLoadedData(File file,
+                                double[] threshold,
+                                ObservationData data) {
+        // To save memory, we will cache one data for one DataType only
+        for (Iterator<String> it = keyToLoadedData.keySet().iterator(); it.hasNext(); ) {
+            String key = it.next();
+            ObservationData tmp = keyToLoadedData.get(key);
+            if (tmp.getDataType() == data.getDataType())
+                it.remove();
+        }
+        String key = generateKeyForData(file, threshold);
+        keyToLoadedData.put(key, data);
+    }
+    
+    public ObservationData getLoadedData(File file,
+                                         double[] threshold) {
+        String key = generateKeyForData(file, threshold);
+        return keyToLoadedData.get(key);
+    }
+    
+    /**
+     * Get the file for cached data.
+     * @param dataType
+     * @return
+     */
+    public String getLoadedDataFileName(DataType dataType) {
+        for (Iterator<String> it = keyToLoadedData.keySet().iterator(); it.hasNext(); ) {
+            String key = it.next();
+            ObservationData tmp = keyToLoadedData.get(key);
+            if (tmp.getDataType() == dataType) {
+                String[] tokens = key.split("::");
+                return tokens[0];
+            }
+        }
+        return null;
+    }
+    
+    private String generateKeyForData(File file, double[] threshold) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(file.getAbsolutePath());
+        for (double value : threshold) {
+            builder.append("::").append(value);
+        }
+        return builder.toString();
     }
 
     public Map<String, String> getLoadedSampleToType() {

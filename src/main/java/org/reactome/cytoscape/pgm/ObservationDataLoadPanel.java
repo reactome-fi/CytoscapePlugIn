@@ -116,7 +116,8 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         font = font.deriveFont(Font.ITALIC, font.getSize() - 1);
         ta.setFont(font);
         ta.setText("Note: A sample information file should be a text file: one line for one sample containing "
-                 + "sample name and type separated by a tab, two types only, and no title line.");
+                 + "sample name and type separated by a tab, two types only, and no title line. Your analysis "
+                 + "will be performed against samples in this file.");
         constraints.gridx = 0;
         constraints.gridy = 2;
         constraints.gridwidth = 3;

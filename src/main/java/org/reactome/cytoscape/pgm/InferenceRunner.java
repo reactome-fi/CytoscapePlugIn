@@ -264,6 +264,10 @@ public class InferenceRunner {
                 progressPane.setMinimum(0);
                 int count = 0;
                 for (Observation observation : observations) {
+                    // If this is used for two cases and there is no type information for the observation
+                    // the inference will not be performed for it.
+                    if (usedForTwoCases && observation.getAnnoation() == null)
+                        continue; 
                     if (progressPane != null)
                         progressPane.setText("Sample: " + observation.getName());
                     performInference(observation.getVariableToAssignment(), observation.getName());

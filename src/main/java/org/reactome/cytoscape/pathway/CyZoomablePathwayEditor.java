@@ -708,19 +708,27 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
      * desktop as the normal function.
      */
     private void runFactorGraphAnalysis() {
-        // TODO: Add a dialog to ask the user if the data and algorithms should be reloaded
-        if (FactorGraphRegistry.getRegistry().getLoadedData() != null) {
-            final FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
-            analyzer.setPathwayId(pathwayEditor.getRenderable().getReactomeId());
-            analyzer.setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
-            
-            Thread t = new Thread() {
-                public void run() {
-                    analyzer.runFactorGraphAnalysis();
-                }
-            };
-            t.start();
-            return;
+        if (FactorGraphRegistry.getRegistry().isDataLoaded()) {
+            int reply = JOptionPane.showConfirmDialog(this,
+                                                      "Data and algorithms have been loaded previously. Do you want to reload them?",
+                                                      "Reload Data and Algorithms?",
+                                                      JOptionPane.YES_NO_CANCEL_OPTION);
+            if (reply == JOptionPane.CANCEL_OPTION)
+                return; 
+            if (reply == JOptionPane.NO_OPTION) { // There is no need to reload data.
+                final FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
+                analyzer.setPathwayId(pathwayEditor.getRenderable().getReactomeId());
+                analyzer.setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
+                
+                Thread t = new Thread() {
+                    public void run() {
+                        analyzer.runFactorGraphAnalysis();
+                    }
+                };
+                t.start();
+                return;
+            }
+            // If Yes, the following code will be used.
         }
         FactorGraphAnalysisDialog dialog = new FactorGraphAnalysisDialog();
         dialog.setSize(625, 630);

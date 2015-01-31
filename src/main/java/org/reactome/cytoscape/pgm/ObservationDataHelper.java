@@ -159,7 +159,7 @@ public class ObservationDataHelper {
                                            ObservationFileLoader dataLoader) throws IOException {
         // Check if data has been loaded already
         List<ObservationData> observationData = FactorGraphRegistry.getRegistry().getLoadedData();
-        if (observationData == null) {
+        if (observationData == null || observationData.size() == 0) {
             observationData = new ArrayList<ObservationFileLoader.ObservationData>();
             Map<String, Map<String, Integer>> dnaSampleToGeneToState = null;
             if (dnaFile != null) {
@@ -172,6 +172,7 @@ public class ObservationDataHelper {
                 data.setDataType(DataType.CNV);
                 data.setSampleToGeneToValue(dnaSampleToGeneToState);
                 observationData.add(data);
+                FactorGraphRegistry.getRegistry().cacheLoadedData(dnaFile, dnaThresholdValues, data);
             }
             Map<String, Map<String, Integer>> geneExpSampleToGeneToState = null;
             if (geneExpFile != null) {
@@ -183,8 +184,8 @@ public class ObservationDataHelper {
                 data.setDataType(DataType.mRNA_EXP);
                 data.setSampleToGeneToValue(geneExpSampleToGeneToState);
                 observationData.add(data);
+                FactorGraphRegistry.getRegistry().cacheLoadedData(geneExpFile, geneExpThresholdValues, data);
             }
-            FactorGraphRegistry.getRegistry().setLoadedData(observationData);
         }
         Map<String, Variable> nameToVar = getNameToVarInFactorGraph();
         for (ObservationData data : observationData) {

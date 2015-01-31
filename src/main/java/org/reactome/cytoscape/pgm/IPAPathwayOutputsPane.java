@@ -137,9 +137,8 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
         JSplitPane jsp = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
                                         boxPlotPane,
                                         lowerPane);
-        jsp.setDividerLocation(0.5d);
-        jsp.setDividerLocation(250); // Need to set an integer. Otherwise, the plot is too narrow.
-        boxPlotPane.setPreferredSize(new Dimension(250, 400));
+        jsp.setDividerLocation(0.50d);
+        jsp.setDividerLocation(150); // Give the plot 150 px initially
         
         // Add a JSplitPane for the table and a new graph pane to display graphs
         for (int i = 0; i < getComponentCount(); i++) {

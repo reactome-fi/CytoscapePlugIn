@@ -166,7 +166,7 @@ public class FactorGraphAnalyzer {
                                           "Error in Graphical Model Analysis",
                                           JOptionPane.ERROR_MESSAGE);
             progressPane.setVisible(false);
-            System.err.println(e);
+            e.printStackTrace();
         }
     }
     
