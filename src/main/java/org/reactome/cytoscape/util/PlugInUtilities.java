@@ -15,10 +15,8 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JDesktopPane;
@@ -62,8 +60,6 @@ import org.jfree.chart.plot.CategoryMarker;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
-import org.reactome.factorgraph.Factor;
-import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 
 /**
@@ -81,43 +77,6 @@ public class PlugInUtilities {
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
 
     public PlugInUtilities() {
-    }
-    
-    /**
-     * Get a set of Variables that have been linked to outputs for the passed
-     * FactorGraph object.
-     * @param fg
-     * @return
-     */
-    public static Set<Variable> getOutputVariables(FactorGraph fg) {
-        Set<Variable> outputs = new HashSet<Variable>();
-        for (Variable var : fg.getVariables()) {
-            if (isCentralDogmaVariable(var))
-                continue;
-            List<Factor> factors = var.getFactors();
-            for (Factor factor : factors) {
-                List<Variable> variables = factor.getVariables();
-                // If the first variable is a reaction output
-                if (variables == null || variables.size() == 0)
-                    continue;
-                Variable var1 = variables.get(0);
-                if (var1 == var)
-                    continue; // Don't count itself
-                String varName1 = var1.getName();
-                if (varName1.matches("(\\d+)_OUTPUT"))
-                    outputs.add(var);
-            }
-        }
-        return outputs;
-    }
-    
-    private static boolean isCentralDogmaVariable(Variable var) {
-        String varName = var.getName();
-        if (varName.endsWith("_protein") ||
-            varName.endsWith("_DNA") ||
-            varName.endsWith("_mRNA"))
-            return true;
-        return false;
     }
     
     public static double[] convertDoubleListToArray(List<Double> list) {

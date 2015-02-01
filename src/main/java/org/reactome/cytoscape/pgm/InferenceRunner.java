@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JOptionPane;
 
@@ -36,6 +37,7 @@ import org.reactome.factorgraph.Variable;
  */
 public class InferenceRunner {
     private FactorGraph factorGraph;
+    private Set<Variable> outputVars;
     // Two inferencer
     private Inferencer lbp;
     private Inferencer gibbs;
@@ -76,6 +78,10 @@ public class InferenceRunner {
 
     public void setFactorGraph(FactorGraph factorGraph) {
         this.factorGraph = factorGraph;
+    }
+    
+    public void setOutputVariables(Set<Variable> variables) {
+        this.outputVars = variables;
     }
 
     public void setAlgorithms(List<Inferencer> algorithms) {
@@ -134,7 +140,7 @@ public class InferenceRunner {
         else
             valuePane = new IPASampleAnalysisPane(title);
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        valuePane.setInferenceResults(fgResults);
+        valuePane.setInferenceResults(fgResults, outputVars);
 
         // Show outputs results
         title = "IPA Pathway Analysis";

@@ -46,6 +46,9 @@ public class FactorGraphRegistry {
     private Map<String, String> loadedSampleToType;
     private File sampleInfoFile; // The above map should be loaded from this file
     private List<Inferencer> loadedInferencer;
+    // Cache escape names to avoid displaying
+    private boolean needEscapeNameDialog = true;
+    private String escapeNames;
     
     public static final FactorGraphRegistry getRegistry() {
         if (registry == null)
@@ -92,6 +95,22 @@ public class FactorGraphRegistry {
         }
     }
     
+    public boolean isNeedEscapeNameDialog() {
+        return needEscapeNameDialog;
+    }
+
+    public void setNeedEscapeNameDialog(boolean needEscapeNameDialog) {
+        this.needEscapeNameDialog = needEscapeNameDialog;
+    }
+
+    public String getEscapeNames() {
+        return escapeNames;
+    }
+
+    public void setEscapeNames(String escapeNames) {
+        this.escapeNames = escapeNames;
+    }
+
     public File getSampleInfoFile() {
         return sampleInfoFile;
     }

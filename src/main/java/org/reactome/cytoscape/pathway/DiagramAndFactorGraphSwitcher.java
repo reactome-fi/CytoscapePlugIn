@@ -154,6 +154,9 @@ public class DiagramAndFactorGraphSwitcher {
     }
     
     private String getEscapeNames() {
+        if (!FactorGraphRegistry.getRegistry().isNeedEscapeNameDialog() &&
+            FactorGraphRegistry.getRegistry().getEscapeNames() != null)
+            return FactorGraphRegistry.getRegistry().getEscapeNames();
         final EscapeNameDialog dialog = new EscapeNameDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
         SwingUtilities.invokeLater(new Runnable() {
             
@@ -167,7 +170,9 @@ public class DiagramAndFactorGraphSwitcher {
         dialog.setVisible(true);
         if (!dialog.isOkClicked)
             return null;
-        return dialog.getEscapeList();
+        String names = dialog.getEscapeList();
+        FactorGraphRegistry.getRegistry().setEscapeNames(names);
+        return names;
     }
     
     private void convertPathwayToFactorGraph(Long pathwayId,

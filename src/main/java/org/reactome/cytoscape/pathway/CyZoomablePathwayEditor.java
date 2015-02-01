@@ -719,7 +719,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 final FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
                 analyzer.setPathwayId(pathwayEditor.getRenderable().getReactomeId());
                 analyzer.setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
-                
+                // Don't show escape name dialog
+                FactorGraphRegistry.getRegistry().setNeedEscapeNameDialog(false);
                 Thread t = new Thread() {
                     public void run() {
                         analyzer.runFactorGraphAnalysis();
@@ -730,6 +731,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             }
             // If Yes, the following code will be used.
         }
+        FactorGraphRegistry.getRegistry().setNeedEscapeNameDialog(true);
         FactorGraphAnalysisDialog dialog = new FactorGraphAnalysisDialog();
         dialog.setSize(625, 630);
         GKApplicationUtilities.center(dialog);
