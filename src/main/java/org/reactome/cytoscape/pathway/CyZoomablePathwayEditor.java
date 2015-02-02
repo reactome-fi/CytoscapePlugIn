@@ -282,6 +282,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             });
             popup.addSeparator();
             popup.add(runPGMAnalysis);
+            // Output analysis results
+            // Input analysis results
         }
         else {
             // Convert as a factor graph

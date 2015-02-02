@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +47,6 @@ public class ObservationDataHelper {
     protected Map<String, Variable> nameToVar;
     // In order to assign ids to new variable
     protected int maxId;
-    private boolean noRandom;
     
     /**
      * Default constructor is used only for subclassing.
@@ -59,14 +59,6 @@ public class ObservationDataHelper {
             throw new IllegalArgumentException("Factor graph cannot be null!");
         this.fg = fg;
         initializeProperties();
-    }
-
-    public boolean isNoRandom() {
-        return noRandom;
-    }
-
-    public void setNoRandom(boolean noRandom) {
-        this.noRandom = noRandom;
     }
 
     protected void initializeProperties() {
@@ -129,7 +121,7 @@ public class ObservationDataHelper {
             sampleToType = loadSampleToType(sampleInfoFile);
         }
         if (sampleToType != null && sampleToType.size() > 0) {
-            boolean correct = attachTypesToObservations(sampleToType, observations);
+            boolean correct = filterObservationsForTypes(sampleToType, observations);
             if (!correct)
                 return false;
         }
@@ -137,7 +129,7 @@ public class ObservationDataHelper {
         // Even though we want to perform two-case analysis, we still need to generate
         // random samples for p-values and FDRs calculations regarding individual samples
         // and objects in the pathway. But it can be turned off by using a flag.
-        if (!noRandom) {
+        if (sampleInfoFile == null) {
             if (progressPane != null)
                 progressPane.setText("Generating random data...");
             ObservationRandomizer randomizer = new ObservationRandomizer();
@@ -204,15 +196,24 @@ public class ObservationDataHelper {
         return nameToVar;
     }
 
-    private boolean attachTypesToObservations(Map<String, String> sampleToType,
-                                           List<Observation> observations) {
-        if (sampleToType == null || sampleToType.size() == 0)
-            return true; // Nothing to be done.
-        // Attach sample type information to observation as annotation
+    private boolean filterObservationsForTypes(Map<String, String> sampleToType,
+                                               List<Observation> observations) {
+        if (sampleToType == null || sampleToType.size() == 0) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Cannot find any samples in the sample information file.",
+                                          "Wrong Sample Info File",
+                                          JOptionPane.ERROR_MESSAGE);
+            return false; // Nothing to be done.
+        }
+        // Filter observations and attach sample information.
         Map<String, Integer> typeToCount = new HashMap<String, Integer>();
-        for (Observation observation : observations) {
+        for (Iterator<Observation> it = observations.iterator(); it.hasNext();) {
+            Observation observation = it.next();
             String type = sampleToType.get(observation.getName());
-            if (type != null) {
+            if (type == null) {
+                it.remove(); // If there is no type available for this Observation, just remove it.
+            }
+            else {
                 observation.setAnnoation(type);
                 Integer count = typeToCount.get(type);
                 if (count == null)

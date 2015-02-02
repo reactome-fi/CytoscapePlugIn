@@ -19,6 +19,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.gk.util.DialogControlPane;
+import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
 import org.reactome.cytoscape.pgm.ObservationDataLoadPanel;
 import org.reactome.cytoscape.service.FIActionDialog;
@@ -78,7 +79,9 @@ public class FactorGraphAnalysisDialog extends FIActionDialog {
         controlPane = new DialogControlPane();
         getContentPane().add(controlPane, BorderLayout.SOUTH);
         okBtn = controlPane.getOKBtn();
-        okBtn.setEnabled(false); // Default should be disabled.
+        // If the data has been loaded before, we should enable the OKbtn
+        // Default should be disabled.
+        okBtn.setEnabled(FactorGraphRegistry.getRegistry().isDataLoaded()); 
         okBtn.addActionListener(new ActionListener() {
             
             @Override

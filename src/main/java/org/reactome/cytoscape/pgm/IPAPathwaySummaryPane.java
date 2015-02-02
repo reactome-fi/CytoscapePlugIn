@@ -7,7 +7,6 @@ package org.reactome.cytoscape.pgm;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Cursor;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Rectangle;
@@ -67,6 +66,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
 import org.reactome.r3.util.InteractionUtilities;
 import org.reactome.r3.util.MathUtilities;
@@ -75,7 +75,7 @@ import org.reactome.r3.util.MathUtilities;
  * @author gwu
  *
  */
-public class IPAPathwayOutputsPane extends IPAValueTablePane {
+public class IPAPathwaySummaryPane extends IPAValueTablePane {
     
     private DefaultBoxAndWhiskerCategoryDataset dataset;
     private CategoryPlot plot;
@@ -98,7 +98,7 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
     /**
      * @param title
      */
-    public IPAPathwayOutputsPane(String title) {
+    public IPAPathwaySummaryPane(String title) {
         super(title);
     }        
     
@@ -404,7 +404,7 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
         // Want to control data update by this object self to avoid
         // conflict exception.
         dataset.setNotify(false);
-        CategoryAxis xAxis = new CategoryAxis("Output Variable");
+        CategoryAxis xAxis = new CategoryAxis("Variable");
         NumberAxis yAxis = new NumberAxis("IPA");
         BoxAndWhiskerRenderer renderer = new BoxAndWhiskerRenderer();
         // We want to show the variable label
@@ -436,6 +436,7 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
     }
     
     private void setOverview(List<VariableInferenceResults> varResults,
+                             Set<Variable> outputVars,
                              Map<String, String> sampleToType) {
         StringBuilder builder = new StringBuilder();
         int size = 0;
@@ -450,6 +451,7 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
         double ipaDiffCutoff = 0.30d; // 2 fold difference
         try {
             generateOverview(varResults, 
+                             outputVars,
                              pvalueCutoff,
                              ipaDiffCutoff, 
                              sampleToType,
@@ -466,6 +468,7 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
     }
     
     private void generateOverview(List<VariableInferenceResults> varResults,
+                                  Set<Variable> outputVars,
                                   double pvalueCutoff,
                                   double ipaDiffCutoff,
                                   Map<String, String> sampleToType,
@@ -483,6 +486,8 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
         if (sampleToType != null)
             typeToSamples = getTypeToSamples(sampleToType);
         for (VariableInferenceResults varResult : varResults) {
+            if (!outputVars.contains(varResult.getVariable()))
+                continue; // Make sure it counts for outputs only
             realIPAs.clear();
             randomIPAs.clear();
             if (typeToSamples == null)
@@ -555,6 +560,7 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
     }
     
     public void setVariableResults(List<VariableInferenceResults> varResults,
+                                   Set<Variable> outputVars,
                                    Map<String, String> sampleToType) throws MathException {
         // Do a sort
         List<VariableInferenceResults> sortedResults = new ArrayList<VariableInferenceResults>(varResults);
@@ -600,7 +606,8 @@ public class IPAPathwayOutputsPane extends IPAValueTablePane {
         setCombinedPValue(pvalues);
         // Set overview
         setOverview(varResults,
-                      sampleToType);
+                    outputVars,
+                    sampleToType);
     }
     
     private void parseTwoCasesResults(List<VariableInferenceResults> sortedResults,

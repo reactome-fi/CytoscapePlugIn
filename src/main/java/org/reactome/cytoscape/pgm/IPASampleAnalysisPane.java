@@ -70,7 +70,7 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
         model.setVarResults(outputVarResults);
     }
     
-    public List<VariableInferenceResults> getOutputVariableResults() {
+    public List<VariableInferenceResults> getInferenceResults() {
         IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
         return model.varResults;
     }

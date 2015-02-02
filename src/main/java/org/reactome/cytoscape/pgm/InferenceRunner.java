@@ -37,6 +37,8 @@ import org.reactome.factorgraph.Variable;
  */
 public class InferenceRunner {
     private FactorGraph factorGraph;
+    private Set<Variable> pathwayVars;
+    // A subset of the above for outputs only
     private Set<Variable> outputVars;
     // Two inferencer
     private Inferencer lbp;
@@ -56,6 +58,14 @@ public class InferenceRunner {
     public InferenceRunner() {
     }
     
+    public Set<Variable> getOutputVars() {
+        return outputVars;
+    }
+
+    public void setOutputVars(Set<Variable> outputVars) {
+        this.outputVars = outputVars;
+    }
+
     public boolean isUsedForTwoCases() {
         return usedForTwoCases;
     }
@@ -80,8 +90,8 @@ public class InferenceRunner {
         this.factorGraph = factorGraph;
     }
     
-    public void setOutputVariables(Set<Variable> variables) {
-        this.outputVars = variables;
+    public void setPathwayVars(Set<Variable> variables) {
+        this.pathwayVars = variables;
     }
 
     public void setAlgorithms(List<Inferencer> algorithms) {
@@ -140,18 +150,19 @@ public class InferenceRunner {
         else
             valuePane = new IPASampleAnalysisPane(title);
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        valuePane.setInferenceResults(fgResults, outputVars);
+        valuePane.setInferenceResults(fgResults, pathwayVars);
 
         // Show outputs results
         title = "IPA Pathway Analysis";
         index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);
-        IPAPathwayOutputsPane outputPane = null;
+        IPAPathwaySummaryPane outputPane = null;
         if (index > -1)
-            outputPane = (IPAPathwayOutputsPane) tableBrowserPane.getComponentAt(index);
+            outputPane = (IPAPathwaySummaryPane) tableBrowserPane.getComponentAt(index);
         else
-            outputPane = new IPAPathwayOutputsPane(title);
+            outputPane = new IPAPathwaySummaryPane(title);
         outputPane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        outputPane.setVariableResults(valuePane.getOutputVariableResults(),
+        outputPane.setVariableResults(valuePane.getInferenceResults(),
+                                      outputVars,
                                       fgResults.isUsedForTwoCases() ? fgResults.getSampleToType() : null);
         if (index == -1)
             index = tableBrowserPane.indexOfComponent(outputPane);

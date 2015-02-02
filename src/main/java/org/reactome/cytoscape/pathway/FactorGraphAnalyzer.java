@@ -142,7 +142,6 @@ public class FactorGraphAnalyzer {
             
             progressPane.setText("Loading observation data...");
             ObservationDataHelper dataHelper = new ObservationDataHelper(factorGraph);
-            dataHelper.setNoRandom(false);
             boolean correct = dataHelper.performLoadData(cnvFile,
                                                          cnvThresholdValues, 
                                                          geneExpFile, 
@@ -160,8 +159,10 @@ public class FactorGraphAnalyzer {
             InferenceRunner inferenceRunner = new InferenceRunner();
             inferenceRunner.setFactorGraph(factorGraph);
             // Get the set of output variables for results analysis
-            Set<Variable> outputVars = getOutputVariables(factorGraph, pathwayDiagram);
-            inferenceRunner.setOutputVariables(outputVars);
+            Set<Variable> pathwayVars = getPathwayVars(factorGraph, pathwayDiagram);
+            inferenceRunner.setPathwayVars(pathwayVars);
+            Set<Variable> outputVars = getPathwayVars(factorGraph, pathwayDiagram);
+            inferenceRunner.setOutputVars(outputVars);
             inferenceRunner.setUsedForTwoCases(getSampleInfoFile() != null);
             inferenceRunner.setProgressPane(progressPane);
             inferenceRunner.setAlgorithms(FactorGraphRegistry.getRegistry().getLoadedAlgorithms());
@@ -179,6 +180,26 @@ public class FactorGraphAnalyzer {
             progressPane.setVisible(false);
             e.printStackTrace();
         }
+    }
+    
+    private Set<Variable> getPathwayVars(FactorGraph fg, RenderablePathway diagram) {
+        // Get output ids from diagram diagram
+        Set<String> reactomeIds = new HashSet<String>();
+        for (Object o : diagram.getComponents()) {
+            Renderable r = (Renderable) o;
+            if (r.getReactomeId() == null || !(r instanceof Node))
+                continue; // Nothing to be done
+            reactomeIds.add(r.getReactomeId() + "");
+        }
+        Set<Variable> pathwayVars = new HashSet<Variable>();
+        // If a variable's reactome id is in this list, it should be a output
+        for (Variable var : fg.getVariables()) {
+            if (var.getCustomizedInfo() == null)
+                continue;
+            if (reactomeIds.contains(var.getCustomizedInfo()))
+                pathwayVars.add(var);
+        }
+        return pathwayVars;
     }
     
     private Set<Variable> getOutputVariables(FactorGraph fg, RenderablePathway diagram) {

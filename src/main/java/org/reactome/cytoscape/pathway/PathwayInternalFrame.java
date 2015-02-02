@@ -26,7 +26,7 @@ import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
-import org.reactome.cytoscape.pgm.IPAPathwayOutputsPane;
+import org.reactome.cytoscape.pgm.IPAPathwaySummaryPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +100,7 @@ public class PathwayInternalFrame extends JInternalFrame {
         };
         
         Dictionary<String, String> props = new Hashtable<String, String>();
-        props.put("target", IPAPathwayOutputsPane.class.getSimpleName());
+        props.put("target", IPAPathwaySummaryPane.class.getSimpleName());
         tableSelectionRegistration = context.registerService(PropertyChangeListener.class.getName(), 
                                                              listener,
                                                              props);

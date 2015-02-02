@@ -168,6 +168,26 @@ public class FactorGraphRegistry {
         return null;
     }
     
+    /**
+     * Get the file for cached data.
+     * @param dataType
+     * @return
+     */
+    public double[] getLoadedThresholds(DataType dataType) {
+        double[] rtn = null;
+        for (Iterator<String> it = keyToLoadedData.keySet().iterator(); it.hasNext(); ) {
+            String key = it.next();
+            ObservationData tmp = keyToLoadedData.get(key);
+            if (tmp.getDataType() == dataType) {
+                String[] tokens = key.split("::");
+                rtn = new double[tokens.length - 1];
+                for (int i = 1; i < tokens.length; i++)
+                    rtn[i - 1] = new Double(tokens[i]);
+            }
+        }
+        return rtn;
+    }
+    
     private String generateKeyForData(File file, double[] threshold) {
         StringBuilder builder = new StringBuilder();
         builder.append(file.getAbsolutePath());

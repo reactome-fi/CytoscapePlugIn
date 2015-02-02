@@ -31,6 +31,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import org.reactome.factorgraph.common.DataType;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
 
@@ -83,6 +84,34 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         JPanel twoCasesPane = createTwoCasesPane();
         twoCasesPane.setBorder(BorderFactory.createEtchedBorder());
         add(twoCasesPane);
+        
+        setValues();
+    }
+    
+    private void setValues() {
+        if (!FactorGraphRegistry.getRegistry().isDataLoaded())
+            return; 
+        setValues(DataType.CNV, dnaTFs);
+        setValues(DataType.mRNA_EXP, geneExpTFs);
+        if (FactorGraphRegistry.getRegistry().getSampleInfoFile() != null) {
+            useTwoCasesBox.setSelected(true);
+            twoCaseFileTF.setText(FactorGraphRegistry.getRegistry().getSampleInfoFile().getAbsolutePath());
+        }
+    }
+
+    private void setValues(DataType dataType,
+                           List<JTextField> tfs) {
+        FactorGraphRegistry registry = FactorGraphRegistry.getRegistry();
+        String fileName = registry.getLoadedDataFileName(dataType);
+        double[] thresholds = registry.getLoadedThresholds(dataType);
+        // The last TF is not editable. There is only two values provided in the threshold array
+        for (int i = 0; i < tfs.size() - 1; i++) {
+            JTextField tf = tfs.get(i);
+            if (i == 0)
+                tf.setText(fileName);
+            else
+                tf.setText(thresholds[i - 1] + "");
+        }
     }
     
     private JPanel createTwoCasesPane() {
