@@ -719,8 +719,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 return; 
             if (reply == JOptionPane.NO_OPTION) { // There is no need to reload data.
                 final FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
-                analyzer.setPathwayId(pathwayEditor.getRenderable().getReactomeId());
-                analyzer.setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
+                analyzer.setPathwayEditor(pathwayEditor);
                 // Don't show escape name dialog
                 FactorGraphRegistry.getRegistry().setNeedEscapeNameDialog(false);
                 Thread t = new Thread() {
@@ -743,8 +742,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             // Initialize FactorGraphAnalyzer and set up its required member variables
             // for performing analysis.
             final FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
-            analyzer.setPathwayId(pathwayEditor.getRenderable().getReactomeId());
-            analyzer.setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
+            analyzer.setPathwayEditor(pathwayEditor);
             ObservationDataLoadPanel dataPane = dialog.getDataLoadPane();
             analyzer.setGeneExpFile(dataPane.getGeneExpFile());
             analyzer.setGeneExpThresholdValues(dataPane.getGeneExpThresholdValues());

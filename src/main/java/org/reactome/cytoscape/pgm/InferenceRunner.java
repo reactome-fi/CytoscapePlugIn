@@ -17,7 +17,10 @@ import org.apache.commons.math.MathException;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.gk.graphEditor.PathwayEditor;
+import org.gk.render.RenderablePathway;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.service.PathwayDiagramHighlighter;
 import org.reactome.cytoscape.service.PopupMenuManager;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -51,6 +54,8 @@ public class InferenceRunner {
     private boolean abort;
     // Flag indicating the final results should be performed based on two cases
     private boolean usedForTwoCases;
+    // To be highlight
+    private PathwayEditor pathwayEditor;
     
     /**
      * Default constructor.
@@ -58,6 +63,14 @@ public class InferenceRunner {
     public InferenceRunner() {
     }
     
+    public PathwayEditor getPathwayEditor() {
+        return pathwayEditor;
+    }
+
+    public void setPathwayEditor(PathwayEditor pathwayEditor) {
+        this.pathwayEditor = pathwayEditor;
+    }
+
     public Set<Variable> getOutputVars() {
         return outputVars;
     }
@@ -168,6 +181,14 @@ public class InferenceRunner {
             index = tableBrowserPane.indexOfComponent(outputPane);
         if (index >= 0) // Select this as the default table for viewing the results
             tableBrowserPane.setSelectedIndex(index);
+        // Highlight pathway diagram
+        if (pathwayEditor != null) {
+            Map<String, Double> idToValue = outputPane.getReactomeIdToIPADiff();
+            PathwayDiagramHighlighter highlighter = new PathwayDiagramHighlighter();
+            highlighter.highlightELV((RenderablePathway)pathwayEditor.getRenderable(),
+                                     idToValue);
+            pathwayEditor.repaint(pathwayEditor.getVisibleRect());
+        }
     }
     
     public void performInference(boolean needFinishDialog) throws Exception {

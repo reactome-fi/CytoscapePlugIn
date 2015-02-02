@@ -559,6 +559,21 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         }
     }
     
+    /**
+     * Get the map from Reactome ids to IPA diffs.
+     * @return
+     */
+    public Map<String, Double> getReactomeIdToIPADiff() {
+        TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
+        Map<String, Double> idToDiff = new HashMap<String, Double>();
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            String id = (String) tableModel.getValueAt(i, 0); // The first value
+            String diff = (String) tableModel.getValueAt(i, 4);
+            idToDiff.put(id, new Double(diff));
+        }
+        return idToDiff;
+    }
+    
     public void setVariableResults(List<VariableInferenceResults> varResults,
                                    Set<Variable> outputVars,
                                    Map<String, String> sampleToType) throws MathException {

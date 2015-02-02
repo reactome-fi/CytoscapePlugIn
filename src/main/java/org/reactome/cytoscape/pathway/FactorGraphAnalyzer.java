@@ -12,6 +12,7 @@ import java.util.Set;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
 import org.gk.render.Renderable;
@@ -37,6 +38,7 @@ public class FactorGraphAnalyzer {
     // variables should be provided
     private Long pathwayId;
     private RenderablePathway pathwayDiagram;
+    private PathwayEditor pathwayEditor;
     // Information entered by the user
     private File geneExpFile;
     private double[] geneExpThresholdValues;
@@ -49,6 +51,18 @@ public class FactorGraphAnalyzer {
     public FactorGraphAnalyzer() {
     }
     
+    public PathwayEditor getPathwayEditor() {
+        return pathwayEditor;
+    }
+
+    public void setPathwayEditor(PathwayEditor pathwayEditor) {
+        this.pathwayEditor = pathwayEditor;
+        if (pathwayEditor != null) {
+            setPathwayId(pathwayEditor.getRenderable().getReactomeId());
+            setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
+        }
+    }
+
     public File getSampleInfoFile() {
         return FactorGraphRegistry.getRegistry().getSampleInfoFile();
     }
@@ -161,11 +175,12 @@ public class FactorGraphAnalyzer {
             // Get the set of output variables for results analysis
             Set<Variable> pathwayVars = getPathwayVars(factorGraph, pathwayDiagram);
             inferenceRunner.setPathwayVars(pathwayVars);
-            Set<Variable> outputVars = getPathwayVars(factorGraph, pathwayDiagram);
+            Set<Variable> outputVars = getOutputVariables(factorGraph, pathwayDiagram);
             inferenceRunner.setOutputVars(outputVars);
             inferenceRunner.setUsedForTwoCases(getSampleInfoFile() != null);
             inferenceRunner.setProgressPane(progressPane);
             inferenceRunner.setAlgorithms(FactorGraphRegistry.getRegistry().getLoadedAlgorithms());
+            inferenceRunner.setPathwayEditor(pathwayEditor);
             // Now call for inference
             inferenceRunner.performInference(true);
             
