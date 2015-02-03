@@ -9,7 +9,12 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
@@ -24,13 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTable;
+import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.RowSorterEvent;
@@ -49,6 +48,7 @@ import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.gk.render.Renderable;
+import org.gk.util.DialogControlPane;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
@@ -94,6 +94,12 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     private ServiceRegistration networkSelectionRegistration;
     // For showing a summarized result
     private JLabel outputResultLabel;
+    // Add a button to recheck outputs
+    private JButton recheckOutuptBtn;
+    // Cache these values for rechecking
+    private List<VariableInferenceResults> varResults;
+    private Set<Variable> outputVars;
+    private Map<String, String> sampleToType;
     
     /**
      * @param title
@@ -117,11 +123,37 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         outputResultLabel = new JLabel("Total checked outputs:");
         controlToolBar.add(outputResultLabel);
         controlToolBar.add(closeGlue);
+        recheckOutuptBtn = new JButton("Reset Cutoffs");
+        recheckOutuptBtn.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                recheckOutputs();
+            }
+        });
+        controlToolBar.add(recheckOutuptBtn);
         controlToolBar.add(closeBtn);
         
         addContentPane();
         
         installListeners();
+    }
+    
+    private void recheckOutputs() {
+        RecheckOutputsDialog dialog = new RecheckOutputsDialog();
+        dialog.setSize(400, 300);
+        dialog.setLocationRelativeTo(this);
+        dialog.setModal(true);
+        dialog.setVisible(true);
+        if (dialog.isOkClicked) {
+            String pvalueCutoffText = dialog.pvalueCutoffTF.getText().trim();
+            String ipaDiffCutoffText = dialog.ipaCutoffTF.getText().trim();
+            setOverview(varResults, 
+                        outputVars,
+                        sampleToType, 
+                        new Double(pvalueCutoffText), 
+                        new Double(ipaDiffCutoffText));
+        }
     }
 
     private void addContentPane() {
@@ -441,18 +473,18 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     
     private void setOverview(List<VariableInferenceResults> varResults,
                              Set<Variable> outputVars,
-                             Map<String, String> sampleToType) {
+                             Map<String, String> sampleToType,
+                             double pvalueCutoff,
+                             double ipaDiffCutoff) {
         StringBuilder builder = new StringBuilder();
         int size = 0;
         if (varResults != null)
             size = varResults.size();
-        builder.append("Total checked outputs: " + varResults.size());
+        builder.append("Total checked outputs: " + outputVars.size());
         if (size == 0) {
             outputResultLabel.setText(builder.toString());
             return; 
         }
-        double pvalueCutoff = 0.01d;
-        double ipaDiffCutoff = 0.30d; // 2 fold difference
         try {
             generateOverview(varResults, 
                              outputVars,
@@ -623,10 +655,19 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         tableModel.calculateFDRs(new ArrayList<Double>(pvalues));
         tableModel.fireTableStructureChanged();
         setCombinedPValue(pvalues);
+        // Cache these values for recheck
+        this.varResults = varResults;
+        this.outputVars = outputVars;
+        this.sampleToType = sampleToType;
         // Set overview
+        // Use these default values
+        double pvalueCutoff = 0.01d;
+        double ipaDiffCutoff = 0.30d; // 2 fold difference
         setOverview(varResults,
                     outputVars,
-                    sampleToType);
+                    sampleToType,
+                    pvalueCutoff,
+                    ipaDiffCutoff);
     }
     
     private void parseTwoCasesResults(List<VariableInferenceResults> sortedResults,
@@ -745,6 +786,106 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                     label,
                     varResults.getVariable().getCustomizedInfo());
         return ipas;
+    }
+    
+    private class RecheckOutputsDialog extends JDialog {
+        private DialogControlPane controlPane;
+        private JTextField pvalueCutoffTF;
+        private JTextField ipaCutoffTF;
+        private boolean isOkClicked;
+        
+        public RecheckOutputsDialog() {
+            super(PlugInObjectManager.getManager().getCytoscapeDesktop());
+            init();
+        }
+        
+        private void init() {
+            setTitle("Recheck Outputs");
+            JPanel contentPane = new JPanel();
+            contentPane.setLayout(new GridBagLayout());
+            contentPane.setBorder(BorderFactory.createEtchedBorder());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(4, 4, 4, 4);
+            JLabel label = new JLabel("<html><u><b>Enter Cutoffs for Rechecing Outputs</b></u></html>");
+            constraints.gridwidth = 2;
+            contentPane.add(label, constraints);
+            
+            label = new JLabel("P-value Cutoff:");
+            constraints.gridy = 1;
+            constraints.gridwidth = 1;
+            contentPane.add(label, constraints);
+            pvalueCutoffTF = new JTextField();
+            pvalueCutoffTF.setColumns(4);;
+            constraints.gridx = 1;
+            contentPane.add(pvalueCutoffTF, constraints);
+            
+            label = new JLabel("IPA MeanDiff Cutoff:");
+            constraints.gridy = 2;
+            constraints.gridwidth = 1;
+            contentPane.add(label, constraints);
+            ipaCutoffTF = new JTextField();
+            ipaCutoffTF.setColumns(4);;
+            constraints.gridx = 1;
+            contentPane.add(ipaCutoffTF, constraints);
+            
+            controlPane = new DialogControlPane();
+            controlPane.getCancelBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dispose();
+                }
+            });
+            
+            controlPane.getOKBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (!validateValues())
+                        return;
+                    isOkClicked = true;
+                    dispose();
+                }
+            });
+            
+            getContentPane().add(contentPane, BorderLayout.CENTER);
+            getContentPane().add(controlPane, BorderLayout.SOUTH);
+        }
+        
+        private boolean validateValues() {
+            String text = pvalueCutoffTF.getText().trim();
+            boolean rtn = validateNumber(text, "P-value");
+            if (!rtn)
+                return false;
+            text = ipaCutoffTF.getText().trim();
+            rtn = validateNumber(text, "IPA meanDiff");
+            if (!rtn)
+                return false;
+            return true;
+        }
+
+        private boolean validateNumber(String text,
+                                       String type) {
+            if (text.length() == 0) {
+                JOptionPane.showMessageDialog(this,
+                                              type + " cutoff should not be empty!", 
+                                              "Empty Cutoff",
+                                              JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            try {
+                Double value = new Double(text);
+            }
+            catch(NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                                              type + " cutoff should be a number!", 
+                                              "Wrong P-value Cutoff",
+                                              JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            return true;
+        }
+        
     }
     
     class TTestTableModel extends AbstractTableModel {

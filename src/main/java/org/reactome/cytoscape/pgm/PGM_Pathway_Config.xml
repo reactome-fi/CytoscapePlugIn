@@ -22,8 +22,8 @@
     <!-- Currently only LBP is supported in Java -->
     <LoopyBeliefPropagation>
         <debug>false</debug>
-        <maxIteration>100</maxIteration>
-        <tolerance>1.0e-4</tolerance>
+        <maxIteration>150</maxIteration>
+        <tolerance>1.0e-5</tolerance>
         <!-- Some pathways are pretty big. It will be better to use logSpace to avoid numeric underflow! -->
         <logSpace>true</logSpace>
         <updateViaFactors>false</updateViaFactors>
@@ -32,8 +32,8 @@
     </LoopyBeliefPropagation>
     <GibbsSampling>
         <debug>false</debug>
-        <maxIteration>500</maxIteration>
-        <burnin>100</burnin>
+        <maxIteration>1000</maxIteration>
+        <burnin>1000</burnin>
         <restart>5</restart>
     </GibbsSampling>
 </pgm_config>
