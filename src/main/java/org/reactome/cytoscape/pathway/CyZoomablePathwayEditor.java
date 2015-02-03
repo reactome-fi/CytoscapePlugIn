@@ -18,15 +18,7 @@ import java.awt.event.MouseEvent;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,6 +29,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import org.cytoscape.property.CyProperty;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.gk.gkEditor.ZoomablePathwayEditor;
@@ -47,6 +40,7 @@ import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.*;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
+import org.gk.util.SwingImageCreator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
@@ -262,58 +256,57 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             }
         });
         popup.add(convertToFINetwork);
+        
+        JMenuItem runPGMAnalysis = new JMenuItem("Run Graphical Model Analysis");
+        runPGMAnalysis.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // If there is data has been loaded already, we don't need to show this dialog again
+                if (FactorGraphRegistry.getRegistry().isDataLoaded()) {
+                    // Show a warning
+                    // Use the JFrame so that the position is the same as other dialog
+                    int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                              "Features related to probabilistic graphical models are still experimental,\n"
+                                                                      + "and will be changed in the future. Please use inferred results with \n"
+                                                                      + "caution. Do you still want to continue?",
+                                                                      "Experimental Feature Warning",
+                                                                      JOptionPane.OK_CANCEL_OPTION,
+                                                                      JOptionPane.WARNING_MESSAGE);
+                    if (reply == JOptionPane.CANCEL_OPTION)
+                        return;
+                }
+                runFactorGraphAnalysis();
+            }
+        });
+        popup.addSeparator();
+        popup.add(runPGMAnalysis);
+        // Output analysis results
+        JMenuItem saveResults = new JMenuItem("Save Analysis Results");
+        saveResults.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveAnalysisResults();
+            }
+        });
+        popup.add(saveResults);
+        // Input analysis results
+        JMenuItem openResults = new JMenuItem("Open Analysis Results");
+        openResults.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openAnalysisResults();
+            }
+        });
+        popup.add(openResults);
+        
         // As of January 26, 2015, we will not display the converted Factor Graph for normal use.
         // The old factor graph based visualization will be enabled for advanced users only and will
         // be developed along the normal use.
         String pgmDebug = PlugInObjectManager.getManager().getProperties().getProperty("PGMDebug");
-        // This is the default. We will use only one choice.
-        if (pgmDebug == null || !pgmDebug.equalsIgnoreCase("true")) {
-            JMenuItem runPGMAnalysis = new JMenuItem("Run Graphical Model Analysis");
-            runPGMAnalysis.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    // If there is data has been loaded already, we don't need to show this dialog again
-                    if (FactorGraphRegistry.getRegistry().isDataLoaded()) {
-                        // Show a warning
-                        // Use the JFrame so that the position is the same as other dialog
-                        int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                                                  "Features related to probabilistic graphical models are still experimental,\n"
-                                                                          + "and will be changed in the future. Please use inferred results with \n"
-                                                                          + "caution. Do you still want to continue?",
-                                                                          "Experimental Feature Warning",
-                                                                          JOptionPane.OK_CANCEL_OPTION,
-                                                                          JOptionPane.WARNING_MESSAGE);
-                        if (reply == JOptionPane.CANCEL_OPTION)
-                            return;
-                    }
-                    runFactorGraphAnalysis();
-                }
-            });
-            popup.addSeparator();
-            popup.add(runPGMAnalysis);
-            // Output analysis results
-            JMenuItem saveResults = new JMenuItem("Save Analysis Results");
-            saveResults.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    saveAnalysisResults();
-                }
-            });
-            popup.add(saveResults);
-            // Input analysis results
-            JMenuItem openResults = new JMenuItem("Open Analysis Results");
-            openResults.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    openAnalysisResults();
-                }
-            });
-            popup.add(openResults);
-        }
-        else {
+        if (pgmDebug != null && pgmDebug.equalsIgnoreCase("true")) {
             // Convert as a factor graph
             JMenuItem convertAsFactorGraph = new JMenuItem("Convert to Graphical Model");
             convertAsFactorGraph.addActionListener(new ActionListener() {
@@ -370,9 +363,9 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    pathwayEditor.exportDiagram();
+                    exportDiagram();
                 }
-                catch(IOException e1) {
+                catch(Exception e1) {
                     e1.printStackTrace();
                     JOptionPane.showMessageDialog(pathwayEditor,
                                                   "Pathway diagram cannot be exported: " + e1,
@@ -386,6 +379,47 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         popup.show(getPathwayEditor(),
                    e.getX(),
                    e.getY());
+    }
+    
+    /**
+     * A local implementation so that we can use the FileUtil in Cytoscape.
+     */
+    private void exportDiagram() throws Exception {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference reference = null;
+        CyProperty<?> cyProp = null;
+        ServiceReference[] references = context.getServiceReferences(CyProperty.class.getName(), null);
+        if (references != null) {
+            for (ServiceReference tmp : references) {
+                CyProperty<?> prop = (CyProperty<?>) context.getService(tmp);
+                if (prop.getPropertyType().equals(Properties.class)) {
+                    reference = tmp;
+                    cyProp = prop;
+                    break;
+                }
+                context.ungetService(tmp);
+            }
+        }
+        JFileChooser fileChooser = new JFileChooser();
+        if (cyProp != null) {
+            Properties properties = (Properties) cyProp.getProperties();
+            String lastDirName = properties.getProperty(FileUtil.LAST_DIRECTORY);
+            if (lastDirName != null) {
+                File dir = new File(lastDirName);
+                if (dir.exists())
+                    fileChooser.setCurrentDirectory(dir);
+            }
+        }
+        fileChooser.setDialogTitle("Export Pathway Diagram ...");
+        SwingImageCreator.exportImage(pathwayEditor, fileChooser);
+        // However, we cannot save the current directory.
+        File file = fileChooser.getSelectedFile();
+        if (file != null && cyProp != null) {
+            Properties properties = (Properties) cyProp.getProperties();
+            properties.setProperty(FileUtil.LAST_DIRECTORY, file.getParent());
+        }
+        if (reference != null)
+            context.ungetService(reference);
     }
     
     private void searchDiagrams() {
@@ -745,7 +779,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                          "Open Analysis Results", 
                                          FileUtil.LOAD,
                                          filters);
-            
+            if (file == null)
+                return;
             JAXBContext jaxbContext = JAXBContext.newInstance(FactorGraphInferenceResults.class);
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             FactorGraphInferenceResults results = (FactorGraphInferenceResults) unmarshaller.unmarshal(file);
@@ -801,7 +836,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                          "Save Analysis Results", 
                                          FileUtil.SAVE,
                                          filters);
-            
+            if (file == null)
+                return; // Canceled
             // Have to make sure all ids are not null and unique
             results.getFactorGraph().setIdsInFactors();
             RenderablePathway diagram = (RenderablePathway) pathwayEditor.getRenderable();
@@ -823,9 +859,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
 
     private Collection<FileChooserFilter> getAnalysisResultFilters() {
         Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
-        FileChooserFilter filter = new FileChooserFilter("Analysis Results", "xml");
-        filters.add(filter);
-        filter = new FileChooserFilter("Analysis Results", "txt");
+        FileChooserFilter filter = new FileChooserFilter("Analysis Results",
+                                                         new String[]{"xml", "txt", ".xml", ".txt"});
         filters.add(filter);
         return filters;
     }
