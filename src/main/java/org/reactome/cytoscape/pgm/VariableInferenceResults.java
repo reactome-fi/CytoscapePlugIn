@@ -4,9 +4,17 @@
  */
 package org.reactome.cytoscape.pgm;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlIDREF;
+import javax.xml.bind.annotation.adapters.XmlAdapter;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Variable;
@@ -14,11 +22,14 @@ import org.reactome.factorgraph.Variable;
 /**
  * Inference results for one Variable object across a data set.
  * @author gwu
- *
  */
+@XmlAccessorType(XmlAccessType.FIELD)
 public class VariableInferenceResults {
+    @XmlIDREF
     private Variable variable;
-    private Map<String, List<Double>> sampleToValues;
+    @XmlJavaTypeAdapter(SampleToValuesAdapter.class)
+    private HashMap<String, ArrayList<Double>> sampleToValues;
+    @XmlElement(name="priorValues")
     private List<Double> priorValues;
     
     /**
@@ -35,12 +46,15 @@ public class VariableInferenceResults {
         this.variable = variable;
     }
 
-    public Map<String, List<Double>> getSampleToValues() {
+    public Map<String, ArrayList<Double>> getSampleToValues() {
         return sampleToValues;
     }
 
-    public void setSampleToValues(Map<String, List<Double>> sampleToValues) {
-        this.sampleToValues = sampleToValues;
+    public void setSampleToValues(Map<String, ArrayList<Double>> sampleToValues) {
+        if (sampleToValues instanceof HashMap)
+            this.sampleToValues = (HashMap<String, ArrayList<Double>>)this.sampleToValues;
+        else
+            this.sampleToValues = new HashMap<String, ArrayList<Double>>(sampleToValues);
     }
     
     public void clear() {
@@ -60,14 +74,18 @@ public class VariableInferenceResults {
         setPriorValues(PlugInUtilities.convertArrayToList(values));
     }
     
-    public void addSampleToValue(String sample, List<Double> values) {
+    public void addSampleToValue(String sample, ArrayList<Double> values) {
         if (sampleToValues == null)
-            sampleToValues = new HashMap<String, List<Double>>();
+            sampleToValues = new HashMap<String, ArrayList<Double>>();
         sampleToValues.put(sample, values);
     }
     
     public void addSampleToValue(String sample, double[] values) {
-        addSampleToValue(sample, PlugInUtilities.convertArrayToList(values));
+        List<Double> list = PlugInUtilities.convertArrayToList(values);
+        if (list instanceof ArrayList)
+            addSampleToValue(sample, (ArrayList<Double>)list);
+        else
+            addSampleToValue(sample, new ArrayList<Double>(list));
     }
     
     public Map<String, List<Double>> getPosteriorValues() {
@@ -90,6 +108,51 @@ public class VariableInferenceResults {
             }
         }
         return rtn;
+    }
+    
+    @XmlAccessorType(XmlAccessType.FIELD)
+    static class SampleToValues {
+        private String sample;
+        private List<Double> values;
+        
+        public SampleToValues() {
+            
+        }
+    }
+    
+    @XmlAccessorType(XmlAccessType.FIELD)
+    static class SampleToValuesList {
+        @XmlElement
+        private List<SampleToValues> sampleToValues;
+        
+        public SampleToValuesList() {
+            sampleToValues = new ArrayList<VariableInferenceResults.SampleToValues>();
+        }
+    }
+    
+    static class SampleToValuesAdapter extends XmlAdapter<SampleToValuesList, HashMap<String, List<Double>>> {
+
+        public SampleToValuesList marshal(HashMap<String, List<Double>> sampleToValues) throws Exception {
+           SampleToValuesList rtn = new SampleToValuesList();
+           for (String sample : sampleToValues.keySet()) {
+               List<Double> values = sampleToValues.get(sample);
+               SampleToValues tmp = new SampleToValues();
+               tmp.sample = sample;
+               tmp.values = values;
+               rtn.sampleToValues.add(tmp);
+           }
+           return rtn;
+        }
+       
+        public HashMap<String, List<Double>> unmarshal(SampleToValuesList sampleToValuesList) throws Exception {
+           HashMap<String, List<Double>> rtn = new HashMap<String, List<Double>>();
+           for (SampleToValues sampleToValues : sampleToValuesList.sampleToValues) {
+               rtn.put(sampleToValues.sample,
+                       sampleToValues.values);
+           }
+           return rtn;
+        }
+        
     }
     
 }

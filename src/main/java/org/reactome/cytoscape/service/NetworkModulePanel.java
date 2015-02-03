@@ -323,9 +323,6 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     
     protected void exportAnnotations() {
         // Export annotations in a text file
-        Collection<FileChooserFilter> fileFilters = new ArrayList<FileChooserFilter>();
-        FileChooserFilter fileFilter = new FileChooserFilter("A file containing FI annotations", ".txt");
-        fileFilters.add(fileFilter);
         Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
         FileChooserFilter filter = new FileChooserFilter("Annotation File", "txt");
         filters.add(filter);

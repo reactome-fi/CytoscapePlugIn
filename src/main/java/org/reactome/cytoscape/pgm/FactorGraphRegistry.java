@@ -14,6 +14,7 @@ import java.util.Map;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.events.NetworkAboutToBeDestroyedEvent;
 import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
+import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.FactorGraph;
@@ -34,6 +35,8 @@ public class FactorGraphRegistry {
     private static FactorGraphRegistry registry;
     // Register converted FactorGraph from a PathwayDiagram
     private Map<CyNetwork, FactorGraph> networkToFg;
+    // Map from a pathway diagram to a FactorGraph
+    private Map<RenderablePathway, FactorGraph> diagramToFg;
     // Register inference results
     private Map<FactorGraph, FactorGraphInferenceResults> fgToResults;
     // For observations
@@ -61,6 +64,7 @@ public class FactorGraphRegistry {
      */
     private FactorGraphRegistry() {
         networkToFg = new HashMap<CyNetwork, FactorGraph>();
+        diagramToFg = new HashMap<RenderablePathway, FactorGraph>();
         fgToResults = new HashMap<FactorGraph, FactorGraphInferenceResults>();
         fgToObservations = new HashMap<FactorGraph, List<Observation>>();
         fgToRandomObservations = new HashMap<FactorGraph, List<Observation>>();
@@ -217,6 +221,14 @@ public class FactorGraphRegistry {
         networkToFg.put(network, pfg);
     }
     
+    public void registerDiagramToFactorGraph(RenderablePathway diagram, FactorGraph fg) {
+        diagramToFg.put(diagram, fg);
+    }
+    
+    public void unregisterDiagramToFactorGraph(RenderablePathway diagram) {
+        diagramToFg.remove(diagram);
+    }
+    
     public FactorGraph getFactorGraph(CyNetwork network) {
         return networkToFg.get(network);
     }
@@ -234,6 +246,20 @@ public class FactorGraphRegistry {
             fgResults.setFactorGraph(factorGraph);
             fgToResults.put(factorGraph, fgResults);
         }
+        return fgResults;
+    }
+    
+    /**
+     * Get the inference results for a RenderablePathway object. If nothing is done for this
+     * diagram, a null will be returned.
+     * @param diagram
+     * @return
+     */
+    public FactorGraphInferenceResults getInferenceResults(RenderablePathway diagram) {
+        FactorGraph fg = diagramToFg.get(diagram);
+        if (fg == null)
+            return null;
+        FactorGraphInferenceResults fgResults = fgToResults.get(fg);
         return fgResults;
     }
     

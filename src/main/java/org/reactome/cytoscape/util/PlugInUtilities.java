@@ -60,7 +60,6 @@ import org.jfree.chart.plot.CategoryMarker;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
-import org.reactome.factorgraph.Variable;
 
 /**
  * Utility methods that can be used by Reactome FI plug-in have been grouped

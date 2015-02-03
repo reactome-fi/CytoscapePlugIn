@@ -226,8 +226,7 @@ public class InferenceRunner {
         }
         if (status == InferenceStatus.DONE) {
             FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(factorGraph);
-            showIPANodeValues(fgResults);
-            showIPAPathwayValues(fgResults);
+            showInferenceResults(fgResults);
             if (needFinishDialog) {
                 String message = "Inference has finished successfully. ";
                 // Check if any posterior inference is done
@@ -244,6 +243,11 @@ public class InferenceRunner {
                                               JOptionPane.INFORMATION_MESSAGE);
             }
         }
+    }
+
+    public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
+        showIPANodeValues(fgResults);
+        showIPAPathwayValues(fgResults);
     }
     
     /**

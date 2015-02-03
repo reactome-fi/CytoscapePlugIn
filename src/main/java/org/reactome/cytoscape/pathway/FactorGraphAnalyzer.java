@@ -12,6 +12,7 @@ import java.util.Set;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import org.apache.commons.math.MathException;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
@@ -20,6 +21,7 @@ import org.gk.render.RenderableInteraction;
 import org.gk.render.RenderablePathway;
 import org.gk.render.RenderableReaction;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.InferenceRunner;
 import org.reactome.cytoscape.pgm.ObservationDataHelper;
@@ -195,6 +197,24 @@ public class FactorGraphAnalyzer {
             progressPane.setVisible(false);
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Call this method to display a saved results from a file.
+     * @param fgResults
+     */
+    public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
+        FactorGraph factorGraph = fgResults.getFactorGraph();
+        InferenceRunner inferenceRunner = new InferenceRunner();
+        inferenceRunner.setFactorGraph(factorGraph);
+        // Get the set of output variables for results analysis
+        Set<Variable> pathwayVars = getPathwayVars(factorGraph, pathwayDiagram);
+        inferenceRunner.setPathwayVars(pathwayVars);
+        Set<Variable> outputVars = getOutputVariables(factorGraph, pathwayDiagram);
+        inferenceRunner.setOutputVars(outputVars);
+        inferenceRunner.setUsedForTwoCases(fgResults.getSampleToType() != null);
+        inferenceRunner.setPathwayEditor(pathwayEditor);
+        inferenceRunner.showInferenceResults(fgResults);
     }
     
     private Set<Variable> getPathwayVars(FactorGraph fg, RenderablePathway diagram) {

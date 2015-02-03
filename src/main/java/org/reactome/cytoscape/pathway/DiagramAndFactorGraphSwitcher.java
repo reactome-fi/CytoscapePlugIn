@@ -108,7 +108,10 @@ public class DiagramAndFactorGraphSwitcher {
         String escapeNames = getEscapeNames();
         if (escapeNames == null)
             return null; // Aborted
-        return convertPathwayToFactorGraph(pathwayId, pathway, escapeNames);
+        FactorGraph fg = convertPathwayToFactorGraph(pathwayId, pathway, escapeNames);
+        if (fg != null)
+            FactorGraphRegistry.getRegistry().registerDiagramToFactorGraph(pathway, fg);
+        return fg;
     }
 
     /**

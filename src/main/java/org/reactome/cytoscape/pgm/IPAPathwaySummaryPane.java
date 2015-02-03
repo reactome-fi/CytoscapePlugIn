@@ -323,13 +323,17 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     private void rePlotData() {
         dataset.clear();
         TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
+        // In two cases, these values will be set dynamically. So we have to
+        // get them in the table.
+        String realLabel = tableModel.getColumnName(2);
+        String randomLabel = tableModel.getColumnName(3);
         for (int i = 0; i < tTestResultTable.getRowCount(); i++) {
             int index = tTestResultTable.convertRowIndexToModel(i);
             String varLabel = (String) tableModel.getValueAt(index, 0);
             List<Double> realIPAs = realSampleToIPAs.get(varLabel);
-            dataset.add(realIPAs, "Real Samples", varLabel);
+            dataset.add(realIPAs, realLabel, varLabel);
             List<Double> randomIPAs = randomSampleToIPAs.get(varLabel);
-            dataset.add(randomIPAs, "Random Samples", varLabel);
+            dataset.add(randomIPAs, randomLabel, varLabel);
         }
         DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
         plot.datasetChanged(event);

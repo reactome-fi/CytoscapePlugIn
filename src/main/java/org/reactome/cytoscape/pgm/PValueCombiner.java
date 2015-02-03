@@ -55,8 +55,16 @@ public class PValueCombiner {
         double f = 2.0d * mean * mean / var;
         double c = var / (2.0d * mean);
         double fisher = calculateFisherValue(pvaluesCopy);
-        ChiSquaredDistribution distribution = new ChiSquaredDistributionImpl(f);
-        return 1.0d - distribution.cumulativeProbability(c * fisher);
+        // If f is NaN (e.g. because of a list of 0.0 in the real values, which generates NaN)
+        // we switch to use the old Fisher method
+        if (Double.isNaN(f) || Double.isNaN(c)) {
+            ChiSquaredDistribution distribution = new ChiSquaredDistributionImpl(2 * size);
+            return 1.0d - distribution.cumulativeProbability(fisher);
+        }
+        else {
+            ChiSquaredDistribution distribution = new ChiSquaredDistributionImpl(f);
+            return 1.0d - distribution.cumulativeProbability(c * fisher);
+        }
     }
     
     private double calculateFisherValue(List<Double> pvalues) {

@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 
@@ -20,19 +24,31 @@ import org.reactome.factorgraph.Variable;
  * @author gwu
  *
  */
+@XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
 public class FactorGraphInferenceResults {
     private FactorGraph factorGraph;
-    private Map<Variable, VariableInferenceResults> varToResults;
+    private List<VariableInferenceResults> varResults;
     // A flag indicating this result should be processed based on two cases
     private boolean usedForTwoCases;
     // Map samples to types
     private Map<String, String> sampleToType;
+    // Add a label for this result
+    private Long pathwayDiagramId;
     
     /**
      * Default constructor.
      */
     public FactorGraphInferenceResults() {
-        varToResults = new HashMap<Variable, VariableInferenceResults>();
+        varResults = new ArrayList<VariableInferenceResults>();
+    }
+
+    public Long getPathwayDiagramId() {
+        return pathwayDiagramId;
+    }
+
+    public void setPathwayDiagramId(Long pathwayDiagramId) {
+        this.pathwayDiagramId = pathwayDiagramId;
     }
 
     public Map<String, String> getSampleToType() {
@@ -60,11 +76,18 @@ public class FactorGraphInferenceResults {
     }
 
     public Map<Variable, VariableInferenceResults> getVarToResults() {
+        Map<Variable, VariableInferenceResults> varToResults = new HashMap<Variable, VariableInferenceResults>();
+        for (VariableInferenceResults varResult : varResults)
+            varToResults.put(varResult.getVariable(), varResult);
         return varToResults;
     }
     
     public VariableInferenceResults getVariableInferenceResults(Variable var) {
-        return varToResults.get(var);
+        for (VariableInferenceResults varResult : varResults) {
+            if (varResult.getVariable() == var)
+                return varResult;
+        }
+        return null;
     }
     
     /**
@@ -74,25 +97,23 @@ public class FactorGraphInferenceResults {
      */
     public List<VariableInferenceResults> getVariableInferenceResults(Collection<Variable> variables) {
         List<VariableInferenceResults> rtn = new ArrayList<VariableInferenceResults>();
-        if (varToResults != null) {
-            for (Variable var : variables) {
-                VariableInferenceResults varResults = varToResults.get(var);
-                if (varResults != null)
-                    rtn.add(varResults);
-            }
+        for (VariableInferenceResults varResult : varResults) {
+            if (variables.contains(varResult.getVariable()))
+                rtn.add(varResult);
         }
         return rtn;
     }
 
     public void setVarToResults(Map<Variable, VariableInferenceResults> varToResults) {
-        if (varToResults == null)
-            this.varToResults.clear(); // We don't want to keep a null object here. 
-        else
-            this.varToResults = varToResults;
+        varResults.clear();
+        if (varToResults != null) {
+            for (VariableInferenceResults varResult : varToResults.values())
+                varResults.add(varResult);
+        }
     }
     
-    public void addVarToResults(VariableInferenceResults varResults) {
-        varToResults.put(varResults.getVariable(), varResults);
+    public void addVarToResults(VariableInferenceResults varResult) {
+        varResults.add(varResult);
     }
     
     /**
@@ -121,14 +142,20 @@ public class FactorGraphInferenceResults {
         varResults.addSampleToValue(sample, var.getBelief());
     }
     
+    /**
+     * A helper method to get a result for a specified variable. If no result exists,
+     * an empty object will be created.
+     * @param var
+     * @return
+     */
     private VariableInferenceResults getVarResults(Variable var) {
-        VariableInferenceResults varResults = varToResults.get(var);
-        if (varResults == null) {
-            varResults = new VariableInferenceResults();
-            varResults.setVariable(var);
-            varToResults.put(var, varResults);
+        VariableInferenceResults varResult = getVariableInferenceResults(var);
+        if (varResult == null) {
+            varResult = new VariableInferenceResults();
+            varResult.setVariable(var);
+            varResults.add(varResult);
         }
-        return varResults;
+        return varResult;
     }
     
     /**
@@ -137,25 +164,23 @@ public class FactorGraphInferenceResults {
      */
     public Set<String> getSamples() {
         Set<String> samples = new HashSet<String>();
-        if (varToResults != null) {
-            for (VariableInferenceResults varResults : varToResults.values()) {
-                samples.addAll(varResults.getPosteriorValues().keySet());
-            }
+        for (VariableInferenceResults varResults : varResults) {
+            samples.addAll(varResults.getPosteriorValues().keySet());
         }
         return samples;
     }
     
     public boolean hasPosteriorResults() {
-        if (varToResults == null || varToResults.size() == 0)
+        if (varResults == null || varResults.size() == 0)
             return false;
-        VariableInferenceResults varResult = varToResults.values().iterator().next();
+        VariableInferenceResults varResult = varResults.get(0);
         if (varResult.getPosteriorValues() == null || varResult.getPosteriorValues().size() == 0)
             return false;
         return true;
     }
     
     public void clear() {
-        varToResults.clear();
+        varResults.clear();
     }
     
 }

@@ -16,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyVetoException;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +33,12 @@ import java.util.regex.Pattern;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 
+import org.cytoscape.util.swing.FileChooserFilter;
+import org.cytoscape.util.swing.FileUtil;
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
@@ -44,6 +50,7 @@ import org.gk.util.GKApplicationUtilities;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
 import org.reactome.cytoscape.pgm.ObservationDataLoadPanel;
@@ -266,24 +273,45 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    // Show a warning
-                    // Use the JFrame so that the position is the same as other dialog
-                    int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                                              "Features related to probabilistic graphical models are still experimental,\n"
-                                                                      + "and will be changed in the future. Please use inferred results with \n"
-                                                                      + "caution. Do you still want to continue?",
-                                                                      "Experimental Feature Warning",
-                                                                      JOptionPane.OK_CANCEL_OPTION,
-                                                                      JOptionPane.WARNING_MESSAGE);
-                    if (reply == JOptionPane.CANCEL_OPTION)
-                        return;
+                    // If there is data has been loaded already, we don't need to show this dialog again
+                    if (FactorGraphRegistry.getRegistry().isDataLoaded()) {
+                        // Show a warning
+                        // Use the JFrame so that the position is the same as other dialog
+                        int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                                  "Features related to probabilistic graphical models are still experimental,\n"
+                                                                          + "and will be changed in the future. Please use inferred results with \n"
+                                                                          + "caution. Do you still want to continue?",
+                                                                          "Experimental Feature Warning",
+                                                                          JOptionPane.OK_CANCEL_OPTION,
+                                                                          JOptionPane.WARNING_MESSAGE);
+                        if (reply == JOptionPane.CANCEL_OPTION)
+                            return;
+                    }
                     runFactorGraphAnalysis();
                 }
             });
             popup.addSeparator();
             popup.add(runPGMAnalysis);
             // Output analysis results
+            JMenuItem saveResults = new JMenuItem("Save Analysis Results");
+            saveResults.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    saveAnalysisResults();
+                }
+            });
+            popup.add(saveResults);
             // Input analysis results
+            JMenuItem openResults = new JMenuItem("Open Analysis Results");
+            openResults.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    openAnalysisResults();
+                }
+            });
+            popup.add(openResults);
         }
         else {
             // Convert as a factor graph
@@ -703,6 +731,103 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                           JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
+    }
+    
+    private void openAnalysisResults() {
+        ServiceReference reference = null;
+        try {
+            // Get a file
+            Collection<FileChooserFilter> filters = getAnalysisResultFilters();
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            reference = context.getServiceReference(FileUtil.class.getName());
+            FileUtil fileUtil = (FileUtil) context.getService(reference);
+            File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), 
+                                         "Open Analysis Results", 
+                                         FileUtil.LOAD,
+                                         filters);
+            
+            JAXBContext jaxbContext = JAXBContext.newInstance(FactorGraphInferenceResults.class);
+            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            FactorGraphInferenceResults results = (FactorGraphInferenceResults) unmarshaller.unmarshal(file);
+            RenderablePathway diagram = (RenderablePathway) pathwayEditor.getRenderable();
+            if (!(diagram.getReactomeDiagramId().equals(results.getPathwayDiagramId()))) {
+                JOptionPane.showMessageDialog(this,
+                                              "The saved results are not for this pathway diagram!",
+                                              "Error in Opening Results", 
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
+            analyzer.setPathwayEditor(pathwayEditor);
+            analyzer.showInferenceResults(results);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(this,
+                                          "Cannot open inferece results: " + e,
+                                          "Error in Opening Results", 
+                                          JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+        finally {
+            if (reference != null)
+                PlugInObjectManager.getManager().getBundleContext().ungetService(reference);
+        }
+    }
+    
+    private void saveAnalysisResults() {
+        RenderablePathway pathway = (RenderablePathway) pathwayEditor.getRenderable();
+        FactorGraphInferenceResults results = FactorGraphRegistry.getRegistry().getInferenceResults(pathway);
+        if (results == null) {
+            JOptionPane.showMessageDialog(this, 
+                                          "Graphical model analysis has not been performed for this pathway.\n" + 
+                                          "Please perform the analysis first.",
+                                          "No Results",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        ServiceReference reference = null;
+        try {
+            JAXBContext jaxbContext = JAXBContext.newInstance(FactorGraphInferenceResults.class);
+            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            
+            jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            
+            // Get a file
+            Collection<FileChooserFilter> filters = getAnalysisResultFilters();
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            reference = context.getServiceReference(FileUtil.class.getName());
+            FileUtil fileUtil = (FileUtil) context.getService(reference);
+            File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), 
+                                         "Save Analysis Results", 
+                                         FileUtil.SAVE,
+                                         filters);
+            
+            // Have to make sure all ids are not null and unique
+            results.getFactorGraph().setIdsInFactors();
+            RenderablePathway diagram = (RenderablePathway) pathwayEditor.getRenderable();
+            results.setPathwayDiagramId(diagram.getReactomeDiagramId());
+            jaxbMarshaller.marshal(results, file);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(this,
+                                          "Cannot save analysis results: " + e,
+                                          "Error in Saving Results", 
+                                          JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+        finally {
+            if (reference != null)
+                PlugInObjectManager.getManager().getBundleContext().ungetService(reference);
+        }
+    }
+
+    private Collection<FileChooserFilter> getAnalysisResultFilters() {
+        Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
+        FileChooserFilter filter = new FileChooserFilter("Analysis Results", "xml");
+        filters.add(filter);
+        filter = new FileChooserFilter("Analysis Results", "txt");
+        filters.add(filter);
+        return filters;
     }
     
     /**

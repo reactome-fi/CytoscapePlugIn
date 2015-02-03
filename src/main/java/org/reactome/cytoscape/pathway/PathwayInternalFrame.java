@@ -26,8 +26,10 @@ import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.IPAPathwaySummaryPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.factorgraph.FactorGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +74,7 @@ public class PathwayInternalFrame extends JInternalFrame {
             public void internalFrameClosing(InternalFrameEvent e) {
                 if (tableSelectionRegistration != null)
                     tableSelectionRegistration.unregister();
+                FactorGraphRegistry.getRegistry().unregisterDiagramToFactorGraph((RenderablePathway)pathwayEditor.getPathwayEditor().getRenderable());
             }
             
         });
