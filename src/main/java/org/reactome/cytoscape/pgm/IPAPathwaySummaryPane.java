@@ -581,6 +581,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                                                  VariableInferenceResults varResult,
                                                  Map<String, Set<String>> typeToSamples) {
         List<String> types = new ArrayList<String>(typeToSamples.keySet());
+        // Do a sort so that the results are the same as in the table
+        Collections.sort(types);
         // The first type is used as real. No order is needed
         Map<String, List<Double>> sampleToRealProbs = grepVarResultsForSamples(varResult, typeToSamples.get(types.get(0)));
         for (List<Double> probs : sampleToRealProbs.values()) {
@@ -822,6 +824,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             label = new JLabel("IPA MeanDiff Cutoff:");
             constraints.gridy = 2;
             constraints.gridwidth = 1;
+            constraints.gridx = 0;
             contentPane.add(label, constraints);
             ipaCutoffTF = new JTextField();
             ipaCutoffTF.setColumns(4);;
