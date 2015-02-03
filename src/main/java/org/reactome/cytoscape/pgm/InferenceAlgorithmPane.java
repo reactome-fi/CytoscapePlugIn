@@ -70,14 +70,47 @@ public class InferenceAlgorithmPane extends JPanel {
         // Otherwise, nothing is returned from the following two calls.
         //TODO: This is weird and should be changed in the future.
         FactorGraphRegistry.getRegistry(); 
-        PathwayPGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        // Call this method for initialization 
+        PathwayPGMConfiguration.getConfig();
         lbpPane = createAlgorithmPane("Loopy Belief Propagation (LBP)",
-                                             config.getLBP());
+                                      getLBP());
         add(lbpPane);
         gibbsPane = createAlgorithmPane("Gibbs Sampling (Gibbs)",
-                                               config.getGibbsSampling());
+                                        getGibbs());
         add(gibbsPane);
         add(createAlgorithmSelectionPane());
+    }
+    
+    private GibbsSampling getGibbs() {
+        List<Inferencer> algorithms = FactorGraphRegistry.getRegistry().getLoadedAlgorithms();
+        GibbsSampling gibbs = null;
+        if (algorithms != null) {
+            for (Inferencer alg : algorithms) {
+                if (alg instanceof GibbsSampling) {
+                    gibbs = (GibbsSampling) alg;
+                    break;
+                }
+            }
+        }
+        if (gibbs == null)
+            gibbs = PathwayPGMConfiguration.getConfig().getGibbsSampling();
+        return gibbs;
+    }
+    
+    private LoopyBeliefPropagation getLBP() {
+        List<Inferencer> algorithms = FactorGraphRegistry.getRegistry().getLoadedAlgorithms();
+        LoopyBeliefPropagation lbp = null;
+        if (algorithms != null) {
+            for (Inferencer alg : algorithms) {
+                if (alg instanceof LoopyBeliefPropagation) {
+                    lbp = (LoopyBeliefPropagation) alg;
+                    break;
+                }
+            }
+        }
+        if (lbp == null)
+            lbp = PathwayPGMConfiguration.getConfig().getLBP();
+        return lbp;
     }
     
     private JPanel createAlgorithmSelectionPane() {
@@ -168,7 +201,7 @@ public class InferenceAlgorithmPane extends JPanel {
             keyToValue.put("maxIteration", lbp.getMaxIteration());
             keyToValue.put("tolerance", lbp.getTolerance());
             keyToValue.put("useLogSpace", lbp.getUseLogSpace());
-            keyToValue.put("dumping", lbp.getDumping());
+//            keyToValue.put("dumping", lbp.getDumping());
             keyToValue.put("inferenceType", lbp.getInferenceType());
         }
         else if (alg instanceof GibbsSampling) {

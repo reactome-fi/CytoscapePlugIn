@@ -22,13 +22,15 @@
     <!-- Currently only LBP is supported in Java -->
     <LoopyBeliefPropagation>
         <debug>false</debug>
-        <maxIteration>150</maxIteration>
+        <maxIteration>200</maxIteration>
         <tolerance>1.0e-5</tolerance>
         <!-- Some pathways are pretty big. It will be better to use logSpace to avoid numeric underflow! -->
         <logSpace>true</logSpace>
         <updateViaFactors>false</updateViaFactors>
         <!-- A little dumping to help some models to converge -->
-        <dumping>0.25</dumping>
+        <!-- It seems that there is a little problem with the current implementation, which cause the inference not
+        converging. So use 0.0.-->
+        <dumping>0.0</dumping>
     </LoopyBeliefPropagation>
     <GibbsSampling>
         <debug>false</debug>
