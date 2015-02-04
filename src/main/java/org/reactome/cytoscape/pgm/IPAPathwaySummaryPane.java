@@ -87,8 +87,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     // For combined p-value
     private JLabel combinedPValueLabel;
     // Cache calculated IPA values for sorting purpose
-    private Map<String, List<Double>> realSampleToIPAs;
-    private Map<String, List<Double>> randomSampleToIPAs;
+    private Map<String, List<Double>> realVarIdToIPAs;
+    private Map<String, List<Double>> randomVarIdToIPAs;
     // Used for selecting a node
     private CyNetworkView networkView;
     private ServiceRegistration networkSelectionRegistration;
@@ -182,8 +182,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         }
         add(jsp, BorderLayout.CENTER);
         
-        realSampleToIPAs = new HashMap<String, List<Double>>();
-        randomSampleToIPAs = new HashMap<String, List<Double>>();
+        realVarIdToIPAs = new HashMap<String, List<Double>>();
+        randomVarIdToIPAs = new HashMap<String, List<Double>>();
     }
     
     private void installListeners() {
@@ -362,9 +362,9 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         for (int i = 0; i < tTestResultTable.getRowCount(); i++) {
             int index = tTestResultTable.convertRowIndexToModel(i);
             String varLabel = (String) tableModel.getValueAt(index, 0);
-            List<Double> realIPAs = realSampleToIPAs.get(varLabel);
+            List<Double> realIPAs = realVarIdToIPAs.get(varLabel);
             dataset.add(realIPAs, realLabel, varLabel);
-            List<Double> randomIPAs = randomSampleToIPAs.get(varLabel);
+            List<Double> randomIPAs = randomVarIdToIPAs.get(varLabel);
             dataset.add(randomIPAs, randomLabel, varLabel);
         }
         DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
@@ -416,7 +416,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         panel.setBorder(BorderFactory.createEtchedBorder());
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
         
-        JLabel titleLabel = new JLabel("Combined p-value using an extension of Fisher's method (click to see the reference): ");
+        JLabel titleLabel = new JLabel("Combined p-value for outputs using an extension of Fisher's method (click to see the reference): ");
         titleLabel.setToolTipText("Click to view the reference");
         titleLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         combinedPValueLabel = new JLabel("1.0");
@@ -607,7 +607,11 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             String id = (String) tableModel.getValueAt(i, 0); // The first value
             String diff = (String) tableModel.getValueAt(i, 4);
-            idToDiff.put(id, new Double(diff));
+            try {
+                Double value = new Double(diff); // Just in case the diff is not a number (aka NaN).
+                idToDiff.put(id, value);
+            }
+            catch(NumberFormatException e) {}
         }
         return idToDiff;
     }
@@ -615,6 +619,10 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     public void setVariableResults(List<VariableInferenceResults> varResults,
                                    Set<Variable> outputVars,
                                    Map<String, String> sampleToType) throws MathException {
+        // Cache these values for recheck
+        this.varResults = varResults;
+        this.outputVars = outputVars;
+        this.sampleToType = sampleToType;
         // Do a sort
         List<VariableInferenceResults> sortedResults = new ArrayList<VariableInferenceResults>(varResults);
         Collections.sort(sortedResults, new Comparator<VariableInferenceResults>() {
@@ -624,8 +632,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             }
         });
         dataset.clear();
-        realSampleToIPAs.clear();
-        randomSampleToIPAs.clear();
+        realVarIdToIPAs.clear();
+        randomVarIdToIPAs.clear();
         TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
         tableModel.reset(); // Reset the original data if any.
         List<Double> pvalues = new ArrayList<Double>();
@@ -657,10 +665,6 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         tableModel.calculateFDRs(new ArrayList<Double>(pvalues));
         tableModel.fireTableStructureChanged();
         setCombinedPValue(pvalues);
-        // Cache these values for recheck
-        this.varResults = varResults;
-        this.outputVars = outputVars;
-        this.sampleToType = sampleToType;
         // Set overview
         // Use these default values
         double pvalueCutoff = 0.01d;
@@ -711,8 +715,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                                               varResults.getVariable().getCustomizedInfo());
             pvalues.add(pvalue);
             // In this two cases analysis, we assume the first type is real and the second random.
-            realSampleToIPAs.put(varResults.getVariable().getCustomizedInfo(), ipas0);
-            randomSampleToIPAs.put(varResults.getVariable().getCustomizedInfo(), ipas1);
+            realVarIdToIPAs.put(varResults.getVariable().getCustomizedInfo(), ipas0);
+            randomVarIdToIPAs.put(varResults.getVariable().getCustomizedInfo(), ipas1);
         }
     }
 
@@ -755,8 +759,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                                               varResults.getVariable().getName(),
                                               varResults.getVariable().getCustomizedInfo());
             pvalues.add(pvalue);
-            realSampleToIPAs.put(varResults.getVariable().getCustomizedInfo(), realIPAs);
-            randomSampleToIPAs.put(varResults.getVariable().getCustomizedInfo(), randomIPAs);
+            realVarIdToIPAs.put(varResults.getVariable().getCustomizedInfo(), realIPAs);
+            randomVarIdToIPAs.put(varResults.getVariable().getCustomizedInfo(), randomIPAs);
         }
     }
     
@@ -767,12 +771,26 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
      * @throws MathException
      */
     private void setCombinedPValue(List<Double> pvalues) throws MathException {
+        // We want to make sure combined p-value is calculated against outputs only
+        // pvalues should be corresponding to VariableListValues
+        List<List<Double>> outputIPAs = new ArrayList<List<Double>>();
+        List<Double> outputPValues = new ArrayList<Double>();
+        for (int i = 0; i < varResults.size(); i++) {
+            VariableInferenceResults varResult = varResults.get(i);
+            if (outputVars.contains(varResult.getVariable())) {
+                List<Double> ipas = realVarIdToIPAs.get(varResult.getVariable().getCustomizedInfo());
+                if (ipas == null)
+                    continue; // This should not occur
+                outputPValues.add(pvalues.get(i));
+                outputIPAs.add(ipas);
+            }
+        }
 //        double combinedPValue = MathUtilities.combinePValuesWithFisherMethod(pvalues);
         // Since it is pretty sure, variables are dependent in pathway, use another method
         // to combine p-values
         PValueCombiner combiner = new PValueCombiner();
-        double combinedPValue = combiner.combinePValue(new ArrayList<List<Double>>(realSampleToIPAs.values()),
-                                                        pvalues);
+        double combinedPValue = combiner.combinePValue(outputIPAs,
+                                                       outputPValues);
         combinedPValueLabel.setText(PlugInUtilities.formatProbability(combinedPValue));
     }
     

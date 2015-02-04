@@ -316,6 +316,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
             public Comparator<?> getComparator(int column) {
                 if (column == 0)
                     return super.getComparator(0);
+                if (fgInfResults.getSampleToType() != null && column == 1)
+                    return super.getComparator(1);
                 Comparator<String> comparator = new Comparator<String>() {
                     public int compare(String value1, String value2) {
                         if (value1 == null || value1.length() == 0 ||
@@ -342,7 +344,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
     }
     
     protected class IPAValueTableModel extends NetworkModuleTableModel {
-        private final String[] ORIGINAL_HEADERS = new String[]{"Sample", "Select Nodes to View"};
+        private String[] originalHeaders = new String[]{"Sample", "Select Nodes to View"};
         // Cache the list of variables for different view
         protected List<VariableInferenceResults> varResults;
         // A flag to indicate if p-values should be displayed
@@ -350,16 +352,24 @@ public class IPAValueTablePane extends NetworkModulePanel {
         private boolean hideFDRs = true;
         
         public IPAValueTableModel() {
-            columnHeaders = ORIGINAL_HEADERS; // Just some test data
+            columnHeaders = originalHeaders; // Just some test data
             tableData = new ArrayList<String[]>();
         }
         
         public void setSamples(List<String> samples) {
             Collections.sort(samples);
             tableData.clear();
+            Map<String, String> sampleToType = fgInfResults.getSampleToType();
+            if (sampleToType != null) {
+                // Add a new type in the header
+                originalHeaders = new String[]{"Sample", "Type", "Select Nodes to View"};
+            }
             for (String sample : samples) {
-                String[] values = new String[]{sample,
-                                               ""};
+                String[] values = null;
+                if (sampleToType != null) 
+                    values = new String[]{sample, sampleToType.get(sample), ""};
+                else
+                    values = new String[]{sample, ""};
                 tableData.add(values);
             }
             fireTableStructureChanged();
@@ -390,6 +400,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
         
         protected void resetDataWithPValues(List<String> sampleList) {
+            if (fgInfResults.getSampleToType() != null)
+                throw new IllegalStateException("This operation is not supported when two-cases analysis is performed!");
             columnHeaders = new String[varResults.size() * 3 + 1];
             columnHeaders[0] = "Sample";
             for (int i = 0; i < varResults.size(); i++) {
@@ -452,22 +464,34 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
         
         protected void resetDataWithoutPValues(List<String> sampleList) {
-            columnHeaders = new String[varResults.size() + 1];
+            int dataIndex = 0;
+            Map<String, String> sampleToType = fgInfResults.getSampleToType();
+            if (sampleToType == null) {
+                columnHeaders = new String[varResults.size() + 1];
+                dataIndex = 1;
+            }
+            else {
+                columnHeaders = new String[varResults.size() + 2];
+                columnHeaders[1] = "Type";
+                dataIndex = 2;
+            }
             columnHeaders[0] = "Sample";
             for (int i = 0; i < varResults.size(); i++) {
                 String name = varResults.get(i).getVariable().getName();
-                columnHeaders[i + 1] = name;
+                columnHeaders[i + dataIndex] = name;
             }
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[varResults.size() + 1];
+                String[] rowData = new String[columnHeaders.length];
                 rowData[0] = sampleList.get(i);
+                if (sampleToType != null)
+                    rowData[1] = sampleToType.get(sampleList.get(i));
                 for (int j = 0; j < varResults.size(); j++) {
                     VariableInferenceResults varResult = varResults.get(j);
                     Map<String, List<Double>> posteriors = varResult.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
                     double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(),
                                                             postProbs);
-                    rowData[j + 1] = PlugInUtilities.formatProbability(ipa);
+                    rowData[j + dataIndex] = PlugInUtilities.formatProbability(ipa);
                 }
                 tableData.add(rowData);
             }
@@ -475,7 +499,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
         
         protected void resetData() {
             if (varResults == null || varResults.size() == 0) {
-                columnHeaders = ORIGINAL_HEADERS;
+                columnHeaders = originalHeaders;
                 // Refresh the tableData
                 for (String[] values : tableData) {
                     for (int i = 1; i < values.length; i++)
