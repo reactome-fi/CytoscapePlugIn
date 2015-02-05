@@ -115,4 +115,10 @@ public class PathwayDiagramHighlighter {
         highlightELV(diagram, idToValue, min, max);
     }
     
+    public int[] getColorSpetrum() {
+        if (colors == null)
+            initColors();
+        return colors;
+    }
+    
 }

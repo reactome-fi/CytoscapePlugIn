@@ -5,7 +5,6 @@
 package org.reactome.cytoscape.pgm;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -46,7 +45,6 @@ public class FactorGraphRegistry {
     // Key is a concatenated string based on file name and threshold values
     // Most likely such a key should be unique.
     private Map<String, ObservationData> keyToLoadedData;
-    private Map<String, String> loadedSampleToType;
     private File sampleInfoFile; // The above map should be loaded from this file
     private List<Inferencer> loadedInferencer;
     // Cache escape names to avoid displaying
@@ -98,7 +96,7 @@ public class FactorGraphRegistry {
             e.printStackTrace();
         }
     }
-    
+
     public boolean isNeedEscapeNameDialog() {
         return needEscapeNameDialog;
     }
@@ -115,16 +113,12 @@ public class FactorGraphRegistry {
         this.escapeNames = escapeNames;
     }
 
-    public File getSampleInfoFile() {
+    public File getTwoCaseSampleInfoFile() {
         return sampleInfoFile;
     }
 
     public void setTwoCasesSampleInfoFile(File sampleInfoFile) {
         this.sampleInfoFile = sampleInfoFile;
-    }
-    
-    public List<ObservationData> getLoadedData() {
-        return new ArrayList<ObservationData>(keyToLoadedData.values());
     }
     
     /**
@@ -199,14 +193,6 @@ public class FactorGraphRegistry {
             builder.append("::").append(value);
         }
         return builder.toString();
-    }
-
-    public Map<String, String> getLoadedSampleToType() {
-        return loadedSampleToType;
-    }
-
-    public void setLoadedSampleToType(Map<String, String> loadedSampleToType) {
-        this.loadedSampleToType = loadedSampleToType;
     }
 
     public List<Inferencer> getLoadedAlgorithms() {

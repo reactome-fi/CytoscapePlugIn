@@ -150,34 +150,35 @@ public class ObservationDataHelper {
                                            ProgressPane progressPane,
                                            ObservationFileLoader dataLoader) throws IOException {
         // Check if data has been loaded already
-        List<ObservationData> observationData = FactorGraphRegistry.getRegistry().getLoadedData();
-        if (observationData == null || observationData.size() == 0) {
-            observationData = new ArrayList<ObservationFileLoader.ObservationData>();
-            Map<String, Map<String, Integer>> dnaSampleToGeneToState = null;
-            if (dnaFile != null) {
-                if (progressPane != null)
-                    progressPane.setText("Loading CNV data...");
-                dnaSampleToGeneToState = dataLoader.loadObservationData(dnaFile.getAbsolutePath(),
-                                                                        DataType.CNV,
-                                                                        dnaThresholdValues);
-                ObservationData data = new ObservationData();
+        List<ObservationData> observationData = new ArrayList<ObservationFileLoader.ObservationData>();
+        if (dnaFile != null) {
+            if (progressPane != null)
+                progressPane.setText("Loading CNV data...");
+            ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(dnaFile, dnaThresholdValues);
+            if (data == null) {
+                Map<String, Map<String, Integer>> dnaSampleToGeneToState = dataLoader.loadObservationData(dnaFile.getAbsolutePath(),
+                                                                                                          DataType.CNV,
+                                                                                                          dnaThresholdValues);
+                data = new ObservationData();
                 data.setDataType(DataType.CNV);
                 data.setSampleToGeneToValue(dnaSampleToGeneToState);
-                observationData.add(data);
                 FactorGraphRegistry.getRegistry().cacheLoadedData(dnaFile, dnaThresholdValues, data);
             }
-            Map<String, Map<String, Integer>> geneExpSampleToGeneToState = null;
-            if (geneExpFile != null) {
-                progressPane.setText("Loading mRNA expression data...");
-                geneExpSampleToGeneToState = dataLoader.loadObservationData(geneExpFile.getAbsolutePath(),
-                                                                            DataType.mRNA_EXP,
-                                                                            geneExpThresholdValues);
-                ObservationData data = new ObservationData();
+            observationData.add(data);
+        }
+        if (geneExpFile != null) {
+            progressPane.setText("Loading mRNA expression data...");
+            ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(geneExpFile, geneExpThresholdValues);
+            if (data == null) {
+                Map<String, Map<String, Integer>> geneExpSampleToGeneToState = dataLoader.loadObservationData(geneExpFile.getAbsolutePath(),
+                                                                                                              DataType.mRNA_EXP,
+                                                                                                              geneExpThresholdValues);
+                data = new ObservationData();
                 data.setDataType(DataType.mRNA_EXP);
                 data.setSampleToGeneToValue(geneExpSampleToGeneToState);
-                observationData.add(data);
                 FactorGraphRegistry.getRegistry().cacheLoadedData(geneExpFile, geneExpThresholdValues, data);
             }
+            observationData.add(data);
         }
         Map<String, Variable> nameToVar = getNameToVarInFactorGraph();
         for (ObservationData data : observationData) {
@@ -252,11 +253,12 @@ public class ObservationDataHelper {
     }
     
     private Map<String, String> loadSampleToType(File sampleFile) throws IOException {
-        Map<String, String> sampleToType = FactorGraphRegistry.getRegistry().getLoadedSampleToType();
-        if (sampleToType != null)
-            return sampleToType;
+        //TODO cache the loaded sampleToType information
+//        Map<String, String> sampleToType = FactorGraphRegistry.getRegistry().getLoadedSampleToType();
+//        if (sampleToType != null)
+//            return sampleToType;
         FileUtility fu = new FileUtility();
-        sampleToType = new HashMap<String, String>();
+        Map<String, String> sampleToType = new HashMap<String, String>();
         fu.setInput(sampleFile.getAbsolutePath());
         String line = null;
         while ((line = fu.readLine()) != null) {
@@ -264,7 +266,6 @@ public class ObservationDataHelper {
             sampleToType.put(tokens[0], tokens[1]);
         }
         fu.close();
-        FactorGraphRegistry.getRegistry().setLoadedSampleToType(sampleToType);
         return sampleToType;
     }
     

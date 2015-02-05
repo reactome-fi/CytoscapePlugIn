@@ -93,9 +93,9 @@ public abstract class ObservationDataLoadPanel extends JPanel {
             return; 
         setValues(DataType.CNV, dnaTFs);
         setValues(DataType.mRNA_EXP, geneExpTFs);
-        if (FactorGraphRegistry.getRegistry().getSampleInfoFile() != null) {
+        if (FactorGraphRegistry.getRegistry().getTwoCaseSampleInfoFile() != null) {
             useTwoCasesBox.setSelected(true);
-            twoCaseFileTF.setText(FactorGraphRegistry.getRegistry().getSampleInfoFile().getAbsolutePath());
+            twoCaseFileTF.setText(FactorGraphRegistry.getRegistry().getTwoCaseSampleInfoFile().getAbsolutePath());
         }
     }
 

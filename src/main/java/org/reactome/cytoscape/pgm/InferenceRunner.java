@@ -184,11 +184,19 @@ public class InferenceRunner {
         // Highlight pathway diagram
         if (pathwayEditor != null) {
             Map<String, Double> idToValue = outputPane.getReactomeIdToIPADiff();
-            PathwayDiagramHighlighter highlighter = new PathwayDiagramHighlighter();
-            highlighter.highlightELV((RenderablePathway)pathwayEditor.getRenderable(),
-                                     idToValue);
-            pathwayEditor.repaint(pathwayEditor.getVisibleRect());
+            highlightPathway(idToValue);
         }
+    }
+
+    private void highlightPathway(Map<String, Double> idToValue) {
+        PathwayDiagramHighlighter highlighter = new PathwayDiagramHighlighter();
+        double[] minMaxValue = PlugInObjectManager.getManager().getMinMaxColorValues();
+        highlighter.highlightELV((RenderablePathway)pathwayEditor.getRenderable(),
+                                 idToValue,
+                                 minMaxValue[0],
+                                 minMaxValue[1]);
+        pathwayEditor.repaint(pathwayEditor.getVisibleRect());
+        pathwayEditor.firePropertyChange("showColorSpectrum", false, true);
     }
     
     public void performInference(boolean needFinishDialog) throws Exception {

@@ -66,7 +66,7 @@ public class FactorGraphAnalyzer {
     }
 
     public File getSampleInfoFile() {
-        return FactorGraphRegistry.getRegistry().getSampleInfoFile();
+        return FactorGraphRegistry.getRegistry().getTwoCaseSampleInfoFile();
     }
 
     public void setTwoCasesSampleInfoFile(File sampleInfoFile) {

@@ -56,6 +56,8 @@ public class PlugInObjectManager {
     private TaskManager taskManager;
     // Currently selected FI network version
     private String fiNetworkVersion;
+    // Used for setting colors for pathway diagram highlighting
+    private double[] minMaxColorValues = new double[]{-1.0, 1.0};
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
@@ -70,6 +72,14 @@ public class PlugInObjectManager {
         return manager;
     }
     
+    public double[] getMinMaxColorValues() {
+        return minMaxColorValues;
+    }
+
+    public void setMinMaxColorValues(double[] minMaxColorValues) {
+        this.minMaxColorValues = minMaxColorValues;
+    }
+
     /**
      * Check if Reactome pathways are loaded.
      * @return
