@@ -17,10 +17,8 @@ import org.apache.commons.math.MathException;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
-import org.gk.graphEditor.PathwayEditor;
-import org.gk.render.RenderablePathway;
 import org.gk.util.ProgressPane;
-import org.reactome.cytoscape.service.PathwayDiagramHighlighter;
+import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.PopupMenuManager;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -54,8 +52,8 @@ public class InferenceRunner {
     private boolean abort;
     // Flag indicating the final results should be performed based on two cases
     private boolean usedForTwoCases;
-    // To be highlight
-    private PathwayEditor pathwayEditor;
+    // For highlighting
+    private PathwayHighlightControlPanel hiliteControlPane;
     
     /**
      * Default constructor.
@@ -63,12 +61,12 @@ public class InferenceRunner {
     public InferenceRunner() {
     }
     
-    public PathwayEditor getPathwayEditor() {
-        return pathwayEditor;
+    public PathwayHighlightControlPanel getHiliteControlPane() {
+        return hiliteControlPane;
     }
 
-    public void setPathwayEditor(PathwayEditor pathwayEditor) {
-        this.pathwayEditor = pathwayEditor;
+    public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
+        this.hiliteControlPane = hiliteControlPane;
     }
 
     public Set<Variable> getOutputVars() {
@@ -182,23 +180,14 @@ public class InferenceRunner {
         if (index >= 0) // Select this as the default table for viewing the results
             tableBrowserPane.setSelectedIndex(index);
         // Highlight pathway diagram
-        if (pathwayEditor != null) {
+        if (hiliteControlPane != null) {
             Map<String, Double> idToValue = outputPane.getReactomeIdToIPADiff();
-            highlightPathway(idToValue);
+            hiliteControlPane.setIdToValue(idToValue);
+            hiliteControlPane.highlight();
+            hiliteControlPane.setVisible(true);
         }
     }
 
-    private void highlightPathway(Map<String, Double> idToValue) {
-        PathwayDiagramHighlighter highlighter = new PathwayDiagramHighlighter();
-        double[] minMaxValue = PlugInObjectManager.getManager().getMinMaxColorValues();
-        highlighter.highlightELV((RenderablePathway)pathwayEditor.getRenderable(),
-                                 idToValue,
-                                 minMaxValue[0],
-                                 minMaxValue[1]);
-        pathwayEditor.repaint(pathwayEditor.getVisibleRect());
-        pathwayEditor.firePropertyChange("showColorSpectrum", false, true);
-    }
-    
     public void performInference(boolean needFinishDialog) throws Exception {
         if (progressPane != null) {
             progressPane.enableCancelAction(new ActionListener() {

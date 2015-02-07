@@ -13,7 +13,6 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.math.MathException;
-import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
 import org.gk.render.Renderable;
@@ -25,6 +24,7 @@ import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.InferenceRunner;
 import org.reactome.cytoscape.pgm.ObservationDataHelper;
+import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Inferencer;
@@ -40,7 +40,7 @@ public class FactorGraphAnalyzer {
     // variables should be provided
     private Long pathwayId;
     private RenderablePathway pathwayDiagram;
-    private PathwayEditor pathwayEditor;
+    private PathwayHighlightControlPanel hiliteControlPane;
     // Information entered by the user
     private File geneExpFile;
     private double[] geneExpThresholdValues;
@@ -53,17 +53,14 @@ public class FactorGraphAnalyzer {
     public FactorGraphAnalyzer() {
     }
     
-    public PathwayEditor getPathwayEditor() {
-        return pathwayEditor;
+    public PathwayHighlightControlPanel getHighlightControlPane() {
+        return hiliteControlPane;
     }
 
-    public void setPathwayEditor(PathwayEditor pathwayEditor) {
-        this.pathwayEditor = pathwayEditor;
-        if (pathwayEditor != null) {
-            setPathwayId(pathwayEditor.getRenderable().getReactomeId());
-            setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
-        }
+    public void setHighlightControlPane(PathwayHighlightControlPanel highlightControlPane) {
+        this.hiliteControlPane = highlightControlPane;
     }
+
 
     public File getSampleInfoFile() {
         return FactorGraphRegistry.getRegistry().getTwoCaseSampleInfoFile();
@@ -182,7 +179,7 @@ public class FactorGraphAnalyzer {
             inferenceRunner.setUsedForTwoCases(getSampleInfoFile() != null);
             inferenceRunner.setProgressPane(progressPane);
             inferenceRunner.setAlgorithms(FactorGraphRegistry.getRegistry().getLoadedAlgorithms());
-            inferenceRunner.setPathwayEditor(pathwayEditor);
+            inferenceRunner.setHiliteControlPane(this.hiliteControlPane);
             // Now call for inference
             inferenceRunner.performInference(true);
             
@@ -204,6 +201,8 @@ public class FactorGraphAnalyzer {
      * @param fgResults
      */
     public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
+        if (pathwayDiagram == null || hiliteControlPane == null)
+            return; // Cannot do anything here
         FactorGraph factorGraph = fgResults.getFactorGraph();
         InferenceRunner inferenceRunner = new InferenceRunner();
         inferenceRunner.setFactorGraph(factorGraph);
@@ -213,7 +212,7 @@ public class FactorGraphAnalyzer {
         Set<Variable> outputVars = getOutputVariables(factorGraph, pathwayDiagram);
         inferenceRunner.setOutputVars(outputVars);
         inferenceRunner.setUsedForTwoCases(fgResults.getSampleToType() != null);
-        inferenceRunner.setPathwayEditor(pathwayEditor);
+        inferenceRunner.setHiliteControlPane(hiliteControlPane);
         inferenceRunner.showInferenceResults(fgResults);
     }
     

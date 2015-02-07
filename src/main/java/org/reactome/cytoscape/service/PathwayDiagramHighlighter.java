@@ -85,6 +85,11 @@ public class PathwayDiagramHighlighter {
                 continue;
             }
             Double value = idToValue.get(dbId.toString());
+            // In case this value is out-of-range
+            if (value > max)
+                value = max;
+            if (value < min)
+                value = min;
             double rel = (value - min) / (max - min);
             // Add 0.5d to round half up
             int index = (int) (rel * (colors.length - 1) + 0.5d); // The last index should be --.

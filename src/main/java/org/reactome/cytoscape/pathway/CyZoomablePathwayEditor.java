@@ -4,18 +4,21 @@
  */
 package org.reactome.cytoscape.pathway;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Rectangle2D;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.util.*;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,9 +29,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
-import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.application.swing.CytoPanel;
-import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.property.CyProperty;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
@@ -46,11 +46,10 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
-import org.reactome.cytoscape.pgm.IPAPathwaySummaryPane;
 import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
 import org.reactome.cytoscape.pgm.ObservationDataLoadPanel;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
-import org.reactome.cytoscape.service.PathwayDiagramHighlighter;
+import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -73,11 +72,9 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     // Keep the original colors so that they can be revert back in case remove highlighting
     private Map<Renderable, Color> rToFg;
     private Map<Renderable, Color> rToBg;
-    // For color spectrum
-    private JPanel colorSpectrumPane;
-    private JLabel minValueLabel;
-    private JLabel maxValueLabel;
-    
+    // To control pathway highlight
+    private PathwayHighlightControlPanel hiliteControlPane;
+
     public CyZoomablePathwayEditor() {
         // Don't need the title
         titleLabel.setVisible(false);
@@ -113,7 +110,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         initColorSpectrumPane();
     }
     
-    //TODO: refactor to create a new class for handling coloring.
     private void initColorSpectrumPane() {
         JPanel southPane = null;
         for (Component comp : getComponents()) {
@@ -129,84 +125,10 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         }
         if (southPane == null)
             return; // Cannot do anything
-        colorSpectrumPane = new JPanel();
-        colorSpectrumPane.setLayout(new GridBagLayout());
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.anchor = GridBagConstraints.CENTER;
-        constraints.insets = new Insets(2, 0, 2, 0);
-        double[] minMaxValue = PlugInObjectManager.getManager().getMinMaxColorValues();
-        minValueLabel = new JLabel(minMaxValue[0] + "");
-        maxValueLabel = new JLabel(minMaxValue[1] + "");
-        ColorSpectrumPane colorPane = new ColorSpectrumPane();
-        colorPane.setPreferredSize(new Dimension(257, 20));
-        colorSpectrumPane.add(minValueLabel, constraints);
-        constraints.gridx = 1;
-        colorSpectrumPane.add(colorPane, constraints);
-        constraints.gridx = 2;
-        colorSpectrumPane.add(maxValueLabel, constraints);
-        southPane.add(colorSpectrumPane);
-        colorSpectrumPane.setVisible(false); // Default is null
-        
-        // Add a listener so that it can turn on
-        pathwayEditor.addPropertyChangeListener(new PropertyChangeListener() {
-            
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                if (evt.getPropertyName().equals("showColorSpectrum")) {
-                    boolean value = (Boolean) evt.getNewValue();
-                    if (value)
-                        showColorSpectrum();
-                    else
-                        hideColorSpectrum();
-                }
-            }
-        });
-        
-        colorSpectrumPane.addMouseListener(new MouseAdapter() {
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) {
-                    MinMaxValueDialog dialog = new MinMaxValueDialog();
-                    if (dialog.isOkClikeced) {
-                        highlightPathway(); 
-                    }
-                }
-            }
-        });
-    }
-    
-    //TODO: This method should be changed. The current way has to rely the displayed tables.
-    private void highlightPathway() {
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
-        String title = "IPA Pathway Analysis";
-        int index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);
-        IPAPathwaySummaryPane outputPane = null;
-        if (index > -1)
-            outputPane = (IPAPathwaySummaryPane) tableBrowserPane.getComponentAt(index);
-        if (outputPane == null)
-            return;
-        Map<String, Double> idToValue = outputPane.getReactomeIdToIPADiff();
-        PathwayDiagramHighlighter highlighter = new PathwayDiagramHighlighter();
-        double[] minMaxValue = PlugInObjectManager.getManager().getMinMaxColorValues();
-        highlighter.highlightELV((RenderablePathway)pathwayEditor.getRenderable(),
-                                 idToValue,
-                                 minMaxValue[0],
-                                 minMaxValue[1]);
-        pathwayEditor.repaint(pathwayEditor.getVisibleRect());
-        showColorSpectrum();
-    }
-    
-    public void showColorSpectrum() {
-        double[] minMaxValue = PlugInObjectManager.getManager().getMinMaxColorValues();
-        minValueLabel.setText(minMaxValue[0] + "");
-        maxValueLabel.setText(minMaxValue[1] + "");
-        colorSpectrumPane.setVisible(true);
-    }
-    
-    public void hideColorSpectrum() {
-        colorSpectrumPane.setVisible(false);
+        hiliteControlPane = new PathwayHighlightControlPanel();
+        southPane.add(hiliteControlPane);
+        hiliteControlPane.setVisible(false); // Default is null
+        hiliteControlPane.setPathwayEditor(pathwayEditor);
     }
     
     @Override
@@ -893,8 +815,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                               JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
-            analyzer.setPathwayEditor(pathwayEditor);
+            FactorGraphAnalyzer analyzer = getFactorGraphAnalyzer();
             analyzer.showInferenceResults(results);
         }
         catch(Exception e) {
@@ -908,6 +829,14 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             if (reference != null)
                 PlugInObjectManager.getManager().getBundleContext().ungetService(reference);
         }
+    }
+
+    private FactorGraphAnalyzer getFactorGraphAnalyzer() {
+        FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
+        analyzer.setPathwayId(pathwayEditor.getRenderable().getReactomeId());
+        analyzer.setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
+        analyzer.setHighlightControlPane(hiliteControlPane);
+        return analyzer;
     }
     
     private void saveAnalysisResults() {
@@ -979,8 +908,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             if (reply == JOptionPane.CANCEL_OPTION)
                 return; 
             if (reply == JOptionPane.NO_OPTION) { // There is no need to reload data.
-                final FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
-                analyzer.setPathwayEditor(pathwayEditor);
+                final FactorGraphAnalyzer analyzer = getFactorGraphAnalyzer();
                 // Don't show escape name dialog
                 FactorGraphRegistry.getRegistry().setNeedEscapeNameDialog(false);
                 Thread t = new Thread() {
@@ -1002,8 +930,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         if (dialog.isOkClicked()) {
             // Initialize FactorGraphAnalyzer and set up its required member variables
             // for performing analysis.
-            final FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
-            analyzer.setPathwayEditor(pathwayEditor);
+            final FactorGraphAnalyzer analyzer = getFactorGraphAnalyzer();
             ObservationDataLoadPanel dataPane = dialog.getDataLoadPane();
             analyzer.setGeneExpFile(dataPane.getGeneExpFile());
             analyzer.setGeneExpThresholdValues(dataPane.getGeneExpThresholdValues());
@@ -1272,109 +1199,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         protected void validateCompartmentSetting(Renderable r) {
             return; 
         }
-    }
-    
-    private class ColorSpectrumPane extends JComponent {
-        private int[] colors;
-        
-        public ColorSpectrumPane() {
-            colors = new PathwayDiagramHighlighter().getColorSpetrum();
-        }
-        
-        @Override
-        public void paint(Graphics g) {
-            super.paint(g);
-            // Color lines
-            double step = (double) getWidth() / colors.length;
-            double x = 0.0d;
-            int height = getHeight();
-            Graphics2D g2 = (Graphics2D) g;
-            for (int i = 0; i < colors.length; i++) {
-                Color color = new Color(colors[i]);
-                g2.setPaint(color);
-                Rectangle2D r = new Rectangle2D.Double(x, 0, step, height);
-                g2.fill(r);
-                x += step;
-            }
-        }
-    }
-    
-    private class MinMaxValueDialog extends JDialog {
-        private JTextField minTF, maxTF;
-        private boolean isOkClikeced;
-        
-        public MinMaxValueDialog() {
-            super(PlugInObjectManager.getManager().getCytoscapeDesktop());
-            setTitle("Max/Min Values for Coloring");
-            JPanel panel = new JPanel();
-            panel.setLayout(new GridBagLayout());
-            GridBagConstraints constraints = new GridBagConstraints();
-            constraints.insets = new Insets(4, 4, 4, 4);
-            JLabel label = new JLabel("<html><b><u>Enter Max/Min Values for Coloring</u></b></html>");
-            constraints.gridwidth = 2;
-            panel.add(label, constraints);
-            
-            double[] minMaxValue = PlugInObjectManager.getManager().getMinMaxColorValues();
-            
-            label = new JLabel("Minimum Value:");
-            minTF = new JTextField(minMaxValue[0] + "");
-            minTF.setColumns(4);
-            constraints.gridwidth = 1;
-            constraints.gridy = 1;
-            panel.add(label, constraints);
-            panel.add(minTF, constraints);
-            
-            label = new JLabel("Maxmimum Value:");
-            maxTF = new JTextField(minMaxValue[1] + "");
-            minTF.setColumns(4);
-            constraints.gridwidth = 1;
-            constraints.gridy = 2;
-            panel.add(label, constraints);
-            panel.add(maxTF, constraints);
-            getContentPane().add(panel, BorderLayout.CENTER);
-            
-            DialogControlPane controlPane = new DialogControlPane();
-            controlPane.getOKBtn().addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if (commitValues()) {
-                        isOkClikeced = true;
-                        dispose();
-                    }
-                }
-            });
-            controlPane.getCancelBtn().addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    dispose();
-                }
-            });
-            getContentPane().add(controlPane, BorderLayout.SOUTH);
-            
-            setLocationRelativeTo(getOwner());
-            setSize(325, 250);
-            setModal(true);
-            setVisible(true);
-        }
-        
-        private boolean commitValues() {
-            try {
-                double min = new Double(minTF.getText().trim());
-                double max = new Double(maxTF.getText().trim());
-                PlugInObjectManager.getManager().setMinMaxColorValues(new double[]{min, max});
-            }
-            catch(NumberFormatException e) {
-                JOptionPane.showMessageDialog(this,
-                                              "Error in parsing value: " + e.getMessage(),
-                                              "Error in Value", 
-                                              JOptionPane.ERROR_MESSAGE);
-                return false;
-            }
-            return true;
-        }
-        
     }
     
 }
