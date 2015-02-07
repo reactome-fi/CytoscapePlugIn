@@ -5,6 +5,7 @@
 package org.reactome.cytoscape.pgm;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -147,6 +148,10 @@ public class FactorGraphRegistry {
                                          double[] threshold) {
         String key = generateKeyForData(file, threshold);
         return keyToLoadedData.get(key);
+    }
+    
+    public List<ObservationData> getAllLoadedData() {
+        return new ArrayList<ObservationData>(keyToLoadedData.values());
     }
     
     /**

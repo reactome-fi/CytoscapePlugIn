@@ -114,6 +114,7 @@ public class ObservationDataHelper {
             return false;
         }
         // Need to re-validate FactorGraph since new factors have been added
+        // during data loading
         fg.validatVariables();
         Map<String, String> sampleToType = null;
         if (sampleInfoFile != null) {
@@ -149,36 +150,43 @@ public class ObservationDataHelper {
                                            double[] geneExpThresholdValues,
                                            ProgressPane progressPane,
                                            ObservationFileLoader dataLoader) throws IOException {
-        // Check if data has been loaded already
-        List<ObservationData> observationData = new ArrayList<ObservationFileLoader.ObservationData>();
-        if (dnaFile != null) {
-            if (progressPane != null)
-                progressPane.setText("Loading CNV data...");
-            ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(dnaFile, dnaThresholdValues);
-            if (data == null) {
-                Map<String, Map<String, Integer>> dnaSampleToGeneToState = dataLoader.loadObservationData(dnaFile.getAbsolutePath(),
-                                                                                                          DataType.CNV,
-                                                                                                          dnaThresholdValues);
-                data = new ObservationData();
-                data.setDataType(DataType.CNV);
-                data.setSampleToGeneToValue(dnaSampleToGeneToState);
-                FactorGraphRegistry.getRegistry().cacheLoadedData(dnaFile, dnaThresholdValues, data);
-            }
-            observationData.add(data);
+        List<ObservationData> observationData = null;
+        // If both dnaFile and geneExpFile are null, we should use the cached data
+        if (dnaFile == null && geneExpFile == null) {
+            observationData = FactorGraphRegistry.getRegistry().getAllLoadedData();
         }
-        if (geneExpFile != null) {
-            progressPane.setText("Loading mRNA expression data...");
-            ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(geneExpFile, geneExpThresholdValues);
-            if (data == null) {
-                Map<String, Map<String, Integer>> geneExpSampleToGeneToState = dataLoader.loadObservationData(geneExpFile.getAbsolutePath(),
-                                                                                                              DataType.mRNA_EXP,
-                                                                                                              geneExpThresholdValues);
-                data = new ObservationData();
-                data.setDataType(DataType.mRNA_EXP);
-                data.setSampleToGeneToValue(geneExpSampleToGeneToState);
-                FactorGraphRegistry.getRegistry().cacheLoadedData(geneExpFile, geneExpThresholdValues, data);
+        else {
+            // Check if data has been loaded already
+            observationData = new ArrayList<ObservationFileLoader.ObservationData>();
+            if (dnaFile != null) {
+                if (progressPane != null)
+                    progressPane.setText("Loading CNV data...");
+                ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(dnaFile, dnaThresholdValues);
+                if (data == null) {
+                    Map<String, Map<String, Integer>> dnaSampleToGeneToState = dataLoader.loadObservationData(dnaFile.getAbsolutePath(),
+                                                                                                              DataType.CNV,
+                                                                                                              dnaThresholdValues);
+                    data = new ObservationData();
+                    data.setDataType(DataType.CNV);
+                    data.setSampleToGeneToValue(dnaSampleToGeneToState);
+                    FactorGraphRegistry.getRegistry().cacheLoadedData(dnaFile, dnaThresholdValues, data);
+                }
+                observationData.add(data);
             }
-            observationData.add(data);
+            if (geneExpFile != null) {
+                progressPane.setText("Loading mRNA expression data...");
+                ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(geneExpFile, geneExpThresholdValues);
+                if (data == null) {
+                    Map<String, Map<String, Integer>> geneExpSampleToGeneToState = dataLoader.loadObservationData(geneExpFile.getAbsolutePath(),
+                                                                                                                  DataType.mRNA_EXP,
+                                                                                                                  geneExpThresholdValues);
+                    data = new ObservationData();
+                    data.setDataType(DataType.mRNA_EXP);
+                    data.setSampleToGeneToValue(geneExpSampleToGeneToState);
+                    FactorGraphRegistry.getRegistry().cacheLoadedData(geneExpFile, geneExpThresholdValues, data);
+                }
+                observationData.add(data);
+            }
         }
         Map<String, Variable> nameToVar = getNameToVarInFactorGraph();
         for (ObservationData data : observationData) {
@@ -189,7 +197,7 @@ public class ObservationDataHelper {
         }
         return observationData;
     }
-    
+
     private Map<String, Variable> getNameToVarInFactorGraph() {
         Map<String, Variable> nameToVar = new HashMap<String, Variable>();
         for (Variable var : fg.getVariables())
