@@ -65,6 +65,7 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
         List<VariableInferenceResults> outputVarResults = null;
         if (fgResults != null && outputVars != null) {
             outputVarResults = fgResults.getVariableInferenceResults(outputVars);
+            this.fgInfResults = fgResults;
         }
         IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
         model.setVarResults(outputVarResults);

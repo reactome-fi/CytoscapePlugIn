@@ -67,7 +67,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
     // Keep this registration so that it can be unregister if this panel is closed
     private ServiceRegistration currentViewRegistration;
     // Inference results for a selected FactorGraph
-    private FactorGraphInferenceResults fgInfResults;
+    protected FactorGraphInferenceResults fgInfResults;
     // So that it can be unregister
     private ServiceRegistration graphSelectionRegistration;
     

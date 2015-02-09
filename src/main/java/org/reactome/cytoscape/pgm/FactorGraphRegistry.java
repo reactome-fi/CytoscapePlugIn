@@ -216,6 +216,12 @@ public class FactorGraphRegistry {
         diagramToFg.put(diagram, fg);
     }
     
+    public void registerInferenceResults(FactorGraphInferenceResults fgResults) {
+        if (fgToResults == null)
+            fgToResults = new HashMap<FactorGraph, FactorGraphInferenceResults>();
+        fgToResults.put(fgResults.getFactorGraph(), fgResults);
+    }
+    
     public void unregisterDiagramToFactorGraph(RenderablePathway diagram) {
         diagramToFg.remove(diagram);
     }

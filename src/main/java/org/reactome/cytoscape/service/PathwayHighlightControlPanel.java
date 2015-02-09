@@ -27,6 +27,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -116,6 +117,9 @@ public class PathwayHighlightControlPanel extends JPanel {
                                  minMaxValues[0], 
                                  minMaxValues[1]);
         pathwayEditor.repaint(pathwayEditor.getVisibleRect());
+        // Since there is no HIGHLIGHT ActionType, using SELECTION instead
+        // to make repaint consistent.
+        pathwayEditor.fireGraphEditorActionEvent(ActionType.SELECTION);
     }
     
     public void highlight() {

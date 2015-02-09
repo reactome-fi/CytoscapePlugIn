@@ -139,6 +139,10 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         installListeners();
     }
     
+    public void hideControlToolBar() {
+        controlToolBar.setVisible(false);
+    }
+    
     private void recheckOutputs() {
         RecheckOutputsDialog dialog = new RecheckOutputsDialog();
         dialog.setSize(400, 300);
@@ -711,12 +715,11 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             }
             double pvalue = tableModel.addRow(ipas0, 
                                               ipas1,
-                                              varResults.getVariable().getName(),
-                                              varResults.getVariable().getCustomizedInfo());
+                                              varResults.getVariable());
             pvalues.add(pvalue);
             // In this two cases analysis, we assume the first type is real and the second random.
-            realVarIdToIPAs.put(varResults.getVariable().getCustomizedInfo(), ipas0);
-            randomVarIdToIPAs.put(varResults.getVariable().getCustomizedInfo(), ipas1);
+            realVarIdToIPAs.put(getVariableKey(varResults.getVariable()), ipas0);
+            randomVarIdToIPAs.put(getVariableKey(varResults.getVariable()), ipas1);
         }
     }
 
@@ -756,12 +759,17 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                                                         varResults);
             double pvalue = tableModel.addRow(realIPAs, 
                                               randomIPAs,
-                                              varResults.getVariable().getName(),
-                                              varResults.getVariable().getCustomizedInfo());
+                                              varResults.getVariable());
             pvalues.add(pvalue);
-            realVarIdToIPAs.put(varResults.getVariable().getCustomizedInfo(), realIPAs);
-            randomVarIdToIPAs.put(varResults.getVariable().getCustomizedInfo(), randomIPAs);
+            realVarIdToIPAs.put(getVariableKey(varResults.getVariable()), realIPAs);
+            randomVarIdToIPAs.put(getVariableKey(varResults.getVariable()), randomIPAs);
         }
+    }
+    
+    private String getVariableKey(Variable var) {
+        if (var.getCustomizedInfo() != null)
+            return var.getCustomizedInfo();
+        return var.getName();
     }
     
     /**
@@ -778,7 +786,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         for (int i = 0; i < varResults.size(); i++) {
             VariableInferenceResults varResult = varResults.get(i);
             if (outputVars.contains(varResult.getVariable())) {
-                List<Double> ipas = realVarIdToIPAs.get(varResult.getVariable().getCustomizedInfo());
+                List<Double> ipas = realVarIdToIPAs.get(getVariableKey(varResults.get(i).getVariable()));
                 if (ipas == null)
                     continue; // This should not occur
                 outputPValues.add(pvalues.get(i));
@@ -802,9 +810,10 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             double ipa = IPACalculator.calculateIPA(varResults.getPriorValues(), probs);
             ipas.add(ipa);
         }
+        // Make sure column key is not null
         dataset.add(ipas, 
                     label,
-                    varResults.getVariable().getCustomizedInfo());
+                    getVariableKey(varResults.getVariable()));
         return ipas;
     }
     
@@ -953,8 +962,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
          */
         public double addRow(List<Double> realIPAs,
                              List<Double> randomIPAs,
-                             String varName,
-                             String varLabel) throws MathException {
+                             Variable var) throws MathException {
             double realMean = MathUtilities.calculateMean(realIPAs);
             double randomMean = MathUtilities.calculateMean(randomIPAs);
             double diff = realMean - randomMean;
@@ -972,8 +980,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             double pvalue = new MannWhitneyUTest().mannWhitneyUTest(realArray, randomArray);
             
             String[] row = new String[colHeaders.size()];
-            row[0] = varLabel;
-            row[1] = varName;
+            row[0] = getVariableKey(var);
+            row[1] = var.getName();
             row[2] = PlugInUtilities.formatProbability(realMean);
             row[3] = PlugInUtilities.formatProbability(randomMean);
             row[4] = PlugInUtilities.formatProbability(diff);

@@ -4,6 +4,7 @@
  */
 package org.reactome.cytoscape.pgm;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,12 +13,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.junit.Test;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
+import org.reactome.factorgraph.common.DataType;
 
 /**
  * Inference results for a FactorGraph object for the whole data set.
@@ -181,6 +186,26 @@ public class FactorGraphInferenceResults {
     
     public void clear() {
         varResults.clear();
+    }
+    
+    @Test
+    public void testStoredResults() throws Exception {
+        JAXBContext jaxbContext = JAXBContext.newInstance(FactorGraphInferenceResults.class);
+        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        File file = new File("/Users/gwu/Documents/EclipseWorkspace/caBigR3/results/paradigm/twoCases/hnsc/CytoscapeAppResults/M_G1Transition_MAX_BRCA.xml");
+        FactorGraphInferenceResults results = (FactorGraphInferenceResults) unmarshaller.unmarshal(file);
+        Map<Variable, VariableInferenceResults> varToResults = results.getVarToResults();
+        for (Variable var : varToResults.keySet()) {
+            if (var.getName().endsWith("_" + DataType.mRNA_EXP)) {
+                System.out.println(var.getName());
+                Map<String, List<Double>> sampleToResults = varToResults.get(var).getPosteriorValues();
+                for (String sample : sampleToResults.keySet()) {
+                    List<Double> values = sampleToResults.get(sample);
+                    System.out.println(sample + "\t" + values);
+                }
+                break;
+            }
+        }
     }
     
 }

@@ -214,6 +214,8 @@ public class FactorGraphAnalyzer {
         inferenceRunner.setUsedForTwoCases(fgResults.getSampleToType() != null);
         inferenceRunner.setHiliteControlPane(hiliteControlPane);
         inferenceRunner.showInferenceResults(fgResults);
+        FactorGraphRegistry.getRegistry().registerDiagramToFactorGraph(pathwayDiagram, factorGraph);
+        FactorGraphRegistry.getRegistry().registerInferenceResults(fgResults);
     }
     
     private Set<Variable> getPathwayVars(FactorGraph fg, RenderablePathway diagram) {

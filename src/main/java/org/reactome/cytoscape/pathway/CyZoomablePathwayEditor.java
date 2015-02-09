@@ -47,6 +47,7 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
+import org.reactome.cytoscape.pgm.GeneLevelResultDialog;
 import org.reactome.cytoscape.pgm.ObservationDataLoadPanel;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
@@ -304,6 +305,20 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         });
         popup.addSeparator();
         popup.add(runPGMAnalysis);
+        JMenuItem showGeneData = new JMenuItem("Show Gene Level Analysis Results");
+        showGeneData.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                GeneLevelResultDialog dialog = new GeneLevelResultDialog();
+                if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable()))
+                    return; // Nothing to be displayed
+                dialog.setSize(750, 600);
+                dialog.setModal(true);
+                dialog.setVisible(true);
+            }
+        });
+        popup.add(showGeneData);
         // Output analysis results
         JMenuItem saveResults = new JMenuItem("Save Analysis Results");
         saveResults.addActionListener(new ActionListener() {
@@ -646,6 +661,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 }
             });
             popup.add(listGenesItem);
+            JMenuItem showGeneLevelPGMResults = new JMenuItem("Show Gene Level GPM Results");
+            showGeneLevelPGMResults.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    showGeneLevelPGMResultsForEntity(dbId, name);
+                }
+            });
+            popup.addSeparator();
+            popup.add(showGeneLevelPGMResults);
             // Fetch FIs
             JMenuItem fetchFIs = new JMenuItem("Fetch FIs");
             fetchFIs.addActionListener(new ActionListener() {
@@ -675,6 +700,41 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         popup.show(getPathwayEditor(), 
                    event.getX(),
                    event.getY());
+    }
+    
+    private void showGeneLevelPGMResultsForEntity(final Long dbId,
+                                                  final String name) {
+        RESTFulFIService service = new RESTFulFIService();
+        String genes = null;
+        try {
+            genes = service.listGenes(dbId);
+            
+            if (genes == null || genes.trim().length() == 0) {
+                JOptionPane.showMessageDialog(CyZoomablePathwayEditor.this,
+                                              "There is no gene contained in \"" + name + "\"",
+                                              "No Gene",
+                                              JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(CyZoomablePathwayEditor.this,
+                                          "Error in fetching genes for \"" + name + "\": " + e.getMessage(),
+                                          "Error in Fetching Genes",
+                                          JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        Set<String> geneSets = new HashSet<String>();
+        for (String tmp : genes.split(",")) {
+            geneSets.add(tmp);
+        }
+        GeneLevelResultDialog dialog = new GeneLevelResultDialog();
+        if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable(),
+                                         geneSets))
+            return; // Nothing to be displayed
+        dialog.setSize(750, 450);
+        dialog.setModal(true);
+        dialog.setVisible(true);
     }
     
     /**
