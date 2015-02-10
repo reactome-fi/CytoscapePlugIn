@@ -5,22 +5,15 @@
 package org.reactome.cytoscape.pgm;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -29,14 +22,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.RowSorterEvent;
-import javax.swing.event.RowSorterListener;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
-import javax.swing.table.TableRowSorter;
 
 import org.apache.commons.math.MathException;
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
@@ -49,20 +45,11 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.gk.render.Renderable;
 import org.gk.util.DialogControlPane;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.CategoryAxis;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.labels.BoxAndWhiskerToolTipGenerator;
-import org.jfree.chart.plot.CategoryPlot;
-import org.jfree.chart.renderer.category.BoxAndWhiskerRenderer;
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.general.DatasetChangeEvent;
-import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -77,18 +64,11 @@ import org.reactome.r3.util.MathUtilities;
  */
 public class IPAPathwaySummaryPane extends IPAValueTablePane {
     
-    private DefaultBoxAndWhiskerCategoryDataset dataset;
-    private CategoryPlot plot;
-    private ChartPanel chartPanel;
-    private JTable tTestResultTable;
+    // Used to display the values. The main component
+    private TTestTablePlotPane<Variable> tablePlotPane;
     // For node selection sync between table and network view
     private boolean isFromTable;
     private boolean isFromNetwork;
-    // For combined p-value
-    private JLabel combinedPValueLabel;
-    // Cache calculated IPA values for sorting purpose
-    private Map<String, List<Double>> realVarIdToIPAs;
-    private Map<String, List<Double>> randomVarIdToIPAs;
     // Used for selecting a node
     private CyNetworkView networkView;
     private ServiceRegistration networkSelectionRegistration;
@@ -152,56 +132,42 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         if (dialog.isOkClicked) {
             String pvalueCutoffText = dialog.pvalueCutoffTF.getText().trim();
             String ipaDiffCutoffText = dialog.ipaCutoffTF.getText().trim();
-            setOverview(varResults, 
-                        outputVars,
-                        sampleToType, 
-                        new Double(pvalueCutoffText), 
+            setOverview(new Double(pvalueCutoffText), 
                         new Double(ipaDiffCutoffText));
         }
     }
 
     private void addContentPane() {
-        JPanel boxPlotPane = createBoxPlotPane();
-        JPanel ttestResultPane = createTTestResultTable();
-        JPanel combinedPValuePane = createCombinedPValuePane();
-        
-        JPanel lowerPane = new JPanel();
-        lowerPane.setLayout(new BorderLayout());
-        lowerPane.add(ttestResultPane, BorderLayout.CENTER);
-        lowerPane.add(combinedPValuePane, BorderLayout.SOUTH);
-        
-        JSplitPane jsp = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-                                        boxPlotPane,
-                                        lowerPane);
-        jsp.setDividerLocation(0.50d);
-        jsp.setDividerLocation(150); // Give the plot 150 px initially
-        
-        // Add a JSplitPane for the table and a new graph pane to display graphs
-        for (int i = 0; i < getComponentCount(); i++) {
-            Component comp = getComponent(i);
-            if (comp instanceof JScrollPane) {
-                remove(comp);
-                break;
+        tablePlotPane = new TTestTablePlotPane<Variable>() {
+
+            @Override
+            protected String[] getAnnotations(Variable key) {
+                return new String[]{getVariableKey(key), key.getName()};
             }
-        }
-        add(jsp, BorderLayout.CENTER);
-        
-        realVarIdToIPAs = new HashMap<String, List<Double>>();
-        randomVarIdToIPAs = new HashMap<String, List<Double>>();
+
+            @Override
+            protected String getKey(Variable key) {
+                return getVariableKey(key);
+            }
+
+            @Override
+            protected void sortValueKeys(List<Variable> list) {
+                Collections.sort(list, new Comparator<Variable>() {
+                    public int compare(Variable var1, Variable var2) {
+                        String key1 = getVariableKey(var1);
+                        String key2 = getVariableKey(var2);
+                        return key1.compareTo(key2);
+                    }
+                });
+            }
+            
+        };
+        tablePlotPane.setCombinedPValueTitle("Combined p-value for outputs using an extension of Fisher's method (click to see the reference): ");
+        add(tablePlotPane, BorderLayout.CENTER);
     }
     
     private void installListeners() {
-        tTestResultTable.getRowSorter().addRowSorterListener(new RowSorterListener() {
-            
-            @Override
-            public void sorterChanged(RowSorterEvent e) {
-                rePlotData();
-            }
-        });
-        // Use this simple method to make sure marker is synchronized between two views.
-        TableAndPlotActionSynchronizer tpSyncHelper = new TableAndPlotActionSynchronizer(tTestResultTable, chartPanel);
-        
-        tTestResultTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+        tablePlotPane.getTable().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -260,6 +226,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     }
 
     private void selectRows(Set<String> rowKeys) {
+        JTable tTestResultTable = tablePlotPane.getTable();
         tTestResultTable.clearSelection();
         if (rowKeys.size() > 0) {
             // Find the row index in the table model
@@ -303,6 +270,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         isFromTable = true;
         // Get the selected variable labels
         Set<String> sourceIdsForSelection = new HashSet<String>();
+        JTable tTestResultTable = tablePlotPane.getTable();
         TTestTableModel model = (TTestTableModel) tTestResultTable.getModel();
         if (tTestResultTable.getSelectedRowCount() > 0) {
             for (int row : tTestResultTable.getSelectedRows()) {
@@ -356,129 +324,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         isFromTable = false;
     }
     
-    private void rePlotData() {
-        dataset.clear();
-        TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
-        // In two cases, these values will be set dynamically. So we have to
-        // get them in the table.
-        String realLabel = tableModel.getColumnName(2);
-        String randomLabel = tableModel.getColumnName(3);
-        for (int i = 0; i < tTestResultTable.getRowCount(); i++) {
-            int index = tTestResultTable.convertRowIndexToModel(i);
-            String varLabel = (String) tableModel.getValueAt(index, 0);
-            List<Double> realIPAs = realVarIdToIPAs.get(varLabel);
-            dataset.add(realIPAs, realLabel, varLabel);
-            List<Double> randomIPAs = randomVarIdToIPAs.get(varLabel);
-            dataset.add(randomIPAs, randomLabel, varLabel);
-        }
-        DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
-        plot.datasetChanged(event);
-    }
-    
-    private JPanel createTTestResultTable() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout());
-        panel.setBorder(BorderFactory.createEtchedBorder());
-        
-        JLabel label = new JLabel("Mean Value Comparison Results");
-        Font font = label.getFont();
-        label.setFont(font.deriveFont(Font.BOLD));
-        // Want to make sure label is in the middle, so
-        // add a panel
-        JPanel labelPane = new JPanel();
-        labelPane.add(label);
-        panel.add(labelPane, BorderLayout.NORTH);
-        
-        TTestTableModel model = new TTestTableModel();
-        tTestResultTable = new JTable(model);
-        // Need to add a row sorter
-        TableRowSorter<TTestTableModel> sorter = new TableRowSorter<TTestTableModel>(model) {
-
-            @Override
-            public Comparator<?> getComparator(int column) {
-                if (column == 1) // Just use the String comparator for name
-                    return super.getComparator(0);
-                Comparator<String> rtn = new Comparator<String>() {
-                    public int compare(String var1, String var2) {
-                        Double value1 = new Double(var1);
-                        Double value2 = new Double(var2);
-                        return value1.compareTo(value2);
-                    }
-                };
-                return rtn;
-            }
-        };
-        tTestResultTable.setRowSorter(sorter);
-        
-        panel.add(new JScrollPane(tTestResultTable), BorderLayout.CENTER);
-        
-        return panel;
-    }
-    
-    private JPanel createCombinedPValuePane() {
-        JPanel panel = new JPanel();
-        panel.setBorder(BorderFactory.createEtchedBorder());
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        
-        JLabel titleLabel = new JLabel("Combined p-value for outputs using an extension of Fisher's method (click to see the reference): ");
-        titleLabel.setToolTipText("Click to view the reference");
-        titleLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        combinedPValueLabel = new JLabel("1.0");
-        titleLabel.addMouseListener(new MouseAdapter() {
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                String url = "http://www.sciencedirect.com/science/article/pii/S0167715202003103";
-                PlugInUtilities.openURL(url);
-            }
-            
-        });
-        panel.add(titleLabel);
-        panel.add(combinedPValueLabel);
-        
-        return panel;
-    }
-    
-    private JPanel createBoxPlotPane() {
-        dataset = new DefaultBoxAndWhiskerCategoryDataset();
-        // Want to control data update by this object self to avoid
-        // conflict exception.
-        dataset.setNotify(false);
-        CategoryAxis xAxis = new CategoryAxis("Variable");
-        NumberAxis yAxis = new NumberAxis("IPA");
-        BoxAndWhiskerRenderer renderer = new BoxAndWhiskerRenderer();
-        // We want to show the variable label
-        BoxAndWhiskerToolTipGenerator tooltipGenerator = new BoxAndWhiskerToolTipGenerator() {
-
-            @Override
-            public String generateToolTip(CategoryDataset dataset,
-                                          int row,
-                                          int column) {
-                Object variable = dataset.getColumnKey(column);
-                String rtn = super.generateToolTip(dataset, row, column);
-                return "Variable: " + variable + " " + rtn;
-            }
-        };
-        renderer.setBaseToolTipGenerator(tooltipGenerator);
-        plot = new CategoryPlot(dataset,
-                                xAxis, 
-                                yAxis,
-                                renderer);
-        Font font = getFont();
-        font = font.deriveFont(Font.BOLD);
-        JFreeChart chart = new JFreeChart("Boxplot for Integrated Pathway Activities (IPAs) of Outputs", 
-                                          font,
-                                          plot, 
-                                          true);
-        chartPanel = new ChartPanel(chart);
-        chartPanel.setBorder(BorderFactory.createEtchedBorder());
-        return chartPanel;
-    }
-    
-    private void setOverview(List<VariableInferenceResults> varResults,
-                             Set<Variable> outputVars,
-                             Map<String, String> sampleToType,
-                             double pvalueCutoff,
+    private void setOverview(double pvalueCutoff,
                              double ipaDiffCutoff) {
         StringBuilder builder = new StringBuilder();
         int size = 0;
@@ -490,11 +336,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             return; 
         }
         try {
-            generateOverview(varResults, 
-                             outputVars,
-                             pvalueCutoff,
+            generateOverview(pvalueCutoff,
                              ipaDiffCutoff, 
-                             sampleToType,
                              builder);
             outputResultLabel.setText(builder.toString());
         }
@@ -507,11 +350,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         }
     }
     
-    private void generateOverview(List<VariableInferenceResults> varResults,
-                                  Set<Variable> outputVars,
-                                  double pvalueCutoff,
+    private void generateOverview(double pvalueCutoff,
                                   double ipaDiffCutoff,
-                                  Map<String, String> sampleToType,
                                   StringBuilder builder) throws Exception {
         // Do a test
         int negPerturbedOutputs = 0;
@@ -606,7 +446,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
      * @return
      */
     public Map<String, Double> getReactomeIdToIPADiff() {
-        TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
+        TTestTableModel tableModel = (TTestTableModel) tablePlotPane.getTable().getModel();
         Map<String, Double> idToDiff = new HashMap<String, Double>();
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             String id = (String) tableModel.getValueAt(i, 0); // The first value
@@ -621,68 +461,28 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     }
     
     public void setVariableResults(List<VariableInferenceResults> varResults,
-                                   Set<Variable> outputVars,
+                                   Set<Variable> outputVars, // Used to calculate combined p-value and overview.
                                    Map<String, String> sampleToType) throws MathException {
         // Cache these values for recheck
         this.varResults = varResults;
         this.outputVars = outputVars;
         this.sampleToType = sampleToType;
-        // Do a sort
-        List<VariableInferenceResults> sortedResults = new ArrayList<VariableInferenceResults>(varResults);
-        Collections.sort(sortedResults, new Comparator<VariableInferenceResults>() {
-            public int compare(VariableInferenceResults varResults1,
-                               VariableInferenceResults varResults2) {
-                return varResults1.getVariable().getName().compareTo(varResults2.getVariable().getName());
-            }
-        });
-        dataset.clear();
-        realVarIdToIPAs.clear();
-        randomVarIdToIPAs.clear();
-        TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
-        tableModel.reset(); // Reset the original data if any.
-        List<Double> pvalues = new ArrayList<Double>();
         if (sampleToType == null) {
-            parseResults(sortedResults, 
-                         tableModel,
-                         pvalues);
+            parseResults(varResults);
         }
         else {
-            parseTwoCasesResults(sortedResults,
-                                 tableModel,
-                                 pvalues,
+            parseTwoCasesResults(varResults,
                                  sampleToType);
         }
-        // The following code is used to control performance:
-        // 16 is arbitrary
-        CategoryAxis axis = plot.getDomainAxis();
-        if (varResults.size() > PlugInUtilities.PLOT_CATEGORY_AXIX_LABEL_CUT_OFF) {
-            axis.setTickLabelsVisible(false);
-            axis.setTickMarksVisible(false);
-        }
-        else {
-            axis.setTickLabelsVisible(true);
-            axis.setTickMarksVisible(true);
-        }
-        DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
-        plot.datasetChanged(event);
-        // Make a copy to avoid modifying by the called method
-        tableModel.calculateFDRs(new ArrayList<Double>(pvalues));
-        tableModel.fireTableStructureChanged();
-        setCombinedPValue(pvalues);
         // Set overview
         // Use these default values
         double pvalueCutoff = 0.01d;
         double ipaDiffCutoff = 0.30d; // 2 fold difference
-        setOverview(varResults,
-                    outputVars,
-                    sampleToType,
-                    pvalueCutoff,
+        setOverview(pvalueCutoff,
                     ipaDiffCutoff);
     }
     
     private void parseTwoCasesResults(List<VariableInferenceResults> sortedResults,
-                                      TTestTableModel tableModel,
-                                      List<Double> pvalues,
                                       Map<String, String> sampleToType) throws MathException {
         // Get two types
         Set<String> types = new HashSet<String>(sampleToType.values());
@@ -697,30 +497,29 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         // Do a sort
         List<String> sortedTypes = new ArrayList<String>(types);
         Collections.sort(sortedTypes);
-        tableModel.setSampleTypes(sortedTypes);
         Map<String, Set<String>> typeToSamples = getTypeToSamples(sampleToType);
+        Map<Variable, List<Double>> varToIPAs1 = new HashMap<Variable, List<Double>>();
+        Map<Variable, List<Double>> varToIPAs2 = new HashMap<Variable, List<Double>>();
         for (VariableInferenceResults varResults : sortedResults) {
-            List<Double> ipas0 = null;
             List<Double> ipas1 = null;
+            List<Double> ipas2 = null;
             for (String type : sortedTypes) {
                 Set<String> samples = typeToSamples.get(type);
                 Map<String, List<Double>> sampleToProbs = grepVarResultsForSamples(varResults, samples);
-                List<Double> ipas = addValueToDataset(sampleToProbs, 
-                                                      type,
-                                                      varResults);
-                if (ipas0 == null)
-                    ipas0 = ipas;
-                else
+                List<Double> ipas = calculateIPAs(varResults.getPriorValues(),
+                                                  sampleToProbs);
+                if (ipas1 == null)
                     ipas1 = ipas;
+                else
+                    ipas2 = ipas;
             }
-            double pvalue = tableModel.addRow(ipas0, 
-                                              ipas1,
-                                              varResults.getVariable());
-            pvalues.add(pvalue);
-            // In this two cases analysis, we assume the first type is real and the second random.
-            realVarIdToIPAs.put(getVariableKey(varResults.getVariable()), ipas0);
-            randomVarIdToIPAs.put(getVariableKey(varResults.getVariable()), ipas1);
+            varToIPAs1.put(varResults.getVariable(), ipas1);
+            varToIPAs2.put(varResults.getVariable(), ipas2);
         }
+        tablePlotPane.setDisplayValues(sortedTypes.get(0),
+                                       varToIPAs1, 
+                                       sortedTypes.get(1), 
+                                       varToIPAs2);
     }
 
     private Map<String, Set<String>> getTypeToSamples(Map<String, String> sampleToType) {
@@ -746,24 +545,21 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         return sampleToResults;
     }
 
-    private void parseResults(List<VariableInferenceResults> sortedResults,
-                              TTestTableModel tableModel,
-                              List<Double> pvalues) throws MathException {
+    private void parseResults(List<VariableInferenceResults> sortedResults) throws MathException {
+        Map<Variable, List<Double>> varToRealIPAs = new HashMap<Variable, List<Double>>();
+        Map<Variable, List<Double>> varToRandomIPAs = new HashMap<Variable, List<Double>>();
         for (VariableInferenceResults varResults : sortedResults) {
-            Map<String, List<Double>> sampleToProbs = varResults.getPosteriorValues();
-            List<Double> realIPAs = addValueToDataset(sampleToProbs, 
-                                                      "Real Samples",
-                                                      varResults);
-            List<Double> randomIPAs = addValueToDataset(varResults.getRandomPosteriorValues(),
-                                                        "Random Samples",
-                                                        varResults);
-            double pvalue = tableModel.addRow(realIPAs, 
-                                              randomIPAs,
-                                              varResults.getVariable());
-            pvalues.add(pvalue);
-            realVarIdToIPAs.put(getVariableKey(varResults.getVariable()), realIPAs);
-            randomVarIdToIPAs.put(getVariableKey(varResults.getVariable()), randomIPAs);
+            List<Double> realIPAs = calculateIPAs(varResults.getPriorValues(),
+                                                  varResults.getPosteriorValues());
+            varToRealIPAs.put(varResults.getVariable(), realIPAs);
+            List<Double> randomIPAs = calculateIPAs(varResults.getPriorValues(),
+                                                    varResults.getRandomPosteriorValues());
+            varToRandomIPAs.put(varResults.getVariable(), randomIPAs);
         }
+        tablePlotPane.setDisplayValues("Real Samples",
+                                       varToRealIPAs,
+                                       "Random Samples",
+                                       varToRandomIPAs);
     }
     
     private String getVariableKey(Variable var) {
@@ -772,48 +568,13 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         return var.getName();
     }
     
-    /**
-     * Calculate combined p-value from a list of p-values using Fisher's method and display
-     * it in a label.
-     * @param pvalues
-     * @throws MathException
-     */
-    private void setCombinedPValue(List<Double> pvalues) throws MathException {
-        // We want to make sure combined p-value is calculated against outputs only
-        // pvalues should be corresponding to VariableListValues
-        List<List<Double>> outputIPAs = new ArrayList<List<Double>>();
-        List<Double> outputPValues = new ArrayList<Double>();
-        for (int i = 0; i < varResults.size(); i++) {
-            VariableInferenceResults varResult = varResults.get(i);
-            if (outputVars.contains(varResult.getVariable())) {
-                List<Double> ipas = realVarIdToIPAs.get(getVariableKey(varResults.get(i).getVariable()));
-                if (ipas == null)
-                    continue; // This should not occur
-                outputPValues.add(pvalues.get(i));
-                outputIPAs.add(ipas);
-            }
-        }
-//        double combinedPValue = MathUtilities.combinePValuesWithFisherMethod(pvalues);
-        // Since it is pretty sure, variables are dependent in pathway, use another method
-        // to combine p-values
-        PValueCombiner combiner = new PValueCombiner();
-        double combinedPValue = combiner.combinePValue(outputIPAs,
-                                                       outputPValues);
-        combinedPValueLabel.setText(PlugInUtilities.formatProbability(combinedPValue));
-    }
-    
-    private List<Double> addValueToDataset(Map<String, List<Double>> sampleToProbs,
-                                           String label,
-                                           VariableInferenceResults varResults) {
+    private List<Double> calculateIPAs(List<Double> priorValues,
+                                       Map<String, List<Double>> sampleToProbs) {
         List<Double> ipas = new ArrayList<Double>();
         for (List<Double> probs : sampleToProbs.values()) {
-            double ipa = IPACalculator.calculateIPA(varResults.getPriorValues(), probs);
+            double ipa = IPACalculator.calculateIPA(priorValues, probs);
             ipas.add(ipa);
         }
-        // Make sure column key is not null
-        dataset.add(ipas, 
-                    label,
-                    getVariableKey(varResults.getVariable()));
         return ipas;
     }
     
@@ -917,142 +678,4 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         }
         
     }
-    
-    class TTestTableModel extends AbstractTableModel {
-        private List<String> colHeaders;
-        private List<String[]> data;
-        
-        public TTestTableModel() {
-            String[] headers = new String[]{
-                    "DB_ID",
-                    "Name",
-                    "RealMean",
-                    "RandomMean",
-                    "MeanDiff",
-//                    "t-statistic",
-                    "p-value",
-                    "FDR"
-            };
-            colHeaders = Arrays.asList(headers);
-            data = new ArrayList<String[]>();
-        }
-        
-        /**
-         * Clear up the displayed data if any.
-         */
-        public void reset() {
-            data.clear();
-            fireTableDataChanged();
-        }
-        
-        public void setSampleTypes(List<String> types) {
-            if (types.size() < 2)
-                return; // Cannot use it
-            colHeaders.set(2, types.get(0));
-            colHeaders.set(3, types.get(1));
-        }
-        
-        /**
-         * Add a new column to the table model. P-value will be returned from this method.
-         * @param realIPAs
-         * @param randomIPAs
-         * @param varLabel it should the DB_ID for a Reactome PhysicalEntity instance.
-         * @return
-         * @throws MathException
-         */
-        public double addRow(List<Double> realIPAs,
-                             List<Double> randomIPAs,
-                             Variable var) throws MathException {
-            double realMean = MathUtilities.calculateMean(realIPAs);
-            double randomMean = MathUtilities.calculateMean(randomIPAs);
-            double diff = realMean - randomMean;
-            // Need a double array
-            double[] realArray = new double[realIPAs.size()];
-            for (int i = 0; i < realIPAs.size(); i++)
-                realArray[i] = realIPAs.get(i);
-            double[] randomArray = new double[randomIPAs.size()];
-            for (int i = 0; i < randomIPAs.size(); i++)
-                randomArray[i] = randomIPAs.get(i);
-//            double t = TestUtils.t(realArray,
-//                                   randomArray);
-//            double pvalue = TestUtils.tTest(realArray,
-//                                            randomArray);
-            double pvalue = new MannWhitneyUTest().mannWhitneyUTest(realArray, randomArray);
-            
-            String[] row = new String[colHeaders.size()];
-            row[0] = getVariableKey(var);
-            row[1] = var.getName();
-            row[2] = PlugInUtilities.formatProbability(realMean);
-            row[3] = PlugInUtilities.formatProbability(randomMean);
-            row[4] = PlugInUtilities.formatProbability(diff);
-//            row[4] = PlugInUtilities.formatProbability(t);
-            row[5] = PlugInUtilities.formatProbability(pvalue);
-            
-            data.add(row);
-            
-            return pvalue;
-        }
-        
-        /**
-         * A method to calculate FDRs. The order in the passed List should be the same
-         * as p-values stored in the data object. Otherwise, the calculated FDRs assignment
-         * will be wrong.
-         * @param pvalues
-         */
-        void calculateFDRs(List<Double> pvalues) {
-            if (data.size() != pvalues.size())
-                throw new IllegalArgumentException("Passed pvalues list has different size to the stored table data.");
-            List<String[]> pvalueSortedList = new ArrayList<String[]>(data);
-            final int fdrIndex = 6;
-            // Just copy pvalues into rowdata for the time being
-            for (int i = 0; i < pvalueSortedList.size(); i++) {
-                Double pvalue = pvalues.get(i);
-                String[] rowData = pvalueSortedList.get(i);
-                rowData[fdrIndex] = pvalue + "";
-            }
-            Collections.sort(pvalueSortedList, new Comparator<String[]>() {
-                public int compare(String[] row1, String[] row2) {
-                    Double pvalue1 = new Double(row1[fdrIndex]);
-                    Double pvalue2 = new Double(row2[fdrIndex]);
-                    return pvalue1.compareTo(pvalue2);
-                }
-            });
-            // pvalues will be sorted 
-            List<Double> fdrs = MathUtilities.calculateFDRWithBenjaminiHochberg(pvalues);
-            // Modify pvalues into FDRs for the last column. Since the same String[] objects are
-            // used in the sorted list and the original data, there is no need to do anything for
-            // table display purpose.
-            for (int i = 0; i < pvalueSortedList.size(); i++) {
-                String[] rowData = pvalueSortedList.get(i);
-                rowData[fdrIndex] = PlugInUtilities.formatProbability(fdrs.get(i));
-            }
-        }
-
-        @Override
-        public int getRowCount() {
-            return data.size();
-        }
-
-        @Override
-        public int getColumnCount() {
-            return colHeaders.size(); 
-        }
-
-        @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            String[] row = data.get(rowIndex);
-            return row[columnIndex];
-        }
-
-        @Override
-        public String getColumnName(int column) {
-            return colHeaders.get(column);
-        }
-
-        @Override
-        public Class<?> getColumnClass(int columnIndex) {
-            return String.class;
-        }
-    }
-    
 }

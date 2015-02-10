@@ -16,6 +16,7 @@ import java.util.Set;
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
+import javax.swing.event.ListSelectionEvent;
 
 import org.apache.commons.math.MathException;
 import org.gk.render.RenderablePathway;
@@ -42,7 +43,14 @@ public class GeneLevelResultDialog extends JDialog {
     }
     
     private void init() {
-        summaryPane = new IPAPathwaySummaryPane("Observation");
+        summaryPane = new IPAPathwaySummaryPane("Observation") {
+
+            @Override
+            protected void doTableSelection(ListSelectionEvent e) {
+                // Do nothing to avoid selecting in the pathway diagram.
+            }
+            
+        };
         summaryPane.hideControlToolBar();
         summaryPane.setBorder(BorderFactory.createEtchedBorder());
         getContentPane().add(summaryPane, BorderLayout.CENTER);
