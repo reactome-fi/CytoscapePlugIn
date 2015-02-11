@@ -320,6 +320,7 @@ public class InferenceRunner {
                     if (abort)
                         break;
                 }
+                fgResults.setObservations(observations);
             }
             if (!abort) { // Maybe abort in the above loop.
                 observations = FactorGraphRegistry.getRegistry().getRandomObservations(factorGraph);
@@ -337,6 +338,7 @@ public class InferenceRunner {
                             break;
                     }
                 }
+                fgResults.setRandomObservations(observations);
             }
             if (abort) {
                 status = InferenceStatus.ABORT;

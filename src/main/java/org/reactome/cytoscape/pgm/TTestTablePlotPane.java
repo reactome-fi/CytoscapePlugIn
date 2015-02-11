@@ -18,6 +18,7 @@ import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -150,8 +151,11 @@ public class TTestTablePlotPane<T> extends JPanel {
         TableRowSorter<TTestTableModel> sorter = new TableRowSorter<TTestTableModel>(model) {
             @Override
             public Comparator<?> getComparator(int column) {
-                if (column == 1) // Just use the String comparator for name
-                    return super.getComparator(0);
+                //TODO This is hard-coded and should be changed late
+                int annotationCols = getModel().getAnnotationColumns();
+                if (column < annotationCols && !getModel().getColumnName(column).equals("DB_ID")) {
+                    return super.getComparator(column);
+                }
                 Comparator<String> rtn = new Comparator<String>() {
                     public int compare(String var1, String var2) {
                         Double value1 = new Double(var1);
@@ -229,6 +233,14 @@ public class TTestTablePlotPane<T> extends JPanel {
         return chartPanel;
     }
     
+    public CategoryPlot getPlot() {
+        return plot;
+    }
+    
+    public void setChartTitle(String title) {
+        chartPanel.getChart().setTitle(title);
+    }
+    
     /**
      * Set the label as the title for combined p-value. Usually there is no need to call this
      * method.
@@ -250,6 +262,13 @@ public class TTestTablePlotPane<T> extends JPanel {
                                  Map<T, List<Double>> nameToValues1,
                                  String dataLabel2,
                                  Map<T, List<Double>> nameToValues2) throws MathException {
+        if (nameToValues1.size() == 0 || nameToValues2.size() == 0) {
+            JOptionPane.showMessageDialog(this,
+                                          "Empty values for displaying.",
+                                          "Empty Values",
+                                          JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         this.dataLabel1 = dataLabel1;
         this.dataLabel2 = dataLabel2;
         // Perform a simple sort
@@ -266,6 +285,7 @@ public class TTestTablePlotPane<T> extends JPanel {
         this.nameToValues2.clear();
         TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
         tableModel.reset(); // Reset the original data if any.
+        tableModel.setSampleTypes(dataLabel1, dataLabel2);
         List<Double> pvalues = new ArrayList<Double>();
         // For combined p-values
         List<List<Double>> values = new ArrayList<List<Double>>();

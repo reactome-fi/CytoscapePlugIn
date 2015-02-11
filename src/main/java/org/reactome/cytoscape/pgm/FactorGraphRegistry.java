@@ -230,6 +230,10 @@ public class FactorGraphRegistry {
         return networkToFg.get(network);
     }
     
+    public FactorGraph getFactorGraph(RenderablePathway diagram) {
+        return diagramToFg.get(diagram);
+    }
+    
     /**
      * Get a saved FactorGraphInferenceResults. If nothing is registered,
      * create a new object and return it.

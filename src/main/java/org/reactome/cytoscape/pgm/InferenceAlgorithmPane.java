@@ -108,8 +108,11 @@ public class InferenceAlgorithmPane extends JPanel {
                 }
             }
         }
-        if (lbp == null)
+        if (lbp == null) {
             lbp = PathwayPGMConfiguration.getConfig().getLBP();
+            // Default to use SUM_PRODUCT
+            lbp.setInferenceType(InferenceType.MAX_PRODUCT);
+        }
         return lbp;
     }
     

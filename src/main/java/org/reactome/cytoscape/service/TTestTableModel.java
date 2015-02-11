@@ -5,7 +5,6 @@
 package org.reactome.cytoscape.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -25,6 +24,7 @@ import org.reactome.r3.util.MathUtilities;
 public class TTestTableModel extends AbstractTableModel {
     private List<String> colHeaders;
     private List<String[]> data;
+    private int annotationColumns;
     
     public TTestTableModel() {
         String[] headers = new String[]{
@@ -37,7 +37,12 @@ public class TTestTableModel extends AbstractTableModel {
                 "p-value",
                 "FDR"
         };
-        colHeaders = Arrays.asList(headers);
+        // Have to use this way. Otherwise, the following list is unmodifable.
+//        colHeaders = Arrays.asList(headers);
+        colHeaders = new ArrayList<String>();
+        for (String header : headers)
+            colHeaders.add(header);
+        annotationColumns = 2; // The first two columns for annotations.
         data = new ArrayList<String[]>();
     }
     
@@ -49,11 +54,26 @@ public class TTestTableModel extends AbstractTableModel {
         fireTableDataChanged();
     }
     
-    public void setSampleTypes(List<String> types) {
-        if (types.size() < 2)
-            return; // Cannot use it
-        colHeaders.set(2, types.get(0));
-        colHeaders.set(3, types.get(1));
+    /**
+     * Set the column headers and the total columns used for row annotations (e.g. DB_ID, name).
+     * @param colHeaders
+     * @param annotationColumns
+     */
+    public void setColHeaders(List<String> colHeaders,
+                              int annotationColumns) {
+        this.colHeaders.clear();
+        this.colHeaders.addAll(colHeaders);
+        this.annotationColumns = annotationColumns;
+    }
+    
+    public int getAnnotationColumns() {
+        return annotationColumns;
+    }
+    
+    public void setSampleTypes(String type1,
+                               String type2) {
+        colHeaders.set(annotationColumns, type1);
+        colHeaders.set(annotationColumns + 1, type2);
     }
     
     /**

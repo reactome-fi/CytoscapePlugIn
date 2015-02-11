@@ -50,11 +50,12 @@ public class PValueCombiner {
                 pvaluesCopy.set(i, 1.0E-16); // As the minimum value
         }
         int size = pvalues.size();
+        double fisher = calculateFisherValue(pvaluesCopy);
+        
         double mean = calculateMean(size);
         double var = calculateVar(realValuesList, size);
         double f = 2.0d * mean * mean / var;
         double c = var / (2.0d * mean);
-        double fisher = calculateFisherValue(pvaluesCopy);
         // If f is NaN (e.g. because of a list of 0.0 in the real values, which generates NaN)
         // we switch to use the old Fisher method
         if (Double.isNaN(f) || Double.isNaN(c)) {
@@ -85,6 +86,8 @@ public class PValueCombiner {
             List<Double> values1 = valuesList.get(i);
             for (int j = i + 1; j < valuesList.size(); j++) {
                 List<Double> values2 = valuesList.get(j);
+                if (values1.size() != values2.size())
+                    return Double.NaN; // Cannot calculate correaltion
                 double cov = calculateCovariance(values1, values2);
                 total += cov;
             }

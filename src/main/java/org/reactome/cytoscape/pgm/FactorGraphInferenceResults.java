@@ -17,10 +17,12 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.junit.Test;
 import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.Observation;
 import org.reactome.factorgraph.Variable;
 import org.reactome.factorgraph.common.DataType;
 
@@ -40,12 +42,33 @@ public class FactorGraphInferenceResults {
     private Map<String, String> sampleToType;
     // Add a label for this result
     private Long pathwayDiagramId;
+    // Observations used
+    @XmlElement(name="observation")
+    private List<Observation> observations;
+    @XmlElement(name="randomObservation")
+    private List<Observation> randomObservations;
     
     /**
      * Default constructor.
      */
     public FactorGraphInferenceResults() {
         varResults = new ArrayList<VariableInferenceResults>();
+    }
+
+    public List<Observation> getObservations() {
+        return observations;
+    }
+
+    public void setObservations(List<Observation> observations) {
+        this.observations = observations;
+    }
+
+    public List<Observation> getRandomObservations() {
+        return randomObservations;
+    }
+
+    public void setRandomObservations(List<Observation> randomObservations) {
+        this.randomObservations = randomObservations;
     }
 
     public Long getPathwayDiagramId() {

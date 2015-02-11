@@ -5,6 +5,7 @@
 package org.reactome.cytoscape.pgm;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -28,6 +29,7 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.event.ListSelectionEvent;
@@ -138,7 +140,21 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     }
 
     private void addContentPane() {
-        tablePlotPane = new TTestTablePlotPane<Variable>() {
+        // Need to remove the original added JScrollPane first.
+        for (int i = 0; i < getComponentCount(); i++) {
+            Component comp = getComponent(i);
+            if (comp instanceof JScrollPane) {
+                remove(comp);
+                break;
+            }
+        }
+        tablePlotPane = createTablePlotPane();
+        tablePlotPane.setCombinedPValueTitle("Combined p-value for outputs using an extension of Fisher's method (click to see the reference): ");
+        add(tablePlotPane, BorderLayout.CENTER);
+    }
+
+    protected TTestTablePlotPane<Variable> createTablePlotPane() {
+        return new TTestTablePlotPane<Variable>() {
 
             @Override
             protected String[] getAnnotations(Variable key) {
@@ -162,8 +178,6 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             }
             
         };
-        tablePlotPane.setCombinedPValueTitle("Combined p-value for outputs using an extension of Fisher's method (click to see the reference): ");
-        add(tablePlotPane, BorderLayout.CENTER);
     }
     
     private void installListeners() {
@@ -364,7 +378,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         boolean hasData = false;
         Map<String, Set<String>> typeToSamples = null;
         if (sampleToType != null)
-            typeToSamples = getTypeToSamples(sampleToType);
+            typeToSamples = PlugInUtilities.getTypeToSamples(sampleToType);
         for (VariableInferenceResults varResult : varResults) {
             if (!outputVars.contains(varResult.getVariable()))
                 continue; // Make sure it counts for outputs only
@@ -497,7 +511,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         // Do a sort
         List<String> sortedTypes = new ArrayList<String>(types);
         Collections.sort(sortedTypes);
-        Map<String, Set<String>> typeToSamples = getTypeToSamples(sampleToType);
+        Map<String, Set<String>> typeToSamples = PlugInUtilities.getTypeToSamples(sampleToType);
         Map<Variable, List<Double>> varToIPAs1 = new HashMap<Variable, List<Double>>();
         Map<Variable, List<Double>> varToIPAs2 = new HashMap<Variable, List<Double>>();
         for (VariableInferenceResults varResults : sortedResults) {
@@ -522,16 +536,6 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                                        varToIPAs2);
     }
 
-    private Map<String, Set<String>> getTypeToSamples(Map<String, String> sampleToType) {
-        // Do a reverse map
-        Map<String, Set<String>> typeToSamples = new HashMap<String, Set<String>>();
-        for (String sample : sampleToType.keySet()) {
-            String type = sampleToType.get(sample);
-            InteractionUtilities.addElementToSet(typeToSamples, type, sample);
-        }
-        return typeToSamples;
-    }
-    
     private Map<String, List<Double>> grepVarResultsForSamples(VariableInferenceResults varResults,
                                                                Set<String> samples) {
         Map<String, List<Double>> sampleToResults = new HashMap<String, List<Double>>();
@@ -562,7 +566,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                                        varToRandomIPAs);
     }
     
-    private String getVariableKey(Variable var) {
+    protected String getVariableKey(Variable var) {
         if (var.getCustomizedInfo() != null)
             return var.getCustomizedInfo();
         return var.getName();

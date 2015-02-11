@@ -15,8 +15,10 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JDesktopPane;
@@ -60,6 +62,7 @@ import org.jfree.chart.plot.CategoryMarker;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.reactome.r3.util.InteractionUtilities;
 
 /**
  * Utility methods that can be used by Reactome FI plug-in have been grouped
@@ -76,6 +79,21 @@ public class PlugInUtilities {
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * A type can have multiple samples. This method converts sampleToType to typeToSamples.
+     * @param sampleToType
+     * @return
+     */
+    public static Map<String, Set<String>> getTypeToSamples(Map<String, String> sampleToType) {
+        // Do a reverse map
+        Map<String, Set<String>> typeToSamples = new HashMap<String, Set<String>>();
+        for (String sample : sampleToType.keySet()) {
+            String type = sampleToType.get(sample);
+            InteractionUtilities.addElementToSet(typeToSamples, type, sample);
+        }
+        return typeToSamples;
     }
     
     public static double[] convertDoubleListToArray(List<Double> list) {

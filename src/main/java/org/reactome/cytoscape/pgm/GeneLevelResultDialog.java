@@ -8,6 +8,9 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +24,7 @@ import javax.swing.event.ListSelectionEvent;
 import org.apache.commons.math.MathException;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
+import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.Variable;
 import org.reactome.factorgraph.common.DataType;
@@ -43,14 +47,7 @@ public class GeneLevelResultDialog extends JDialog {
     }
     
     private void init() {
-        summaryPane = new IPAPathwaySummaryPane("Observation") {
-
-            @Override
-            protected void doTableSelection(ListSelectionEvent e) {
-                // Do nothing to avoid selecting in the pathway diagram.
-            }
-            
-        };
+        summaryPane = createSummaryPane();
         summaryPane.hideControlToolBar();
         summaryPane.setBorder(BorderFactory.createEtchedBorder());
         getContentPane().add(summaryPane, BorderLayout.CENTER);
@@ -66,6 +63,56 @@ public class GeneLevelResultDialog extends JDialog {
             }
         });
         setLocationRelativeTo(getOwner());
+    }
+
+    private IPAPathwaySummaryPane createSummaryPane() {
+        return new IPAPathwaySummaryPane("Observation") {
+
+            @Override
+            protected void doTableSelection(ListSelectionEvent e) {
+                // Do nothing to avoid selecting in the pathway diagram.
+            }
+
+            @Override
+            protected TTestTablePlotPane<Variable> createTablePlotPane() {
+                TTestTablePlotPane<Variable> tablePlotPane = new TTestTablePlotPane<Variable>() {
+
+                    @Override
+                    protected String[] getAnnotations(Variable key) {
+                        return new String[]{getVariableKey(key)}; // Don't want to show two columns having the same content.
+                    }
+
+                    @Override
+                    protected String getKey(Variable key) {
+                        return getVariableKey(key);
+                    }
+
+                    @Override
+                    protected void sortValueKeys(List<Variable> list) {
+                        Collections.sort(list, new Comparator<Variable>() {
+                            public int compare(Variable var1, Variable var2) {
+                                String key1 = getVariableKey(var1);
+                                String key2 = getVariableKey(var2);
+                                return key1.compareTo(key2);
+                            }
+                        });
+                    }
+                    
+                };
+                TTestTableModel model = (TTestTableModel) tablePlotPane.getTable().getModel();
+                String[] headers = new String[]{
+                        "Name",
+                        "RealMean",
+                        "RandomMean",
+                        "MeanDiff",
+                        "p-value",
+                        "FDR"
+                };
+                model.setColHeaders(Arrays.asList(headers),
+                                    1);
+                return tablePlotPane;
+            }
+        };
     }
     
     
@@ -100,7 +147,7 @@ public class GeneLevelResultDialog extends JDialog {
         }
         if (variables.size() == 0) {
             JOptionPane.showMessageDialog(this,
-                                          "Cannot find any results for selected ." + (genes == null ? "diagram." : "entity."),
+                                          "Cannot find any results for selected " + (genes == null ? "diagram." : "entity."),
                                           "Empty Results",
                                           JOptionPane.INFORMATION_MESSAGE);
             return false;

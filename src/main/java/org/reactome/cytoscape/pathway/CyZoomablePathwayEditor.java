@@ -46,8 +46,9 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
-import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
 import org.reactome.cytoscape.pgm.GeneLevelResultDialog;
+import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
+import org.reactome.cytoscape.pgm.ObservationDataDialog;
 import org.reactome.cytoscape.pgm.ObservationDataLoadPanel;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
@@ -314,11 +315,24 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable()))
                     return; // Nothing to be displayed
                 dialog.setSize(750, 600);
-                dialog.setModal(true);
+//                dialog.setModal(true);
                 dialog.setVisible(true);
             }
         });
         popup.add(showGeneData);
+        JMenuItem showObservation = new JMenuItem("Show Observations");
+        showObservation.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ObservationDataDialog dialog = new ObservationDataDialog();
+                if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable()))
+                    return; // Nothing to be displayed
+                dialog.setSize(750, 600);
+//                dialog.setModal(true);
+                dialog.setVisible(true);
+            }
+        });
+        popup.add(showObservation);
         // Output analysis results
         JMenuItem saveResults = new JMenuItem("Save Analysis Results");
         saveResults.addActionListener(new ActionListener() {
@@ -661,7 +675,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 }
             });
             popup.add(listGenesItem);
-            JMenuItem showGeneLevelPGMResults = new JMenuItem("Show Gene Level GPM Results");
+            JMenuItem showGeneLevelPGMResults = new JMenuItem("Show Gene Level Analysis Results");
             showGeneLevelPGMResults.addActionListener(new ActionListener() {
                 
                 @Override
@@ -671,6 +685,15 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             });
             popup.addSeparator();
             popup.add(showGeneLevelPGMResults);
+            JMenuItem showObservations = new JMenuItem("Show Observations");
+            showObservations.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    showObservationsForEntity(dbId, name);
+                }
+            });
+            popup.add(showObservations);
             // Fetch FIs
             JMenuItem fetchFIs = new JMenuItem("Fetch FIs");
             fetchFIs.addActionListener(new ActionListener() {
@@ -702,8 +725,35 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                    event.getY());
     }
     
-    private void showGeneLevelPGMResultsForEntity(final Long dbId,
-                                                  final String name) {
+    private void  showObservationsForEntity(final Long dbId,
+                                            final String name) {
+        Set<String> geneSet = fetchGenes(dbId, name);
+        if (geneSet == null)
+            return;
+        ObservationDataDialog dialog = new ObservationDataDialog();
+        dialog.setTargetGenes(geneSet);
+        if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable()))
+            return; // Nothing to be displayed
+        dialog.setSize(750, 450);
+//        dialog.setModal(true);
+        dialog.setVisible(true);
+    }
+    
+    private void showGeneLevelPGMResultsForEntity(Long dbId,
+                                           String name) {
+        Set<String> geneSet = fetchGenes(dbId, name);
+        if (geneSet == null)
+            return;
+        GeneLevelResultDialog dialog = new GeneLevelResultDialog();
+        if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable(),
+                                         geneSet))
+            return; // Nothing to be displayed
+        dialog.setSize(750, 450);
+//        dialog.setModal(true);
+        dialog.setVisible(true);
+    }
+
+    private Set<String> fetchGenes(Long dbId, String name) {
         RESTFulFIService service = new RESTFulFIService();
         String genes = null;
         try {
@@ -714,7 +764,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                               "There is no gene contained in \"" + name + "\"",
                                               "No Gene",
                                               JOptionPane.INFORMATION_MESSAGE);
-                return;
+                return null;
             }
         }
         catch(Exception e) {
@@ -722,19 +772,13 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                           "Error in fetching genes for \"" + name + "\": " + e.getMessage(),
                                           "Error in Fetching Genes",
                                           JOptionPane.ERROR_MESSAGE);
-            return;
+            return null;
         }
-        Set<String> geneSets = new HashSet<String>();
+        Set<String> geneSet = new HashSet<String>();
         for (String tmp : genes.split(",")) {
-            geneSets.add(tmp);
+            geneSet.add(tmp);
         }
-        GeneLevelResultDialog dialog = new GeneLevelResultDialog();
-        if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable(),
-                                         geneSets))
-            return; // Nothing to be displayed
-        dialog.setSize(750, 450);
-        dialog.setModal(true);
-        dialog.setVisible(true);
+        return geneSet;
     }
     
     /**
