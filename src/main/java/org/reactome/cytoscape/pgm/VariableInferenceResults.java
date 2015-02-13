@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -49,7 +50,20 @@ public class VariableInferenceResults {
     public Map<String, ArrayList<Double>> getSampleToValues() {
         return sampleToValues;
     }
-
+    
+    public Map<String, List<Double>> getResultsForSamples(Set<String> samples) {
+        Map<String, List<Double>> sampleToResults = new HashMap<String, List<Double>>();
+        if (sampleToValues != null) {
+            for (String sample : sampleToValues.keySet()) {
+                if (samples.contains(sample)) {
+                    List<Double> probs = sampleToValues.get(sample);
+                    sampleToResults.put(sample, probs);
+                }
+            }
+        }
+        return sampleToResults;
+    }
+    
     public void setSampleToValues(Map<String, ArrayList<Double>> sampleToValues) {
         if (sampleToValues instanceof HashMap)
             this.sampleToValues = (HashMap<String, ArrayList<Double>>)this.sampleToValues;

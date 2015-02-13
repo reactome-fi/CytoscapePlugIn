@@ -34,6 +34,9 @@ public class PValueCombiner {
     /**
      * Call this method to do a Kosh & McDermott's method to combine p-values into
      * one single value.
+     * NOTE: For some reason, this implementation yields not good results in some cases.
+     * It is too sensitive to the values in the realValuesList (e.g. swing from 1.0 to 0.0), 
+     * which may fluctuate from the PGM inference results.
      * @param realValuesList
      * @param pvalues
      * @return

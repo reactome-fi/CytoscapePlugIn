@@ -47,9 +47,7 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.GeneLevelResultDialog;
-import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
 import org.reactome.cytoscape.pgm.ObservationDataDialog;
-import org.reactome.cytoscape.pgm.ObservationDataLoadPanel;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.RESTFulFIService;
@@ -1004,56 +1002,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
      * desktop as the normal function.
      */
     private void runFactorGraphAnalysis() {
-        if (FactorGraphRegistry.getRegistry().isDataLoaded()) {
-            int reply = JOptionPane.showConfirmDialog(this,
-                                                      "Data and algorithms have been loaded previously. Do you want to reload them?",
-                                                      "Reload Data and Algorithms?",
-                                                      JOptionPane.YES_NO_CANCEL_OPTION);
-            if (reply == JOptionPane.CANCEL_OPTION)
-                return; 
-            if (reply == JOptionPane.NO_OPTION) { // There is no need to reload data.
-                final FactorGraphAnalyzer analyzer = getFactorGraphAnalyzer();
-                // Don't show escape name dialog
-                FactorGraphRegistry.getRegistry().setNeedEscapeNameDialog(false);
-                Thread t = new Thread() {
-                    public void run() {
-                        analyzer.runFactorGraphAnalysis();
-                    }
-                };
-                t.start();
-                return;
-            }
-            // If Yes, the following code will be used.
-        }
-        FactorGraphRegistry.getRegistry().setNeedEscapeNameDialog(true);
-        FactorGraphAnalysisDialog dialog = new FactorGraphAnalysisDialog();
-        dialog.setSize(625, 630);
-        GKApplicationUtilities.center(dialog);
-        dialog.setModal(true);
-        dialog.setVisible(true);
-        if (dialog.isOkClicked()) {
-            // Initialize FactorGraphAnalyzer and set up its required member variables
-            // for performing analysis.
-            final FactorGraphAnalyzer analyzer = getFactorGraphAnalyzer();
-            ObservationDataLoadPanel dataPane = dialog.getDataLoadPane();
-            analyzer.setGeneExpFile(dataPane.getGeneExpFile());
-            analyzer.setGeneExpThresholdValues(dataPane.getGeneExpThresholdValues());
-            analyzer.setCnvFile(dataPane.getDNAFile());
-            analyzer.setCnvThresholdValues(dataPane.getDNAThresholdValues());
-            // If two cases analysis should be performed
-            if (dataPane.isTwoCasesAnalysisSelected())
-                analyzer.setTwoCasesSampleInfoFile(dataPane.getTwoCasesSampleInfoFile());
-                
-            InferenceAlgorithmPane algPane = dialog.getAlgorithmPane();
-            analyzer.setAlgorithms(algPane.getSelectedAlgorithms());
-            
-            Thread t = new Thread() {
-                public void run() {
-                    analyzer.runFactorGraphAnalysis();
-                }
-            };
-            t.start();
-        }
+        FactorGraphAnalyzer analyzer = getFactorGraphAnalyzer();
+        analyzer.startAnalysis();
     }
     
     private String formatGenesText(String genes) {

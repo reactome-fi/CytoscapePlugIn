@@ -86,10 +86,8 @@ public class NCICancerIndexDiseaseHelper
     
     public Map<String, DiseaseData> fetchDiseases() throws IOException
     {
-        String serviceUrl = PlugInObjectManager.getManager().getRestfulURL();
-     // Get the host URL name
-        int index = serviceUrl.lastIndexOf("/", serviceUrl.length() - 2);
-        String diseaseUrl = serviceUrl.substring(0, index + 1) + "Cytoscape/Disease_Thesaurus_10.05d.txt.zip";
+        String hostURL = PlugInObjectManager.getManager().getHostURL();
+        String diseaseUrl = hostURL + "Cytoscape/Disease_Thesaurus_10.05d.txt.zip";
         URL url = new URL(diseaseUrl);
         InputStream is = url.openStream();
         BufferedInputStream bis = new BufferedInputStream(is);

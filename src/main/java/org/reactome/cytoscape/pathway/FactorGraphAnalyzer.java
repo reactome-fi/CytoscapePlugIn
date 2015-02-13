@@ -13,22 +13,21 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.math.MathException;
-import org.gk.render.HyperEdge;
-import org.gk.render.Node;
-import org.gk.render.Renderable;
-import org.gk.render.RenderableInteraction;
 import org.gk.render.RenderablePathway;
-import org.gk.render.RenderableReaction;
+import org.gk.util.GKApplicationUtilities;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
+import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
 import org.reactome.cytoscape.pgm.InferenceRunner;
 import org.reactome.cytoscape.pgm.ObservationDataHelper;
+import org.reactome.cytoscape.pgm.ObservationDataLoadPanel;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Inferencer;
 import org.reactome.factorgraph.Variable;
+import org.reactome.pathway.factorgraph.VariableRole;
 
 /**
  * This class is used to perform factor graph based pathway analysis.
@@ -125,11 +124,68 @@ public class FactorGraphAnalyzer {
     public void setPathwayDiagram(RenderablePathway pathwayDiagram) {
         this.pathwayDiagram = pathwayDiagram;
     }
+    
+    /**
+     * Call this method to start a factor graph analysis. 
+     */
+    public void startAnalysis() {
+        if (FactorGraphRegistry.getRegistry().isDataLoaded()) {
+            int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                      "Data and algorithms have been loaded previously. Do you want to reload them?",
+                                                      "Reload Data and Algorithms?",
+                                                      JOptionPane.YES_NO_CANCEL_OPTION);
+            if (reply == JOptionPane.CANCEL_OPTION)
+                return; 
+            if (reply == JOptionPane.NO_OPTION) { // There is no need to reload data.
+                // Don't show escape name dialog
+                FactorGraphRegistry.getRegistry().setNeedEscapeNameDialog(false);
+                Thread t = new Thread() {
+                    public void run() {
+                        runFactorGraphAnalysis();
+                    }
+                };
+                t.start();
+                return;
+            }
+            // If Yes, the following code will be used.
+        }
+        FactorGraphRegistry.getRegistry().setNeedEscapeNameDialog(true);
+        FactorGraphAnalysisDialog dialog = new FactorGraphAnalysisDialog();
+        dialog.setSize(625, 630);
+        GKApplicationUtilities.center(dialog);
+        dialog.setModal(true);
+        dialog.setVisible(true);
+        if (dialog.isOkClicked()) {
+            getParametersFromDialog(dialog);
+            Thread t = new Thread() {
+                public void run() {
+                    runFactorGraphAnalysis();
+                }
+            };
+            t.start();
+        }
+    }
+
+    private void getParametersFromDialog(FactorGraphAnalysisDialog dialog) {
+        // Initialize FactorGraphAnalyzer and set up its required member variables
+        // for performing analysis.
+        ObservationDataLoadPanel dataPane = dialog.getDataLoadPane();
+        setGeneExpFile(dataPane.getGeneExpFile());
+        setGeneExpThresholdValues(dataPane.getGeneExpThresholdValues());
+        setCnvFile(dataPane.getDNAFile());
+        setCnvThresholdValues(dataPane.getDNAThresholdValues());
+        // If two cases analysis should be performed
+        if (dataPane.isTwoCasesAnalysisSelected())
+            setTwoCasesSampleInfoFile(dataPane.getTwoCasesSampleInfoFile());
+            
+        InferenceAlgorithmPane algPane = dialog.getAlgorithmPane();
+        setAlgorithms(algPane.getSelectedAlgorithms());
+    }
 
     /**
      * This is the actual place where the factor graph based analysis is performed.
      */
-    public void runFactorGraphAnalysis() {
+    protected void runFactorGraphAnalysis() {
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         if (pathwayId == null || pathwayDiagram == null) {
             JOptionPane.showMessageDialog(frame,
@@ -138,11 +194,7 @@ public class FactorGraphAnalyzer {
                                           JOptionPane.ERROR_MESSAGE);
             return;
         }
-        ProgressPane progressPane = new ProgressPane();
-        progressPane.setTitle("Run Graphical Model Analysis");
-        progressPane.setIndeterminate(true);
-        frame.setGlassPane(progressPane);
-        frame.getGlassPane().setVisible(true);
+        ProgressPane progressPane = initializeProgressPane(frame);
         // Convert to a FactorGraph using this object
         DiagramAndFactorGraphSwitcher switcher = new DiagramAndFactorGraphSwitcher();
         try {
@@ -153,35 +205,11 @@ public class FactorGraphAnalyzer {
                 return; // Something may be wrong
             }
             
-            progressPane.setText("Loading observation data...");
-            ObservationDataHelper dataHelper = new ObservationDataHelper(factorGraph);
-            boolean correct = dataHelper.performLoadData(cnvFile,
-                                                         cnvThresholdValues, 
-                                                         geneExpFile, 
-                                                         geneExpThresholdValues,
-                                                         getSampleInfoFile(),
-                                                         progressPane);
-            if (!correct) {
-                progressPane.setText("Wrong in data loading.");
-                progressPane.setVisible(false);
-                return;
-            }
-            progressPane.setText("Data loading is done.");
+            if(!loadEvidences(factorGraph, progressPane))
+                return; // Something wrong during loading
             
-            progressPane.setTitle("Perform inference...");
-            InferenceRunner inferenceRunner = new InferenceRunner();
-            inferenceRunner.setFactorGraph(factorGraph);
-            // Get the set of output variables for results analysis
-            Set<Variable> pathwayVars = getPathwayVars(factorGraph, pathwayDiagram);
-            inferenceRunner.setPathwayVars(pathwayVars);
-            Set<Variable> outputVars = getOutputVariables(factorGraph, pathwayDiagram);
-            inferenceRunner.setOutputVars(outputVars);
-            inferenceRunner.setUsedForTwoCases(getSampleInfoFile() != null);
-            inferenceRunner.setProgressPane(progressPane);
-            inferenceRunner.setAlgorithms(FactorGraphRegistry.getRegistry().getLoadedAlgorithms());
-            inferenceRunner.setHiliteControlPane(this.hiliteControlPane);
-            // Now call for inference
-            inferenceRunner.performInference(true);
+            performInference(factorGraph,
+                             progressPane);
             
             progressPane.setText("Analysis is done!");
             progressPane.setVisible(false);
@@ -195,6 +223,52 @@ public class FactorGraphAnalyzer {
             e.printStackTrace();
         }
     }
+
+    private void performInference(FactorGraph factorGraph,
+                                  ProgressPane progressPane) throws Exception {
+        progressPane.setTitle("Perform inference...");
+        InferenceRunner inferenceRunner = new InferenceRunner();
+        inferenceRunner.setFactorGraph(factorGraph);
+        // Get the set of output variables for results analysis
+        Set<Variable> pathwayVars = getPathwayVars(factorGraph);
+        inferenceRunner.setPathwayVars(pathwayVars);
+        Set<Variable> outputVars = getOutputVariables(factorGraph);
+        inferenceRunner.setOutputVars(outputVars);
+        inferenceRunner.setUsedForTwoCases(getSampleInfoFile() != null);
+        inferenceRunner.setProgressPane(progressPane);
+        inferenceRunner.setAlgorithms(FactorGraphRegistry.getRegistry().getLoadedAlgorithms());
+        inferenceRunner.setHiliteControlPane(this.hiliteControlPane);
+        // Now call for inference
+        inferenceRunner.performInference(true);
+    }
+
+    protected boolean loadEvidences(FactorGraph factorGraph,
+                                    ProgressPane progressPane) throws Exception {
+        progressPane.setText("Loading observation data...");
+        ObservationDataHelper dataHelper = new ObservationDataHelper(factorGraph);
+        boolean correct = dataHelper.performLoadData(cnvFile,
+                                                     cnvThresholdValues, 
+                                                     geneExpFile, 
+                                                     geneExpThresholdValues,
+                                                     getSampleInfoFile(),
+                                                     progressPane);
+        if (!correct) {
+            progressPane.setText("Wrong in data loading.");
+            progressPane.setVisible(false);
+            return false;
+        }
+        progressPane.setText("Data loading is done.");
+        return true;
+    }
+
+    protected ProgressPane initializeProgressPane(JFrame frame) {
+        ProgressPane progressPane = new ProgressPane();
+        progressPane.setTitle("Run Graphical Model Analysis");
+        progressPane.setIndeterminate(true);
+        frame.setGlassPane(progressPane);
+        frame.getGlassPane().setVisible(true);
+        return progressPane;
+    }
     
     /**
      * Call this method to display a saved results from a file.
@@ -207,9 +281,9 @@ public class FactorGraphAnalyzer {
         InferenceRunner inferenceRunner = new InferenceRunner();
         inferenceRunner.setFactorGraph(factorGraph);
         // Get the set of output variables for results analysis
-        Set<Variable> pathwayVars = getPathwayVars(factorGraph, pathwayDiagram);
+        Set<Variable> pathwayVars = getPathwayVars(factorGraph);
         inferenceRunner.setPathwayVars(pathwayVars);
-        Set<Variable> outputVars = getOutputVariables(factorGraph, pathwayDiagram);
+        Set<Variable> outputVars = getOutputVariables(factorGraph);
         inferenceRunner.setOutputVars(outputVars);
         inferenceRunner.setUsedForTwoCases(fgResults.getSampleToType() != null);
         inferenceRunner.setHiliteControlPane(hiliteControlPane);
@@ -218,51 +292,25 @@ public class FactorGraphAnalyzer {
         FactorGraphRegistry.getRegistry().registerInferenceResults(fgResults);
     }
     
-    private Set<Variable> getPathwayVars(FactorGraph fg, RenderablePathway diagram) {
-        // Get output ids from diagram diagram
-        Set<String> reactomeIds = new HashSet<String>();
-        for (Object o : diagram.getComponents()) {
-            Renderable r = (Renderable) o;
-            if (r.getReactomeId() == null || !(r instanceof Node))
-                continue; // Nothing to be done
-            reactomeIds.add(r.getReactomeId() + "");
-        }
+    protected Set<Variable> getPathwayVars(FactorGraph fg) {
         Set<Variable> pathwayVars = new HashSet<Variable>();
         // If a variable's reactome id is in this list, it should be a output
         for (Variable var : fg.getVariables()) {
-            if (var.getCustomizedInfo() == null)
-                continue;
-            if (reactomeIds.contains(var.getCustomizedInfo()))
-                pathwayVars.add(var);
+            String roles = var.getProperty("role");
+            if (roles != null && roles.length() > 0)
+                pathwayVars.add(var); // If there is a role assigned to the variable, it should be used as a pathway variable
         }
         return pathwayVars;
     }
     
-    private Set<Variable> getOutputVariables(FactorGraph fg, RenderablePathway diagram) {
-        // Get output ids from diagram diagram
-        Set<String> outputIds = new HashSet<String>();
-        for (Object o : diagram.getComponents()) {
-            Renderable r = (Renderable) o;
-            if (r.getReactomeId() == null)
-                continue; // Nothing to be done
-            if (r instanceof RenderableReaction ||
-                r instanceof RenderableInteraction) {
-                HyperEdge edge = (HyperEdge) r;
-                List<Node> outputs = edge.getOutputNodes();
-                if (outputs != null) {
-                    for (Node output : outputs) {
-                        if (output.getReactomeId() != null)
-                            outputIds.add(output.getReactomeId() + "");
-                    }
-                }
-            }
-        }
+    protected Set<Variable> getOutputVariables(FactorGraph fg) {
         Set<Variable> outputVar = new HashSet<Variable>();
         // If a variable's reactome id is in this list, it should be a output
         for (Variable var : fg.getVariables()) {
-            if (var.getCustomizedInfo() == null)
+            String roles = var.getProperty("role");
+            if (roles == null || roles.length() == 0)
                 continue;
-            if (outputIds.contains(var.getCustomizedInfo()))
+            if (roles.contains(VariableRole.OUTPUT.toString()))
                 outputVar.add(var);
         }
         return outputVar;

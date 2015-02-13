@@ -29,6 +29,7 @@ import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
+import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Node;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
@@ -168,6 +169,8 @@ public class DiagramAndFactorGraphSwitcher {
                 dialog.okBtn.requestFocus();
             }
         });
+        if (FactorGraphRegistry.getRegistry().getEscapeNames() != null)
+            dialog.setEscapeNames(FactorGraphRegistry.getRegistry().getEscapeNames());
         dialog.setSize(400, 275);
         dialog.setModal(true);
         dialog.setVisible(true);
@@ -342,16 +345,18 @@ public class DiagramAndFactorGraphSwitcher {
     private Map<String, String> generateSourceIdInfo(FactorGraph fg) {
         Map<String, String> sourceIdInfo = new HashMap<String, String>();
         for (Factor factor : fg.getFactors()) {
-            if (factor.getCustomizedInfo() == null)
+            String dbId = factor.getProperty(ReactomeJavaConstants.DB_ID);
+            if (dbId == null)
                 continue;
             sourceIdInfo.put(factor.getId(), 
-                             factor.getCustomizedInfo());
+                             dbId);
         }
         for (Variable variable : fg.getVariables()) {
-            if (variable.getCustomizedInfo() == null)
+            String dbId = variable.getProperty(ReactomeJavaConstants.DB_ID);
+            if (dbId == null)
                 continue;
             sourceIdInfo.put(variable.getId(),
-                             variable.getCustomizedInfo());
+                             dbId);
         }
         return sourceIdInfo;
     }
@@ -387,6 +392,10 @@ public class DiagramAndFactorGraphSwitcher {
         public EscapeNameDialog(JFrame parentFrame) {
             super(parentFrame);
             init();
+        }
+        
+        public void setEscapeNames(String names) {
+            listTA.setText(names);
         }
         
         private void init() {
@@ -461,19 +470,12 @@ public class DiagramAndFactorGraphSwitcher {
         }
         
         private String getPredefinedList() {
-            String[] escapeNames = new String[] {
-                    "ATP",
-                    "ADP",
-                    "Pi",
-                    "H2O",
-                    "GTP",
-                    "GDP",
-                    "CO2",
-                    "H+"
-            };
+            String names = PlugInObjectManager.getManager().getProperties().getProperty("fgEscapeNames");
+            if (names == null)
+                names = "ATP,ADP,Pi,H2O,GTP,GDP,CO2,H+";
+            String[] escapeNames = names.split(",");
             List<String> escapeList = Arrays.asList(escapeNames);
             return StringUtils.join(", ", escapeList);
         }
-        
     }
 }

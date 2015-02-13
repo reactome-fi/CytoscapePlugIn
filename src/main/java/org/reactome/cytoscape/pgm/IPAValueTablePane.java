@@ -38,6 +38,7 @@ import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.GraphEditorSelectionModel;
+import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -264,9 +265,10 @@ public class IPAValueTablePane extends NetworkModulePanel {
         if (selection != null && selection.size() > 0) {
             Map<String, Variable> dbIdToVar = new HashMap<String, Variable>();
             for (Variable var : fg.getVariables()) {
-                if (var.getCustomizedInfo() == null)
+                String dbId = var.getProperty(ReactomeJavaConstants.DB_ID);
+                if (dbId == null)
                     continue;
-                dbIdToVar.put(var.getCustomizedInfo(), var);
+                dbIdToVar.put(dbId, var);
             }
             for (Object obj : selection) {
                 Renderable r = (Renderable) obj;

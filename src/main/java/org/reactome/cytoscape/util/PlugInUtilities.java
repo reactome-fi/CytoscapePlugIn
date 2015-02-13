@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,6 +63,7 @@ import org.jfree.chart.plot.CategoryMarker;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.reactome.pathway.factorgraph.IPACalculator;
 import org.reactome.r3.util.InteractionUtilities;
 
 /**
@@ -79,6 +81,26 @@ public class PlugInUtilities {
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * Calculate a list of IPAs for values in sampleToProbs. The returned list is
+     * sorted by sample names alphabetically.
+     * @param priorValues
+     * @param sampleToProbs
+     * @return
+     */
+    public static List<Double> calculateIPAs(List<Double> priorValues,
+                                             Map<String, List<Double>> sampleToProbs) {
+        List<String> sampleList = new ArrayList<String>(sampleToProbs.keySet());
+        Collections.sort(sampleList);
+        List<Double> ipas = new ArrayList<Double>();
+        for (String sample : sampleList) {
+            List<Double> probs = sampleToProbs.get(sample);
+            double ipa = IPACalculator.calculateIPA(priorValues, probs);
+            ipas.add(ipa);
+        }
+        return ipas;
     }
     
     /**
@@ -381,6 +403,8 @@ public class PlugInUtilities {
     }  
     
     public static String formatProbability(double value) {
+        if (Double.isNaN(value))
+            return value + "";
         return String.format("%1.2E", value);
     }
 

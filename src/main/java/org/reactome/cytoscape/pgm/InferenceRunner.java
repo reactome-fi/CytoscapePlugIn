@@ -260,7 +260,7 @@ public class InferenceRunner {
             }
             catch(InferenceCannotConvergeException e) {
                 if (gibbs == null || ((LoopyBeliefPropagation)lbp).getInferenceType() == InferenceType.MAX_PRODUCT)
-                    throw e; // Gibbs cannot support MAX_PRODUCT now.
+                    throw e; // Gibbs cannot support MAX_PRODUCT
                 if (gibbs != null) { // Try switch to Gibbs automatically if it is set.
                     progressPane.setText("Use Gibbs for " + 
                                          (sample == null ? " prior" : sample));
@@ -275,7 +275,7 @@ public class InferenceRunner {
         }
     }
 
-    private synchronized void performInference() {
+    public synchronized void performInference() {
         if (lbp == null && gibbs == null) // We cannot do anything if there is no inferencer is set.
             return;
         if (factorGraph == null)

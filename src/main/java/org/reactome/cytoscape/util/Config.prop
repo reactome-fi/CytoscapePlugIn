@@ -5,19 +5,22 @@ dataSourceURL=http://reactomedev.oicr.on.ca/cgi-bin/eventbrowser?DB=${DB_NAME}&F
 moduleColors=0,0,153;51,153,0;153,0,153;102,102,0;0,102,102;204,153,0;204,0,102;204,204,255,0,102,51;0,204,204;102,0,51;0,51,51;0,102,153;255,102,255;255,255,102
 userGuideURL=http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin_4
 # A list of FI network versions available for selection
-FINetworkVersions=2013,2012,2009
+FINetworkVersions=2014,2013,2012
 # For local test
-2009_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+#2009_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 2012_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 2013_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+2014_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 # For Production site
 #2009_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp/FIService/
 #2012_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2012/FIService/
 #2013_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2013/FIService/
+#2014_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2014/FIService/
 # Source data bases
-2009_sourceDb=test_reactome_28_plus_i_myisam
+#2009_sourceDb=test_reactome_28_plus_i_myisam
 2012_sourceDb=test_reactome_41_plus_i
 2013_sourceDb=test_reactome_47_plus_i
+2013_sourceDb=test_reactome_51_plus_i
 # A list of evidences and their labels
 evidenceProperties=humanInteraction,scePPI,dmePPI,celPPI,mousePPI,genewaysPPI,pavlidisGeneExp,carlosGeneExp,pfamDomainInt,goBPSharing,probability
 evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interaction,Mouse Interaction,Geneways Interaction,Pavlidis Gene Exp,Carlos Gene Exp,PfamDomain Interaction,GO BP Sharing,Score
@@ -25,7 +28,8 @@ evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interacti
 ReactomeRESTfulAPI=http://localhost:8080/ReactomeRESTfulAPI/RESTfulWS/
 #ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/ReactomeRESTfulAPI_PathX/RESTfulWS/
 ReactomeURL=http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&ID=
-# Pre-learned probabilities between gene expression nodes and mRNA nodes
-expressionFactorValues=0.02,0.89,0.09,0.01,0.92,0.07,0.03,0.76,0.21
-# pre-learned probabilities between CNVs and DNA nodes
-cnvFactorValues=0.83,0.12,0.05,0.14,0.695,0.165,0.07,0.26,0.67
+# Use to control the debug model for PGM analysis
+PGMDebug=false
+# The file has pre-generated factor graph objects in a zipped XML file
+factorGraphFiles=PathwayDiagramsFactorGraphs.xml.zip
+fgEscapeNames=ATP,ADP,Pi,H2O,GTP,GDP,CO2,H+

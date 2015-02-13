@@ -97,6 +97,16 @@ public class FactorGraphRegistry {
             e.printStackTrace();
         }
     }
+    
+    /**
+     * Remove all saved data for the passed FactorGraph object.
+     * @param fg
+     */
+    public void clearData(FactorGraph fg) {
+        fgToObservations.remove(fg);
+        fgToRandomObservations.remove(fg);
+        fgToResults.remove(fg);
+    }
 
     public boolean isNeedEscapeNameDialog() {
         return needEscapeNameDialog;
@@ -107,6 +117,9 @@ public class FactorGraphRegistry {
     }
 
     public String getEscapeNames() {
+        // escapeNames should not be null 
+        if (escapeNames == null)
+            escapeNames = PlugInObjectManager.getManager().getProperties().getProperty("fgEscapeNames");
         return escapeNames;
     }
 

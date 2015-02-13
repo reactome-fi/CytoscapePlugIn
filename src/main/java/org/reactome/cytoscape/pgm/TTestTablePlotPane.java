@@ -40,6 +40,7 @@ import org.jfree.data.general.DatasetChangeEvent;
 import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.r3.util.MathUtilities;
 
 /**
  * This customized JPanel combines a table for t-test and box plots together into a single user interface component.
@@ -178,19 +179,20 @@ public class TTestTablePlotPane<T> extends JPanel {
         panel.setBorder(BorderFactory.createEtchedBorder());
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
         
-        combinedTitleLabel = new JLabel("Combined p-value using an extension of Fisher's method (click to see the reference): ");
-        combinedTitleLabel.setToolTipText("Click to view the reference");
-        combinedTitleLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+//        combinedTitleLabel = new JLabel("Combined p-value using an extension of Fisher's method (click to see the reference): ");
+        combinedTitleLabel = new JLabel("Combined p-value using the Fisher's method: ");
+//        combinedTitleLabel.setToolTipText("Click to view the reference");
+//        combinedTitleLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         combinedPValueLabel = new JLabel("1.0");
-        combinedTitleLabel.addMouseListener(new MouseAdapter() {
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                String url = "http://www.sciencedirect.com/science/article/pii/S0167715202003103";
-                PlugInUtilities.openURL(url);
-            }
-            
-        });
+//        combinedTitleLabel.addMouseListener(new MouseAdapter() {
+//
+//            @Override
+//            public void mouseClicked(MouseEvent e) {
+//                String url = "http://www.sciencedirect.com/science/article/pii/S0167715202003103";
+//                PlugInUtilities.openURL(url);
+//            }
+//            
+//        });
         panel.add(combinedTitleLabel);
         panel.add(combinedPValueLabel);
         
@@ -345,12 +347,12 @@ public class TTestTablePlotPane<T> extends JPanel {
      */
     private void calculateCombinedPValue(List<Double> pvalues,
                                          List<List<Double>> values) throws MathException {
-//        double combinedPValue = MathUtilities.combinePValuesWithFisherMethod(pvalues);
+        double combinedPValue = MathUtilities.combinePValuesWithFisherMethod(pvalues);
         // Since it is pretty sure, variables are dependent in pathway, use another method
         // to combine p-values
-        PValueCombiner combiner = new PValueCombiner();
-        double combinedPValue = combiner.combinePValue(values,
-                                                       pvalues);
+//        PValueCombiner combiner = new PValueCombiner();
+//        double combinedPValue = combiner.combinePValue(values,
+//                                                       pvalues);
         combinedPValueLabel.setText(PlugInUtilities.formatProbability(combinedPValue));
     }
     

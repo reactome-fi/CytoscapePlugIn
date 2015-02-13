@@ -37,7 +37,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableModel;
 
 import org.apache.commons.math.MathException;
-import org.apache.commons.math3.stat.inference.MannWhitneyUTest;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
@@ -45,6 +44,7 @@ import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
+import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
 import org.gk.util.DialogControlPane;
 import org.osgi.framework.BundleContext;
@@ -56,9 +56,7 @@ import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Variable;
-import org.reactome.pathway.factorgraph.IPACalculator;
 import org.reactome.r3.util.InteractionUtilities;
-import org.reactome.r3.util.MathUtilities;
 
 /**
  * @author gwu
@@ -134,7 +132,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         if (dialog.isOkClicked) {
             String pvalueCutoffText = dialog.pvalueCutoffTF.getText().trim();
             String ipaDiffCutoffText = dialog.ipaCutoffTF.getText().trim();
-            setOverview(new Double(pvalueCutoffText), 
+            generateOverview(new Double(pvalueCutoffText), 
                         new Double(ipaDiffCutoffText));
         }
     }
@@ -149,7 +147,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             }
         }
         tablePlotPane = createTablePlotPane();
-        tablePlotPane.setCombinedPValueTitle("Combined p-value for outputs using an extension of Fisher's method (click to see the reference): ");
+        tablePlotPane.setCombinedPValueTitle("Combined p-value for outputs using the Fisher's method: ");
         add(tablePlotPane, BorderLayout.CENTER);
     }
 
@@ -338,14 +336,11 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         isFromTable = false;
     }
     
-    private void setOverview(double pvalueCutoff,
-                             double ipaDiffCutoff) {
+    private void generateOverview(double pvalueCutoff,
+                                  double ipaDiffCutoff) {
         StringBuilder builder = new StringBuilder();
-        int size = 0;
-        if (varResults != null)
-            size = varResults.size();
         builder.append("Total checked outputs: " + outputVars.size());
-        if (size == 0) {
+        if (outputVars.size() == 0) {
             outputResultLabel.setText(builder.toString());
             return; 
         }
@@ -357,8 +352,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         }
         catch(Exception e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Error in generating details: " + e,
-                                          "Error in Generating Details",
+                                          "Error in generating overview: " + e,
+                                          "Error in Generating Overview",
                                           JOptionPane.ERROR_MESSAGE);
             outputResultLabel.setText(builder.toString());
         }
@@ -367,51 +362,14 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     private void generateOverview(double pvalueCutoff,
                                   double ipaDiffCutoff,
                                   StringBuilder builder) throws Exception {
-        // Do a test
-        int negPerturbedOutputs = 0;
-        int posPerturbedOutputs = 0;
-        List<Double> realIPAs = new ArrayList<Double>();
-        List<Double> randomIPAs = new ArrayList<Double>();
-        List<List<Double>> allRealIPAs = new ArrayList<List<Double>>();
-        MannWhitneyUTest uTest = new MannWhitneyUTest();
-        List<Double> pvalues = new ArrayList<Double>();
-        boolean hasData = false;
-        Map<String, Set<String>> typeToSamples = null;
-        if (sampleToType != null)
-            typeToSamples = PlugInUtilities.getTypeToSamples(sampleToType);
-        for (VariableInferenceResults varResult : varResults) {
-            if (!outputVars.contains(varResult.getVariable()))
-                continue; // Make sure it counts for outputs only
-            realIPAs.clear();
-            randomIPAs.clear();
-            if (typeToSamples == null)
-                calculateIPAForOverview(realIPAs, randomIPAs, varResult);
-            else
-                calculateTwoCasesIPAForOverview(realIPAs,
-                                                randomIPAs,
-                                                varResult,
-                                                typeToSamples);
-            if (realIPAs.size() == 0 || randomIPAs.size() == 0)
-                continue;
-            hasData = true;
-            double realMean = MathUtilities.calculateMean(realIPAs);
-            double randomMean = MathUtilities.calculateMean(randomIPAs);
-            double meanDiff = realMean - randomMean;
-            if (Math.abs(meanDiff) < ipaDiffCutoff)
-                continue;
-            double pvalue = uTest.mannWhitneyUTest(PlugInUtilities.convertDoubleListToArray(realIPAs),
-                                                   PlugInUtilities.convertDoubleListToArray(randomIPAs));
-            if (pvalue < pvalueCutoff) {
-                if (meanDiff < 0.0d)
-                    negPerturbedOutputs ++;
-                else if (meanDiff > 0.0d)
-                    posPerturbedOutputs ++;
-            }
-        }
-        if (!hasData) {
-            builder.append(" (No inference results are available.) ");
-            return;
-        }
+        PathwayResultSummary resultSummary = new PathwayResultSummary();
+        resultSummary.setIPACutoff(ipaDiffCutoff);
+        resultSummary.setPvalueCutoff(pvalueCutoff);
+        resultSummary.parseResults(varResults,
+                                   outputVars,
+                                   sampleToType);
+        int negPerturbedOutputs = resultSummary.getDownOutputs();
+        int posPerturbedOutputs = resultSummary.getUpOutputs();
         builder.append(" (").append(negPerturbedOutputs).append(" down perturbed, ");
         builder.append(posPerturbedOutputs).append(" up perturbed, based on pvalue < ");
         builder.append(pvalueCutoff).append(" and IPA mean diff > ");
@@ -419,42 +377,6 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         return;
     }
 
-    private void calculateIPAForOverview(List<Double> realIPAs,
-                                         List<Double> randomIPAs,
-                                         VariableInferenceResults varResult) {
-        Map<String, List<Double>> sampleToRealProbs = varResult.getPosteriorValues();
-        for (List<Double> probs : sampleToRealProbs.values()) {
-            double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), probs);
-            realIPAs.add(ipa);
-        }
-        Map<String, List<Double>> sampleToRandomProbs = varResult.getRandomPosteriorValues();
-        for (List<Double> probs : sampleToRandomProbs.values()) {
-            double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), probs);
-            randomIPAs.add(ipa);
-        }
-    }
-    
-    private void calculateTwoCasesIPAForOverview(List<Double> realIPAs,
-                                                 List<Double> randomIPAs,
-                                                 VariableInferenceResults varResult,
-                                                 Map<String, Set<String>> typeToSamples) {
-        List<String> types = new ArrayList<String>(typeToSamples.keySet());
-        // Do a sort so that the results are the same as in the table
-        Collections.sort(types);
-        // The first type is used as real. No order is needed
-        Map<String, List<Double>> sampleToRealProbs = grepVarResultsForSamples(varResult, typeToSamples.get(types.get(0)));
-        for (List<Double> probs : sampleToRealProbs.values()) {
-            double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), probs);
-            realIPAs.add(ipa);
-        }
-        // The second is used as random.
-        Map<String, List<Double>> sampleToRandomProbs = grepVarResultsForSamples(varResult, typeToSamples.get(types.get(1)));
-        for (List<Double> probs : sampleToRandomProbs.values()) {
-            double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(), probs);
-            randomIPAs.add(ipa);
-        }
-    }
-    
     /**
      * Get the map from Reactome ids to IPA diffs.
      * @return
@@ -492,8 +414,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         // Use these default values
         double pvalueCutoff = 0.01d;
         double ipaDiffCutoff = 0.30d; // 2 fold difference
-        setOverview(pvalueCutoff,
-                    ipaDiffCutoff);
+        generateOverview(pvalueCutoff,
+                         ipaDiffCutoff);
     }
     
     private void parseTwoCasesResults(List<VariableInferenceResults> sortedResults,
@@ -519,9 +441,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             List<Double> ipas2 = null;
             for (String type : sortedTypes) {
                 Set<String> samples = typeToSamples.get(type);
-                Map<String, List<Double>> sampleToProbs = grepVarResultsForSamples(varResults, samples);
-                List<Double> ipas = calculateIPAs(varResults.getPriorValues(),
-                                                  sampleToProbs);
+                Map<String, List<Double>> sampleToProbs = varResults.getResultsForSamples(samples);
+                List<Double> ipas = PlugInUtilities.calculateIPAs(varResults.getPriorValues(), sampleToProbs);
                 if (ipas1 == null)
                     ipas1 = ipas;
                 else
@@ -536,28 +457,15 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                                        varToIPAs2);
     }
 
-    private Map<String, List<Double>> grepVarResultsForSamples(VariableInferenceResults varResults,
-                                                               Set<String> samples) {
-        Map<String, List<Double>> sampleToResults = new HashMap<String, List<Double>>();
-        Map<String, List<Double>> sampleToProbs = varResults.getPosteriorValues();
-        for (String sample : sampleToProbs.keySet()) {
-            if (samples.contains(sample)) {
-                List<Double> probs = sampleToProbs.get(sample);
-                sampleToResults.put(sample, probs);
-            }
-        }
-        return sampleToResults;
-    }
-
-    private void parseResults(List<VariableInferenceResults> sortedResults) throws MathException {
+    private void parseResults(List<VariableInferenceResults> varResultList) throws MathException {
         Map<Variable, List<Double>> varToRealIPAs = new HashMap<Variable, List<Double>>();
         Map<Variable, List<Double>> varToRandomIPAs = new HashMap<Variable, List<Double>>();
-        for (VariableInferenceResults varResults : sortedResults) {
-            List<Double> realIPAs = calculateIPAs(varResults.getPriorValues(),
-                                                  varResults.getPosteriorValues());
+        for (VariableInferenceResults varResults : varResultList) {
+            List<Double> realIPAs = PlugInUtilities.calculateIPAs(varResults.getPriorValues(),
+                                                                  varResults.getPosteriorValues());
             varToRealIPAs.put(varResults.getVariable(), realIPAs);
-            List<Double> randomIPAs = calculateIPAs(varResults.getPriorValues(),
-                                                    varResults.getRandomPosteriorValues());
+            List<Double> randomIPAs = PlugInUtilities.calculateIPAs(varResults.getPriorValues(), 
+                                                                    varResults.getRandomPosteriorValues());
             varToRandomIPAs.put(varResults.getVariable(), randomIPAs);
         }
         tablePlotPane.setDisplayValues("Real Samples",
@@ -567,19 +475,11 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     }
     
     protected String getVariableKey(Variable var) {
-        if (var.getCustomizedInfo() != null)
-            return var.getCustomizedInfo();
-        return var.getName();
-    }
-    
-    private List<Double> calculateIPAs(List<Double> priorValues,
-                                       Map<String, List<Double>> sampleToProbs) {
-        List<Double> ipas = new ArrayList<Double>();
-        for (List<Double> probs : sampleToProbs.values()) {
-            double ipa = IPACalculator.calculateIPA(priorValues, probs);
-            ipas.add(ipa);
-        }
-        return ipas;
+        String dbId = var.getProperty(ReactomeJavaConstants.DB_ID);
+        if (dbId == null)
+            return var.getName();
+        else
+            return dbId;
     }
     
     private class RecheckOutputsDialog extends JDialog {

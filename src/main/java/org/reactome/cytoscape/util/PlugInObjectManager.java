@@ -223,6 +223,14 @@ public class PlugInObjectManager {
         return cyApplication;
     }
     
+    public void selectCytoPane(Component panel, CytoPanelName direction) {
+        CySwingApplication desktopApp = getCySwingApplication();
+        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(direction);
+        int index = tableBrowserPane.indexOfComponent(panel);
+        if (index >= 0)
+            tableBrowserPane.setSelectedIndex(index);
+    }
+    
     /**
      * Get the JFrame used to hold the whole application.
      * @return
@@ -287,6 +295,13 @@ public class PlugInObjectManager {
 
     public String getRestfulURL() {
         return getRestfulURL(getFiNetworkVersion());
+    }
+    
+    public String getHostURL() {
+        String serviceUrl = PlugInObjectManager.getManager().getRestfulURL();
+     // Get the host URL name
+        int index = serviceUrl.lastIndexOf("/", serviceUrl.length() - 2);
+        return serviceUrl.substring(0, index + 1);
     }
     
     public String getDataSourceURL(String fiVersion)
