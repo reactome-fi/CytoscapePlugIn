@@ -74,8 +74,6 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     private List<VariableInferenceResults> varResults;
     private Set<Variable> outputVars;
     private Map<String, String> sampleToType;
-    // A flag to indicate if small molecules have been hidden
-    private boolean isSimpleEntityHidden = true; // Default is shown
     
     /**
      * @param title
@@ -179,7 +177,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                doTableSelection(e);
+                if (e.getValueIsAdjusting())
+                    doTableSelection(e);
             }
         });
         

@@ -109,6 +109,11 @@ public class GeneLevelResultDialog extends GeneLevelDialog {
                                     1);
                 return tablePlotPane;
             }
+
+            @Override
+            protected void handleGraphEditorSelection(List<?> selection) {
+                // Do nothing since there is no change we will get selected here.
+            }
         };
     }
     
