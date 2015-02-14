@@ -205,7 +205,7 @@ public class InferenceRunner {
         // Use a new thread for performing inference so that it can be cancelled
         Thread t = new Thread() {
             public void run() {
-                performInference();
+                _performInference();
             }
         };
         t.start();
@@ -274,8 +274,8 @@ public class InferenceRunner {
             gibbs.runInference();
         }
     }
-
-    public synchronized void performInference() {
+    
+    public synchronized void performInference() throws InferenceCannotConvergeException {
         if (lbp == null && gibbs == null) // We cannot do anything if there is no inferencer is set.
             return;
         if (factorGraph == null)
@@ -286,67 +286,71 @@ public class InferenceRunner {
             lbp.setFactorGraph(factorGraph);
         if (gibbs != null)
             gibbs.setFactorGraph(factorGraph);
-        try {
-            status = InferenceStatus.WORKING;
-            if (progressPane != null)
-                progressPane.setText("Perform prior inference...");
-            performInference(null, null);
-            FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(factorGraph);
-            fgResults.setUsedForTwoCases(usedForTwoCases);
-            fgResults.storeInferenceResults(null); // Store prior result
-            List<Observation> observations = FactorGraphRegistry.getRegistry().getObservations(factorGraph);
-            Map<String, String> sampleToType = new HashMap<String, String>();
-            fgResults.setSampleToType(sampleToType);
+        status = InferenceStatus.WORKING;
+        if (progressPane != null)
+            progressPane.setText("Perform prior inference...");
+        performInference(null, null);
+        FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(factorGraph);
+        fgResults.setUsedForTwoCases(usedForTwoCases);
+        fgResults.storeInferenceResults(null); // Store prior result
+        List<Observation> observations = FactorGraphRegistry.getRegistry().getObservations(factorGraph);
+        Map<String, String> sampleToType = new HashMap<String, String>();
+        fgResults.setSampleToType(sampleToType);
+        if (observations != null) {
+            progressPane.setIndeterminate(false);
+            progressPane.setMaximum(observations.size());
+            progressPane.setMinimum(0);
+            int count = 0;
+            for (Observation observation : observations) {
+                // If this is used for two cases and there is no type information for the observation
+                // the inference will not be performed for it.
+                if (usedForTwoCases && observation.getAnnoation() == null)
+                    continue; 
+                if (progressPane != null)
+                    progressPane.setText("Sample: " + observation.getName());
+                performInference(observation.getVariableToAssignment(), observation.getName());
+                fgResults.storeInferenceResults(observation.getName());
+                // If there is no sample type, don't include to avoid a new type (null!)
+                // appears in the further analysis.
+                if (observation.getAnnoation() != null)
+                    sampleToType.put(observation.getName(), observation.getAnnoation());
+                count ++;
+                progressPane.setValue(count);
+                if (abort)
+                    break;
+            }
+            fgResults.setObservations(observations);
+        }
+        if (!abort) { // Maybe abort in the above loop.
+            observations = FactorGraphRegistry.getRegistry().getRandomObservations(factorGraph);
             if (observations != null) {
-                progressPane.setIndeterminate(false);
-                progressPane.setMaximum(observations.size());
-                progressPane.setMinimum(0);
                 int count = 0;
+                progressPane.setMaximum(observations.size());
                 for (Observation observation : observations) {
-                    // If this is used for two cases and there is no type information for the observation
-                    // the inference will not be performed for it.
-                    if (usedForTwoCases && observation.getAnnoation() == null)
-                        continue; 
-                    if (progressPane != null)
-                        progressPane.setText("Sample: " + observation.getName());
-                    performInference(observation.getVariableToAssignment(), observation.getName());
-                    fgResults.storeInferenceResults(observation.getName());
-                    // If there is no sample type, don't include to avoid a new type (null!)
-                    // appears in the further analysis.
-                    if (observation.getAnnoation() != null)
-                        sampleToType.put(observation.getName(), observation.getAnnoation());
                     count ++;
+                    if (progressPane != null)
+                        progressPane.setText("Random sample: " + count);
+                    performInference(observation.getVariableToAssignment(), "Random sample " + count);
+                    fgResults.storeInferenceResults(observation.getName());
                     progressPane.setValue(count);
                     if (abort)
                         break;
                 }
-                fgResults.setObservations(observations);
             }
-            if (!abort) { // Maybe abort in the above loop.
-                observations = FactorGraphRegistry.getRegistry().getRandomObservations(factorGraph);
-                if (observations != null) {
-                    int count = 0;
-                    progressPane.setMaximum(observations.size());
-                    for (Observation observation : observations) {
-                        count ++;
-                        if (progressPane != null)
-                            progressPane.setText("Random sample: " + count);
-                        performInference(observation.getVariableToAssignment(), "Random sample " + count);
-                        fgResults.storeInferenceResults(observation.getName());
-                        progressPane.setValue(count);
-                        if (abort)
-                            break;
-                    }
-                }
-                fgResults.setRandomObservations(observations);
-            }
-            if (abort) {
-                status = InferenceStatus.ABORT;
-                // Empty inference results
-                fgResults.clear();
-            }
-            else
-                status = InferenceStatus.DONE;
+            fgResults.setRandomObservations(observations);
+        }
+        if (abort) {
+            status = InferenceStatus.ABORT;
+            // Empty inference results
+            fgResults.clear();
+        }
+        else
+            status = InferenceStatus.DONE;
+    }
+
+    private void _performInference() {
+        try {
+            performInference();
         }
         catch(InferenceCannotConvergeException e) {
             String message = "Inference cannot converge. You may try to run inference again, which may converge\n" + 

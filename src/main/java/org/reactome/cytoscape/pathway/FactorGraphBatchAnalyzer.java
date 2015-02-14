@@ -33,6 +33,7 @@ import org.reactome.cytoscape.pgm.PathwayResultSummary;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.InferenceCannotConvergeException;
 import org.reactome.factorgraph.Variable;
 import org.reactome.r3.util.JAXBBindableList;
 
@@ -63,6 +64,7 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         ProgressPane progressPane = initializeProgressPane(frame);
         try {
+            long time1 = System.currentTimeMillis();
             progressPane.setText("Fetching factor graphs...");
             List<FactorGraph> factorGraphs = fetchFactorGraphs();
             progressPane.setText("Total models: " + factorGraphs.size());
@@ -73,12 +75,19 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
             progressPane.setTitle("Perform inference...");
             InferenceRunner inferenceRunner = getInferenceRunner(progressPane);
             List<PathwayResultSummary> resultList = new ArrayList<PathwayResultSummary>();
+            List<FactorGraph> failedFGs = new ArrayList<FactorGraph>();
             for (FactorGraph fg : factorGraphs) {
                 progressPane.setText("Analyzing " + fg.getName());
                 progressPane.setValue(count);
-                PathwayResultSummary result = runFactorGraphAnalysis(fg, 
-                                                                     inferenceRunner,
-                                                                     progressPane);
+                PathwayResultSummary result = null;
+                try {
+                    result = runFactorGraphAnalysis(fg, 
+                                                    inferenceRunner,
+                                                    progressPane);
+                }
+                catch(InferenceCannotConvergeException e) {
+                    failedFGs.add(fg);
+                }
                 if (result != null)
                     resultList.add(result);
                 if (inferenceRunner.getStatus() == InferenceStatus.ABORT ||
@@ -89,7 +98,14 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
 //                if (count == 11)
 //                    break;
             }
+            showFailedResults(failedFGs);
             showResults(resultList);
+            String message = factorGraphs.size() + " pathways were subject to analyze. " + resultList.size() + " succeeded, and \n" + 
+                             failedFGs.size() + " failed. The total running time was " + (System.currentTimeMillis() - time1) / 1000 + " seconds.";
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          message,
+                                          "Graphical Analysis Results",
+                                          JOptionPane.INFORMATION_MESSAGE);
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -103,7 +119,20 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
         }
     }
     
+    private void showFailedResults(List<FactorGraph> fgs) {
+        if (fgs.size() == 0)
+            return;
+        // Otherwise, show the user the following list
+        //TODO: will create a dialog to show them. The user should export this list
+        // so that they can re-try later on.
+        System.out.println("The following factor graphs failed because of nonconvering: " + fgs.size());
+        for (FactorGraph fg : fgs)
+            System.out.println(fg.getName());
+    }
+    
     public void showResults(List<PathwayResultSummary> resultList) {
+        if (resultList.size() == 0)
+            return; // Nothing to be shown
         String title = "Pathway PGM Analysis";
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
@@ -119,7 +148,7 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
     
     private PathwayResultSummary runFactorGraphAnalysis(FactorGraph factorGraph,
                                                         InferenceRunner runner,
-                                                        ProgressPane progressPane) throws Exception {
+                                                        ProgressPane progressPane) throws InferenceCannotConvergeException, Exception {
         if(!loadEvidences(factorGraph, progressPane))
             return null; // Something wrong during loading
         performInference(factorGraph,
@@ -155,7 +184,7 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
     
     private void performInference(FactorGraph factorGraph,
                                   InferenceRunner inferenceRunner,
-                                  ProgressPane progressPane) throws Exception {
+                                  ProgressPane progressPane) throws InferenceCannotConvergeException {
         String name = factorGraph.getName();
         int index = name.indexOf("]");
         name = name.substring(index + 1).trim();
