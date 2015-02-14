@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
-import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.event.ListSelectionEvent;
 
@@ -25,7 +24,6 @@ import org.apache.commons.math.MathException;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.service.TTestTableModel;
-import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.Variable;
 import org.reactome.factorgraph.common.DataType;
 
@@ -34,7 +32,7 @@ import org.reactome.factorgraph.common.DataType;
  * @author gwu
  *
  */
-public class GeneLevelResultDialog extends JDialog {
+public class GeneLevelResultDialog extends GeneLevelDialog {
     // Used to display results
     private IPAPathwaySummaryPane summaryPane;
     
@@ -42,11 +40,9 @@ public class GeneLevelResultDialog extends JDialog {
      * Default constructor.
      */
     public GeneLevelResultDialog() {
-        super(PlugInObjectManager.getManager().getCytoscapeDesktop());
-        init();
     }
     
-    private void init() {
+    protected void init() {
         summaryPane = createSummaryPane();
         summaryPane.hideControlToolBar();
         summaryPane.setBorder(BorderFactory.createEtchedBorder());
@@ -63,6 +59,7 @@ public class GeneLevelResultDialog extends JDialog {
             }
         });
         setLocationRelativeTo(getOwner());
+        addTableSelectionListener(summaryPane.getTablePlotPane().getTable());
     }
 
     private IPAPathwaySummaryPane createSummaryPane() {

@@ -309,9 +309,11 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             
             @Override
             public void actionPerformed(ActionEvent e) {
+//                TODO: Selection is not correct: cannot highlight
                 GeneLevelResultDialog dialog = new GeneLevelResultDialog();
                 if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable()))
                     return; // Nothing to be displayed
+                dialog.enableDiagramSelection(pathwayEditor);
                 dialog.setSize(750, 600);
 //                dialog.setModal(true);
                 dialog.setVisible(true);
@@ -325,6 +327,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 ObservationDataDialog dialog = new ObservationDataDialog();
                 if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable()))
                     return; // Nothing to be displayed
+                dialog.enableDiagramSelection(pathwayEditor);
                 dialog.setSize(750, 600);
 //                dialog.setModal(true);
                 dialog.setVisible(true);
@@ -1028,21 +1031,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         return builder.toString();
     }
     
-    /**
-     * Do selection based on a list of DB_IDs for objects displayed in
-     * the wrapped PathwayEditor.
-     * @param sourceIds
-     */
-    public void selectBySourceIds(Collection<Long> sourceIds) {
-        List<Renderable> selection = new ArrayList<Renderable>();
-        for (Object o : getPathwayEditor().getDisplayedObjects()) {
-            Renderable r = (Renderable) o;
-            if (sourceIds.contains(r.getReactomeId()))
-                selection.add(r);
-        }
-        getPathwayEditor().setSelection(selection);
-    }
-
     @Override
     protected PathwayEditor createPathwayEditor() {
         return new CyPathwayEditor();

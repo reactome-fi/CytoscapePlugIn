@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,6 +57,8 @@ import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
+import org.gk.graphEditor.PathwayEditor;
+import org.gk.render.Renderable;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
@@ -81,6 +84,23 @@ public class PlugInUtilities {
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * Do selection based on a list of DB_IDs for objects displayed in
+     * the provided PathwayEditor.
+     * @param pathwayEditor
+     * @param sourceIds
+     */
+    public static void selectByDbIds(PathwayEditor pathwayEditor,
+                                     Collection<Long> sourceIds) {
+        List<Renderable> selection = new ArrayList<Renderable>();
+        for (Object o : pathwayEditor.getDisplayedObjects()) {
+            Renderable r = (Renderable) o;
+            if (sourceIds.contains(r.getReactomeId()))
+                selection.add(r);
+        }
+        pathwayEditor.setSelection(selection);
     }
     
     /**

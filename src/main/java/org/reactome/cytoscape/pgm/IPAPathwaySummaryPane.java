@@ -12,6 +12,8 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -23,15 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableModel;
@@ -80,6 +74,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     private List<VariableInferenceResults> varResults;
     private Set<Variable> outputVars;
     private Map<String, String> sampleToType;
+    // A flag to indicate if small molecules have been hidden
+    private boolean isSimpleEntityHidden = true; // Default is shown
     
     /**
      * @param title
@@ -187,6 +183,23 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             }
         });
         
+        // For popup menu
+        tablePlotPane.getTable().addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger())
+                    doTablePopup(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger())
+                    doTablePopup(e);
+            }
+            
+        });
+        
         // Synchronize selection from network to pathway overview
         RowsSetListener selectionListener = new RowsSetListener() {
             @Override
@@ -208,6 +221,13 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         networkSelectionRegistration = context.registerService(RowsSetListener.class.getName(),
                                                                selectionListener, 
                                                                null);
+    }
+    
+    private void doTablePopup(MouseEvent e) {
+        JPopupMenu popup = new JPopupMenu();
+        JMenuItem simpleEntityToggle = new JMenuItem();
+        
+        popup.show(tablePlotPane.getTable(), e.getX(), e.getY());
     }
     
     @Override
@@ -394,6 +414,10 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             catch(NumberFormatException e) {}
         }
         return idToDiff;
+    }
+    
+    public TTestTablePlotPane<Variable> getTablePlotPane() {
+        return this.tablePlotPane;
     }
     
     public void setVariableResults(List<VariableInferenceResults> varResults,

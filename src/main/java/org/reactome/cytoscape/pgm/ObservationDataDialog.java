@@ -16,14 +16,12 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
-import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.math.MathException;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.service.TTestTableModel;
-import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Observation;
 import org.reactome.factorgraph.Variable;
@@ -33,7 +31,7 @@ import org.reactome.factorgraph.Variable;
  * @author gwu
  *
  */
-public class ObservationDataDialog extends JDialog {
+public class ObservationDataDialog extends GeneLevelDialog {
     private TTestTablePlotPane<String> tablePlotPane;
     // A list of genes to be displayed
     private Set<String> targetGenes;
@@ -42,11 +40,9 @@ public class ObservationDataDialog extends JDialog {
      * Default constructor.
      */
     public ObservationDataDialog() {
-        super(PlugInObjectManager.getManager().getCytoscapeDesktop());
-        init();
     }
     
-    private void init() {
+    protected void init() {
         setTitle("Observation Data");
         
         tablePlotPane = new TTestTablePlotPane<String>() {
@@ -92,6 +88,8 @@ public class ObservationDataDialog extends JDialog {
         });
         getContentPane().add(controlPane, BorderLayout.SOUTH);
         setLocationRelativeTo(getOwner());
+        
+        addTableSelectionListener(tablePlotPane.getTable());;
     }
     
     public Set<String> getTargetGenes() {
@@ -101,7 +99,7 @@ public class ObservationDataDialog extends JDialog {
     public void setTargetGenes(Set<String> targetGenes) {
         this.targetGenes = targetGenes;
     }
-
+    
     /**
      * Show observations data loaded for the passed RenderablePathway object.
      * @param diagram

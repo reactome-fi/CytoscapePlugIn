@@ -29,6 +29,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.IPAPathwaySummaryPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.FactorGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,7 +122,7 @@ public class PathwayInternalFrame extends JInternalFrame {
                     dbIds.add(new Long(sourceId));
             }
         }
-        pathwayEditor.selectBySourceIds(dbIds);
+        PlugInUtilities.selectByDbIds(pathwayEditor.getPathwayEditor(), dbIds);
     }
     
     public PathwayEditor getPathwayEditor() {
