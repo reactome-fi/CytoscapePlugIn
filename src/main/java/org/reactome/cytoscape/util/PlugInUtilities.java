@@ -66,7 +66,10 @@ import org.jfree.chart.plot.CategoryMarker;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.reactome.factorgraph.FactorGraph;
+import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
+import org.reactome.pathway.factorgraph.VariableRole;
 import org.reactome.r3.util.InteractionUtilities;
 
 /**
@@ -84,6 +87,24 @@ public class PlugInUtilities {
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * Get a set of variables converted from outputs in pathways.
+     * @param fg
+     * @return
+     */
+    public static Set<Variable> getOutputVariables(FactorGraph fg) {
+        Set<Variable> outputVar = new HashSet<Variable>();
+        // If a variable's reactome id is in this list, it should be a output
+        for (Variable var : fg.getVariables()) {
+            String roles = var.getProperty("role");
+            if (roles == null || roles.length() == 0)
+                continue;
+            if (roles.contains(VariableRole.OUTPUT.toString()))
+                outputVar.add(var);
+        }
+        return outputVar;
     }
     
     /**

@@ -5,9 +5,7 @@
 package org.reactome.cytoscape.pathway;
 
 import java.io.File;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -26,8 +24,6 @@ import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Inferencer;
-import org.reactome.factorgraph.Variable;
-import org.reactome.pathway.factorgraph.VariableRole;
 
 /**
  * This class is used to perform factor graph based pathway analysis.
@@ -229,11 +225,6 @@ public class FactorGraphAnalyzer {
         progressPane.setTitle("Perform inference...");
         InferenceRunner inferenceRunner = new InferenceRunner();
         inferenceRunner.setFactorGraph(factorGraph);
-        // Get the set of output variables for results analysis
-        Set<Variable> pathwayVars = getPathwayVars(factorGraph);
-        inferenceRunner.setPathwayVars(pathwayVars);
-        Set<Variable> outputVars = getOutputVariables(factorGraph);
-        inferenceRunner.setOutputVars(outputVars);
         inferenceRunner.setUsedForTwoCases(getSampleInfoFile() != null);
         inferenceRunner.setProgressPane(progressPane);
         inferenceRunner.setAlgorithms(FactorGraphRegistry.getRegistry().getLoadedAlgorithms());
@@ -280,40 +271,10 @@ public class FactorGraphAnalyzer {
         FactorGraph factorGraph = fgResults.getFactorGraph();
         InferenceRunner inferenceRunner = new InferenceRunner();
         inferenceRunner.setFactorGraph(factorGraph);
-        // Get the set of output variables for results analysis
-        Set<Variable> pathwayVars = getPathwayVars(factorGraph);
-        inferenceRunner.setPathwayVars(pathwayVars);
-        Set<Variable> outputVars = getOutputVariables(factorGraph);
-        inferenceRunner.setOutputVars(outputVars);
         inferenceRunner.setUsedForTwoCases(fgResults.getSampleToType() != null);
         inferenceRunner.setHiliteControlPane(hiliteControlPane);
         inferenceRunner.showInferenceResults(fgResults);
         FactorGraphRegistry.getRegistry().registerDiagramToFactorGraph(pathwayDiagram, factorGraph);
         FactorGraphRegistry.getRegistry().registerInferenceResults(fgResults);
     }
-    
-    protected Set<Variable> getPathwayVars(FactorGraph fg) {
-        Set<Variable> pathwayVars = new HashSet<Variable>();
-        // If a variable's reactome id is in this list, it should be a output
-        for (Variable var : fg.getVariables()) {
-            String roles = var.getProperty("role");
-            if (roles != null && roles.length() > 0)
-                pathwayVars.add(var); // If there is a role assigned to the variable, it should be used as a pathway variable
-        }
-        return pathwayVars;
-    }
-    
-    protected Set<Variable> getOutputVariables(FactorGraph fg) {
-        Set<Variable> outputVar = new HashSet<Variable>();
-        // If a variable's reactome id is in this list, it should be a output
-        for (Variable var : fg.getVariables()) {
-            String roles = var.getProperty("role");
-            if (roles == null || roles.length() == 0)
-                continue;
-            if (roles.contains(VariableRole.OUTPUT.toString()))
-                outputVar.add(var);
-        }
-        return outputVar;
-    }
-    
 }

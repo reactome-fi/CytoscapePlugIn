@@ -9,19 +9,13 @@ import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.swing.JOptionPane;
 
 import org.apache.commons.math.MathException;
-import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.application.swing.CytoPanel;
-import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
-import org.reactome.cytoscape.service.PopupMenuManager;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.GibbsSampling;
 import org.reactome.factorgraph.InferenceCannotConvergeException;
@@ -38,9 +32,6 @@ import org.reactome.factorgraph.Variable;
  */
 public class InferenceRunner {
     private FactorGraph factorGraph;
-    private Set<Variable> pathwayVars;
-    // A subset of the above for outputs only
-    private Set<Variable> outputVars;
     // Two inferencer
     private Inferencer lbp;
     private Inferencer gibbs;
@@ -69,14 +60,6 @@ public class InferenceRunner {
         this.hiliteControlPane = hiliteControlPane;
     }
 
-    public Set<Variable> getOutputVars() {
-        return outputVars;
-    }
-
-    public void setOutputVars(Set<Variable> outputVars) {
-        this.outputVars = outputVars;
-    }
-
     public boolean isUsedForTwoCases() {
         return usedForTwoCases;
     }
@@ -101,10 +84,6 @@ public class InferenceRunner {
         this.factorGraph = factorGraph;
     }
     
-    public void setPathwayVars(Set<Variable> variables) {
-        this.pathwayVars = variables;
-    }
-
     public void setAlgorithms(List<Inferencer> algorithms) {
         if (algorithms == null)
             return;
@@ -124,70 +103,6 @@ public class InferenceRunner {
         return status;
     }
     
-    /**
-     * Calculate and show IPA values.
-     * @param resultsList
-     * @param target
-     * @return true if values are shown.
-     */
-    private void showIPANodeValues(FactorGraphInferenceResults fgResults) {
-        if (!fgResults.hasPosteriorResults()) // Just prior probabilities
-            return ;
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
-        String title = "IPA Node Values";
-        int index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);
-        IPAValueTablePane valuePane = null;
-        if (index < 0)
-            valuePane = new IPAValueTablePane(title);
-        else
-            valuePane = (IPAValueTablePane) tableBrowserPane.getComponentAt(index);
-        valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        valuePane.setInferenceResults(fgResults);
-    }
-    
-    private void showIPAPathwayValues(FactorGraphInferenceResults fgResults) throws MathException {
-        if (!fgResults.hasPosteriorResults())
-            return; 
-        String title = "IPA Sample Analysis";
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
-        
-        int index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane,
-                                                                    title);
-        IPASampleAnalysisPane valuePane = null;
-        if (index > -1)
-            valuePane = (IPASampleAnalysisPane) tableBrowserPane.getComponentAt(index);
-        else
-            valuePane = new IPASampleAnalysisPane(title);
-        valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        valuePane.setInferenceResults(fgResults, pathwayVars);
-
-        // Show outputs results
-        title = "IPA Pathway Analysis";
-        index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);
-        IPAPathwaySummaryPane outputPane = null;
-        if (index > -1)
-            outputPane = (IPAPathwaySummaryPane) tableBrowserPane.getComponentAt(index);
-        else
-            outputPane = new IPAPathwaySummaryPane(title);
-        outputPane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        outputPane.setVariableResults(valuePane.getInferenceResults(),
-                                      outputVars,
-                                      fgResults.isUsedForTwoCases() ? fgResults.getSampleToType() : null);
-        if (index == -1)
-            index = tableBrowserPane.indexOfComponent(outputPane);
-        if (index >= 0) // Select this as the default table for viewing the results
-            tableBrowserPane.setSelectedIndex(index);
-        // Highlight pathway diagram
-        if (hiliteControlPane != null) {
-            Map<String, Double> idToValue = outputPane.getReactomeIdToIPADiff();
-            hiliteControlPane.setIdToValue(idToValue);
-            hiliteControlPane.highlight();
-            hiliteControlPane.setVisible(true);
-        }
-    }
-
     public void performInference(boolean needFinishDialog) throws Exception {
         if (progressPane != null) {
             progressPane.enableCancelAction(new ActionListener() {
@@ -243,8 +158,9 @@ public class InferenceRunner {
     }
 
     public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
-        showIPANodeValues(fgResults);
-        showIPAPathwayValues(fgResults);
+        InferenceResultsControl control = new InferenceResultsControl();
+        control.setHiliteControlPane(hiliteControlPane);
+        control.showInferenceResults(fgResults);
     }
     
     /**

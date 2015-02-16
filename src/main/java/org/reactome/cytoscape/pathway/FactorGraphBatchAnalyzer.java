@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -34,7 +33,6 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.InferenceCannotConvergeException;
-import org.reactome.factorgraph.Variable;
 import org.reactome.r3.util.JAXBBindableList;
 
 /**
@@ -163,7 +161,7 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
         FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(fg);
         PathwayResultSummary resultSummary = new PathwayResultSummary();
         resultSummary.setResults(fgResults,
-                                 getOutputVariables(fg));
+                                 PlugInUtilities.getOutputVariables(fg));
         return resultSummary;
     }
     
@@ -190,11 +188,6 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
         name = name.substring(index + 1).trim();
         progressPane.setTitle(name);
         inferenceRunner.setFactorGraph(factorGraph);
-        // Get the set of output variables for results analysis
-        Set<Variable> pathwayVars = getPathwayVars(factorGraph);
-        inferenceRunner.setPathwayVars(pathwayVars);
-        Set<Variable> outputVars = getOutputVariables(factorGraph);
-        inferenceRunner.setOutputVars(outputVars);
         // Now call for inference
         inferenceRunner.performInference();
     }

@@ -40,6 +40,8 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
+import org.gk.render.RenderableChemical;
+import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
@@ -74,6 +76,9 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     private List<VariableInferenceResults> varResults;
     private Set<Variable> outputVars;
     private Map<String, String> sampleToType;
+    // In order to simplify views
+    private RenderablePathway pathwayDiagram;
+    private boolean simpleEntitiesHidden;
     
     /**
      * @param title
@@ -82,6 +87,14 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         super(title);
     }        
     
+    public RenderablePathway getPathwayDiagram() {
+        return pathwayDiagram;
+    }
+
+    public void setPathwayDiagram(RenderablePathway pathwayDiagram) {
+        this.pathwayDiagram = pathwayDiagram;
+    }
+
     @Override
     public void setNetworkView(CyNetworkView networkView) {
         this.networkView = networkView;
@@ -223,10 +236,78 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     }
     
     private void doTablePopup(MouseEvent e) {
+        if (pathwayDiagram == null)
+            return; // Nothing to be done here since we cannot get a list of proteins
         JPopupMenu popup = new JPopupMenu();
         JMenuItem simpleEntityToggle = new JMenuItem();
-        
+        if (simpleEntitiesHidden)
+            simpleEntityToggle.setText("Show Chemicals");
+        else
+            simpleEntityToggle.setText("Hide Chemicals");
+        simpleEntityToggle.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                toggleSimpleEntities();
+            }
+        });
+        popup.add(simpleEntityToggle);
         popup.show(tablePlotPane.getTable(), e.getX(), e.getY());
+    }
+    
+    private void toggleSimpleEntities() {
+        try {
+            if (simpleEntitiesHidden) {
+                if (sampleToType == null) {
+                    parseResults(varResults);
+                }
+                else {
+                    parseTwoCasesResults(varResults,
+                                         sampleToType);
+                }
+                simpleEntitiesHidden = false;
+            }
+            else {
+                List<VariableInferenceResults> nonSimpleEntityResults = getNonSimpleEntityResults();
+                if (sampleToType == null) {
+                    parseResults(nonSimpleEntityResults);
+                }
+                else {
+                    parseTwoCasesResults(nonSimpleEntityResults,
+                                         sampleToType);
+                }
+                simpleEntitiesHidden = true;
+            }
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                                          "Error in toggling chemicals displaying: " + e, 
+                                          "Error in Display",
+                                          JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private List<VariableInferenceResults> getNonSimpleEntityResults() {
+        if (pathwayDiagram == null)
+            return varResults; // Cannot do anything here
+        // Get a list of DB_IDs for SimpleEntities
+        Set<String> simpleEntityIds = new HashSet<String>();
+        for (Object o : pathwayDiagram.getComponents()) {
+            Renderable r = (Renderable) o;
+            if (r.getReactomeId() == null)
+                continue;
+            if (r instanceof RenderableChemical)
+                simpleEntityIds.add(r.getReactomeId() + "");
+        }
+        // Create a new list
+        List<VariableInferenceResults> varResults1 = new ArrayList<VariableInferenceResults>();
+        for (VariableInferenceResults varResult : varResults) {
+            Variable var = varResult.getVariable();
+            String dbId = var.getProperty(ReactomeJavaConstants.DB_ID);
+            if (!simpleEntityIds.contains(dbId))
+                varResults1.add(varResult);
+        }
+        return varResults1;
     }
     
     @Override
