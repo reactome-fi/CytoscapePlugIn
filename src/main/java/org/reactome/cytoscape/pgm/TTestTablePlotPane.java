@@ -5,11 +5,8 @@
 package org.reactome.cytoscape.pgm;
 
 import java.awt.BorderLayout;
-import java.awt.Cursor;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;

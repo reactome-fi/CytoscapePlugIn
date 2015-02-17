@@ -190,7 +190,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (e.getValueIsAdjusting())
+                if (!e.getValueIsAdjusting())
                     doTableSelection(e);
             }
         });

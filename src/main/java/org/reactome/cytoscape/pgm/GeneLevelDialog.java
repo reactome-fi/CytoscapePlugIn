@@ -46,8 +46,7 @@ public abstract class GeneLevelDialog extends JDialog {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (!e.getValueIsAdjusting())
-                    return;
-                selectEntitiesInDiagram(table);
+                    selectEntitiesInDiagram(table);
             }
         });
     }

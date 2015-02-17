@@ -49,7 +49,8 @@ public class TableAndPlotActionSynchronizer {
             
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                doTableSelection();
+                if (!e.getValueIsAdjusting())
+                    doTableSelection();
             }
         });
         
