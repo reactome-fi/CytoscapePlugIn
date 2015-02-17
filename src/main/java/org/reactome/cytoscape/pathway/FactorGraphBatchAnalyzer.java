@@ -4,18 +4,32 @@
  */
 package org.reactome.cytoscape.pathway;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
@@ -23,6 +37,7 @@ import org.apache.commons.math.MathException;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.gk.util.DialogControlPane;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
@@ -93,7 +108,7 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
                     break; // Aborted or an error thrown
                 }
                 count ++;
-//                if (count == 11)
+//                if (count == 6)
 //                    break;
             }
             showFailedResults(failedFGs);
@@ -121,11 +136,10 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
         if (fgs.size() == 0)
             return;
         // Otherwise, show the user the following list
-        //TODO: will create a dialog to show them. The user should export this list
-        // so that they can re-try later on.
-        System.out.println("The following factor graphs failed because of nonconvering: " + fgs.size());
-        for (FactorGraph fg : fgs)
-            System.out.println(fg.getName());
+        FailedFactorGraphDialog dialog = new FailedFactorGraphDialog();
+        dialog.setFailedFactorGraphs(fgs);
+        dialog.setModal(true);
+        dialog.setVisible(true);
     }
     
     public void showResults(List<PathwayResultSummary> resultList) {
@@ -205,5 +219,68 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
         @SuppressWarnings("unchecked")
         JAXBBindableList<FactorGraph> list = (JAXBBindableList<FactorGraph>) unmarshaller.unmarshal(zis);
         return list.getList();
+    }
+    
+    private class FailedFactorGraphDialog extends JDialog {
+        private JList<String> fgList;
+        private JLabel label;
+        
+        public FailedFactorGraphDialog() {
+            super(PlugInObjectManager.getManager().getCytoscapeDesktop());
+            init();
+        }
+        
+        private void init() {
+            JPanel contentPane = new JPanel();
+            contentPane.setBorder(BorderFactory.createEtchedBorder());
+            contentPane.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(4, 4, 4, 4);
+            constraints.anchor = GridBagConstraints.WEST;
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            constraints.weightx = 0.5d;
+            label = new JLabel("<html>The inference for the following pathways failed because of non-convergence:</html>");
+            contentPane.add(label, constraints);
+            DefaultListModel<String> model = new DefaultListModel<String>();
+            fgList = new JList<String>(model);
+            fgList.setVisibleRowCount(3);
+            fgList.setPreferredSize(new Dimension(450, 150));
+            constraints.gridheight = 4;
+            constraints.gridy = 1;
+            contentPane.add(new JScrollPane(fgList), constraints);
+            getContentPane().add(contentPane, BorderLayout.CENTER);
+            
+            DialogControlPane controlPane = new DialogControlPane();
+            controlPane.getCancelBtn().setVisible(false);
+            controlPane.getOKBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dispose();
+                }
+            });
+            getContentPane().add(controlPane, BorderLayout.SOUTH);
+            
+            setLocationRelativeTo(getOwner());
+            setSize(525, 300);
+        }
+        
+        public void setFailedFactorGraphs(List<FactorGraph> fgs) {
+            Collections.sort(fgs, new Comparator<FactorGraph>() {
+               public int compare(FactorGraph fg1, FactorGraph fg2) { 
+                   return fg1.getName().compareTo(fg2.getName());
+               }
+            });
+            DefaultListModel<String> model = (DefaultListModel<String>) fgList.getModel();
+            for (FactorGraph fg : fgs) {
+                model.addElement(fg.getName());
+            }
+            StringBuilder text = new StringBuilder();
+            text.append("<html>The inference for the following pathway");
+            if (fgs.size() > 1)
+                text.append("s");
+            text.append(" failed because of non-convergence:</html>");
+            label.setText(text.toString());
+        }
     }
 }
