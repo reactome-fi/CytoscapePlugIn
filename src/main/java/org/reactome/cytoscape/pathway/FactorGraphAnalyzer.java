@@ -17,6 +17,7 @@ import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.InferenceAlgorithmPane;
+import org.reactome.cytoscape.pgm.InferenceResultsControl;
 import org.reactome.cytoscape.pgm.InferenceRunner;
 import org.reactome.cytoscape.pgm.ObservationDataHelper;
 import org.reactome.cytoscape.pgm.ObservationDataLoadPanel;
@@ -268,13 +269,10 @@ public class FactorGraphAnalyzer {
     public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
         if (pathwayDiagram == null || hiliteControlPane == null)
             return; // Cannot do anything here
-        FactorGraph factorGraph = fgResults.getFactorGraph();
-        InferenceRunner inferenceRunner = new InferenceRunner();
-        inferenceRunner.setFactorGraph(factorGraph);
-        inferenceRunner.setUsedForTwoCases(fgResults.getSampleToType() != null);
-        inferenceRunner.setHiliteControlPane(hiliteControlPane);
-        inferenceRunner.showInferenceResults(fgResults);
-        FactorGraphRegistry.getRegistry().registerDiagramToFactorGraph(pathwayDiagram, factorGraph);
+        InferenceResultsControl control = new InferenceResultsControl();
+        control.setHiliteControlPane(hiliteControlPane);
+        control.showInferenceResults(fgResults);
+        FactorGraphRegistry.getRegistry().registerDiagramToFactorGraph(pathwayDiagram, fgResults.getFactorGraph());
         FactorGraphRegistry.getRegistry().registerInferenceResults(fgResults);
     }
 }

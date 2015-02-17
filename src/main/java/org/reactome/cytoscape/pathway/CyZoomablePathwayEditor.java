@@ -131,6 +131,10 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         hiliteControlPane.setPathwayEditor(pathwayEditor);
     }
     
+    public PathwayHighlightControlPanel getHighlightControlPane() {
+        return this.hiliteControlPane;
+    }
+    
     @Override
     public void eventSelected(EventSelectionEvent selectionEvent) {
         List<Long> relatedIds = getRelatedPathwaysIds();

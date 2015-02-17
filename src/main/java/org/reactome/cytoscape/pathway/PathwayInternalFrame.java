@@ -26,11 +26,12 @@ import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
+import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.IPAPathwaySummaryPane;
+import org.reactome.cytoscape.pgm.InferenceResultsControl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.factorgraph.FactorGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +70,20 @@ public class PathwayInternalFrame extends JInternalFrame {
                 selectionEvent.setIsPathway(true);
                 PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(pathwayEditor,
                                                                                                             selectionEvent);
+                // If pathway inference results existing, we will show them
+                RenderablePathway diagram = (RenderablePathway) pathwayEditor.getPathwayEditor().getRenderable();
+                FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(diagram);
+                if (fgResults != null) {
+                    // Show results
+                    InferenceResultsControl control = new InferenceResultsControl();
+                    control.setHiliteControlPane(pathwayEditor.getHighlightControlPane());
+                    try {
+                        control.showInferenceResults(fgResults);
+                    }
+                    catch(Exception e1) {
+                        e1.printStackTrace(); // We will not show a dialog here to avoid interferring the user.
+                    }
+                }
             }
 
             @Override

@@ -13,13 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTable;
+import javax.swing.*;
+import javax.swing.RowSorter.SortKey;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.RowSorterListener;
 import javax.swing.table.TableRowSorter;
@@ -282,6 +277,8 @@ public class TTestTablePlotPane<T> extends JPanel {
         dataset.clear();
         this.nameToValues1.clear();
         this.nameToValues2.clear();
+        // To keep the original sorting
+        List<? extends SortKey> sortedKeys = getSortedKeys();
         TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
         tableModel.reset(); // Reset the original data if any.
         tableModel.setSampleTypes(dataLabel1, dataLabel2);
@@ -322,7 +319,23 @@ public class TTestTablePlotPane<T> extends JPanel {
         // Make a copy to avoid modifying by the called method
         tableModel.calculateFDRs(new ArrayList<Double>(pvalues));
         tableModel.fireTableStructureChanged();
+        if (sortedKeys != null && sortedKeys.size() > 0)
+            tTestResultTable.getRowSorter().setSortKeys(sortedKeys);
         calculateCombinedPValue(pvalues, values);
+    }
+    
+    private List<? extends SortKey> getSortedKeys() {
+        List<? extends SortKey> sortedKeys = tTestResultTable.getRowSorter().getSortKeys();
+        if (sortedKeys != null && sortedKeys.size() > 0)
+            return sortedKeys;
+        // Otherwise, sort based on p-values
+        // We need to initialize a new rtn list to avoid generic related
+        // error.
+        List<SortKey> rtn = new ArrayList<SortKey>();
+        // The second to the last should be the p-value column
+        rtn.add(new RowSorter.SortKey(tTestResultTable.getColumnCount() - 2, 
+                                             SortOrder.ASCENDING));
+        return rtn;
     }
     
     protected String[] getAnnotations(T key) {
