@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -256,12 +257,14 @@ public class TTestTablePlotPane<T> extends JPanel {
      * @param nameToValues1
      * @param dataLabel2
      * @param nameToValues2
+     * @param namesForCombinedPValue
      * @throws MathException
      */
     public void setDisplayValues(String dataLabel1,
                                  Map<T, List<Double>> nameToValues1,
                                  String dataLabel2,
-                                 Map<T, List<Double>> nameToValues2) throws MathException {
+                                 Map<T, List<Double>> nameToValues2,
+                                 Set<T> namesForCombinedPValue) throws MathException {
         if (nameToValues1.size() == 0 || nameToValues2.size() == 0) {
             JOptionPane.showMessageDialog(this,
                                           "Empty values for displaying.",
@@ -291,6 +294,7 @@ public class TTestTablePlotPane<T> extends JPanel {
         tableModel.setSampleTypes(dataLabel1, dataLabel2);
         List<Double> pvalues = new ArrayList<Double>();
         // For combined p-values
+        List<Double> combinedPValues = new ArrayList<Double>();
         List<List<Double>> values = new ArrayList<List<Double>>();
         for (T name : nameList) {
             String key = getKey(name);
@@ -308,7 +312,10 @@ public class TTestTablePlotPane<T> extends JPanel {
                                               values2,
                                               getAnnotations(name));
             pvalues.add(pvalue);
-            values.add(values1);
+            if (namesForCombinedPValue == null || namesForCombinedPValue.contains(name)) {
+                combinedPValues.add(pvalue);
+                values.add(values1);
+            }
         }
         // The following code is used to control performance:
         // 16 is arbitrary
@@ -328,7 +335,26 @@ public class TTestTablePlotPane<T> extends JPanel {
         tableModel.fireTableStructureChanged();
         if (sortedKeys != null && sortedKeys.size() > 0)
             tTestResultTable.getRowSorter().setSortKeys(sortedKeys);
-        calculateCombinedPValue(pvalues, values);
+        calculateCombinedPValue(combinedPValues, values);
+    }
+    
+    /**
+     * Set the data to be displayed in this component. 
+     * @param dataLabel1
+     * @param nameToValues1
+     * @param dataLabel2
+     * @param nameToValues2
+     * @throws MathException
+     */
+    public void setDisplayValues(String dataLabel1,
+                                 Map<T, List<Double>> nameToValues1,
+                                 String dataLabel2,
+                                 Map<T, List<Double>> nameToValues2) throws MathException {
+        setDisplayValues(dataLabel1,
+                         nameToValues1,
+                         dataLabel2,
+                         nameToValues2,
+                         null);
     }
     
     /**

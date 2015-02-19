@@ -558,7 +558,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         tablePlotPane.setDisplayValues(sortedTypes.get(0),
                                        varToIPAs1, 
                                        sortedTypes.get(1), 
-                                       varToIPAs2);
+                                       varToIPAs2,
+                                       outputVars);
     }
 
     private void parseResults(List<VariableInferenceResults> varResultList) throws MathException {
@@ -575,7 +576,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         tablePlotPane.setDisplayValues("Real Samples",
                                        varToRealIPAs,
                                        "Random Samples",
-                                       varToRandomIPAs);
+                                       varToRandomIPAs,
+                                       outputVars);
     }
     
     protected String getVariableKey(Variable var) {
