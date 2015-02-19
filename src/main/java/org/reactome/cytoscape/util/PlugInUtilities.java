@@ -26,6 +26,10 @@ import java.util.Set;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JTable;
+import javax.swing.RowSorter;
+import javax.swing.RowSorter.SortKey;
+import javax.swing.SortOrder;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
@@ -87,6 +91,27 @@ public class PlugInUtilities {
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * Get the sorted keys used in the table. If nothing is selected, the passed column will be
+     * used for sorting in ASCENDING.
+     * @return
+     */
+    public static List<? extends SortKey> getSortedKeys(JTable table,
+                                                        int defaultColumn) {
+        if (table.getRowSorter() == null)
+            return null;
+        List<? extends SortKey> sortedKeys = table.getRowSorter().getSortKeys();
+        if (sortedKeys != null && sortedKeys.size() > 0)
+            return sortedKeys;
+        // Otherwise, sort based on p-values
+        // We need to initialize a new rtn list to avoid generic related
+        // error.
+        List<SortKey> rtn = new ArrayList<SortKey>();
+        // The second to the last should be the p-value column
+        rtn.add(new RowSorter.SortKey(defaultColumn, SortOrder.ASCENDING));
+        return rtn;
     }
     
     /**

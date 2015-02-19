@@ -13,7 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTable;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.RowSorterListener;
@@ -278,6 +284,7 @@ public class TTestTablePlotPane<T> extends JPanel {
         this.nameToValues1.clear();
         this.nameToValues2.clear();
         // To keep the original sorting
+        // The second column should be p-values.
         List<? extends SortKey> sortedKeys = getSortedKeys();
         TTestTableModel tableModel = (TTestTableModel) tTestResultTable.getModel();
         tableModel.reset(); // Reset the original data if any.
@@ -324,18 +331,14 @@ public class TTestTablePlotPane<T> extends JPanel {
         calculateCombinedPValue(pvalues, values);
     }
     
+    /**
+     * Get the sorted keys used in the table. If nothing is selected, the passed column will be
+     * used for sorting in ASCENDING.
+     * @return
+     */
     private List<? extends SortKey> getSortedKeys() {
-        List<? extends SortKey> sortedKeys = tTestResultTable.getRowSorter().getSortKeys();
-        if (sortedKeys != null && sortedKeys.size() > 0)
-            return sortedKeys;
-        // Otherwise, sort based on p-values
-        // We need to initialize a new rtn list to avoid generic related
-        // error.
-        List<SortKey> rtn = new ArrayList<SortKey>();
-        // The second to the last should be the p-value column
-        rtn.add(new RowSorter.SortKey(tTestResultTable.getColumnCount() - 2, 
-                                             SortOrder.ASCENDING));
-        return rtn;
+        int defaultCol = tTestResultTable.getColumnCount() - 2;
+        return PlugInUtilities.getSortedKeys(tTestResultTable, defaultCol);
     }
     
     protected String[] getAnnotations(T key) {

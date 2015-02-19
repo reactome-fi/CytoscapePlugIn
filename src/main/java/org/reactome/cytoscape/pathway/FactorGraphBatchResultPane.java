@@ -12,6 +12,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import javax.swing.JOptionPane;
+import javax.swing.RowFilter;
+import javax.swing.RowSorter.SortKey;
 import javax.swing.table.TableRowSorter;
 
 import org.reactome.cytoscape.pgm.PathwayResultSummary;
@@ -40,6 +42,10 @@ public class FactorGraphBatchResultPane extends PathwayEnrichmentResultPane {
         FactorGraphBatchResultTableModel model = (FactorGraphBatchResultTableModel) contentTable.getModel();
         try {
             model.setResults(resultList);
+            List<? extends SortKey> sortKeys = PlugInUtilities.getSortedKeys(contentTable,
+                                                                             contentTable.getColumnCount() - 2);
+            if (sortKeys != null)
+                contentTable.getRowSorter().setSortKeys(sortKeys);
         }
         catch(Exception e) {
             JOptionPane.showMessageDialog(this,
@@ -59,6 +65,35 @@ public class FactorGraphBatchResultPane extends PathwayEnrichmentResultPane {
     protected TableRowSorter<NetworkModuleTableModel> createTableRowSorter(NetworkModuleTableModel model) {
         return new FactorGraphBatchResultTableRowSorter(model);
     }
+    
+    /**
+     * For handling FDR filtering
+     */
+    @Override
+    protected void resetAnnotations() {
+        final double fdrCutoff = new Double(fdrFilter.getSelectedItem().toString());
+        RowFilter<NetworkModuleTableModel, Integer> rowFilter = new RowFilter<NetworkModuleTableModel, Integer>() {
+
+            @Override
+            public boolean include(Entry<? extends NetworkModuleTableModel, ? extends Integer> entry) {
+                NetworkModuleTableModel model = entry.getModel();
+                // The last two values should be FDRs
+                int count = entry.getValueCount();
+                for (int i = count - 1; i > count - 3; i--) {
+                    String value = entry.getStringValue(i);
+                    Double fdr = new Double(value);
+                    if (fdr <= fdrCutoff)
+                        return true;
+                }
+                return false;
+            }
+        };
+        @SuppressWarnings("unchecked")
+        TableRowSorter<? extends NetworkModuleTableModel> sorter = (TableRowSorter<? extends NetworkModuleTableModel>) contentTable.getRowSorter();
+        sorter.setRowFilter(rowFilter);
+    }
+
+
 
     private class FactorGraphBatchResultTableModel extends AnnotationTableModel {
         private String[] columns = new String[] {
@@ -132,6 +167,8 @@ public class FactorGraphBatchResultPane extends PathwayEnrichmentResultPane {
                 setMethod.invoke(result, fdrs.get(i));
             }
         }
+        
+        
     }
     
     private class FactorGraphBatchResultTableRowSorter extends TableRowSorter<NetworkModuleTableModel> {
