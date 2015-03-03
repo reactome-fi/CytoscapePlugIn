@@ -134,7 +134,7 @@ public class ObservationDataHelper {
             if (progressPane != null)
                 progressPane.setText("Generating random data...");
             ObservationRandomizer randomizer = new ObservationRandomizer();
-            randomizer.setNumberOfPermutation(100);
+            randomizer.setNumberOfPermutation(1000); // Default
             randomizer.setRandomSamplePrefix(RANDOM_SAMPLE_PREFIX);
             List<Observation> randomData = randomizer.randomize(observations,
                                                                 observationData);

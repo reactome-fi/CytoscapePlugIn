@@ -362,18 +362,24 @@ public class IPAValueTablePane extends NetworkModulePanel {
             Collections.sort(samples);
             tableData.clear();
             Map<String, String> sampleToType = fgInfResults.getSampleToType();
-            if (sampleToType != null) {
+            if (sampleToType != null && sampleToType.size() > 0) {
                 // Add a new type in the header
                 originalHeaders = new String[]{"Sample", "Type", "Select Nodes to View"};
             }
+            else {
+                // Reset back to the default
+                originalHeaders = new String[]{"Sample", "Select Nodes to View"};
+            }
             for (String sample : samples) {
                 String[] values = null;
-                if (sampleToType != null) 
+                if (sampleToType != null && sampleToType.size() > 0) 
                     values = new String[]{sample, sampleToType.get(sample), ""};
                 else
                     values = new String[]{sample, ""};
                 tableData.add(values);
             }
+            // Before firing table structure change, have to make sure columnHeaders are correct
+            columnHeaders = originalHeaders; // Re-assign in case originalHeaders has been changed.
             fireTableStructureChanged();
         }
         
@@ -402,7 +408,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
         
         protected void resetDataWithPValues(List<String> sampleList) {
-            if (fgInfResults.getSampleToType() != null)
+            if (fgInfResults.isUsedForTwoCases())
                 throw new IllegalStateException("This operation is not supported when two-cases analysis is performed!");
             columnHeaders = new String[varResults.size() * 3 + 1];
             columnHeaders[0] = "Sample";
@@ -468,7 +474,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
         protected void resetDataWithoutPValues(List<String> sampleList) {
             int dataIndex = 0;
             Map<String, String> sampleToType = fgInfResults.getSampleToType();
-            if (sampleToType == null) {
+            if (sampleToType == null || sampleToType.size() == 0) {
                 columnHeaders = new String[varResults.size() + 1];
                 dataIndex = 1;
             }

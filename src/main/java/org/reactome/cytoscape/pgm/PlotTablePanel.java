@@ -218,7 +218,7 @@ public class PlotTablePanel extends JPanel {
     
     /**
      * Use this helper method to read in a list of double value displayed in a 
-     * table. If there is any INFINITY in the colum, a null is returned.
+     * table. If there is any INFINITY in the column, a null is returned.
      * @param col
      * @return
      */

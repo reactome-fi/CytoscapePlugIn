@@ -236,6 +236,8 @@ public class InferenceRunner {
                     break;
             }
             fgResults.setObservations(observations);
+            if (sampleToType.size() > 0 && fgResults.isUsedForTwoCases())
+                fgResults.setSampleToType(sampleToType);
         }
         if (!abort) { // Maybe abort in the above loop.
             observations = FactorGraphRegistry.getRegistry().getRandomObservations(factorGraph);

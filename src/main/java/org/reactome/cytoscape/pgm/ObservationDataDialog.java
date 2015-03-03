@@ -116,7 +116,7 @@ public class ObservationDataDialog extends GeneLevelDialog {
             return false;
         }
         try {
-            if (fgResults.getSampleToType() != null)
+            if (fgResults.getSampleToType() != null && fgResults.getSampleToType().size() > 0)
                 setObservations(fgResults.getObservations(), fgResults.getSampleToType());
             else
                 setObservations(fgResults.getObservations(), fgResults.getRandomObservations());

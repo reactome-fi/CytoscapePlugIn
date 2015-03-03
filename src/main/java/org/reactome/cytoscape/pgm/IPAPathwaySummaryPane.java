@@ -507,19 +507,21 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         this.varResults = varResults;
         this.outputVars = outputVars;
         this.sampleToType = sampleToType;
-        if (sampleToType == null) {
+        if (sampleToType == null || sampleToType.size() == 0) {
             parseResults(varResults);
         }
         else {
             parseTwoCasesResults(varResults,
                                  sampleToType);
         }
-        // Set overview
-        // Use these default values
-        double pvalueCutoff = 0.01d;
-        double ipaDiffCutoff = 0.30d; // 2 fold difference
-        generateOverview(pvalueCutoff,
-                         ipaDiffCutoff);
+        if (controlToolBar.isVisible()) {
+            // Set overview
+            // Use these default values
+            double pvalueCutoff = 0.01d;
+            double ipaDiffCutoff = 0.30d; // 2 fold difference
+            generateOverview(pvalueCutoff,
+                             ipaDiffCutoff);
+        }
     }
     
     private void parseTwoCasesResults(List<VariableInferenceResults> sortedResults,
