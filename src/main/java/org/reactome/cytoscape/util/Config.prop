@@ -32,4 +32,4 @@ ReactomeURL=http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&ID=
 PGMDebug=false
 # The file has pre-generated factor graph objects in a zipped XML file
 factorGraphFiles=PathwayDiagramsFactorGraphs.xml.zip
-fgEscapeNames=ATP,ADP,Pi,H2O,GTP,GDP,CO2,H+
+fgEscapeNames=ATP, ADP, Pi, H2O, GTP, GDP, CO2, H+

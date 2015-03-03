@@ -46,11 +46,15 @@ public class FactorGraphRegistry {
     // Key is a concatenated string based on file name and threshold values
     // Most likely such a key should be unique.
     private Map<String, ObservationData> keyToLoadedData;
+    // For random data: there should be only one value at any time
+    private Map<String, List<ObservationData>> keyToRandomData;
     private File sampleInfoFile; // The above map should be loaded from this file
     private List<Inferencer> loadedInferencer;
     // Cache escape names to avoid displaying
     private boolean needEscapeNameDialog = true;
     private String escapeNames;
+    // Number of permutation
+    private Integer numberOfPermtation = 100; // Default is 100
     
     public static final FactorGraphRegistry getRegistry() {
         if (registry == null)
@@ -68,6 +72,7 @@ public class FactorGraphRegistry {
         fgToObservations = new HashMap<FactorGraph, List<Observation>>();
         fgToRandomObservations = new HashMap<FactorGraph, List<Observation>>();
         keyToLoadedData = new HashMap<String, ObservationFileLoader.ObservationData>();
+        keyToRandomData = new HashMap<String, List<ObservationData>>();
         // If a network is deleted, the cached factor graph should be 
         // removed automatically. Use the following listener, instead of
         // NetworkDestroyedListener so that the Network to be destroyed can be
@@ -98,6 +103,14 @@ public class FactorGraphRegistry {
         }
     }
     
+    public Integer getNumberOfPermtation() {
+        return numberOfPermtation;
+    }
+
+    public void setNumberOfPermtation(Integer numberOfPermtation) {
+        this.numberOfPermtation = numberOfPermtation;
+    }
+
     /**
      * Remove all saved data for the passed FactorGraph object.
      * @param fg
@@ -291,5 +304,52 @@ public class FactorGraphRegistry {
     
     public List<Observation> getRandomObservations(FactorGraph fg) {
         return fgToRandomObservations.get(fg);
+    }
+    
+    public void cacheRandomData(List<ObservationData> randomData,
+                                File dnaFile,
+                                double[] dnaThresholdValues,
+                                File geneExpFile,
+                                double[] geneExpThresholdValues) {
+        String key = generateKeyForRandomData(dnaFile,
+                                              dnaThresholdValues,
+                                              geneExpFile,
+                                              geneExpThresholdValues);
+        keyToRandomData.clear(); // Make sure only one random data set is cached to control the use of memory
+        keyToRandomData.put(key, randomData);
+    }
+    
+    public List<ObservationData> getRandomData(File dnaFile,
+                                               double[] dnaThresholdValues,
+                                               File geneExpFile,
+                                               double[] geneExpThresholdValues) {
+        if (dnaFile == null && geneExpFile == null) {
+            // Return anything cached
+            if (keyToRandomData.size() > 0)
+                return keyToRandomData.values().iterator().next();
+            return null;
+        }
+        String key = generateKeyForRandomData(dnaFile, dnaThresholdValues, geneExpFile, geneExpThresholdValues);
+        return keyToRandomData.get(key);
+    }
+
+    private String generateKeyForRandomData(File dnaFile,
+                                            double[] dnaThresholdValues,
+                                            File geneExpFile,
+                                            double[] geneExpThresholdValues) {
+        StringBuilder keyBuilder = new StringBuilder();
+        if (dnaFile != null && dnaThresholdValues != null) {
+            String key1 = generateKeyForData(dnaFile, dnaThresholdValues);
+            keyBuilder.append(key1);
+        }
+        if (geneExpFile != null && geneExpThresholdValues != null) {
+            String key2 = generateKeyForData(geneExpFile, geneExpThresholdValues);
+            if (keyBuilder.length() > 0)
+                keyBuilder.append("::");
+            keyBuilder.append(key2);
+        }
+        // The number of permutations may be changed. So we need to keep this information too.
+        keyBuilder.append("::").append(FactorGraphRegistry.getRegistry().getNumberOfPermtation());
+        return keyBuilder.toString();
     }
 }

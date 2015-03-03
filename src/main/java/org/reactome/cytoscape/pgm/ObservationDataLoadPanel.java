@@ -45,6 +45,9 @@ public abstract class ObservationDataLoadPanel extends JPanel {
     private List<JTextField> geneExpTFs;
     private JCheckBox useTwoCasesBox;
     private JTextField twoCaseFileTF;
+    // For number of permutation
+    private JLabel numberOfPermutationLbl;
+    private JTextField numberOfPermutationTF;
     
     public ObservationDataLoadPanel() {
         init(getFont());
@@ -81,6 +84,10 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         geneExpressionPane.setBorder(titleBorder);
         add(geneExpressionPane);
         
+        JPanel numberOfPermutationPane = createNumberOfPermutationPane();
+        numberOfPermutationPane.setBorder(BorderFactory.createEtchedBorder());
+        add(numberOfPermutationPane);
+        
         JPanel twoCasesPane = createTwoCasesPane();
         twoCasesPane.setBorder(BorderFactory.createEtchedBorder());
         add(twoCasesPane);
@@ -114,11 +121,28 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         }
     }
     
-    private JPanel createTwoCasesPane() {
+    private JPanel createNumberOfPermutationPane() {
         JPanel pane = new JPanel();
         pane.setLayout(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(4, 4, 4, 4);
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        numberOfPermutationLbl = new JLabel("Number of permutations: ");
+        numberOfPermutationTF = new JTextField();
+        numberOfPermutationTF.setColumns(4); 
+        numberOfPermutationTF.setText(FactorGraphRegistry.getRegistry().getNumberOfPermtation() + "");
+        pane.add(numberOfPermutationLbl, constraints);
+        constraints.gridx = 1;
+        pane.add(numberOfPermutationTF, constraints);
+        return pane;
+    }
+    
+    private JPanel createTwoCasesPane() {
+        JPanel pane = new JPanel();
+        pane.setLayout(new GridBagLayout());
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.insets = new Insets(2, 4, 2, 4);
         constraints.gridx = 0;
         constraints.gridy = 0;
         constraints.anchor = GridBagConstraints.WEST;
@@ -153,7 +177,6 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         pane.add(ta, constraints);
         
         useTwoCasesBox.addItemListener(new ItemListener() {
-            
             @Override
             public void itemStateChanged(ItemEvent e) {
                 boolean enabled = useTwoCasesBox.isSelected();
@@ -161,6 +184,8 @@ public abstract class ObservationDataLoadPanel extends JPanel {
                 twoCaseFileTF.setEnabled(enabled);
                 browseBtn.setEnabled(enabled);
                 ta.setEnabled(enabled);
+                numberOfPermutationLbl.setEnabled(!enabled);
+                numberOfPermutationTF.setEnabled(!enabled);
             }
         });
         // The following should be disabled first
@@ -184,7 +209,7 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         JPanel pane = new JPanel();
         pane.setLayout(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
-        constraints.insets = new Insets(4, 4, 4, 4);
+        constraints.insets = new Insets(2, 4, 2, 4);
         constraints.gridx = 0;
         constraints.gridy = 0;
         constraints.anchor = GridBagConstraints.WEST;
@@ -266,6 +291,12 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         return file;
     }
     
+    public Integer getNumberOfPermutation() {
+        if (isTwoCasesAnalysisSelected())
+            return null;
+        return new Integer(numberOfPermutationTF.getText().trim());
+    }
+    
     public File getDNAFile() {
         return getFile(dnaTFs);
     }
@@ -297,7 +328,7 @@ public abstract class ObservationDataLoadPanel extends JPanel {
     }
     
     public boolean validateValues() {
-        return validateDNAParameters() & validateGeneExpParameters() & validateTwoCasesParameters();
+        return validateDNAParameters() && validateGeneExpParameters() && validateTwoCasesParameters() && validateNumberOfPermutation();
     }
     
     private boolean validateDNAParameters() {
@@ -310,6 +341,38 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         if (getGeneExpFile() == null)
             return true;
         return validateThresholdValues(geneExpTFs);
+    }
+    
+    private boolean validateNumberOfPermutation() {
+        if (isTwoCasesAnalysisSelected())
+            return true; // Nothing needs to be done
+        String text = numberOfPermutationTF.getText().trim();
+        if (text.length() == 0) {
+            JOptionPane.showMessageDialog(this,
+                                          "Please enter an integer for the number of permutations.",
+                                          "Empty Number of Permutations", 
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        try {
+            int numberOfPermtution = new Integer(text);
+        }
+        catch(NumberFormatException e) {
+            JOptionPane.showMessageDialog(this,
+                                          "Number of permutations has to be a positive integer: " + text,
+                                          "Wrong Number of Permtation", 
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        int numberOfPermtution = new Integer(text);
+        if (numberOfPermtution <= 0) {
+            JOptionPane.showMessageDialog(this,
+                                          "Number of permutations has to be a positive integer: " + text,
+                                          "Wrong Number of Permtation", 
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
     }
     
     private boolean validateTwoCasesParameters() {

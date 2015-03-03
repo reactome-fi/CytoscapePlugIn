@@ -223,9 +223,7 @@ public class PathwayResultSummary {
     
     private void setCombinedPValue(List<Double> pvalues,
                                    List<List<Double>> allIPAs) throws MathException {
-//        PValueCombiner combiner = new PValueCombiner();
-//        double combined = combiner.combinePValue(allIPAs, pvalues);
-        double combined = MathUtilities.combinePValuesWithFisherMethod(pvalues);
+        double combined = PlugInUtilities.calculateCombinedPValue(pvalues, allIPAs);
         setCombinedPValue(combined);
     }
     

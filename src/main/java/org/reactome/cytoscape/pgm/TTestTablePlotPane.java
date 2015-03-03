@@ -386,15 +386,7 @@ public class TTestTablePlotPane<T> extends JPanel {
      */
     private void calculateCombinedPValue(List<Double> pvalues,
                                          List<List<Double>> values) throws MathException {
-        // Have to make sure no 0 in the pvalues list in order to make the implementation in MathUtility work
-        List<Double> pvalueCopy = new ArrayList<Double>();
-        for (Double pvalue : pvalues) {
-            if (pvalue.equals(0.0d))
-                pvalueCopy.add(Double.MIN_VALUE);
-            else
-                pvalueCopy.add(pvalue);
-        }
-        double combinedPValue = MathUtilities.combinePValuesWithFisherMethod(pvalueCopy);
+        double combinedPValue = PlugInUtilities.calculateCombinedPValue(pvalues, values);
         // Since it is pretty sure, variables are dependent in pathway, use another method
         // to combine p-values
 //        PValueCombiner combiner = new PValueCombiner();

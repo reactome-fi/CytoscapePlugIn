@@ -174,6 +174,8 @@ public class FactorGraphAnalyzer {
         // If two cases analysis should be performed
         if (dataPane.isTwoCasesAnalysisSelected())
             setTwoCasesSampleInfoFile(dataPane.getTwoCasesSampleInfoFile());
+        else
+            FactorGraphRegistry.getRegistry().setNumberOfPermtation(dataPane.getNumberOfPermutation());
             
         InferenceAlgorithmPane algPane = dialog.getAlgorithmPane();
         setAlgorithms(algPane.getSelectedAlgorithms());

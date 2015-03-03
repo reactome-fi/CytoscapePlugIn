@@ -133,15 +133,46 @@ public class ObservationDataHelper {
         if (sampleInfoFile == null) {
             if (progressPane != null)
                 progressPane.setText("Generating random data...");
-            ObservationRandomizer randomizer = new ObservationRandomizer();
-            randomizer.setNumberOfPermutation(1000); // Default
-            randomizer.setRandomSamplePrefix(RANDOM_SAMPLE_PREFIX);
-            List<Observation> randomData = randomizer.randomize(observations,
-                                                                observationData);
-            FactorGraphRegistry.getRegistry().setRandomObservations(fg, randomData);
+            List<ObservationData> randomData = getRandomObservationData(observationData,
+                                                                        dnaFile,
+                                                                        dnaThresholdValues, 
+                                                                        geneExpFile,
+                                                                        geneExpThresholdValues);
+            ObservationRandomizer randomizer = getRandomizer();
+            List<Observation> randomObservations = randomizer.createRandomObservations(observations, randomData);
+            FactorGraphRegistry.getRegistry().setRandomObservations(fg, randomObservations);
         }
-        
         return true;
+    }
+    
+    private List<ObservationData> getRandomObservationData(List<ObservationData> realData,
+                                                           File dnaFile,
+                                                           double[] dnaThresholdValues,
+                                                           File geneExpFile,
+                                                           double[] geneExpThresholdValues) {
+        List<ObservationData> randomData = FactorGraphRegistry.getRegistry().getRandomData(dnaFile, 
+                                                                                           dnaThresholdValues,
+                                                                                           geneExpFile, 
+                                                                                           geneExpThresholdValues);
+        if (randomData != null)
+            return randomData;
+        randomData = getRandomizer().randomize(realData);
+        FactorGraphRegistry.getRegistry().cacheRandomData(randomData,
+                                                          dnaFile,
+                                                          dnaThresholdValues,
+                                                          geneExpFile,
+                                                          geneExpThresholdValues);
+        return randomData;
+    }
+    
+    private ObservationRandomizer getRandomizer() {
+        ObservationRandomizer randomizer = new ObservationRandomizer();
+        Integer numberOfPermutation = FactorGraphRegistry.getRegistry().getNumberOfPermtation();
+        if (numberOfPermutation == null || numberOfPermutation == 0)
+            numberOfPermutation = 1000; // Default
+        randomizer.setNumberOfPermutation(numberOfPermutation);
+        randomizer.setRandomSamplePrefix(RANDOM_SAMPLE_PREFIX);
+        return randomizer;
     }
 
     private List<ObservationData> loadData(File dnaFile,

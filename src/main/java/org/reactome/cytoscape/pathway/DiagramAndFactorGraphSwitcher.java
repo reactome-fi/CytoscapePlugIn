@@ -472,8 +472,8 @@ public class DiagramAndFactorGraphSwitcher {
         private String getPredefinedList() {
             String names = PlugInObjectManager.getManager().getProperties().getProperty("fgEscapeNames");
             if (names == null)
-                names = "ATP,ADP,Pi,H2O,GTP,GDP,CO2,H+";
-            String[] escapeNames = names.split(",");
+                names = "ATP, ADP, Pi, H2O, GTP, GDP, CO2, H+";
+            String[] escapeNames = names.split(",( )*");
             List<String> escapeList = Arrays.asList(escapeNames);
             return StringUtils.join(", ", escapeList);
         }

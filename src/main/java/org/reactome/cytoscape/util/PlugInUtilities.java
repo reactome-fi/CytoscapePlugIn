@@ -38,6 +38,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.math.MathException;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
@@ -75,6 +76,7 @@ import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
 import org.reactome.pathway.factorgraph.VariableRole;
 import org.reactome.r3.util.InteractionUtilities;
+import org.reactome.r3.util.MathUtilities;
 
 /**
  * Utility methods that can be used by Reactome FI plug-in have been grouped
@@ -91,6 +93,31 @@ public class PlugInUtilities {
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * Calculate combined p-value from a list of p-values using Fisher's method
+     * @param pvalues
+     * @throws MathException
+     */
+    public static double calculateCombinedPValue(List<Double> pvalues,
+                                         List<List<Double>> values) throws MathException {
+        // Have to make sure no 0 in the pvalues list in order to make the implementation in MathUtility work
+        List<Double> pvalueCopy = new ArrayList<Double>();
+        for (Double pvalue : pvalues) {
+            if (pvalue.equals(0.0d))
+                pvalueCopy.add(Double.MIN_VALUE);
+            else
+                pvalueCopy.add(pvalue);
+        }
+        double combinedPValue = MathUtilities.combinePValuesWithFisherMethod(pvalueCopy);
+        
+        // Since it is pretty sure, variables are dependent in pathway, use another method
+        // to combine p-values
+//        PValueCombiner combiner = new PValueCombiner();
+//        double combinedPValue = combiner.combinePValue(values,
+//                                                       pvalues);
+        return combinedPValue;
     }
     
     /**
