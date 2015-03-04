@@ -172,7 +172,7 @@ public class PathwayResultSummary {
         MannWhitneyUTest uTest = new MannWhitneyUTest();
         List<Double> pvalues = new ArrayList<Double>();
         Map<String, Set<String>> typeToSamples = null;
-        if (sampleToType != null)
+        if (sampleToType != null && sampleToType.size() > 0)
             typeToSamples = PlugInUtilities.getTypeToSamples(sampleToType);
         // Used for some stats
         SummaryStatistics downStats = new SummaryStatistics();

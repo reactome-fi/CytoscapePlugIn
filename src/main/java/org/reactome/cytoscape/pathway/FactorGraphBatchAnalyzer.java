@@ -5,10 +5,6 @@
 package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
@@ -30,6 +26,7 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.border.Border;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
@@ -108,7 +105,7 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
                     break; // Aborted or an error thrown
                 }
                 count ++;
-//                if (count == 6)
+//                if (count == 10)
 //                    break;
             }
             showFailedResults(failedFGs);
@@ -232,22 +229,15 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
         
         private void init() {
             JPanel contentPane = new JPanel();
-            contentPane.setBorder(BorderFactory.createEtchedBorder());
-            contentPane.setLayout(new GridBagLayout());
-            GridBagConstraints constraints = new GridBagConstraints();
-            constraints.insets = new Insets(4, 4, 4, 4);
-            constraints.anchor = GridBagConstraints.WEST;
-            constraints.fill = GridBagConstraints.HORIZONTAL;
-            constraints.weightx = 0.5d;
+            Border border = BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4),
+                                                               BorderFactory.createEtchedBorder());
+            contentPane.setBorder(border);
+            contentPane.setLayout(new BorderLayout());
             label = new JLabel("<html>The inference for the following pathways failed because of non-convergence:</html>");
-            contentPane.add(label, constraints);
+            contentPane.add(label, BorderLayout.NORTH);
             DefaultListModel<String> model = new DefaultListModel<String>();
             fgList = new JList<String>(model);
-            fgList.setVisibleRowCount(3);
-            fgList.setPreferredSize(new Dimension(450, 150));
-            constraints.gridheight = 4;
-            constraints.gridy = 1;
-            contentPane.add(new JScrollPane(fgList), constraints);
+            contentPane.add(new JScrollPane(fgList), BorderLayout.CENTER);
             getContentPane().add(contentPane, BorderLayout.CENTER);
             
             DialogControlPane controlPane = new DialogControlPane();
@@ -261,6 +251,7 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
             });
             getContentPane().add(controlPane, BorderLayout.SOUTH);
             
+            setTitle("Failed Pathways");
             setLocationRelativeTo(getOwner());
             setSize(525, 300);
         }
