@@ -126,6 +126,9 @@ public class FactorGraphAnalyzer {
      * Call this method to start a factor graph analysis. 
      */
     public void startAnalysis() {
+        // If the user doesn't want to use this experiemental feature, just do nothing.
+        if (!FactorGraphRegistry.getRegistry().showFeatureWarningDialog())
+            return;
         if (FactorGraphRegistry.getRegistry().isDataLoaded()) {
             int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                                       "Data and algorithms have been loaded previously. Do you want to reload them?",

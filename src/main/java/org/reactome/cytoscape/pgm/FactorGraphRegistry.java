@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JOptionPane;
+
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.events.NetworkAboutToBeDestroyedEvent;
 import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
@@ -55,6 +57,8 @@ public class FactorGraphRegistry {
     private String escapeNames;
     // Number of permutation
     private Integer numberOfPermtation = 100; // Default is 100
+    // To control if a feature warning is needed
+    private boolean needFeatureWarning = true;
     
     public static final FactorGraphRegistry getRegistry() {
         if (registry == null)
@@ -351,5 +355,27 @@ public class FactorGraphRegistry {
         // The number of permutations may be changed. So we need to keep this information too.
         keyBuilder.append("::").append(FactorGraphRegistry.getRegistry().getNumberOfPermtation());
         return keyBuilder.toString();
+    }
+    
+    /**
+     * Display a warning dialog. If the user choose cancel button, false will be returned. If data has been loaded
+     * before, this dialog will not be displayed, assuming the user has already made a choice.
+     */
+    public boolean showFeatureWarningDialog() {
+        if (!needFeatureWarning)
+            return true; // The user has chosen true already.
+        // Show a warning
+        // Use the JFrame so that the position is the same as other dialog
+        int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                  "Features related to probabilistic graphical models are still experimental,\n"
+                                                          + "and will be changed in the future. Please use inferred results with \n"
+                                                          + "caution. Do you still want to continue?",
+                                                          "Experimental Feature Warning",
+                                                          JOptionPane.OK_CANCEL_OPTION,
+                                                          JOptionPane.WARNING_MESSAGE);
+        if (reply == JOptionPane.CANCEL_OPTION)
+            return false;
+        needFeatureWarning = false;
+        return true;
     }
 }

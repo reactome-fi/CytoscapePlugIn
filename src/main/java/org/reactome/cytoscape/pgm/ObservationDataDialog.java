@@ -120,6 +120,9 @@ public class ObservationDataDialog extends GeneLevelDialog {
                 setObservations(fgResults.getObservations(), fgResults.getSampleToType());
             else
                 setObservations(fgResults.getObservations(), fgResults.getRandomObservations());
+            // Check if there is anything to be displayed
+            if(tablePlotPane.getTable().getRowCount() == 0)
+                return false; // Nothing to be displayed
         }
         catch(MathException e) {
             JOptionPane.showMessageDialog(this,

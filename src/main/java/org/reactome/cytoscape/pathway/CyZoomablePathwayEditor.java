@@ -289,20 +289,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             
             @Override
             public void actionPerformed(ActionEvent e) {
-                // If there is data has been loaded already, we don't need to show this dialog again
-                if (FactorGraphRegistry.getRegistry().isDataLoaded()) {
-                    // Show a warning
-                    // Use the JFrame so that the position is the same as other dialog
-                    int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                                              "Features related to probabilistic graphical models are still experimental,\n"
-                                                                      + "and will be changed in the future. Please use inferred results with \n"
-                                                                      + "caution. Do you still want to continue?",
-                                                                      "Experimental Feature Warning",
-                                                                      JOptionPane.OK_CANCEL_OPTION,
-                                                                      JOptionPane.WARNING_MESSAGE);
-                    if (reply == JOptionPane.CANCEL_OPTION)
-                        return;
-                }
                 runFactorGraphAnalysis();
             }
         });
