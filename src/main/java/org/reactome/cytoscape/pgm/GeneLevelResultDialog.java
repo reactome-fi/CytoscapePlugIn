@@ -132,7 +132,9 @@ public class GeneLevelResultDialog extends GeneLevelDialog {
         Set<Variable> variables = new HashSet<Variable>();
         Map<Variable, VariableInferenceResults> varToResults = fgResults.getVarToResults();
         for (Variable var : varToResults.keySet()) {
-            if (var.getName().endsWith(DataType.mRNA_EXP.toString()) || var.getName().endsWith(DataType.CNV.toString())) {
+            // For gene level results, we want to show results for mRNA since results for mRNA should
+            // combine information from both mRNA_Exp and CNV
+            if (var.getName().endsWith("_mRNA")) {
                 if (genes == null) { // Use all
                     variables.add(var);
                     varResults.add(varToResults.get(var));

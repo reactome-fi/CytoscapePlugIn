@@ -139,7 +139,7 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
             // In order to calculate p-values
             List<List<Double>> randomPerturbs = generateRandomPerturbations();
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[varResults.size() * 3 + 1];
+                String[] rowData = new String[columnHeaders.length];
                 rowData[0] = sampleList.get(i);
                 double negative = 0.0d;
                 double positive = 0.0d;
@@ -201,7 +201,7 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
         protected void resetDataWithoutPValues(List<String> sampleList) {
             columnHeaders = colums_without_pvalues;
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[varResults.size() + 1];
+                String[] rowData = new String[columnHeaders.length];
                 rowData[0] = sampleList.get(i);
                 double negativePerturbations = 0.0d;
                 double positivePerturbations = 0.0d;

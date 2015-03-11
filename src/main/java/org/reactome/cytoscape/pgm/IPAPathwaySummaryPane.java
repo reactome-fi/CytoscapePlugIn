@@ -212,27 +212,31 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             
         });
         
-        // Synchronize selection from network to pathway overview
-        RowsSetListener selectionListener = new RowsSetListener() {
-            @Override
-            public void handleEvent(RowsSetEvent event) {
-                if (!event.containsColumn(CyNetwork.SELECTED) || 
-                        networkView == null ||
-                        networkView.getModel() == null || 
-                        networkView.getModel().getDefaultEdgeTable() == null ||
-                        networkView.getModel().getDefaultNodeTable() == null) {
-                    return;
+        // The following should be used only for FactorGraph display in the debug mode
+        String pgmDebug = PlugInObjectManager.getManager().getProperties().getProperty("PGMDebug");
+        if (pgmDebug != null && pgmDebug.equals("true")) {
+            // Synchronize selection from network to pathway overview
+            RowsSetListener selectionListener = new RowsSetListener() {
+                @Override
+                public void handleEvent(RowsSetEvent event) {
+                    if (!event.containsColumn(CyNetwork.SELECTED) || 
+                            networkView == null ||
+                            networkView.getModel() == null || 
+                            networkView.getModel().getDefaultEdgeTable() == null ||
+                            networkView.getModel().getDefaultNodeTable() == null) {
+                        return;
+                    }
+                    List<CyNode> nodes = CyTableUtil.getNodesInState(networkView.getModel(),
+                                                                     CyNetwork.SELECTED,
+                                                                     true);
+                    handleNetworkSelection(nodes);
                 }
-                List<CyNode> nodes = CyTableUtil.getNodesInState(networkView.getModel(),
-                                                                 CyNetwork.SELECTED,
-                                                                 true);
-                handleNetworkSelection(nodes);
-            }
-        };
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        networkSelectionRegistration = context.registerService(RowsSetListener.class.getName(),
-                                                               selectionListener, 
-                                                               null);
+            };
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            networkSelectionRegistration = context.registerService(RowsSetListener.class.getName(),
+                                                                   selectionListener, 
+                                                                   null);
+        }
     }
     
     private void doTablePopup(MouseEvent e) {

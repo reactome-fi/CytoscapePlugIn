@@ -98,12 +98,13 @@ public class PathwayEnrichmentHighlighter {
     }
     
     public void highlightPathway(CyZoomablePathwayEditor pathwayEditor) {
+        //
         List<String> geneList = new ArrayList<String>(getHitGenes());
         highlightPathway(pathwayEditor, geneList);
     }
     
     private void highlightPathway(final CyZoomablePathwayEditor pathwayEditor,
-                                 final List<String> hitGenes) {
+                                  final List<String> hitGenes) {
         // No need
         if (hitGenes == null || hitGenes.size() == 0)
             return; // Nothing to highlight

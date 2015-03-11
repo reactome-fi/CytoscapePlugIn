@@ -86,11 +86,23 @@ public class PathwayInternalFrame extends JInternalFrame {
                 }
             }
 
+            /**
+             * Need to override this method, instead of internalFrameClosing(), since this
+             * frame will be closed programmatically.
+             */
             @Override
-            public void internalFrameClosing(InternalFrameEvent e) {
+            public void internalFrameClosed(InternalFrameEvent e) {
                 if (tableSelectionRegistration != null)
                     tableSelectionRegistration.unregister();
-                FactorGraphRegistry.getRegistry().unregisterDiagramToFactorGraph((RenderablePathway)pathwayEditor.getPathwayEditor().getRenderable());
+            }
+            
+            /**
+             * If the user manually closes this frame, all cached results will be deleted in
+             * order to keep the memory use small.
+             */
+            @Override
+            public void internalFrameClosing(InternalFrameEvent e) {
+                FactorGraphRegistry.getRegistry().cleanUpCache((RenderablePathway)pathwayEditor.getPathwayEditor().getRenderable());
             }
             
         });

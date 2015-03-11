@@ -13,6 +13,7 @@ import java.util.Set;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.apache.commons.math.MathException;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyRow;
@@ -28,6 +29,8 @@ import org.gk.render.RenderablePathway;
 import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
+import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
@@ -68,8 +71,7 @@ public class DiagramAndNetworkSwitcher {
         // Need to highlight if any
         PathwayInternalFrame frame = registry.getPathwayFrameWithWait(pathwayId);
         if (frame != null) {
-            PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-            hiliter.highlightPathway(frame.getZoomablePathwayEditor());
+            highlightPathway(frame);
         }
         // If the following code is invoked before the above statement is finished (it is possible since
         // a new thread is going to be used), a null exception may be thrown. So wrap it in an invokeLater method
@@ -83,6 +85,31 @@ public class DiagramAndNetworkSwitcher {
                 context.ungetService(reference);
             }
         });
+    }
+
+    private void highlightPathway(PathwayInternalFrame frame) {
+        // If there is PGM inference result available, we want to highlight diagram based on these results
+        RenderablePathway diagram = (RenderablePathway) frame.getDisplayedPathway();
+        FactorGraphInferenceResults results = FactorGraphRegistry.getRegistry().getInferenceResults(diagram);
+        if (results != null) {
+            // Highlight based on PGM results
+            CyZoomablePathwayEditor editor = frame.getZoomablePathwayEditor();
+            try {
+                editor.showInferenceResults(results);
+            }
+            catch(MathException e) {
+                e.printStackTrace(System.err);
+                JOptionPane.showMessageDialog(editor,
+                                              "Error in showing graphical model analysis results: " + e,
+                                              "Error in Result Display",
+                                              JOptionPane.ERROR_MESSAGE);
+            }
+        }
+        else {
+            // Otherwise, highlight based on hit genes
+            PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
+            hiliter.highlightPathway(frame.getZoomablePathwayEditor());
+        }
     }
     
     public void convertToFINetwork(final Long pathwayId,

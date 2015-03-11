@@ -29,6 +29,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.commons.math.MathException;
 import org.cytoscape.property.CyProperty;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
@@ -910,8 +911,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                               JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            FactorGraphAnalyzer analyzer = getFactorGraphAnalyzer();
-            analyzer.showInferenceResults(results);
+            showInferenceResults(results);
         }
         catch(Exception e) {
             JOptionPane.showMessageDialog(this,
@@ -924,6 +924,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             if (reference != null)
                 PlugInObjectManager.getManager().getBundleContext().ungetService(reference);
         }
+    }
+
+    /**
+     * Show inference results for the displayed pathway diagram.
+     * @param results
+     * @throws MathException
+     */
+    public void showInferenceResults(FactorGraphInferenceResults results) throws MathException {
+        FactorGraphAnalyzer analyzer = getFactorGraphAnalyzer();
+        analyzer.showInferenceResults(results);
     }
 
     private FactorGraphAnalyzer getFactorGraphAnalyzer() {

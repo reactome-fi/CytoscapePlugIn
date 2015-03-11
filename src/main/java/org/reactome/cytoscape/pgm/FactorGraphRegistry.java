@@ -38,7 +38,8 @@ public class FactorGraphRegistry {
     // Register converted FactorGraph from a PathwayDiagram
     private Map<CyNetwork, FactorGraph> networkToFg;
     // Map from a pathway diagram to a FactorGraph
-    private Map<RenderablePathway, FactorGraph> diagramToFg;
+    // Use diagram id, instead of object for cases a pathway diagram is re-loaded
+    private Map<Long, FactorGraph> diagramIdToFg;
     // Register inference results
     private Map<FactorGraph, FactorGraphInferenceResults> fgToResults;
     // For observations
@@ -71,7 +72,7 @@ public class FactorGraphRegistry {
      */
     private FactorGraphRegistry() {
         networkToFg = new HashMap<CyNetwork, FactorGraph>();
-        diagramToFg = new HashMap<RenderablePathway, FactorGraph>();
+        diagramIdToFg = new HashMap<Long, FactorGraph>();
         fgToResults = new HashMap<FactorGraph, FactorGraphInferenceResults>();
         fgToObservations = new HashMap<FactorGraph, List<Observation>>();
         fgToRandomObservations = new HashMap<FactorGraph, List<Observation>>();
@@ -243,7 +244,8 @@ public class FactorGraphRegistry {
     }
     
     public void registerDiagramToFactorGraph(RenderablePathway diagram, FactorGraph fg) {
-        diagramToFg.put(diagram, fg);
+        diagramIdToFg.put(getDiagramId(diagram), 
+                          fg);
     }
     
     public void registerInferenceResults(FactorGraphInferenceResults fgResults) {
@@ -252,8 +254,21 @@ public class FactorGraphRegistry {
         fgToResults.put(fgResults.getFactorGraph(), fgResults);
     }
     
-    public void unregisterDiagramToFactorGraph(RenderablePathway diagram) {
-        diagramToFg.remove(diagram);
+    public void cleanUpCache(RenderablePathway diagram) {
+        Long id = getDiagramId(diagram);
+        FactorGraph fg = diagramIdToFg.get(id);
+        if (fg == null)
+            return;
+        diagramIdToFg.remove(id);
+        fgToObservations.remove(fg);
+        fgToRandomObservations.remove(fg);
+        fgToResults.remove(fg);
+    }
+    
+    private Long getDiagramId(RenderablePathway diagram) {
+        if (diagram.getReactomeDiagramId() != null)
+            return diagram.getReactomeDiagramId();
+        return diagram.getReactomeId();
     }
     
     public FactorGraph getFactorGraph(CyNetwork network) {
@@ -261,7 +276,7 @@ public class FactorGraphRegistry {
     }
     
     public FactorGraph getFactorGraph(RenderablePathway diagram) {
-        return diagramToFg.get(diagram);
+        return diagramIdToFg.get(getDiagramId(diagram));
     }
     
     /**
@@ -287,7 +302,7 @@ public class FactorGraphRegistry {
      * @return
      */
     public FactorGraphInferenceResults getInferenceResults(RenderablePathway diagram) {
-        FactorGraph fg = diagramToFg.get(diagram);
+        FactorGraph fg = diagramIdToFg.get(getDiagramId(diagram));
         if (fg == null)
             return null;
         FactorGraphInferenceResults fgResults = fgToResults.get(fg);

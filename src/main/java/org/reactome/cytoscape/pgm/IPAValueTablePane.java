@@ -25,6 +25,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.RowSorterEvent;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
@@ -529,7 +530,9 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 resetDataWithoutPValues(sampleList);
             else
                 resetDataWithPValues(sampleList);
-            
+            // Need to fire the following sorter event so that sorter and model can be the same.
+            RowSorterEvent sorterEvent = new RowSorterEvent(contentTable.getRowSorter());
+            contentTable.sorterChanged(sorterEvent);
             fireTableStructureChanged();
         }
         
