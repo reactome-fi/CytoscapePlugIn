@@ -6,6 +6,7 @@ package org.reactome.cytoscape.service;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -17,15 +18,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.BorderFactory;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JLayeredPane;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
+import javax.swing.*;
 
 import org.gk.gkEditor.PathwayOverviewPane;
 import org.gk.gkEditor.ZoomablePathwayEditor;
@@ -36,7 +29,6 @@ import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * A helper class to handle pathway diagram. This class is designed to be used as a singleton only.
@@ -211,7 +203,7 @@ public class CyPathwayDiagramHelper {
         }
     }
     
-    public void doPathwayEditorPopup(MouseEvent e) {
+    private void doPathwayEditorPopup(MouseEvent e) {
         final PathwayEditor editor = (PathwayEditor) e.getSource();
         JPopupMenu popup = new JPopupMenu();
         // Used to view the selected entity
@@ -219,10 +211,13 @@ public class CyPathwayDiagramHelper {
         if (selection != null && selection.size() == 1) {
             final Renderable r = (Renderable) selection.get(0);
             if (r.getReactomeId() != null) {
-                Action action = new AbstractAction("View Instance") {
+                Action action = new AbstractAction("View Reactome Source") {
                     public void actionPerformed(ActionEvent e) {
-                        String dataSourceURL = PlugInObjectManager.getManager().getDataSourceURL();
-                        PlugInUtilities.openURL(dataSourceURL + r.getReactomeId());
+                        ReactomeSourceView sourceView = new ReactomeSourceView();
+                        // Get a window for a good location
+                        Window parent = (Window) SwingUtilities.getAncestorOfClass(Window.class, editor);
+                        sourceView.viewReactomeSource(r.getReactomeId(),
+                                                      parent == null ? editor : parent);
                     }
                 };
                 popup.add(action);

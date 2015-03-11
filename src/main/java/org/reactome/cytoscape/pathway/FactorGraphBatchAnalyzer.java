@@ -86,6 +86,7 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
             InferenceRunner inferenceRunner = getInferenceRunner(progressPane);
             List<PathwayResultSummary> resultList = new ArrayList<PathwayResultSummary>();
             List<FactorGraph> failedFGs = new ArrayList<FactorGraph>();
+            boolean isAborted = false;
             for (FactorGraph fg : factorGraphs) {
                 progressPane.setText("Analyzing " + fg.getName());
                 progressPane.setValue(count);
@@ -98,16 +99,19 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
                 catch(InferenceCannotConvergeException e) {
                     failedFGs.add(fg);
                 }
-                if (result != null)
-                    resultList.add(result);
                 if (inferenceRunner.getStatus() == InferenceStatus.ABORT ||
                     inferenceRunner.getStatus() == InferenceStatus.ERROR) {
+                    isAborted = true;
                     break; // Aborted or an error thrown
                 }
+                if (result != null)
+                    resultList.add(result);
                 count ++;
 //                if (count == 10)
 //                    break;
             }
+            if (isAborted)
+                return; // Do nothing if the analysis is aborted
             showFailedResults(failedFGs);
             showResults(resultList);
             String message = factorGraphs.size() + " pathways were subject to analyze. " + resultList.size() + " succeeded, and \n" + 
@@ -163,6 +167,12 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
         performInference(factorGraph,
                          runner,
                          progressPane);
+        if (runner.getStatus() == InferenceStatus.ABORT ||
+            runner.getStatus() == InferenceStatus.ERROR) {
+            // Whatever we have, we have to clean it up.
+            FactorGraphRegistry.getRegistry().clearData(factorGraph);
+            return null;
+        }
         PathwayResultSummary resultSummary = collectResults(factorGraph);
         FactorGraphRegistry.getRegistry().clearData(factorGraph);
         return resultSummary;

@@ -304,18 +304,4 @@ public class PlugInObjectManager {
         return serviceUrl.substring(0, index + 1);
     }
     
-    public String getDataSourceURL(String fiVersion)
-    {
-        String dataSourceURL = getProperties().getProperty("dataSourceURL");
-        fiVersion = fiVersion.replaceAll(" ", "_");
-        String dbName = getProperties().getProperty(fiVersion + "_sourceDb");
-        String rtn = dataSourceURL.replace("${DB_NAME}", dbName);
-        return rtn;
-    }
-
-    public String getDataSourceURL()
-    {
-        return getDataSourceURL(getFiNetworkVersion());
-    }
-    
 }
