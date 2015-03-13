@@ -35,6 +35,14 @@ public class PathwayDiagramHighlighter {
         this.maxColor = maxColor;
     }
     
+    public Color getMinColor() {
+        return minColor;
+    }
+
+    public Color getMaxColor() {
+        return maxColor;
+    }
+
     /**
      * Pre-generate an array of colors in int based on the original Java source code.
      */

@@ -57,7 +57,8 @@ import org.reactome.factorgraph.Variable;
 import org.reactome.r3.util.InteractionUtilities;
 
 /**
- * Show results for a list of variables, usually outputs, from one PGM analysis for a pathway.
+ * Show results for a list of variables, usually all displayed entities in a pathway diagram, from one PGM analysis
+ * for a pathway.
  * @author gwu
  *
  */

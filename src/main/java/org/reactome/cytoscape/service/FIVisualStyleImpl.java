@@ -170,19 +170,9 @@ public class FIVisualStyleImpl implements FIVisualStyle {
 //        hitGeneShapeFunction.putMapValue(true,
 //                                         NodeShapeVisualProperty.OCTAGON);
 //        fiVisualStyle.addVisualMappingFunction(hitGeneShapeFunction);
-        // Also a color for hit genes
-        DiscreteMapping hitGeneColorFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
-                                                                                                                 Boolean.class,
-                                                                                                                 BasicVisualLexicon.NODE_BORDER_PAINT);
-        hitGeneColorFunction.putMapValue(true,
-                                         NODE_HIGHLIGHT_COLOR);
-        fiVisualStyle.addVisualMappingFunction(hitGeneColorFunction);
-        // Make it more obvious since we cannot use a filling color, which has been used by clusters
-        DiscreteMapping hitGeneBorderFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
-                                                                                                                      Boolean.class,
-                                                                                                                      BasicVisualLexicon.NODE_BORDER_WIDTH);
-        hitGeneBorderFunction.putMapValue(true, 5);
-        fiVisualStyle.addVisualMappingFunction(hitGeneBorderFunction);
+        handleNodeHighlight(fiVisualStyle, 
+                         visMapFuncFactoryD,
+                         visMapFuncFactoryC);
         
         // Set default edge color and width
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_UNSELECTED_PAINT,
@@ -246,6 +236,24 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         context.ungetService(referenceD);
         context.ungetService(referenceP);
         return fiVisualStyle;
+    }
+
+    protected void handleNodeHighlight(VisualStyle fiVisualStyle,
+                                       VisualMappingFunctionFactory visMapFuncFactoryD,
+                                       VisualMappingFunctionFactory visMapFuncFactoryC) {
+        // Also a color for hit genes
+        DiscreteMapping hitGeneColorFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
+                                                                                                                 Boolean.class,
+                                                                                                                 BasicVisualLexicon.NODE_BORDER_PAINT);
+        hitGeneColorFunction.putMapValue(true,
+                                         NODE_HIGHLIGHT_COLOR);
+        fiVisualStyle.addVisualMappingFunction(hitGeneColorFunction);
+        // Make it more obvious since we cannot use a filling color, which has been used by clusters
+        DiscreteMapping hitGeneBorderFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
+                                                                                                                      Boolean.class,
+                                                                                                                      BasicVisualLexicon.NODE_BORDER_WIDTH);
+        hitGeneBorderFunction.putMapValue(true, 5);
+        fiVisualStyle.addVisualMappingFunction(hitGeneBorderFunction);
     }
 
     private int[] getSampleNumberRange(CyNetworkView view) {

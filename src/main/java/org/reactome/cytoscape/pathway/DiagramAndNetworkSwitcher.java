@@ -31,13 +31,18 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
+import org.reactome.cytoscape.pgm.GeneLevelResultDialog;
+import org.reactome.cytoscape.pgm.PGMFIVisualStyle;
+import org.reactome.cytoscape.pgm.TTestTablePlotPane;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
+import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.factorgraph.Variable;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.funcInt.ReactomeSource;
@@ -234,12 +239,23 @@ public class DiagramAndNetworkSwitcher {
         viewManager = null;
         context.ungetService(reference);
         
-        ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-        FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
-        visStyler.setVisualStyle(view);
-        visStyler.setLayout();
-        visStyler = null;
-        context.ungetService(servRef);
+        FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(pathway);
+        if (fgResults == null) {
+            ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+            FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
+            visStyler.setVisualStyle(view);
+            visStyler.setLayout();
+            visStyler = null;
+            context.ungetService(servRef);
+        }
+        else {
+            assignIPAsToGenes(pathway,
+                              network, 
+                              tableHelper);
+            FIVisualStyle visStyle = new PGMFIVisualStyle();
+            visStyle.setVisualStyle(view);
+            visStyle.setLayout();
+        }
         
         taskMonitor.setProgress(1.0d);
         PropertyChangeEvent event = new PropertyChangeEvent(this, 
@@ -247,7 +263,37 @@ public class DiagramAndNetworkSwitcher {
                                                             pathway,
                                                             null);
         PathwayDiagramRegistry.getRegistry().firePropertyChange(event);
-        
+    }
+    
+    /**
+     * Calculate IPAs for genes mRNAs, and assigne values for nodes.
+     * @param fgResults
+     * @param network
+     * @param tableHelper
+     */
+    private void assignIPAsToGenes(RenderablePathway diagram,
+                                   CyNetwork network,
+                                   TableHelper tableHelper) {
+        // A GeneLevelResultDialog is used to get the value. Usually this should be avoided
+        // because of the heavy work. Probably perform a refactor in the future?
+        GeneLevelResultDialog helper = new GeneLevelResultDialog();
+        boolean rtn = helper.showResultsForDiagram(diagram);
+        if (!rtn)
+            return;
+        TTestTablePlotPane<Variable> plotPane = helper.getSummaryPane().getTablePlotPane();
+        TTestTableModel model = (TTestTableModel) plotPane.getTable().getModel();
+        Map<String, Double> geneToValue = new HashMap<String, Double>();
+        for (int i = 0; i < model.getRowCount(); i++) {
+            String gene = (String) model.getValueAt(i, 0);
+            int index = gene.indexOf("_");
+            if (index > 0)
+                gene = gene.substring(0, index);
+            Double value = new Double((String) model.getValueAt(i, 3));
+            geneToValue.put(gene, value);
+        }
+        tableHelper.storeNodeAttributesByName(network,
+                                              FIVisualStyle.GENE_VALUE_ATT,
+                                              geneToValue);
     }
     
 }

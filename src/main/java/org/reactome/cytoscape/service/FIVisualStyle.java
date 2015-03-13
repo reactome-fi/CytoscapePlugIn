@@ -12,6 +12,7 @@ import org.cytoscape.view.model.CyNetworkView;
 public interface FIVisualStyle {
     // Some pre-defined colors
     public static final Color NODE_HIGHLIGHT_COLOR = new Color(138, 43, 126); // A kind of purple
+    public static final String GENE_VALUE_ATT = "GeneValue";
 
     void setVisualStyle(CyNetworkView view);
     

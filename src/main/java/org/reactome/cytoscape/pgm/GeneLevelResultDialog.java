@@ -42,6 +42,10 @@ public class GeneLevelResultDialog extends GeneLevelDialog {
     public GeneLevelResultDialog() {
     }
     
+    public IPAPathwaySummaryPane getSummaryPane() {
+        return summaryPane;
+    }
+    
     protected void init() {
         summaryPane = createSummaryPane();
         summaryPane.hideControlToolBar();
