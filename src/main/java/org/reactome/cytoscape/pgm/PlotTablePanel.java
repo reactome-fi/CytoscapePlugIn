@@ -14,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.RowSorterListener;
 import javax.swing.event.TableModelEvent;
@@ -89,7 +90,16 @@ public class PlotTablePanel extends JPanel {
             
             @Override
             public void tableChanged(TableModelEvent e) {
-                resetPlotDataset();
+                // The following call has to wait until other Swing related thing is done.
+                // Otherwise, it is possible to throw an index related exception
+                SwingUtilities.invokeLater(new Runnable() {
+                    
+                    @Override
+                    public void run() {
+                        resetPlotDataset();
+                    }
+                });
+//                resetPlotDataset();
             }
         });
         contentTable.getRowSorter().addRowSorterListener(new RowSorterListener() {

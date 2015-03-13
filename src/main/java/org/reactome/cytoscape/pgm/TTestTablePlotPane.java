@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -22,6 +23,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.RowSorter.SortKey;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.RowSorterListener;
 import javax.swing.table.TableRowSorter;
@@ -39,7 +41,6 @@ import org.jfree.data.general.DatasetChangeEvent;
 import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.r3.util.MathUtilities;
 
 /**
  * This customized JPanel combines a table for t-test and box plots together into a single user interface component.
@@ -286,6 +287,16 @@ public class TTestTablePlotPane<T> extends JPanel {
         dataset.clear();
         this.nameToValues1.clear();
         this.nameToValues2.clear();
+        // Turn off selection listener for the time being to avoid
+        // some side effects of un-expected un-selection event.
+        DefaultListSelectionModel selectionModel = null;
+        ListSelectionListener[] selectionListeners = null;
+        if (tTestResultTable.getSelectionModel() instanceof DefaultListSelectionModel) {
+            selectionModel = (DefaultListSelectionModel) tTestResultTable.getSelectionModel();
+            selectionListeners = selectionModel.getListSelectionListeners();
+        }
+        for (ListSelectionListener l : selectionListeners)
+            selectionModel.removeListSelectionListener(l);
         // To keep the original sorting
         // The second column should be p-values.
         List<? extends SortKey> sortedKeys = getSortedKeys();
@@ -336,6 +347,10 @@ public class TTestTablePlotPane<T> extends JPanel {
         if (sortedKeys != null && sortedKeys.size() > 0)
             tTestResultTable.getRowSorter().setSortKeys(sortedKeys);
         calculateCombinedPValue(combinedPValues, values);
+        if (selectionModel != null && selectionListeners != null) {
+            for (ListSelectionListener l : selectionListeners)
+                selectionModel.addListSelectionListener(l);
+        }
     }
     
     /**

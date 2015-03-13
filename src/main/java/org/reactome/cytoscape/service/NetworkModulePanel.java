@@ -333,6 +333,8 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
                                      "Save Annotation File", 
                                      FileUtil.SAVE,
                                      filters);
+        if (file == null)
+            return; // The action is cancelled.
         NetworkModuleTableModel model = (NetworkModuleTableModel) contentTable.getModel();
         FileUtility fu = new FileUtility();
         try {

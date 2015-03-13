@@ -62,7 +62,7 @@ public class InferenceResultsControl {
         else
             valuePane = (IPAValueTablePane) tableBrowserPane.getComponentAt(index);
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        valuePane.setInferenceResults(fgResults);
+        valuePane.setFGInferenceResults(fgResults);
     }
     
     private void showIPAPathwayValues(FactorGraphInferenceResults fgResults) throws MathException {
@@ -79,10 +79,11 @@ public class InferenceResultsControl {
             valuePane = (IPASampleAnalysisPane) tableBrowserPane.getComponentAt(index);
         else
             valuePane = new IPASampleAnalysisPane(title);
-        valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        Set<Variable> pathwayVars = getPathwayVars(fgResults.getFactorGraph());
-        valuePane.setInferenceResults(fgResults, pathwayVars);
-
+        if (valuePane.getFGInferenceResults() != fgResults) {
+            valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
+            Set<Variable> pathwayVars = getPathwayVars(fgResults.getFactorGraph());
+            valuePane.setInferenceResults(fgResults, pathwayVars);
+        }
         // Show outputs results
         title = "IPA Pathway Analysis";
         index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);
@@ -91,16 +92,20 @@ public class InferenceResultsControl {
             outputPane = (IPAPathwaySummaryPane) tableBrowserPane.getComponentAt(index);
         else
             outputPane = new IPAPathwaySummaryPane(title);
-
-        outputPane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        Set<Variable> outputVars = PlugInUtilities.getOutputVariables(fgResults.getFactorGraph());
-        outputPane.setVariableResults(valuePane.getInferenceResults(),
-                                      outputVars,
-                                      fgResults.isUsedForTwoCases() ? fgResults.getSampleToType() : null);
-        if (index == -1)
+        if (outputPane.getFGInferenceResults() != fgResults) {
+            outputPane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
+            Set<Variable> outputVars = PlugInUtilities.getOutputVariables(fgResults.getFactorGraph());
+            outputPane.setVariableResults(valuePane.getInferenceResults(),
+                                          outputVars,
+                                          fgResults.isUsedForTwoCases() ? fgResults.getSampleToType() : null);
+            outputPane.setFGInferenceResults(fgResults);
+        }
+        // Only select it if this tab is newly created.
+        if (index == -1) {
             index = tableBrowserPane.indexOfComponent(outputPane);
-        if (index >= 0) // Select this as the default table for viewing the results
-            tableBrowserPane.setSelectedIndex(index);
+            if (index >= 0) // Select this as the default table for viewing the results
+                tableBrowserPane.setSelectedIndex(index);
+        }
         // Highlight pathway diagram
         if (hiliteControlPane != null) {
             Map<String, Double> idToValue = outputPane.getReactomeIdToIPADiff();

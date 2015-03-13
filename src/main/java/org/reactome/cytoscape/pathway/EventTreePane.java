@@ -163,7 +163,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 if (foundNode != null) {
                     DefaultTreeModel eventModel = (DefaultTreeModel) eventTree.getModel();
                     TreePath eventPath = new TreePath(eventModel.getPathToRoot(foundNode));
-                    eventTree.scrollPathToVisible(eventPath);
+                    scrollPathToVisible(eventPath);
                 }
             }
         });
@@ -284,9 +284,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                                 DefaultTreeModel treeModel) {
         EventObject event = (EventObject) treeNode.getUserObject();
         if (event.dbId.equals(dbId)) {
-            TreePath treePath = new TreePath(treeModel.getPathToRoot(treeNode));
+            final TreePath treePath = new TreePath(treeModel.getPathToRoot(treeNode));
             eventTree.setSelectionPath(treePath);
-            eventTree.scrollPathToVisible(treePath);
+            scrollPathToVisible(treePath);
             return true;
         }
         for (int i = 0; i < treeNode.getChildCount(); i++) {
@@ -720,6 +720,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         List<?> children = root.getChildren();
         for (Object obj : children) {
             Element elm = (Element) obj;
+            // To avoid disease for the time being
+            String name = elm.getAttributeValue("displayName");
+            if (name.equals("Disease"))
+                continue;
             addEvent(treeRoot, elm);
         }
         model.nodeStructureChanged(treeRoot);
@@ -826,14 +830,18 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             for (TreePath path : paths)
                 eventTree.addSelectionPath(path);
             final TreePath firstPath = paths.get(0);
-            SwingUtilities.invokeLater(new Runnable() {
-                
-                @Override
-                public void run() {
-                    eventTree.scrollPathToVisible(firstPath);
-                }
-            });
+            scrollPathToVisible(firstPath);
         }
+    }
+
+    private void scrollPathToVisible(final TreePath firstPath) {
+        SwingUtilities.invokeLater(new Runnable() {
+            
+            @Override
+            public void run() {
+                eventTree.scrollPathToVisible(firstPath);
+            }
+        });
     }
     
     void searchPathway(DefaultMutableTreeNode treeNode,

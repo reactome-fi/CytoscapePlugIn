@@ -1042,9 +1042,11 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         try {
             ServiceReference[] references = context.getServiceReferences(GraphEditorActionListener.class.getName(), null);
             if (references != null && references.length > 0) {
+                // Here a new event is used for easy handling
+                GraphEditorActionEvent event1 = new GraphEditorActionEvent(getPathwayEditor(), ActionType.SELECTION);
                 for (ServiceReference reference : references) {
                     GraphEditorActionListener l = (GraphEditorActionListener) context.getService(reference);
-                    l.graphEditorAction(event);
+                    l.graphEditorAction(event1);
                     context.ungetService(reference);
                 }
             }

@@ -163,7 +163,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                                 this, 
                                 null);
         
-        // Delete PathwayOver if this OSGi plug-in is down
+        // Delete pathway overview if this OSGi plug-in is down
         SynchronousBundleListener bundleListener = new SynchronousBundleListener() {
             
             @Override

@@ -20,6 +20,9 @@ import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.table.TableModel;
 
+import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.Renderable;
@@ -32,6 +35,7 @@ import org.reactome.cytoscape.pgm.IPAPathwaySummaryPane;
 import org.reactome.cytoscape.pgm.InferenceResultsControl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.factorgraph.FactorGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,7 +141,30 @@ public class PathwayInternalFrame extends JInternalFrame {
                                                              props);
     }
     
+    private IPAPathwaySummaryPane getSummaryPane() {
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
+        String title = "IPA Pathway Analysis";
+        int index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);
+        IPAPathwaySummaryPane outputPane = null;
+        if (index > -1)
+            outputPane = (IPAPathwaySummaryPane) tableBrowserPane.getComponentAt(index);
+        return outputPane;
+    }
+    
     private void handleTableSelection(JTable table) {
+        // Get the displayed summary pane
+        IPAPathwaySummaryPane summaryPane = getSummaryPane();
+        if (summaryPane == null)
+            return; // Nothing needs to be done
+        // Check if the factor graph used is converted from this displayed diagram
+        FactorGraphInferenceResults fgResults = summaryPane.getFGInferenceResults();
+        if (fgResults == null || fgResults.getFactorGraph() == null)
+            return;
+        RenderablePathway diagram = getDisplayedPathway();
+        FactorGraph fg = FactorGraphRegistry.getRegistry().getFactorGraph(diagram);
+        if (fgResults.getFactorGraph() != fg)
+            return;
         // Get the selected variable labels
         Set<Long> dbIds = new HashSet<Long>();
         if (table.getSelectedRowCount() > 0) {

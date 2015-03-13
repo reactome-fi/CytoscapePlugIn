@@ -21,11 +21,11 @@ import javax.swing.JOptionPane;
 import javax.swing.event.ListSelectionEvent;
 
 import org.apache.commons.math.MathException;
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.factorgraph.Variable;
-import org.reactome.factorgraph.common.DataType;
 
 /**
  * This customized JDialog is used to show the observation data for a displayed pathway diagram.
@@ -46,6 +46,7 @@ public class GeneLevelResultDialog extends GeneLevelDialog {
         summaryPane = createSummaryPane();
         summaryPane.hideControlToolBar();
         summaryPane.setBorder(BorderFactory.createEtchedBorder());
+        summaryPane.getTablePlotPane().setChartTitle("Boxplot for Integrated Pathway Activities (IPAs) of Gene mRNAs");
         getContentPane().add(summaryPane, BorderLayout.CENTER);
         
         DialogControlPane controlPane = new DialogControlPane();
@@ -111,7 +112,7 @@ public class GeneLevelResultDialog extends GeneLevelDialog {
             }
 
             @Override
-            protected void handleGraphEditorSelection(List<?> selection) {
+            protected void handleGraphEditorSelection(PathwayEditor editor) {
                 // Do nothing since there is no change we will get selected here.
             }
         };

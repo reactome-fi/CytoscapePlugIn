@@ -14,13 +14,15 @@ import java.util.Set;
 
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.model.CyNetworkView;
+import org.gk.graphEditor.PathwayEditor;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
 import org.reactome.r3.util.MathUtilities;
 
 /**
- * This customized JPanel is used to show IPA pathway analysis results.
+ * This customized JPanel is used to show IPA pathway analysis results for a list of samples
+ * as up or down perturbation results.
  * @author gwu
  *
  */
@@ -51,7 +53,7 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
      * Nothing needs to be done here.
      */
     @Override
-    protected void handleGraphEditorSelection(List<?> selection) {
+    protected void handleGraphEditorSelection(PathwayEditor editor) {
     }
 
     @Override
@@ -59,6 +61,11 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
         this.view = view;
     }
 
+    /**
+     * Call this method to show the results.
+     * @param fgResults
+     * @param outputVars
+     */
     public void setInferenceResults(FactorGraphInferenceResults fgResults,
                                     Set<Variable> outputVars) {
         // We want to focus on outputs for pathway perturbation study
@@ -71,6 +78,14 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
         model.setVarResults(outputVarResults);
     }
     
+    /**
+     * In order to show results correctly, call another method setInferenceResults(FactorGraphInferenceResults, Set).
+     */
+    @Override
+    public void setFGInferenceResults(FactorGraphInferenceResults fgResults) {
+        this.fgInfResults = fgResults;
+    }
+
     public List<VariableInferenceResults> getInferenceResults() {
         IPAPathwayTableModel model = (IPAPathwayTableModel) contentPane.getTableModel();
         return model.varResults;

@@ -38,6 +38,7 @@ import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
 import org.gk.render.RenderableChemical;
@@ -51,10 +52,12 @@ import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 import org.reactome.r3.util.InteractionUtilities;
 
 /**
+ * Show results for a list of variables, usually outputs, from one PGM analysis for a pathway.
  * @author gwu
  *
  */
@@ -365,11 +368,16 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     }
     
     @Override
-    protected void handleGraphEditorSelection(List<?> selection) {
+    protected void handleGraphEditorSelection(PathwayEditor editor) {
         if (isFromTable)
+            return;
+        FactorGraph fg = fgInfResults.getFactorGraph();
+        RenderablePathway diagram = (RenderablePathway) editor.getRenderable();
+        if (FactorGraphRegistry.getRegistry().getFactorGraph(diagram) != fg)
             return;
         isFromNetwork = true; // Just borrow this flag
         Set<String> rowKeys = new HashSet<String>();
+        List<?> selection = editor.getSelection();
         for (Object obj : selection) {
             Renderable r = (Renderable) obj;
             if (r.getReactomeId() != null)
@@ -378,7 +386,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         selectRows(rowKeys);
         isFromNetwork = false;
     }
-
+    
     @Override
     protected void doTableSelection(ListSelectionEvent e) {
         if (isFromNetwork)
@@ -504,6 +512,13 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         return this.tablePlotPane;
     }
     
+    /**
+     * This method should be called in order to show the results correctly.
+     * @param varResults
+     * @param outputVars
+     * @param sampleToType
+     * @throws MathException
+     */
     public void setVariableResults(List<VariableInferenceResults> varResults,
                                    Set<Variable> outputVars, // Used to calculate combined p-value and overview.
                                    Map<String, String> sampleToType) throws MathException {
@@ -528,6 +543,15 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         }
     }
     
+    /**
+     * Call this method will only set a member property and will not display results.
+     * Call another method, setVariableResults(), to display results.
+     */
+    @Override
+    public void setFGInferenceResults(FactorGraphInferenceResults fgResults) {
+        this.fgInfResults = fgResults;
+    }
+
     private void parseTwoCasesResults(List<VariableInferenceResults> sortedResults,
                                       Map<String, String> sampleToType) throws MathException {
         // Get two types

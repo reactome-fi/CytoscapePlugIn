@@ -19,6 +19,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.util.Map;
 
+import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -161,6 +162,7 @@ public class PathwayHighlightControlPanel extends JPanel {
             setTitle("Max/Min Values for Coloring");
             JPanel panel = new JPanel();
             panel.setLayout(new GridBagLayout());
+            panel.setBorder(BorderFactory.createEtchedBorder());
             GridBagConstraints constraints = new GridBagConstraints();
             constraints.insets = new Insets(4, 4, 4, 4);
             JLabel label = new JLabel("<html><b><u>Enter Max/Min Values for Coloring</u></b></html>");

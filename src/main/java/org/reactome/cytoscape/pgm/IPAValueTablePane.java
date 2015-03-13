@@ -25,7 +25,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.RowSorterEvent;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
@@ -38,9 +37,10 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
-import org.gk.graphEditor.GraphEditorSelectionModel;
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
+import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.service.NetworkModulePanel;
@@ -53,7 +53,8 @@ import org.reactome.pathway.factorgraph.IPACalculator;
 import org.reactome.r3.util.MathUtilities;
 
 /**
- * This panel is used to list IPA values for a selected factor graph.
+ * This panel is used to list IPA values for a set of variables for each indivial sample in a 
+ * table.
  * @author gwu
  *
  */
@@ -98,9 +99,9 @@ public class IPAValueTablePane extends NetworkModulePanel {
             
             @Override
             public void graphEditorAction(GraphEditorActionEvent e) {
-                if (e.getID() == ActionType.SELECTION && (e.getSource() instanceof GraphEditorSelectionModel)) {
-                    GraphEditorSelectionModel model = (GraphEditorSelectionModel) e.getSource();
-                    handleGraphEditorSelection(model.getSelection());
+                if (e.getID() == ActionType.SELECTION && (e.getSource() instanceof PathwayEditor)) {
+                    PathwayEditor editor = (PathwayEditor) e.getSource();
+                    handleGraphEditorSelection(editor);
                 }
             }
         };
@@ -212,7 +213,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
     }
     
-    public void setInferenceResults(FactorGraphInferenceResults fgResults) {
+    public void setFGInferenceResults(FactorGraphInferenceResults fgResults) {
         // Get a list of samples from posteriors from all variables
         Set<String> sampleSet = null;
         if (fgResults != null) {// If a pathway view is selected, network view will be null.
@@ -224,6 +225,10 @@ public class IPAValueTablePane extends NetworkModulePanel {
         List<String> sampleList = new ArrayList<String>(sampleSet);
         IPAValueTableModel model = (IPAValueTableModel) contentPane.getTableModel();
         model.setSamples(sampleList);
+    }
+    
+    public FactorGraphInferenceResults getFGInferenceResults() {
+        return this.fgInfResults;
     }
 
     @Override
@@ -255,14 +260,18 @@ public class IPAValueTablePane extends NetworkModulePanel {
         setVariables(selectedVars);
     }
     
-    protected void handleGraphEditorSelection(List<?> selection) {
+    protected void handleGraphEditorSelection(PathwayEditor editor) {
         // Selection should be processed via another route
         if (view != null && view.getModel() != null && view.getModel().getDefaultNodeTable() != null)
             return; // To be handled by handleEvent() method.
         if (fgInfResults == null)
             return;
         FactorGraph fg = fgInfResults.getFactorGraph();
+        RenderablePathway diagram = (RenderablePathway) editor.getRenderable();
+        if (FactorGraphRegistry.getRegistry().getFactorGraph(diagram) != fg)
+            return; // This is not for the selected pathway
         List<Variable> selectedVars = new ArrayList<Variable>();
+        List<?> selection = editor.getSelection();
         if (selection != null && selection.size() > 0) {
             Map<String, Variable> dbIdToVar = new HashMap<String, Variable>();
             for (Variable var : fg.getVariables()) {
@@ -319,7 +328,9 @@ public class IPAValueTablePane extends NetworkModulePanel {
             public Comparator<?> getComparator(int column) {
                 if (column == 0)
                     return super.getComparator(0);
-                if (fgInfResults.getSampleToType() != null && column == 1)
+                if (fgInfResults.getSampleToType() != null &&
+                    fgInfResults.getSampleToType().size() > 0 &&
+                    column == 1) // The sample type should be listed here. Sort based on String.
                     return super.getComparator(1);
                 Comparator<String> comparator = new Comparator<String>() {
                     public int compare(String value1, String value2) {
@@ -530,9 +541,6 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 resetDataWithoutPValues(sampleList);
             else
                 resetDataWithPValues(sampleList);
-            // Need to fire the following sorter event so that sorter and model can be the same.
-            RowSorterEvent sorterEvent = new RowSorterEvent(contentTable.getRowSorter());
-            contentTable.sorterChanged(sorterEvent);
             fireTableStructureChanged();
         }
         
