@@ -47,6 +47,7 @@ public class GeneLevelResultDialog extends GeneLevelDialog {
     }
     
     protected void init() {
+        setTitle("Gene Level Results");
         summaryPane = createSummaryPane();
         summaryPane.hideControlToolBar();
         summaryPane.setBorder(BorderFactory.createEtchedBorder());
