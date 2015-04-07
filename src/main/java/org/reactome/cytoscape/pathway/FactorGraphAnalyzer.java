@@ -177,8 +177,11 @@ public class FactorGraphAnalyzer {
         // If two cases analysis should be performed
         if (dataPane.isTwoCasesAnalysisSelected())
             setTwoCasesSampleInfoFile(dataPane.getTwoCasesSampleInfoFile());
-        else
+        else {
+            // Need to remove the originally set sample information
+            setTwoCasesSampleInfoFile(null);
             FactorGraphRegistry.getRegistry().setNumberOfPermtation(dataPane.getNumberOfPermutation());
+        }
             
         InferenceAlgorithmPane algPane = dialog.getAlgorithmPane();
         setAlgorithms(algPane.getSelectedAlgorithms());
