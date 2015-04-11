@@ -148,10 +148,15 @@ public class DiagramAndNetworkSwitcher {
         RESTFulFIService fiService = new RESTFulFIService();
         List<Interaction> interactions = fiService.convertPathwayToFIs(pathwayId);
         if (interactions == null || interactions.size() == 0) {
-            JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
-                                          "There is no FI existing in the selected pathway.",
-                                          "No FI",
-                                          JOptionPane.INFORMATION_MESSAGE);
+            taskMonitor.setProgress(1.0d);
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
+                                                  "There is no FI existing in the selected pathway.",
+                                                  "No FI in Pathway",
+                                                  JOptionPane.INFORMATION_MESSAGE);
+                }
+            });
             return;
         }
         
