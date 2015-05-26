@@ -159,38 +159,26 @@ public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
             if (column == 0 || column == 6)
                 return super.getComparator(column);
             // Something special for FDR since it may contains "<"
-            if (column == 5) {
-                Comparator<String> comparator = new Comparator<String>() {
-                    public int compare(String value1, String value2) {
-                        if (value1.startsWith("<") && value1.startsWith(">")) {
-                            String value11 = value1.substring(1);
-                            String value21 = value2.substring(1);
-                            return new Double(value11).compareTo(new Double(value21));
-                        }
-                        else if (value1.startsWith("<"))
-                            return -1;
-                        else if (value2.startsWith("<"))
-                            return 1;
-                        else {
-                            Double d1 = new Double(value1);
-                            Double d2 = new Double(value2);
-                            return d1.compareTo(d2);
-                        }
-                    }
-                };
-            }
-            // Do based on numbers
             Comparator<String> comparator = new Comparator<String>() {
                 public int compare(String value1, String value2) {
-                    Double d1 = new Double(value1.toString());
-                    Double d2 = new Double(value2.toString());
-                    return d1.compareTo(d2);
+                    if (value1.startsWith("<") && value1.startsWith(">")) {
+                        String value11 = value1.substring(1);
+                        String value21 = value2.substring(1);
+                        return new Double(value11).compareTo(new Double(value21));
+                    }
+                    else if (value1.startsWith("<"))
+                        return -1;
+                    else if (value2.startsWith("<"))
+                        return 1;
+                    else {
+                        Double d1 = new Double(value1);
+                        Double d2 = new Double(value2);
+                        return d1.compareTo(d2);
+                    }
                 }
             };
             return comparator;
         }
-        
-        
         
     }
     

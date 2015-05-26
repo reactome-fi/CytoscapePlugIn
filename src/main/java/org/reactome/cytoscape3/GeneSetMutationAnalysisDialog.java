@@ -179,8 +179,7 @@ public class GeneSetMutationAnalysisDialog extends FIActionDialog {
         constraints.gridy = 0;
         constraints.anchor = GridBagConstraints.CENTER;
         constraints.weightx = 0.0d;
-        fetchFIAnnotations = new JCheckBox(
-                "Fetch FI annotations (WARNING: Slow!)");
+        fetchFIAnnotations = new JCheckBox("Fetch FI annotations");
         JLabel label = new JLabel("* Annotations may be fetched later.");
         label.setFont(font2);
         constructPanel.add(fetchFIAnnotations, constraints);
