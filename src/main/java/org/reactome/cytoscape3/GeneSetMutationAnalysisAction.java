@@ -43,13 +43,15 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         gui.setLocationRelativeTo(desktopApp.getJFrame());
         gui.setModal(true);
         gui.setVisible(true);
-        if (!gui.isOkClicked()) return;
-        final File file = gui.getSelectedFile();
-        if (file == null || !file.exists())
-        {
+        if (!gui.isOkClicked()) 
+            return;
+        File file = gui.getSelectedFile();
+        String enteredGenes = gui.getEnteredGenes();
+        if ((enteredGenes == null) && (file == null || !file.exists())) {
             JOptionPane.showMessageDialog(desktopApp.getJFrame(),
-                    "No file is chosen or the selected file doesn't exist!",
-                    "Error in File", JOptionPane.ERROR_MESSAGE);
+                    "No file is chosen, the selected file doesn't exist or no gene set is entered!",
+                    "Error in Specifying Gene Set", 
+                    JOptionPane.ERROR_MESSAGE);
             return;
         }
         // Create and display a network based on the user's input and the

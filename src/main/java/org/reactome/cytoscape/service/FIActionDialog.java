@@ -124,6 +124,8 @@ public abstract class FIActionDialog extends JDialog {
      */
     public File getSelectedFile() {
         String text = fileTF.getText().trim();
+        if (text.length() == 0)
+            return null;
         return new File(text);
     }
     

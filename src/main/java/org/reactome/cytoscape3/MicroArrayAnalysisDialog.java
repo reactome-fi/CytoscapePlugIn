@@ -65,7 +65,7 @@ public class MicroArrayAnalysisDialog extends FIActionDialog {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 0.1;
         
-        JLabel fileChooseLabel = new JLabel("Choose Data File:");
+        JLabel fileChooseLabel = new JLabel("Choose data file:");
         JButton browseButton = new JButton("Browse");
         fileTF = new JTextField();
         createFileChooserGui(fileTF,

@@ -42,6 +42,8 @@ import org.reactome.r3.util.InteractionUtilities;
 public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
     private String format;
     private File file;
+    // For manually entered genes
+    private String enteredGenes;
     private boolean chooseHomoGenes;
     private boolean useLinkers;
     private boolean showUnlinked;
@@ -57,6 +59,7 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
         this.showUnlinked = gui.getUnlinkedGeneBox().isSelected();
         this.format = gui.getFileFormat();
         this.file = gui.getSelectedFile();
+        this.enteredGenes = gui.getEnteredGenes();
         this.sampleCutoffValue = gui.getSampleCutoffValue();
         this.showUnlinkedEnabled = gui.getUnlinkedGeneBox().isEnabled();
         this.fetchFIAnnotations = gui.shouldFIAnnotationsBeFetched();
@@ -68,7 +71,7 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
         progPane.setMinimum(1);
         progPane.setMaximum(100);
         progPane.setTitle("Gene Set/Mutation Analysis");
-        progPane.setText("Loading file...");
+        progPane.setText("Loading gene set...");
         progPane.setValue(25);
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         desktopApp.getJFrame().setGlassPane(progPane);
@@ -98,7 +101,8 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             }
             else if (format.equals("GeneSet"))
             {
-                selectedGenes = loadGeneSetFile(file);
+                selectedGenes = loadGeneSetFile(enteredGenes,
+                                                file);
             }
             // Check if it is possible to construct the network
             // given the sample size.
@@ -124,13 +128,12 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
 
             progPane.setIndeterminate(true);
             progPane.setText("Constructing FI network...");
-            CyNetwork network = constructFINetwork(selectedGenes, file
-                    .getName());
+            CyNetwork network = constructFINetwork(selectedGenes);
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             TableFormatter tableFormatter = (TableFormatter) context.getService(tableFormatterServRef);
             tableFormatter.makeGeneSetMutationAnalysisTables(network);
-            network.getDefaultNetworkTable().getRow(network.getSUID()).set(
-                    "name", file.getName());
+            String networkName = (file == null ? "Untitled" : file.getName());
+            network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", networkName);
             if (network == null || network.getNodeCount() <= 0)
             {
                 JOptionPane.showMessageDialog(desktopApp.getJFrame(),
@@ -279,35 +282,38 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
         return selectedGenes;
     }
 
-    private Set<String> loadGeneSetFile(File file) throws IOException
-    {
+    private Set<String> loadGeneSetFile(String enteredGenes,
+                                        File file) throws IOException {
         Set<String> genes = new HashSet<String>();
-        FileUtility fu = new FileUtility();
-        fu.setInput(file.getAbsolutePath());
-        String line = fu.readLine();
-        String[] tokens = line.split("\t");
-        if (tokens.length != 1)
-            throw new IllegalArgumentException(
-                    "Wrong file format.\nGeneset format should have only one column and have no header.");
-        genes.add(line.trim());
-        while ((line = fu.readLine()) != null)
-        {
-            genes.add(line.trim());
+        if (enteredGenes != null && enteredGenes.length() > 0) {
+            String[] lines = enteredGenes.split("\n");
+            for (String line : lines)
+                genes.add(line.trim());
         }
-        fu.close();
+        else if (file != null) { // Should handle file
+            FileUtility fu = new FileUtility();
+            fu.setInput(file.getAbsolutePath());
+            String line = fu.readLine();
+            String[] tokens = line.split("\t");
+            if (tokens.length != 1)
+                throw new IllegalArgumentException(
+                        "Wrong file format.\nGeneset format should have only one column and have no header.");
+            genes.add(line.trim());
+            while ((line = fu.readLine()) != null)
+            {
+                genes.add(line.trim());
+            }
+            fu.close();
+        }
         return genes;
     }
 
-    private CyNetwork constructFINetwork(Set<String> selectedGenes, String title)
-            throws Exception
-    {
+    private CyNetwork constructFINetwork(Set<String> selectedGenes) throws Exception {
         // Check if a local service should be used
-        FINetworkService fiService = FIPlugInHelper.getHelper()
-                .getNetworkService();
+        FINetworkService fiService = FIPlugInHelper.getHelper().getNetworkService();
         Set<String> fis = fiService.buildFINetwork(selectedGenes, useLinkers);
         CyNetwork network = null;
-        if (fis != null && fis.size() > 0)
-        {
+        if (fis != null && fis.size() > 0) {
 
             FINetworkGenerator generator = new FINetworkGenerator();
             // Check if any unlinked nodes should be added

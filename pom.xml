@@ -39,7 +39,7 @@
                 </includes>
             </resource>
 		</resources>
-		<!-- Cytoscape requires Java 1.6 -->
+		<!-- Cytoscape requires Java 1.7 -->
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -62,8 +62,8 @@
 					</execution>
 				</executions>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>1.7</source>
+					<target>1.7</target>
 					<optimize>true</optimize>
 					<showWarnings>true</showWarnings>
 					<showDeprecation>true</showDeprecation>
@@ -188,7 +188,7 @@
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>service-api</artifactId>
-			<version>3.0.1</version>
+			<version>RELEASE</version>
 		</dependency>
 		
 		<dependency>
