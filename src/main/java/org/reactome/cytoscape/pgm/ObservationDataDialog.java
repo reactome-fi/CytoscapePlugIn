@@ -139,7 +139,7 @@ public class ObservationDataDialog extends GeneLevelDialog {
      * @param observations
      * @param sampleToType sample to type information. This object should not be null.
      */
-    public void setObservations(List<Observation> observations,
+    public void setObservations(List<Observation<Number>> observations,
                                 Map<String, String> sampleToType) throws MathException {
         if (sampleToType == null)
             throw new IllegalArgumentException("sampleToType should not be null!");
@@ -175,8 +175,8 @@ public class ObservationDataDialog extends GeneLevelDialog {
      * @param randomObservations
      * @throws MathException
      */
-    public void setObservations(List<Observation> observations,
-                                List<Observation> randomObservations) throws MathException {
+    public void setObservations(List<Observation<Number>> observations,
+                                List<Observation<Number>> randomObservations) throws MathException {
         Map<String, List<Double>> nameToRealValues = new HashMap<String, List<Double>>();
         for (Observation obs : observations) 
             addValues(nameToRealValues, obs.getVariableToAssignment());

@@ -44,9 +44,9 @@ public class FactorGraphInferenceResults {
     private Long pathwayDiagramId;
     // Observations used
     @XmlElement(name="observation")
-    private List<Observation> observations;
+    private List<Observation<Number>> observations;
     @XmlElement(name="randomObservation")
-    private List<Observation> randomObservations;
+    private List<Observation<Number>> randomObservations;
     
     /**
      * Default constructor.
@@ -55,19 +55,19 @@ public class FactorGraphInferenceResults {
         varResults = new ArrayList<VariableInferenceResults>();
     }
 
-    public List<Observation> getObservations() {
+    public List<Observation<Number>> getObservations() {
         return observations;
     }
 
-    public void setObservations(List<Observation> observations) {
+    public void setObservations(List<Observation<Number>> observations) {
         this.observations = observations;
     }
 
-    public List<Observation> getRandomObservations() {
+    public List<Observation<Number>> getRandomObservations() {
         return randomObservations;
     }
 
-    public void setRandomObservations(List<Observation> randomObservations) {
+    public void setRandomObservations(List<Observation<Number>> randomObservations) {
         this.randomObservations = randomObservations;
     }
 

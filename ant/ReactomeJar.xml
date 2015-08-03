@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<!-- ====================================================================== 
+     Jul 1, 2005 3:47:49 PM                                                        
+
+     project    Jar Reactome APIs
+     description Create a jar files from gkdev to be used by caBigR3 project.
+                   
+     guanming                                                                
+     ====================================================================== -->
+<project name="ReactomeJar" default="jar" basedir="..">
+	<property name="destDir" value="lib/reactome/" />
+	<property name="sourceClsDir" value="../gkdev/classes" />
+	<property name="srcDir" value="../gkdev/src" />
+		
+	<target name="jar">
+        <jar destfile="${destDir}/reactome.jar">
+            <fileset dir="${sourceClsDir}">
+            		<include name="org/gk/model/*.class" />
+            	    <include name="org/gk/schema/*.class" />
+            	    <include name="org/gk/util/*.class" />
+            		<!-- exclude name="org/gk/util/AuthorToolAppletUtilities.class" / -->    
+            		<include name="org/gk/persistence/*.class" />
+            		<include name="org/gk/render/*.class" />
+            		<include name="org/gk/database/*.class" />
+            	    <include name="org/gk/database/util/*.class" />
+            		<exclude name="org/gk/database/util/ChEBIAttributeAutoFiller.class" />
+            		<exclude name="org/gk/database/util/PsiModAttributeAutoFiller.class" />
+            		<include name="org/gk/graphEditor/*.class" />
+            	    <include name="org/gk/property/*.class" />
+            	    <include name="org/gk/gkCurator/*.class" />
+            		<include name="org/gk/gkEditor/*.class" />
+            		<include name="org/gk/elv/*.class" />
+            		<include name="org/gk/gkCurator/authorTool/*.class" />
+            		<include name="org/gk/slicing/*.class" />
+            		<include name="launcher/*.class" />
+            		<!-- include name="org/gk/pathView/*.class" / -->
+            		<include name="org/gk/qualityCheck/*.class" />
+            	    <!-- include name="org/gk/pathwaylayout/*.class" / -->
+            </fileset>
+        	<zipgroupfileset dir="../gkdev/lib" includes="osxAdapter.jar"/>
+        	<!-- fileset dir="${srcDir}">
+            	    <include name="org/gk/model/*.java" />
+            	    <include name="org/gk/schema/*.java" />
+            	    <include name="org/gk/util/*.java" />
+            	    <include name="org/gk/persistence/*.java" />
+            	    <include name="org/gk/database/*.java" />
+            	    <include name="org/gk/database/util/*.java" />
+            		<include name="org/gk/graphEditor/*.java" />
+            	    <include name="org/gk/property/*.java" />
+            	    <include name="org/gk/render/*.java" />
+            	    <include name="org/gk/slicing/*.java" />
+            	    <include name="org/gk/gkCurator/*.java" />
+            		<include name="org/gk/gkEditor/*.java" />
+            		<include name="org/gk/elv/*.java" />
+            		<include name="org/gk/gkCurator/authorTool/*.java" />
+            		<include name="org/gk/pathwaylayout/*.java" />
+        	</fileset -->
+        </jar>
+    </target>
+	
+</project>
+

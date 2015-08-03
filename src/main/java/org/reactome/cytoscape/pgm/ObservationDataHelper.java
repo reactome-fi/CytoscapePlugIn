@@ -28,6 +28,7 @@ import org.reactome.factorgraph.common.ObservationFileLoader;
 import org.reactome.factorgraph.common.ObservationFileLoader.ObservationData;
 import org.reactome.factorgraph.common.ObservationRandomizer;
 import org.reactome.factorgraph.common.PGMConfiguration;
+import org.reactome.factorgraph.common.VariableManager;
 import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 import org.reactome.r3.util.FileUtility;
 
@@ -105,7 +106,7 @@ public class ObservationDataHelper {
                                                          geneExpThresholdValues,
                                                          progressPane,
                                                          dataLoader);
-        List<Observation> observations = dataLoader.getObservations();
+        List<Observation<Number>> observations = dataLoader.getObservations();
         if (observationData.size() == 0 || observations.size() == 0) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cannot load observation data. Inference cannot be performed.",
@@ -139,7 +140,7 @@ public class ObservationDataHelper {
                                                                         geneExpFile,
                                                                         geneExpThresholdValues);
             ObservationRandomizer randomizer = getRandomizer();
-            List<Observation> randomObservations = randomizer.createRandomObservations(observations, randomData);
+            List<Observation<Number>> randomObservations = randomizer.createRandomObservations(observations, randomData);
             FactorGraphRegistry.getRegistry().setRandomObservations(fg, randomObservations);
         }
         return true;
@@ -194,9 +195,8 @@ public class ObservationDataHelper {
                     progressPane.setText("Loading CNV data...");
                 ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(dnaFile, dnaThresholdValues);
                 if (data == null) {
-                    Map<String, Map<String, Integer>> dnaSampleToGeneToState = dataLoader.loadObservationData(dnaFile.getAbsolutePath(),
-                                                                                                              DataType.CNV,
-                                                                                                              dnaThresholdValues);
+                    Map<String, Map<String, Float>> dnaSampleToGeneToState = dataLoader.loadObservationData(dnaFile.getAbsolutePath(),
+                                                                                                            DataType.CNV);
                     data = new ObservationData();
                     data.setDataType(DataType.CNV);
                     data.setSampleToGeneToValue(dnaSampleToGeneToState);
@@ -208,9 +208,8 @@ public class ObservationDataHelper {
                 progressPane.setText("Loading mRNA expression data...");
                 ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(geneExpFile, geneExpThresholdValues);
                 if (data == null) {
-                    Map<String, Map<String, Integer>> geneExpSampleToGeneToState = dataLoader.loadObservationData(geneExpFile.getAbsolutePath(),
-                                                                                                                  DataType.mRNA_EXP,
-                                                                                                                  geneExpThresholdValues);
+                    Map<String, Map<String, Float>> geneExpSampleToGeneToState = dataLoader.loadObservationData(geneExpFile.getAbsolutePath(),
+                                                                                                                DataType.mRNA_EXP);
                     data = new ObservationData();
                     data.setDataType(DataType.mRNA_EXP);
                     data.setSampleToGeneToValue(geneExpSampleToGeneToState);
@@ -219,25 +218,29 @@ public class ObservationDataHelper {
                 observationData.add(data);
             }
         }
-        Map<String, Variable> nameToVar = getNameToVarInFactorGraph();
+        VariableManager varManager = getVariableManager();
         for (ObservationData data : observationData) {
             dataLoader.addObservation(data.getSampleToGeneToValue(),
                                       data.getDataType(),
-                                      nameToVar,
+                                      varManager,
                                       fg.getFactors());
         }
         return observationData;
     }
 
-    private Map<String, Variable> getNameToVarInFactorGraph() {
-        Map<String, Variable> nameToVar = new HashMap<String, Variable>();
+    /**
+     * Re-generate a VariableManager object from the cached FactorGraph object.
+     * @return
+     */
+    private VariableManager getVariableManager() {
+        VariableManager varManager = new VariableManager();
         for (Variable var : fg.getVariables())
-            nameToVar.put(var.getName(), var);
-        return nameToVar;
+            varManager.register(var);
+        return varManager;
     }
 
     private boolean filterObservationsForTypes(Map<String, String> sampleToType,
-                                               List<Observation> observations) {
+                                               List<Observation<Number>> observations) {
         if (sampleToType == null || sampleToType.size() == 0) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cannot find any samples in the sample information file.",
@@ -247,7 +250,7 @@ public class ObservationDataHelper {
         }
         // Filter observations and attach sample information.
         Map<String, Integer> typeToCount = new HashMap<String, Integer>();
-        for (Iterator<Observation> it = observations.iterator(); it.hasNext();) {
+        for (Iterator<Observation<Number>> it = observations.iterator(); it.hasNext();) {
             Observation observation = it.next();
             String type = sampleToType.get(observation.getName());
             if (type == null) {

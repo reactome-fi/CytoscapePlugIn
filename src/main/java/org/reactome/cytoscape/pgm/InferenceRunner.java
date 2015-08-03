@@ -209,7 +209,7 @@ public class InferenceRunner {
         FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(factorGraph);
         fgResults.setUsedForTwoCases(usedForTwoCases);
         fgResults.storeInferenceResults(null); // Store prior result
-        List<Observation> observations = FactorGraphRegistry.getRegistry().getObservations(factorGraph);
+        List<Observation<Number>> observations = FactorGraphRegistry.getRegistry().getObservations(factorGraph);
         Map<String, String> sampleToType = new HashMap<String, String>();
         fgResults.setSampleToType(sampleToType);
         if (observations != null) {

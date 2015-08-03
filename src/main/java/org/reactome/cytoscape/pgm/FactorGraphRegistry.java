@@ -43,8 +43,8 @@ public class FactorGraphRegistry {
     // Register inference results
     private Map<FactorGraph, FactorGraphInferenceResults> fgToResults;
     // For observations
-    private Map<FactorGraph, List<Observation>> fgToObservations;
-    private Map<FactorGraph, List<Observation>> fgToRandomObservations;
+    private Map<FactorGraph, List<Observation<Number>>> fgToObservations;
+    private Map<FactorGraph, List<Observation<Number>>> fgToRandomObservations;
     // Cache loaded data
     // Key is a concatenated string based on file name and threshold values
     // Most likely such a key should be unique.
@@ -74,8 +74,8 @@ public class FactorGraphRegistry {
         networkToFg = new HashMap<CyNetwork, FactorGraph>();
         diagramIdToFg = new HashMap<Long, FactorGraph>();
         fgToResults = new HashMap<FactorGraph, FactorGraphInferenceResults>();
-        fgToObservations = new HashMap<FactorGraph, List<Observation>>();
-        fgToRandomObservations = new HashMap<FactorGraph, List<Observation>>();
+        fgToObservations = new HashMap<FactorGraph, List<Observation<Number>>>();
+        fgToRandomObservations = new HashMap<FactorGraph, List<Observation<Number>>>();
         keyToLoadedData = new HashMap<String, ObservationFileLoader.ObservationData>();
         keyToRandomData = new HashMap<String, List<ObservationData>>();
         // If a network is deleted, the cached factor graph should be 
@@ -309,19 +309,19 @@ public class FactorGraphRegistry {
         return fgResults;
     }
     
-    public void setObservations(FactorGraph fg, List<Observation> observations) {
+    public void setObservations(FactorGraph fg, List<Observation<Number>> observations) {
         fgToObservations.put(fg, observations);
     }
     
-    public List<Observation> getObservations(FactorGraph fg) {
+    public List<Observation<Number>> getObservations(FactorGraph fg) {
         return fgToObservations.get(fg);
     }
     
-    public void setRandomObservations(FactorGraph fg, List<Observation> observations) {
+    public void setRandomObservations(FactorGraph fg, List<Observation<Number>> observations) {
         fgToRandomObservations.put(fg, observations);
     }
     
-    public List<Observation> getRandomObservations(FactorGraph fg) {
+    public List<Observation<Number>> getRandomObservations(FactorGraph fg) {
         return fgToRandomObservations.get(fg);
     }
     

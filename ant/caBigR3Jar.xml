@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<!-- Generate a jar file for classes needed from the caBIGR3 project -->
+<project name="package" default="jarCaBigR3" basedir="..">
+	<property name="targetDir" value="lib" />
+	<property name="eclipseHome" value="/Users/gwu/Documents/EclipseWorkspace" />
+	<property name="caBigR3Dir" value="${eclipseHome}/caBigR3" />
+	<property name="caBigR3Jar" value="${targetDir}/caBIGR3-minimal.jar" />
+	<property name="caBigR3Version" value="3.0" />
+	<property name="FINetworkBuildDir" value="${eclipseHome}/FINetworkBuild" />
+	<!-- Package needed classes from the FI Network build-->
+	<target name="jarFINetworkBuild">
+		<jar destfile="${targetDir}/FINetworkBuild.jar">
+			<fileset dir="${FINetworkBuildDir}/bin">
+				<exclude name="org/reactome/funcInt/Hib*.class" />
+				<exclude name="org/reactome/funcInt/IntEnumUserType.class" />
+				<include name="org/reactome/funcInt/**.class" />
+			</fileset>
+		</jar>
+	</target>
+	
+	<!-- Package some needed classes from the caBigR3 project -->
+	<target name="jarCaBigR3">
+		<delete file="${targetDir}/caBigR3.jar" />
+		<jar destfile="${caBigR3Jar}">
+			<fileset dir="${caBigR3Dir}/classes">
+				<include name="org/reactome/r3/util/FileUtility.class" />
+				<include name="org/reactome/r3/util/InteractionUtilities.class" />
+				<include name="org/reactome/r3/util/MathUtilities*.class" />
+				<include name="org/reactome/r3/util/JAXBBindableList.class" />
+				<!-- include name="org/reactome/r3/graph/*.class" /-->
+				<include name="org/reactome/r3/cluster/HierarchicalClusterNode.class" />
+				<include name="org/reactome/r3/cluster/HierarchicalCluster*.class" />
+				<include name="org/reactome/r3/cluster/DistanceCalculator.class" />
+				<include name="org/reactome/r3/graph/NetworkBuilderForGeneSet*.class" />
+				<include name="org/reactome/r3/graph/BreadthFirstSearch*.class" />
+				<include name="org/reactome/r3/graph/GeneClusterPair.class" />
+				<include name="org/reactome/r3/graph/NetworkClusterResult.class" />
+				<include name="org/reactome/annotate/*.class" />
+				<include name="org/reactome/cancer/CancerAnalysisUtilitites*.class" />
+				<include name="org/reactome/cancer/CancerGeneExpressionCommon*.class" />
+				<include name="org/reactome/cancer/MATFileLoader*.class" />
+				<!-- The following classes for the Java implementation of FactorGraph -->
+				<include name="org/reactome/factorgraph/*.class" />
+				<include name="org/reactome/factorgraph/common/*.class" />
+				<include name="org/reactome/pathway/factorgraph/*.class" />
+				<exclude name="org/reactome/pathway/factorgraph/DRMAAJobScheduler*.class" />
+				<exclude name="org/reactome/pathway/factorgraph/AlgorithmTester*.class" />
+			</fileset>
+		</jar>
+		<exec executable="${targetDir}/installJar.sh">
+			<!-- file anem -->
+			<arg value="${caBigR3Jar}"/>
+			<!-- groupId -->
+			<arg value="org.reactome" />
+			<!-- artifactId -->
+			<arg value="caBIGR3-minimal" />
+			<!-- version -->
+			<arg value="${caBigR3Version}" />
+		</exec>
+	</target>
+</project>
