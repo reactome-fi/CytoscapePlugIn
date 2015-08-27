@@ -25,6 +25,7 @@ import org.reactome.factorgraph.Observation;
 import org.reactome.factorgraph.common.DataType;
 import org.reactome.factorgraph.common.ObservationFileLoader;
 import org.reactome.factorgraph.common.ObservationFileLoader.ObservationData;
+import org.reactome.factorgraph.common.PGMConfiguration;
 import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 
 
@@ -162,7 +163,6 @@ public class FactorGraphRegistry {
     }
     
     public void cacheLoadedData(File file,
-                                double[] threshold,
                                 ObservationData data) {
         // To save memory, we will cache one data for one DataType only
         for (Iterator<String> it = keyToLoadedData.keySet().iterator(); it.hasNext(); ) {
@@ -171,14 +171,12 @@ public class FactorGraphRegistry {
             if (tmp.getDataType() == data.getDataType())
                 it.remove();
         }
-        String key = generateKeyForData(file, threshold);
-        keyToLoadedData.put(key, data);
+        keyToLoadedData.put(file.getAbsolutePath(),
+                            data);
     }
     
-    public ObservationData getLoadedData(File file,
-                                         double[] threshold) {
-        String key = generateKeyForData(file, threshold);
-        return keyToLoadedData.get(key);
+    public ObservationData getLoadedData(File file) {
+        return keyToLoadedData.get(file.getAbsolutePath());
     }
     
     public List<ObservationData> getAllLoadedData() {
@@ -207,30 +205,19 @@ public class FactorGraphRegistry {
      * @param dataType
      * @return
      */
-    public double[] getLoadedThresholds(DataType dataType) {
-        double[] rtn = null;
-        for (Iterator<String> it = keyToLoadedData.keySet().iterator(); it.hasNext(); ) {
-            String key = it.next();
-            ObservationData tmp = keyToLoadedData.get(key);
-            if (tmp.getDataType() == dataType) {
-                String[] tokens = key.split("::");
-                rtn = new double[tokens.length - 1];
-                for (int i = 1; i < tokens.length; i++)
-                    rtn[i - 1] = new Double(tokens[i]);
-            }
-        }
-        return rtn;
+    public double[] getThresholds(DataType dataType) {
+        PGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        Map<DataType, double[]> typeToThreshold = config.getTypeToThreshold();
+        if (typeToThreshold == null)
+            return null;
+        return typeToThreshold.get(dataType);
     }
     
-    private String generateKeyForData(File file, double[] threshold) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(file.getAbsolutePath());
-        for (double value : threshold) {
-            builder.append("::").append(value);
-        }
-        return builder.toString();
+    public void setThresholds(DataType dataType, double[] thresholds) {
+        PGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        config.setTypeToThreshold(dataType, thresholds);
     }
-
+    
     public List<Inferencer> getLoadedAlgorithms() {
         return loadedInferencer;
     }
@@ -327,46 +314,37 @@ public class FactorGraphRegistry {
     
     public void cacheRandomData(List<ObservationData> randomData,
                                 File dnaFile,
-                                double[] dnaThresholdValues,
-                                File geneExpFile,
-                                double[] geneExpThresholdValues) {
+                                File geneExpFile) {
         String key = generateKeyForRandomData(dnaFile,
-                                              dnaThresholdValues,
-                                              geneExpFile,
-                                              geneExpThresholdValues);
+                                              geneExpFile);
         keyToRandomData.clear(); // Make sure only one random data set is cached to control the use of memory
         keyToRandomData.put(key, randomData);
     }
     
     public List<ObservationData> getRandomData(File dnaFile,
-                                               double[] dnaThresholdValues,
-                                               File geneExpFile,
-                                               double[] geneExpThresholdValues) {
+                                               File geneExpFile) {
         if (dnaFile == null && geneExpFile == null) {
             // Return anything cached
             if (keyToRandomData.size() > 0)
                 return keyToRandomData.values().iterator().next();
             return null;
         }
-        String key = generateKeyForRandomData(dnaFile, dnaThresholdValues, geneExpFile, geneExpThresholdValues);
+        String key = generateKeyForRandomData(dnaFile, geneExpFile);
         return keyToRandomData.get(key);
     }
 
     private String generateKeyForRandomData(File dnaFile,
-                                            double[] dnaThresholdValues,
-                                            File geneExpFile,
-                                            double[] geneExpThresholdValues) {
+                                            File geneExpFile) {
         StringBuilder keyBuilder = new StringBuilder();
-        if (dnaFile != null && dnaThresholdValues != null) {
-            String key1 = generateKeyForData(dnaFile, dnaThresholdValues);
-            keyBuilder.append(key1);
-        }
-        if (geneExpFile != null && geneExpThresholdValues != null) {
-            String key2 = generateKeyForData(geneExpFile, geneExpThresholdValues);
-            if (keyBuilder.length() > 0)
-                keyBuilder.append("::");
-            keyBuilder.append(key2);
-        }
+        if (dnaFile != null) 
+            keyBuilder.append(dnaFile.getAbsolutePath());
+        else
+            keyBuilder.append("null");
+        keyBuilder.append("::");
+        if (geneExpFile != null) 
+            keyBuilder.append(geneExpFile.getAbsolutePath());
+        else
+            keyBuilder.append("null");
         // The number of permutations may be changed. So we need to keep this information too.
         keyBuilder.append("::").append(FactorGraphRegistry.getRegistry().getNumberOfPermtation());
         return keyBuilder.toString();

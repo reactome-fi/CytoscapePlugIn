@@ -25,6 +25,7 @@ import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Inferencer;
+import org.reactome.factorgraph.common.DataType;
 
 /**
  * This class is used to perform factor graph based pathway analysis.
@@ -39,9 +40,7 @@ public class FactorGraphAnalyzer {
     private PathwayHighlightControlPanel hiliteControlPane;
     // Information entered by the user
     private File geneExpFile;
-    private double[] geneExpThresholdValues;
     private File cnvFile;
-    private double[] cnvThresholdValues;
     
     /**
      * Default constructor.
@@ -74,28 +73,12 @@ public class FactorGraphAnalyzer {
         this.geneExpFile = geneExpFile;
     }
 
-    public double[] getGeneExpThresholdValues() {
-        return geneExpThresholdValues;
-    }
-
-    public void setGeneExpThresholdValues(double[] geneExpThresholdValues) {
-        this.geneExpThresholdValues = geneExpThresholdValues;
-    }
-
     public File getCnvFile() {
         return cnvFile;
     }
 
     public void setCnvFile(File cnvFile) {
         this.cnvFile = cnvFile;
-    }
-
-    public double[] getCnvThresholdValues() {
-        return cnvThresholdValues;
-    }
-
-    public void setCnvThresholdValues(double[] cnvThresholdValues) {
-        this.cnvThresholdValues = cnvThresholdValues;
     }
 
     public void setAlgorithms(List<Inferencer> algorithms) {
@@ -151,7 +134,7 @@ public class FactorGraphAnalyzer {
         }
         FactorGraphRegistry.getRegistry().setNeedEscapeNameDialog(true);
         FactorGraphAnalysisDialog dialog = new FactorGraphAnalysisDialog();
-        dialog.setSize(625, 630);
+        dialog.setSize(625, 640);
         GKApplicationUtilities.center(dialog);
         dialog.setModal(true);
         dialog.setVisible(true);
@@ -171,16 +154,17 @@ public class FactorGraphAnalyzer {
         // for performing analysis.
         ObservationDataLoadPanel dataPane = dialog.getDataLoadPane();
         setGeneExpFile(dataPane.getGeneExpFile());
-        setGeneExpThresholdValues(dataPane.getGeneExpThresholdValues());
         setCnvFile(dataPane.getDNAFile());
-        setCnvThresholdValues(dataPane.getDNAThresholdValues());
+        FactorGraphRegistry registry = FactorGraphRegistry.getRegistry();
+        registry.setThresholds(DataType.CNV, dataPane.getDNAThresholdValues());
+        registry.setThresholds(DataType.mRNA_EXP, dataPane.getGeneExpThresholdValues());
         // If two cases analysis should be performed
         if (dataPane.isTwoCasesAnalysisSelected())
             setTwoCasesSampleInfoFile(dataPane.getTwoCasesSampleInfoFile());
         else {
             // Need to remove the originally set sample information
             setTwoCasesSampleInfoFile(null);
-            FactorGraphRegistry.getRegistry().setNumberOfPermtation(dataPane.getNumberOfPermutation());
+            registry.setNumberOfPermtation(dataPane.getNumberOfPermutation());
         }
             
         InferenceAlgorithmPane algPane = dialog.getAlgorithmPane();
@@ -247,9 +231,7 @@ public class FactorGraphAnalyzer {
         progressPane.setText("Loading observation data...");
         ObservationDataHelper dataHelper = new ObservationDataHelper(factorGraph);
         boolean correct = dataHelper.performLoadData(cnvFile,
-                                                     cnvThresholdValues, 
                                                      geneExpFile, 
-                                                     geneExpThresholdValues,
                                                      getSampleInfoFile(),
                                                      progressPane);
         if (!correct) {

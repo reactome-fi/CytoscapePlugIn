@@ -49,6 +49,7 @@ import org.reactome.factorgraph.Factor;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Inferencer;
 import org.reactome.factorgraph.Variable;
+import org.reactome.factorgraph.common.DataType;
 
 /**
  * This PopupMenuHandler is used for a factor graph network.
@@ -495,10 +496,11 @@ public class FactorGraphPopupMenuHandler extends AbstractPopupMenuHandler {
                 frame.setGlassPane(progressPane);
                 frame.getGlassPane().setVisible(true);
                 File sampleInfoFile = dialog.isTwoCaseAnalysisSelected() ? dialog.getTwoCasesSampleInfoFile() : null;
+                FactorGraphRegistry registry = FactorGraphRegistry.getRegistry();
+                registry.setThresholds(DataType.CNV, dialog.getDNAThresholdValues());
+                registry.setThresholds(DataType.mRNA_EXP, dialog.getGeneExpThresholdValues());
                 helper.performLoadData(dialog.getDNAFile(), 
-                                       dialog.getDNAThresholdValues(), 
                                        dialog.getGeneExpFile(), 
-                                       dialog.getGeneExpThresholdValues(), 
                                        sampleInfoFile,
                                        progressPane);
                 frame.getGlassPane().setVisible(false);

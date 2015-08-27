@@ -153,10 +153,10 @@ public class ObservationDataDialog extends GeneLevelDialog {
         Map<String, List<Double>> nameToValues1 = new HashMap<String, List<Double>>();
         for (int i = 0; i < typeList.size(); i++) {
             String type = typeList.get(i);
-            for (Observation obs : observations) {
+            for (Observation<Number> obs : observations) {
                 if (obs.getAnnoation() == null || !obs.getAnnoation().equals(type))
                     continue;
-                Map<Variable, Integer> varToState = obs.getVariableToAssignment();
+                Map<Variable, Number> varToState = obs.getVariableToAssignment();
                 if (i == 0)
                     addValues(nameToValues0, varToState);
                 else
@@ -178,10 +178,10 @@ public class ObservationDataDialog extends GeneLevelDialog {
     public void setObservations(List<Observation<Number>> observations,
                                 List<Observation<Number>> randomObservations) throws MathException {
         Map<String, List<Double>> nameToRealValues = new HashMap<String, List<Double>>();
-        for (Observation obs : observations) 
+        for (Observation<Number> obs : observations) 
             addValues(nameToRealValues, obs.getVariableToAssignment());
         Map<String, List<Double>> nameToRandomValues = new HashMap<String, List<Double>>();
-        for (Observation obs : randomObservations)
+        for (Observation<Number> obs : randomObservations)
             addValues(nameToRandomValues, obs.getVariableToAssignment());
         tablePlotPane.setDisplayValues("Real Samples", 
                                        nameToRealValues,
@@ -190,17 +190,17 @@ public class ObservationDataDialog extends GeneLevelDialog {
     }
     
     private void addValues(Map<String, List<Double>> nameToValues,
-                           Map<Variable, Integer> varToState) {
+                           Map<Variable, Number> varToState) {
         for (Variable var : varToState.keySet()) {
             if (!shouldAdd(var))
                 continue;
-            Integer state = varToState.get(var);
+            Number state = varToState.get(var);
             List<Double> values = nameToValues.get(var.getName());
             if (values == null) {
                 values = new ArrayList<Double>();
                 nameToValues.put(var.getName(), values);
             }
-            values.add(new Double(state)); // Convert an Integer to a Double.
+            values.add(state.doubleValue()); // Convert an Integer to a Double.
         }
     }
     

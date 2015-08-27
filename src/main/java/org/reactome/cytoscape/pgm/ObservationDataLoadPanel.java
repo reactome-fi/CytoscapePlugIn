@@ -17,15 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
@@ -42,7 +34,11 @@ import org.reactome.r3.util.InteractionUtilities;
  */
 public abstract class ObservationDataLoadPanel extends JPanel {
     private List<JTextField> dnaTFs;
+    private JRadioButton dnaEmpBtn;
+    private JRadioButton dnaThresholdBtn;
     private List<JTextField> geneExpTFs;
+    private JRadioButton geneExpEmpBtn;
+    private JRadioButton geneExpThresholdBtn;
     private JCheckBox useTwoCasesBox;
     private JTextField twoCaseFileTF;
     // For number of permutation
@@ -98,8 +94,8 @@ public abstract class ObservationDataLoadPanel extends JPanel {
     private void setValues() {
         if (!FactorGraphRegistry.getRegistry().isDataLoaded())
             return; 
-        setValues(DataType.CNV, dnaTFs);
-        setValues(DataType.mRNA_EXP, geneExpTFs);
+        setValues(DataType.CNV, dnaTFs, dnaEmpBtn, dnaThresholdBtn);
+        setValues(DataType.mRNA_EXP, geneExpTFs, geneExpEmpBtn, geneExpThresholdBtn);
         if (FactorGraphRegistry.getRegistry().getTwoCaseSampleInfoFile() != null) {
             useTwoCasesBox.setSelected(true);
             twoCaseFileTF.setText(FactorGraphRegistry.getRegistry().getTwoCaseSampleInfoFile().getAbsolutePath());
@@ -107,17 +103,24 @@ public abstract class ObservationDataLoadPanel extends JPanel {
     }
 
     private void setValues(DataType dataType,
-                           List<JTextField> tfs) {
+                           List<JTextField> tfs,
+                           JRadioButton empBtn,
+                           JRadioButton thresholdBtn) {
         FactorGraphRegistry registry = FactorGraphRegistry.getRegistry();
         String fileName = registry.getLoadedDataFileName(dataType);
-        double[] thresholds = registry.getLoadedThresholds(dataType);
-        // The last TF is not editable. There is only two values provided in the threshold array
-        for (int i = 0; i < tfs.size() - 1; i++) {
-            JTextField tf = tfs.get(i);
-            if (i == 0)
-                tf.setText(fileName);
-            else
+        if (fileName != null)
+            tfs.get(0).setText(fileName);
+        double[] thresholds = registry.getThresholds(dataType);
+        if (thresholds == null || thresholds.length == 0) {
+            empBtn.setSelected(true);
+        }
+        else {
+            thresholdBtn.setSelected(true);
+            // The last TF is not editable. There is only two values provided in the threshold array
+            for (int i = 1; i < tfs.size() - 1; i++) {
+                JTextField tf = tfs.get(i);
                 tf.setText(thresholds[i - 1] + "");
+            }
         }
     }
     
@@ -209,7 +212,7 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         JPanel pane = new JPanel();
         pane.setLayout(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
-        constraints.insets = new Insets(2, 4, 2, 4);
+        constraints.insets = new Insets(0, 4, 0, 4);
         constraints.gridx = 0;
         constraints.gridy = 0;
         constraints.anchor = GridBagConstraints.WEST;
@@ -221,16 +224,34 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         JButton browseBtn = new JButton("Browse");
         createFileChooserGui(fileTF, label, browseBtn, pane, constraints);
         
-        label = new JLabel("Choose threshold values for discretizing:");
+        // Add a choice to use empirical distribution
+        JRadioButton useEmpricalDistributionBtn = new JRadioButton("Use empirical distribution");
+        final JRadioButton chooseThresholdValuesBtn = new JRadioButton("Choose threshold values for discretizing:");
+        if (dataType.equals("CNV")) {
+            dnaEmpBtn = useEmpricalDistributionBtn;
+            dnaThresholdBtn = chooseThresholdValuesBtn;
+        }
+        else {// So far we support two data types only
+            geneExpEmpBtn = useEmpricalDistributionBtn;
+            geneExpThresholdBtn = chooseThresholdValuesBtn;
+        }
+        ButtonGroup buttonGrp = new ButtonGroup();
+        buttonGrp.add(useEmpricalDistributionBtn);
+        buttonGrp.add(chooseThresholdValuesBtn);
+        
         constraints.gridwidth = 3;
         constraints.gridx = 0;
         constraints.gridy ++;
-        pane.add(label, constraints);
+        pane.add(useEmpricalDistributionBtn, constraints);
+        constraints.gridy ++;
+        pane.add(chooseThresholdValuesBtn, constraints);
         
         constraints.gridwidth = 1;
-        JTextField state0TF = addStateSection("State 0: less than ", pane, constraints);
-        final JTextField state1TF = addStateSection("State 1: less than ", pane, constraints);
-        final JTextField state2TF = addStateSection("State 2: no less than ", pane, constraints);
+        // For disable/enable
+        final List<JComponent> stateGUIs = new ArrayList<JComponent>();
+        JTextField state0TF = addStateSection("State 0: less than ", pane, constraints, stateGUIs);
+        final JTextField state1TF = addStateSection("State 1: less than ", pane, constraints, stateGUIs);
+        final JTextField state2TF = addStateSection("State 2: no less than ", pane, constraints, stateGUIs);
         state2TF.setEditable(false);
         state1TF.getDocument().addDocumentListener(new DocumentListener() {
             
@@ -255,14 +276,29 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         tfs.add(state2TF);
         state0TF.setText(defaultValues[0] + "");
         state1TF.setText(defaultValues[1] + "");
-
+        // Disable or enable threshold values GUIs
+        chooseThresholdValuesBtn.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                boolean isSelected = chooseThresholdValuesBtn.isSelected();
+                for (JComponent comp : stateGUIs)
+                    comp.setEnabled(isSelected);
+            }
+        });
+        // Default use empirical distribution
+        useEmpricalDistributionBtn.setSelected(true);
+        // Disable state GUIs first
+        for (JComponent comp : stateGUIs)
+            comp.setEnabled(false);
         return pane;
     }
     
     private JTextField addStateSection(String labelText,
-                                 JPanel pane, 
-                                 GridBagConstraints constraints) {
+                                       JPanel pane, 
+                                       GridBagConstraints constraints,
+                                       List<JComponent> stateGUIs) {
         JLabel label = new JLabel(labelText);
+        stateGUIs.add(label);
         label.setAlignmentX(JLabel.RIGHT_ALIGNMENT);
         constraints.gridy ++;
         constraints.gridx = 1;
@@ -270,6 +306,7 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         constraints.fill = GridBagConstraints.NONE;
         pane.add(label, constraints);
         JTextField stateTF = new JTextField();
+        stateGUIs.add(stateTF);
         stateTF.setColumns(2);
         constraints.gridx = 2;
         constraints.anchor = GridBagConstraints.WEST;
@@ -302,12 +339,16 @@ public abstract class ObservationDataLoadPanel extends JPanel {
     }
     
     public double[] getDNAThresholdValues() {
+        if (!dnaTFs.get(1).isEnabled())
+            return null; // Return null if they are not enabled
         String value1 = dnaTFs.get(1).getText().trim();
         String value2 = dnaTFs.get(2).getText().trim();
         return new double[]{new Double(value1), new Double(value2)};
     }
     
     public double[] getGeneExpThresholdValues() {
+        if (!geneExpTFs.get(1).isEnabled())
+            return null; // Return null if they are not enabled
         String value1 = geneExpTFs.get(1).getText().trim();
         String value2 = geneExpTFs.get(2).getText().trim();
         return new double[]{new Double(value1), new Double(value2)};

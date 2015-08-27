@@ -24,6 +24,9 @@ import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Observation;
 import org.reactome.factorgraph.Variable;
 import org.reactome.factorgraph.common.DataType;
+import org.reactome.factorgraph.common.DiscreteObservationFactorhandler;
+import org.reactome.factorgraph.common.EmpiricalFactorHandler;
+import org.reactome.factorgraph.common.ObservationFactorHandler;
 import org.reactome.factorgraph.common.ObservationFileLoader;
 import org.reactome.factorgraph.common.ObservationFileLoader.ObservationData;
 import org.reactome.factorgraph.common.ObservationRandomizer;
@@ -88,24 +91,22 @@ public class ObservationDataHelper {
     }
     
     public boolean performLoadData(File dnaFile,
-                                   double[] dnaThresholdValues,
                                    File geneExpFile,
-                                   double[] geneExpThresholdValues,
                                    File sampleInfoFile, // If this file is not null, two-cases analysis should be performed
                                    ProgressPane progressPane) throws Exception {
         if (progressPane != null) {
             progressPane.setTitle("Load Observation Data");
             progressPane.setIndeterminate(true);
         }
-        // We will use a built-in ObservationFileLoader to perform data load
-        ObservationFileLoader dataLoader = new ObservationFileLoader();
-        dataLoader.setPGMConfiguration(PathwayPGMConfiguration.getConfig());
+        
+        ObservationFileLoader dataLoader = initializeDataLoader();
+        
         List<ObservationData> observationData = loadData(dnaFile,
-                                                         dnaThresholdValues,
                                                          geneExpFile,
-                                                         geneExpThresholdValues,
                                                          progressPane,
                                                          dataLoader);
+        // obervations should be a smaller and processed set of observationData. So
+        // we have to cache both of lists. The same is applied to the randomized data too.
         List<Observation<Number>> observations = dataLoader.getObservations();
         if (observationData.size() == 0 || observations.size() == 0) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
@@ -136,33 +137,52 @@ public class ObservationDataHelper {
                 progressPane.setText("Generating random data...");
             List<ObservationData> randomData = getRandomObservationData(observationData,
                                                                         dnaFile,
-                                                                        dnaThresholdValues, 
-                                                                        geneExpFile,
-                                                                        geneExpThresholdValues);
+                                                                        geneExpFile);
             ObservationRandomizer randomizer = getRandomizer();
-            List<Observation<Number>> randomObservations = randomizer.createRandomObservations(observations, randomData);
+            List<Observation<Number>> randomObservations = randomizer.createRandomObservations(observations,
+                                                                                               randomData,
+                                                                                               dataLoader.getDataTypeToObservationFactorHandler());
             FactorGraphRegistry.getRegistry().setRandomObservations(fg, randomObservations);
         }
         return true;
     }
+
+    private ObservationFileLoader initializeDataLoader() {
+        // We will use a built-in ObservationFileLoader to perform data load
+        ObservationFileLoader dataLoader = new ObservationFileLoader();
+        PGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        dataLoader.setPGMConfiguration(config);
+        // Chose ObservationFactorHandler based on threshold values
+        double[] dnaThresholdValues = FactorGraphRegistry.getRegistry().getThresholds(DataType.CNV);
+        ObservationFactorHandler cnvHandler = null;
+        if (dnaThresholdValues == null)
+            cnvHandler = new EmpiricalFactorHandler();
+        else
+            cnvHandler = new DiscreteObservationFactorhandler();
+        dataLoader.setObservationFactorHandler(DataType.CNV,
+                                               cnvHandler);
+        ObservationFactorHandler geneExpHandler = null;
+        double[] geneExpThresholdValues = FactorGraphRegistry.getRegistry().getThresholds(DataType.mRNA_EXP);
+        if (geneExpThresholdValues == null)
+            geneExpHandler = new EmpiricalFactorHandler();
+        else
+            geneExpHandler = new DiscreteObservationFactorhandler();
+        dataLoader.setObservationFactorHandler(DataType.mRNA_EXP,
+                                               geneExpHandler);
+        return dataLoader;
+    }
     
     private List<ObservationData> getRandomObservationData(List<ObservationData> realData,
                                                            File dnaFile,
-                                                           double[] dnaThresholdValues,
-                                                           File geneExpFile,
-                                                           double[] geneExpThresholdValues) {
+                                                           File geneExpFile) {
         List<ObservationData> randomData = FactorGraphRegistry.getRegistry().getRandomData(dnaFile, 
-                                                                                           dnaThresholdValues,
-                                                                                           geneExpFile, 
-                                                                                           geneExpThresholdValues);
+                                                                                           geneExpFile);
         if (randomData != null)
             return randomData;
         randomData = getRandomizer().randomize(realData);
         FactorGraphRegistry.getRegistry().cacheRandomData(randomData,
                                                           dnaFile,
-                                                          dnaThresholdValues,
-                                                          geneExpFile,
-                                                          geneExpThresholdValues);
+                                                          geneExpFile);
         return randomData;
     }
     
@@ -177,9 +197,7 @@ public class ObservationDataHelper {
     }
 
     private List<ObservationData> loadData(File dnaFile,
-                                           double[] dnaThresholdValues,
                                            File geneExpFile,
-                                           double[] geneExpThresholdValues,
                                            ProgressPane progressPane,
                                            ObservationFileLoader dataLoader) throws IOException {
         List<ObservationData> observationData = null;
@@ -193,33 +211,34 @@ public class ObservationDataHelper {
             if (dnaFile != null) {
                 if (progressPane != null)
                     progressPane.setText("Loading CNV data...");
-                ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(dnaFile, dnaThresholdValues);
+                ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(dnaFile);
                 if (data == null) {
                     Map<String, Map<String, Float>> dnaSampleToGeneToState = dataLoader.loadObservationData(dnaFile.getAbsolutePath(),
                                                                                                             DataType.CNV);
                     data = new ObservationData();
                     data.setDataType(DataType.CNV);
                     data.setSampleToGeneToValue(dnaSampleToGeneToState);
-                    FactorGraphRegistry.getRegistry().cacheLoadedData(dnaFile, dnaThresholdValues, data);
+                    FactorGraphRegistry.getRegistry().cacheLoadedData(dnaFile, data);
                 }
                 observationData.add(data);
             }
             if (geneExpFile != null) {
                 progressPane.setText("Loading mRNA expression data...");
-                ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(geneExpFile, geneExpThresholdValues);
+                ObservationData data = FactorGraphRegistry.getRegistry().getLoadedData(geneExpFile);
                 if (data == null) {
                     Map<String, Map<String, Float>> geneExpSampleToGeneToState = dataLoader.loadObservationData(geneExpFile.getAbsolutePath(),
                                                                                                                 DataType.mRNA_EXP);
                     data = new ObservationData();
                     data.setDataType(DataType.mRNA_EXP);
                     data.setSampleToGeneToValue(geneExpSampleToGeneToState);
-                    FactorGraphRegistry.getRegistry().cacheLoadedData(geneExpFile, geneExpThresholdValues, data);
+                    FactorGraphRegistry.getRegistry().cacheLoadedData(geneExpFile, data);
                 }
                 observationData.add(data);
             }
         }
         VariableManager varManager = getVariableManager();
         for (ObservationData data : observationData) {
+            // Observation variables will be added and Observation objects will be added in this step.
             dataLoader.addObservation(data.getSampleToGeneToValue(),
                                       data.getDataType(),
                                       varManager,

@@ -100,7 +100,7 @@
 							oracle.xml.parser,oracle.xml.parser.v2,org.apache.axis,org.apache.axis.client,
 							org.apache.axis.constants,org.apache.axis.description,org.apache.axis.encoding,
 							org.apache.axis.encoding.ser,org.apache.axis.soap,org.apache.axis.utils,
-							org.apache.xerces.dom,org.apache.xerces.parsers,org.gk.pathView,org.reactome.r3.fi,org.jaxen,org.jaxen.jdom
+							org.apache.xerces.dom,org.apache.xerces.parsers,org.gk.pathView,org.reactome.r3,org.reactome.r3.fi,org.jaxen,org.jaxen.jdom
 						</DynamicImport-Package>
 <!--  						<Import-Package>!*</Import-Package> -->
 <!-- 						<Export-Package>${bundle.namespace}</Export-Package> -->
@@ -264,7 +264,7 @@
 		<dependency>
 			<groupId>org.reactome</groupId>
 			<artifactId>caBIGR3-minimal</artifactId>
-			<version>RELEASE</version>
+			<version>3.0</version>
 		</dependency>
 		
 		<dependency>

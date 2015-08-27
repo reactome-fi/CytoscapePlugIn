@@ -21,6 +21,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.junit.Test;
+import org.reactome.factorgraph.ContinuousVariable;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Observation;
 import org.reactome.factorgraph.Variable;
@@ -35,6 +36,7 @@ import org.reactome.factorgraph.common.DataType;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class FactorGraphInferenceResults {
     private FactorGraph factorGraph;
+    // Use list instead of map for XML serialization.
     private List<VariableInferenceResults> varResults;
     // A flag indicating this result should be processed based on two cases
     private boolean usedForTwoCases;
@@ -162,12 +164,14 @@ public class FactorGraphInferenceResults {
     
     private void setVariablePrior(Variable var) {
         VariableInferenceResults varResults = getVarResults(var);
-        varResults.setPriorValues(var.getBelief());
+        if (varResults != null)
+            varResults.setPriorValues(var.getBelief());
     }
     
     private void storeInferenceResults(String sample, Variable var) {
         VariableInferenceResults varResults = getVarResults(var);
-        varResults.addSampleToValue(sample, var.getBelief());
+        if (varResults != null)
+            varResults.addSampleToValue(sample, var.getBelief());
     }
     
     /**
@@ -177,6 +181,9 @@ public class FactorGraphInferenceResults {
      * @return
      */
     private VariableInferenceResults getVarResults(Variable var) {
+        // We cannot perform inference for a ContinuousVariable
+        if (var instanceof ContinuousVariable)
+            return null;
         VariableInferenceResults varResult = getVariableInferenceResults(var);
         if (varResult == null) {
             varResult = new VariableInferenceResults();

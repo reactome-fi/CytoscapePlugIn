@@ -23,7 +23,6 @@ import org.reactome.factorgraph.InferenceType;
 import org.reactome.factorgraph.Inferencer;
 import org.reactome.factorgraph.LoopyBeliefPropagation;
 import org.reactome.factorgraph.Observation;
-import org.reactome.factorgraph.Variable;
 
 /**
  * Use this class for performing actual PGM inference.
@@ -166,12 +165,12 @@ public class InferenceRunner {
     /**
      * This is the actual place to run inference
      */
-    private void performInference(Map<Variable, Integer> varToState,
+    private void performInference(Observation<Number> observation,
                                   String sample) throws InferenceCannotConvergeException {
         // If LBP is set, we will use it.
         if (lbp != null) {
             try {
-                lbp.setObservation(varToState);
+                lbp.setObservation(observation);
                 lbp.runInference();
             }
             catch(InferenceCannotConvergeException e) {
@@ -180,13 +179,13 @@ public class InferenceRunner {
                 if (gibbs != null) { // Try switch to Gibbs automatically if it is set.
                     progressPane.setText("Use Gibbs for " + 
                                          (sample == null ? " prior" : sample));
-                    gibbs.setObservation(varToState);
+                    gibbs.setObservation(observation);
                     gibbs.runInference();
                 }
             }
         }
         else { // Only Gibbs is set
-            gibbs.setObservation(varToState);
+            gibbs.setObservation(observation);
             gibbs.runInference();
         }
     }
@@ -224,7 +223,8 @@ public class InferenceRunner {
                     continue; 
                 if (progressPane != null)
                     progressPane.setText("Sample: " + observation.getName());
-                performInference(observation.getVariableToAssignment(), observation.getName());
+                performInference(observation, 
+                                 observation.getName());
                 fgResults.storeInferenceResults(observation.getName());
                 // If there is no sample type, don't include to avoid a new type (null!)
                 // appears in the further analysis.
@@ -248,7 +248,8 @@ public class InferenceRunner {
                     count ++;
                     if (progressPane != null)
                         progressPane.setText("Random sample: " + count);
-                    performInference(observation.getVariableToAssignment(), "Random sample " + count);
+                    performInference(observation,
+                                     "Random sample " + count);
                     fgResults.storeInferenceResults(observation.getName());
                     progressPane.setValue(count);
                     if (abort)
