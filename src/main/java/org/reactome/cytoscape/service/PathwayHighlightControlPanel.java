@@ -101,7 +101,7 @@ public class PathwayHighlightControlPanel extends JPanel {
         this.idToValue = idToValue;
     }
 
-    private void resetMinMaxValues(double[] minMaxValues) {
+    public void resetMinMaxValues(double[] minMaxValues) {
         // Record these values first
         PlugInObjectManager.getManager().setMinMaxColorValues(minMaxValues);
         minValueLabel.setText(minMaxValues[0] + "");

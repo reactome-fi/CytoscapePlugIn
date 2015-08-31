@@ -4,15 +4,25 @@
  */
 package org.reactome.cytoscape.pgm;
 
+import java.awt.BorderLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.BorderFactory;
+import javax.swing.JDialog;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.border.Border;
 
 import org.apache.commons.math.MathException;
+import org.gk.util.DialogControlPane;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -190,7 +200,7 @@ public class InferenceRunner {
         }
     }
     
-    public synchronized void performInference() throws InferenceCannotConvergeException {
+    public synchronized void performInference() {
         if (lbp == null && gibbs == null) // We cannot do anything if there is no inferencer is set.
             return;
         if (factorGraph == null)
@@ -204,59 +214,79 @@ public class InferenceRunner {
         status = InferenceStatus.WORKING;
         if (progressPane != null)
             progressPane.setText("Perform prior inference...");
-        performInference(null, null);
+        try {
+            performInference(null, null);
+        }
+        catch(InferenceCannotConvergeException exception) { // There is nothing can be done.
+            throw new IllegalStateException("Prior inference cannot converge.");
+        }
         FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(factorGraph);
         fgResults.setUsedForTwoCases(usedForTwoCases);
         fgResults.storeInferenceResults(null); // Store prior result
         List<Observation<Number>> observations = FactorGraphRegistry.getRegistry().getObservations(factorGraph);
         Map<String, String> sampleToType = new HashMap<String, String>();
         fgResults.setSampleToType(sampleToType);
+        List<Observation<Number>> convergedObservations = new ArrayList<Observation<Number>>();
         if (observations != null) {
             progressPane.setIndeterminate(false);
             progressPane.setMaximum(observations.size());
             progressPane.setMinimum(0);
             int count = 0;
-            for (Observation observation : observations) {
+            for (Observation<Number> observation : observations) {
                 // If this is used for two cases and there is no type information for the observation
                 // the inference will not be performed for it.
                 if (usedForTwoCases && observation.getAnnoation() == null)
                     continue; 
                 if (progressPane != null)
                     progressPane.setText("Sample: " + observation.getName());
-                performInference(observation, 
-                                 observation.getName());
+                try {
+                    performInference(observation, 
+                                     observation.getName());
+                }
+                catch (InferenceCannotConvergeException e) {
+                    continue; // Just switch to next sample
+                }
                 fgResults.storeInferenceResults(observation.getName());
                 // If there is no sample type, don't include to avoid a new type (null!)
                 // appears in the further analysis.
                 if (observation.getAnnoation() != null)
                     sampleToType.put(observation.getName(), observation.getAnnoation());
                 count ++;
+                convergedObservations.add(observation);
                 progressPane.setValue(count);
                 if (abort)
                     break;
             }
-            fgResults.setObservations(observations);
+            fgResults.setObservations(convergedObservations);
             if (sampleToType.size() > 0 && fgResults.isUsedForTwoCases())
                 fgResults.setSampleToType(sampleToType);
         }
         if (!abort) { // Maybe abort in the above loop.
             observations = FactorGraphRegistry.getRegistry().getRandomObservations(factorGraph);
+            List<Observation<Number>> convergedRandomObs = new ArrayList<Observation<Number>>();
             if (observations != null) {
                 int count = 0;
                 progressPane.setMaximum(observations.size());
-                for (Observation observation : observations) {
+                for (Observation<Number> observation : observations) {
                     count ++;
                     if (progressPane != null)
                         progressPane.setText("Random sample: " + count);
-                    performInference(observation,
-                                     "Random sample " + count);
+                    try {
+                        performInference(observation,
+                                         "Random sample " + count);
+                    }
+                    catch(InferenceCannotConvergeException e) {
+                        // For random sample, just escape it
+                        continue;
+                    }
                     fgResults.storeInferenceResults(observation.getName());
                     progressPane.setValue(count);
+                    convergedRandomObs.add(observation);
                     if (abort)
                         break;
                 }
             }
-            fgResults.setRandomObservations(observations);
+            fgResults.setRandomObservations(convergedRandomObs);
         }
         if (abort) {
             status = InferenceStatus.ABORT;
@@ -271,15 +301,83 @@ public class InferenceRunner {
         try {
             performInference();
         }
-        catch(InferenceCannotConvergeException e) {
-            String message = "Inference cannot converge. You may try to run inference again, which may converge\n" + 
-                             "because of its stochastic feature, or try the Gibbs sampling algorithm.";
+        catch(IllegalStateException e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          message,
-                                          "Inference Cannot Converge",
+                                          "Error in inference: " + e,
+                                          "Inference Error",
                                           JOptionPane.ERROR_MESSAGE);
             status = InferenceStatus.ERROR;
         }
+        if (status != InferenceStatus.DONE)
+            return;
+        StringBuilder errorMessage = new StringBuilder();
+        // Check how many Random samples have not converged
+        FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(factorGraph);
+        List<Observation<Number>> randomObs = FactorGraphRegistry.getRegistry().getRandomObservations(factorGraph);
+        List<Observation<Number>> convergedRandomObs = fgResults.getRandomObservations();
+        List<Observation<Number>> randomCopy = new ArrayList<Observation<Number>>(randomObs);
+        randomCopy.removeAll(convergedRandomObs);
+        if (randomCopy.size() > 0) {
+            errorMessage.append(randomCopy.size() + " random samples out of " + randomObs.size() + " couldn't converge during inference. ");
+        }
+        List<Observation<Number>> obs = FactorGraphRegistry.getRegistry().getObservations(factorGraph);
+        List<Observation<Number>> convergedObs = fgResults.getObservations();
+        List<Observation<Number>> obsCopy = new ArrayList<Observation<Number>>(obs);
+        obsCopy.removeAll(convergedObs);
+        if (obsCopy.size() > 0) {
+            errorMessage.append("The following observation couldn't converge (" + obsCopy.size() + "/" + obs.size() + "):");
+            for (Observation<Number> ob : obsCopy) {
+                errorMessage.append("\n\t" + ob.getName());
+            }
+        }
+        if (errorMessage.length() > 0) {
+            MessageDialog dialog = new MessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
+            dialog.setTitle("Results Warning!");
+            dialog.setText(errorMessage.toString());
+            dialog.setModal(true);
+            dialog.setLocationRelativeTo(dialog.getOwner());
+            dialog.setSize(500, 400);
+            dialog.setVisible(true);
+        }
+    }
+    
+    private class MessageDialog extends JDialog {
+        private JTextArea ta;
+        
+        public MessageDialog(Window parent) {
+            super(parent);
+            init();
+        }
+        
+        private void init() {
+            JPanel contentPane = new JPanel();
+            contentPane.setLayout(new BorderLayout());
+            Border outer = BorderFactory.createEtchedBorder();
+            Border in = BorderFactory.createEmptyBorder(4, 4, 4, 4);
+            contentPane.setBorder(BorderFactory.createCompoundBorder(outer, in));
+            ta = new JTextArea();
+            ta.setLineWrap(true);
+            ta.setEditable(false);
+            ta.setWrapStyleWord(true);
+            contentPane.add(new JScrollPane(ta), BorderLayout.CENTER);
+            
+            DialogControlPane controlPane = new DialogControlPane();
+            controlPane.getCancelBtn().setVisible(false);
+            controlPane.getOKBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    MessageDialog.this.dispose();
+                }
+            });
+            getContentPane().add(contentPane, BorderLayout.CENTER);
+            getContentPane().add(controlPane, BorderLayout.SOUTH);
+        }
+        
+        public void setText(String text) {
+            ta.setText(text);
+        }
+        
     }
     
 }

@@ -110,11 +110,27 @@ public class InferenceResultsControl {
         if (hiliteControlPane != null) {
             Map<String, Double> idToValue = outputPane.getReactomeIdToIPADiff();
             hiliteControlPane.setIdToValue(idToValue);
-            hiliteControlPane.highlight();
+            double[] minMaxValues = getMinMaxValues(idToValue);
+            hiliteControlPane.resetMinMaxValues(minMaxValues);
             hiliteControlPane.setVisible(true);
             if (hiliteControlPane.getPathwayEditor() != null)
                 outputPane.setPathwayDiagram((RenderablePathway)hiliteControlPane.getPathwayEditor().getRenderable());
         }
+    }
+    
+    private double[] getMinMaxValues(Map<String, Double> idToValue) {
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+        for (Double value : idToValue.values()) {
+            if (value < min)
+                min = value;
+            if (value > max)
+                max = value;
+        }
+        // Want to keep to two digits
+        min = Math.floor(min * 100) / 100.0d;
+        max = Math.ceil(max * 100) / 100.0d;
+        return (new double[]{min, max});
     }
 
     public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
