@@ -4,13 +4,10 @@
  */
 package org.reactome.cytoscape3;
 
-import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -18,7 +15,6 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.service.FIActionDialog;
 import org.reactome.cytoscape.service.FIVersionSelectionPanel;
 

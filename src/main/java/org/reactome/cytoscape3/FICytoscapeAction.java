@@ -15,6 +15,8 @@ public abstract class FICytoscapeAction extends AbstractCyAction {
     
     public FICytoscapeAction(String title) {
         super(title);
+        setPreferredMenu("Apps.Reactome FI");
+        setMenuGravity(0.5f);
     }
 
     protected boolean createNewSession() {

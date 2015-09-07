@@ -8,8 +8,7 @@ import javax.swing.JOptionPane;
 import org.cytoscape.application.swing.CySwingApplication;
 
 @SuppressWarnings("serial")
-public class HotNetAnalysisAction extends FICytoscapeAction
-{
+public class HotNetAnalysisAction extends FICytoscapeAction {
 
     private CySwingApplication desktopApp;
 

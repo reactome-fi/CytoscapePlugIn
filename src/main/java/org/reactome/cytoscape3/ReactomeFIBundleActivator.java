@@ -97,11 +97,14 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         HotNetAnalysisAction hna = new HotNetAnalysisAction(desktopApp);
         // Load pathway diagram into Cytoscape
         ReactomePathwayAction pathwayLoadAction = new ReactomePathwayAction();
+        // Perform impact analysis based on PGM
+        PGMImpactAnalysisAction pgmImpactAction = new PGMImpactAnalysisAction();
         
         // Register said Reactome FI Services with the OSGi framework.
         // An empty property
         Properties prop = new Properties();
         registerAllServices(context, gsma, prop);
+        registerAllServices(context, pgmImpactAction, prop);
         registerAllServices(context, hna, prop);
         registerAllServices(context, maa, prop);
         registerAllServices(context, pathwayLoadAction, prop);

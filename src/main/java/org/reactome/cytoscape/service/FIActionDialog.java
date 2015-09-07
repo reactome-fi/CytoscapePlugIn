@@ -169,7 +169,7 @@ public abstract class FIActionDialog extends JDialog {
         fileUtil = null;
         context.ungetService(fileUtilRef);
     }
-
+    
     /**
      * Sets up actions for the various buttons and file fields
      * and places them according to a given set of layout constraints.
@@ -185,42 +185,51 @@ public abstract class FIActionDialog extends JDialog {
                                         final JButton browseButton, 
                                         JPanel loadPanel,
                                         GridBagConstraints constraints) {
+        createFileChooserGui(fileTF, fileChooseLabel, browseButton, loadPanel, constraints, true);
+    }
+
+    /**
+     * Sets up actions for the various buttons and file fields
+     * and places them according to a given set of layout constraints.
+     * @param fileChooseLabel
+     * @param tf
+     * @param okBtn
+     * @param browseButton
+     * @param loadPanel
+     * @param constraints
+     */
+    protected void createFileChooserGui(final JTextField fileTF,
+                                        final JLabel fileChooseLabel,
+                                        final JButton browseButton, 
+                                        JPanel loadPanel,
+                                        GridBagConstraints constraints,
+                                        boolean needControlOkBtn) {
+        double oldWeightx = constraints.weightx;
+        constraints.weightx = 0.1d;
         loadPanel.add(fileChooseLabel, constraints);
-        fileTF.getDocument().addDocumentListener(new DocumentListener(){
-
-            @Override
-            public void removeUpdate(DocumentEvent e)
-            {
-                if (fileTF.getText().trim().length() > 0)
-                {
-                    okBtn.setEnabled(true);
+        if (needControlOkBtn) {
+            fileTF.getDocument().addDocumentListener(new DocumentListener(){
+                
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    okBtn.setEnabled(fileTF.getText().trim().length() > 0);
                 }
-                else
-                {
-                    okBtn.setEnabled(false);
+                
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    okBtn.setEnabled(fileTF.getText().trim().length() > 0);
                 }
-            }
-
-            @Override
-            public void insertUpdate(DocumentEvent e)
-            {
-                if (fileTF.getText().trim().length() > 0)
-                {
-                    okBtn.setEnabled(true);
+                
+                @Override
+                public void changedUpdate(DocumentEvent e) {
                 }
-                else
-                {
-                    okBtn.setEnabled(false);
-                }
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-            }
-        });
+            });
+            // Disable okBtn as default
+            okBtn.setEnabled(false);
+        }
         fileTF.setColumns(20);
         constraints.gridx = 1;
-        constraints.weightx = 0.80;
+        constraints.weightx = 0.8d;
         loadPanel.add(fileTF, constraints);
         browseButton.addActionListener(new ActionListener() {
             @Override
@@ -231,9 +240,9 @@ public abstract class FIActionDialog extends JDialog {
         });
 
         constraints.gridx = 2;
+        constraints.weightx = 0.1d;
         loadPanel.add(browseButton, constraints);
-        // Disable okBtn as default
-        okBtn.setEnabled(false);
+        constraints.weightx = oldWeightx;
     }
 
     protected abstract JPanel createInnerPanel(FIVersionSelectionPanel versionPanel,
