@@ -4,6 +4,7 @@
  */
 package org.reactome.cytoscape.fipgm;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.reactome.cytoscape.fipgm.Threshold.ThresholdRelation;
@@ -73,6 +74,59 @@ public enum DataTypeDistribution {
             }
         }
         return super.toString();
+    }
+    
+    /**
+     * Extract the distribution from a String generated via the toString() method.
+     * @param text
+     * @return
+     */
+    public static DataTypeDistribution extractDistribution(String text) {
+        DataTypeDistribution rtn = null;
+        try {
+            rtn = DataTypeDistribution.valueOf(text);
+        }
+        catch(IllegalArgumentException e) {
+            // The text cannot be matched. Use the default.
+            rtn = Discrete;
+        }
+        return rtn;
+    }
+    
+    /**
+     * Extract threshold relation from a text generated from the toString() method.
+     * @param text
+     * @return
+     */
+    public static ThresholdRelation extractThresholdRelation(String text) {
+        if (text.contains(ThresholdRelation.or.toString()))
+            return ThresholdRelation.or;
+        if (text.contains(ThresholdRelation.and.toString()))
+            return ThresholdRelation.and;
+        return null;
+    }
+    
+    /**
+     * Extract thresholds from a text generated from the toString() method.
+     * @param text
+     * @return
+     */
+    public static List<Threshold> extractThresholds(String text,
+                                                    ThresholdRelation relation) {
+        List<Threshold> list = new ArrayList<Threshold>();
+        if (relation == null) {
+            Threshold threshold = new Threshold(text);
+            list.add(threshold);
+        }
+        else {
+            // Assume there are only two thresholds for the time being
+            String[] tokens = text.split(relation.toString());
+            for (String token : tokens) {
+                Threshold threshold = new Threshold(token.trim());
+                list.add(threshold);
+            }
+        }
+        return list;
     }
     
     /**

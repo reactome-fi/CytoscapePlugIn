@@ -19,6 +19,15 @@ public class Threshold {
     public Threshold() {
     }
     
+    /**
+     * The passed text should be generated via the toString() method.
+     * @param text
+     */
+    public Threshold(String text) {
+        this();
+        parseText(text);
+    }
+    
     public ValueRelation getValueRelation() {
         return valueRelation;
     }
@@ -39,7 +48,25 @@ public class Threshold {
     public String toString() {
         return valueRelation + "" + value;
     }
-
+    
+    private void parseText(String text) {
+        // Get the relation
+        ValueRelation[] rels = ValueRelation.values();
+        ValueRelation rel1 = null;
+        for (ValueRelation rel : rels) {
+            if (text.startsWith(rel.toString())) {
+                rel1 = rel;
+                break;
+            }
+        }
+        if (rel1 == null)
+            return; // Nothing to be done
+        // Get the value
+        Double value = new Double(text.substring(rel1.toString().length()));
+        setValue(value);
+        setValueRelation(rel1);
+    }
+    
     /**
      * Relation for value
      * @author gwu

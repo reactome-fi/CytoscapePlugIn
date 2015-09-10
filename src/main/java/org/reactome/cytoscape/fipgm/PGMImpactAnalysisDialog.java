@@ -341,6 +341,15 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
         return "PGM Impact Analysis";
     }
     
+    /**
+     * Get the list of data selected in this dialog.
+     * @return
+     */
+    public List<DataDescriptor> getSelectedData() {
+        DataTableModel model = (DataTableModel) dataListTable.getModel();
+        return model.getDataDescriptors();
+    }
+    
     private class DataTableModel extends AbstractTableModel {
         private final String[] colNames = new String[]{"Data File Name", "Data Type", "Abnormal Distribution"};
         // The data to be displayed
@@ -349,6 +358,32 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
         private List<String> distributions;
 
         public DataTableModel() {
+        }
+        
+        /**
+         * Get a list of data displayed in this table model.
+         * @return
+         */
+        public List<DataDescriptor> getDataDescriptors() {
+            List<DataDescriptor> data = new ArrayList<DataDescriptor>();
+            if (fileNames != null) {
+                for (int i = 0; i < fileNames.size(); i++) {
+                    // These three lists should have the same size
+                    String fileName = fileNames.get(i);
+                    DataType dataType = dataTypes.get(i);
+                    String dist = distributions.get(i);
+                    DataDescriptor desc = new DataDescriptor();
+                    desc.setFileName(fileName);
+                    desc.setDataType(dataType);
+                    desc.setDistribution(DataTypeDistribution.extractDistribution(dist));
+                    if (desc.getDistribution() == DataTypeDistribution.Discrete) {
+                        desc.setRelation(DataTypeDistribution.extractThresholdRelation(dist));
+                        desc.setThresholds(DataTypeDistribution.extractThresholds(dist, desc.getRelation()));
+                    }
+                    data.add(desc);
+                }
+            }
+            return data;
         }
         
         public void addData(File file,
@@ -486,6 +521,7 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
             return null;
         }
         
+        @SuppressWarnings("unchecked")
         private void init() {
             JPanel contentPane = new JPanel();
             contentPane.setBorder(BorderFactory.createEtchedBorder());
