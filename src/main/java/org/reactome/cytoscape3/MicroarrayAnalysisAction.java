@@ -6,6 +6,7 @@ import java.io.File;
 import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CySwingApplication;
+import org.reactome.cytoscape.service.FICytoscapeAction;
 
 public class MicroarrayAnalysisAction extends FICytoscapeAction
 {

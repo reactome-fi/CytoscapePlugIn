@@ -1,4 +1,4 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 /**
  * This class provides some basic functions which

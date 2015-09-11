@@ -6,6 +6,7 @@ import java.io.File;
 import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CySwingApplication;
+import org.reactome.cytoscape.service.FICytoscapeAction;
 
 /**
  * This class manages analysis of Gene Set, NCI MAF and Gene Sample / Number

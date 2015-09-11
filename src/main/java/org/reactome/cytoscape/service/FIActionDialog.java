@@ -40,6 +40,8 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  */
 @SuppressWarnings("serial")
 public abstract class FIActionDialog extends JDialog {
+    // For subclass
+    protected JTabbedPane contentPane;
     // Common GUI controls
     protected JTextField fileTF;
     // There should be a OK button always
@@ -53,6 +55,24 @@ public abstract class FIActionDialog extends JDialog {
     }
     
     /**
+     * To be overridden for customized display.
+     * @return
+     */
+    protected String getActionTitle() {
+        return "ReactomeFIViz";
+    }
+    
+    protected JTabbedPane createTabbedPane() {
+        JTabbedPane contentPane = new JTabbedPane() {
+            @Override
+            protected void processMouseEvent(MouseEvent e) {
+                // Do nothing to disable mouse clicking effect.
+            }
+        };
+        return contentPane;
+    }
+    
+    /**
      * Creates the graphical user interfaces for each of the Reactome FI analyses.
      * @param actionType A string indicating the type of action to be performed (GeneSetMutationAnalysis, UserGuide, Microarray, Hotnet).
      */
@@ -61,38 +81,33 @@ public abstract class FIActionDialog extends JDialog {
         // to mimic the Cytoscape GUI and provide room
         // for future tabbed user interfaces.
         // The mouse event has been overridden to avoid the mouse action.
-        setTitle("Reactome FI PlugIn");
-        JTabbedPane mainPane = new JTabbedPane() {
-
-            @Override
-            protected void processMouseEvent(MouseEvent e) {
-                // Do nothing to disable mouse clicking effect.
-            }
-            
-        };
+        setTitle(getActionTitle());
+        
+        contentPane = createTabbedPane();
         setSize(500, 535);
         Font font = new Font("Verdana", Font.BOLD, 12);
-        
-        // Pane for FI Network version selection.
-        FIVersionSelectionPanel versionPane = new FIVersionSelectionPanel();
-        Border etchedBorder = BorderFactory.createEtchedBorder();
-        Border versionBorder = BorderFactory.createTitledBorder(etchedBorder,
-                                                                versionPane.getTitle(), TitledBorder.LEFT, TitledBorder.CENTER,
-                                                                font);
-        versionPane.setBorder(versionBorder);
         
         // Create a control pane first so that the OK button can be used
         // during synchronization
         DialogControlPane controlPane = initControlPane();
         
+        // Pane for FI Network version selection.
+        FIVersionSelectionPanel versionPane = new FIVersionSelectionPanel();
+        Border etchedBorder = BorderFactory.createEtchedBorder();
+        Border versionBorder = BorderFactory.createTitledBorder(etchedBorder,
+                                                                versionPane.getTitle(), 
+                                                                TitledBorder.LEFT, 
+                                                                TitledBorder.CENTER,
+                                                                font);
+        versionPane.setBorder(versionBorder);
         JPanel innerPanel = createInnerPanel(versionPane,
                                              font);
         String tabTitle = getTabTitle();
         
-        mainPane.addTab(tabTitle, innerPanel);
-        mainPane.setSelectedComponent(innerPanel);
+        contentPane.addTab(tabTitle, innerPanel);
+        contentPane.setSelectedComponent(innerPanel);
         
-        getContentPane().add(mainPane, BorderLayout.CENTER);
+        getContentPane().add(contentPane, BorderLayout.CENTER);
         getContentPane().add(controlPane, BorderLayout.SOUTH);
     }
     

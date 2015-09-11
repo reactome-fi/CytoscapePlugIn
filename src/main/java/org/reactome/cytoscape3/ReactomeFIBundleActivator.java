@@ -26,6 +26,7 @@ import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
+import org.reactome.cytoscape.fipgm.PGMImpactAnalysisAction;
 import org.reactome.cytoscape.pathway.FactorGraphPopupMenuHandler;
 import org.reactome.cytoscape.pathway.ReactomePathwayAction;
 import org.reactome.cytoscape.service.FIVisualStyle;

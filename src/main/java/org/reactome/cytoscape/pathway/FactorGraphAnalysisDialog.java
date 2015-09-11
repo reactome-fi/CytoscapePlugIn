@@ -42,7 +42,7 @@ public class FactorGraphAnalysisDialog extends FIActionDialog {
      * Default constructor.
      */
     public FactorGraphAnalysisDialog() {
-        init();
+        init(); // This method performs something more than one having the same method in the supclass.
     }
     
     public ObservationDataLoadPanel getDataLoadPane() {

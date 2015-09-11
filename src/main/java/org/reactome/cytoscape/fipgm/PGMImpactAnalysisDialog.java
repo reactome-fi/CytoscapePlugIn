@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import javax.jws.soap.SOAPBinding.ParameterStyle;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -34,7 +35,9 @@ import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.fipgm.Threshold.ThresholdRelation;
 import org.reactome.cytoscape.service.FIActionDialog;
 import org.reactome.cytoscape.service.FIVersionSelectionPanel;
+import org.reactome.factorgraph.LoopyBeliefPropagation;
 import org.reactome.factorgraph.common.DataType;
+import org.reactome.fi.pgm.FIPGMConstructor.PGMType;
 
 /**
  * @author gwu
@@ -48,6 +51,7 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
     // For data distribution
     private JComboBox<DataTypeDistribution> distTypeBox;
     private JLabel annotationLabel;
+    private FIPGMParameterPane parameterPane;
     
     /**
      * Default constructor.
@@ -55,6 +59,18 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
     public PGMImpactAnalysisDialog() {
         // Reset the default size
         setSize(625, 535);
+        setTitle("FI PGM Impact Analysis");
+        parameterPane = new FIPGMParameterPane();
+        contentPane.add("Model Parameters", parameterPane);
+    }
+    
+    /**
+     * We want to have a clickable JTabbedPane for users to set up parameters for both
+     * data and the PGM model.
+     */
+    @Override
+    protected JTabbedPane createTabbedPane() {
+        return new JTabbedPane();
     }
 
     /* (non-Javadoc)
@@ -338,7 +354,7 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
      */
     @Override
     protected String getTabTitle() {
-        return "PGM Impact Analysis";
+        return "Data Parameters";
     }
     
     /**
@@ -348,6 +364,14 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
     public List<DataDescriptor> getSelectedData() {
         DataTableModel model = (DataTableModel) dataListTable.getModel();
         return model.getDataDescriptors();
+    }
+    
+    public LoopyBeliefPropagation getLBP() {
+        return parameterPane.getLBP();
+    }
+    
+    public PGMType getPGMType() {
+        return parameterPane.getPGMType();
     }
     
     private class DataTableModel extends AbstractTableModel {

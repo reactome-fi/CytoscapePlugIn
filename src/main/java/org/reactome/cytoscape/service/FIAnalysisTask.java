@@ -2,14 +2,13 @@
  * Created on Sep 19, 2013
  *
  */
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.service;
 
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.reactome.cytoscape.service.TableFormatter;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**

@@ -2,11 +2,11 @@
  * Created on Sep 1, 2015
  *
  */
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape.fipgm;
 
 import java.awt.event.ActionEvent;
 
-import org.reactome.cytoscape.fipgm.PGMImpactAnalysisDialog;
+import org.reactome.cytoscape.service.FICytoscapeAction;
 
 /**
  * @author gwu
@@ -31,7 +31,12 @@ public class PGMImpactAnalysisAction extends FICytoscapeAction {
         dialog.setVisible(true);
         if (!dialog.isOkClicked())
             return;
-        System.out.println("Perform PGM Impact Analysis!");
+        PGMImpactAnalysisTask task = new PGMImpactAnalysisTask();
+        task.setData(dialog.getSelectedData());
+        task.setLbp(dialog.getLBP());
+        task.setPGMType(dialog.getPGMType());
+        Thread t = new Thread(task);
+        t.start();
     }
     
 }
