@@ -20,6 +20,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
 import org.reactome.cytoscape.service.PGMAlgorithmPanel;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.GibbsSampling;
 import org.reactome.factorgraph.InferenceType;
 import org.reactome.factorgraph.Inferencer;
@@ -56,24 +57,20 @@ public class InferenceAlgorithmPane extends JPanel {
         List<Inferencer> rtn = new ArrayList<Inferencer>();
         if (selectedAlgBtn.isSelected()) {
             Inferencer selected = (Inferencer) algBox.getSelectedItem();
-            rtn.add(selected);
+            if (selected instanceof LoopyBeliefPropagation)
+                rtn.add(lbpPane.getAlgorithm());
+            else if (selected instanceof GibbsSampling)
+                rtn.add(gibbsPane.getAlgorithm());
         }
         else {
-            for (int i = 0; i < algBox.getItemCount(); i++) {
-                rtn.add(algBox.getItemAt(i));
-            }
+            rtn.add(lbpPane.getAlgorithm());
+            rtn.add(gibbsPane.getAlgorithm());
         }
         return rtn;
     }
     
     private void init() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        // We have to call this method first to initialize the following object.
-        // Otherwise, nothing is returned from the following two calls.
-        //TODO: This is weird and should be changed in the future.
-        FactorGraphRegistry.getRegistry(); 
-        // Call this method for initialization 
-        PathwayPGMConfiguration.getConfig();
         lbpPane = new PGMAlgorithmPanel("Loopy Belief Propagation (LBP)",
                                         getLBP());
         add(lbpPane);
@@ -95,7 +92,7 @@ public class InferenceAlgorithmPane extends JPanel {
             }
         }
         if (gibbs == null)
-            gibbs = PathwayPGMConfiguration.getConfig().getGibbsSampling();
+            gibbs = PlugInObjectManager.getManager().getPathwayPGMConfig().getGibbsSampling();
         return gibbs;
     }
     
@@ -111,7 +108,7 @@ public class InferenceAlgorithmPane extends JPanel {
             }
         }
         if (lbp == null) {
-            lbp = PathwayPGMConfiguration.getConfig().getLBP();
+            lbp = PlugInObjectManager.getManager().getPathwayPGMConfig().getLBP();
             // Default to use SUM_PRODUCT
             lbp.setInferenceType(InferenceType.MAX_PRODUCT);
         }
@@ -165,8 +162,10 @@ public class InferenceAlgorithmPane extends JPanel {
         algBox.setRenderer(renderer);
         algBox.setEditable(false);
         // There are only two algorithms are supported
-        PathwayPGMConfiguration config = PathwayPGMConfiguration.getConfig();
-        algBox.addItem(config.getLBP());
+        PathwayPGMConfiguration config = PlugInObjectManager.getManager().getPathwayPGMConfig();
+        LoopyBeliefPropagation lbp = config.getLBP();
+        lbp.setInferenceType(InferenceType.MAX_PRODUCT);
+        algBox.addItem(lbp);
         algBox.addItem(config.getGibbsSampling());
         // Choose the first one as the default
         algBox.setSelectedIndex(0); // The first should be LBP

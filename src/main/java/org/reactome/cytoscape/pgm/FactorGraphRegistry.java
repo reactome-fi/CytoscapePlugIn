@@ -99,14 +99,6 @@ public class FactorGraphRegistry {
         context.registerService(NetworkAboutToBeDestroyedListener.class.getName(),
                                 listener,
                                 null);
-        // This should be called only once in the whole session
-        PathwayPGMConfiguration config = PathwayPGMConfiguration.getConfig();
-        try {
-            config.config(getClass().getResourceAsStream("PGM_Pathway_Config.xml"));
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-        }
     }
     
     public Integer getNumberOfPermtation() {
@@ -206,7 +198,7 @@ public class FactorGraphRegistry {
      * @return
      */
     public double[] getThresholds(DataType dataType) {
-        PGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        PGMConfiguration config = PlugInObjectManager.getManager().getPathwayPGMConfig();
         Map<DataType, double[]> typeToThreshold = config.getTypeToThreshold();
         if (typeToThreshold == null)
             return null;
@@ -214,7 +206,7 @@ public class FactorGraphRegistry {
     }
     
     public void setThresholds(DataType dataType, double[] thresholds) {
-        PGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        PGMConfiguration config = PlugInObjectManager.getManager().getPathwayPGMConfig();
         config.setTypeToThreshold(dataType, thresholds);
     }
     

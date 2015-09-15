@@ -22,6 +22,7 @@
 				<includes>
           			<include>Config.prop</include>
                     <include>*.gif</include>
+                    <include>*.xml</include>
         		</includes>
 			</resource>
             <resource>
@@ -29,13 +30,6 @@
                 <targetPath>org/reactome/cytoscape/pathway</targetPath>
                 <includes>
                     <include>*.gif</include>
-                </includes>
-            </resource>
-            <resource>
-                <directory>${project.basedir}/src/main/java/org/reactome/cytoscape/pgm</directory>
-                <targetPath>org/reactome/cytoscape/pgm</targetPath>
-                <includes>
-                    <include>*.xml</include>
                 </includes>
             </resource>
 		</resources>

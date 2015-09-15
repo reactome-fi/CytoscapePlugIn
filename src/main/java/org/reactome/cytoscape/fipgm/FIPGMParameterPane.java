@@ -14,13 +14,13 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.service.PGMAlgorithmPanel;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.InferenceType;
 import org.reactome.factorgraph.Inferencer;
 import org.reactome.factorgraph.LoopyBeliefPropagation;
+import org.reactome.fi.pgm.FIPGMConfiguration;
 import org.reactome.fi.pgm.FIPGMConstructor.PGMType;
-import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 /**
  * Customized JPanel for users to set up parameters for the FI PGM.
  * @author gwu
@@ -66,12 +66,7 @@ public class FIPGMParameterPane extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         JPanel modelPane = createModelPane();
         add(modelPane);
-        // The following two weird statments are used to initialize LBP.
-        // This should be changed in the future
-        // Note: FactorGraphRegistry is in package org.reactome.pathway.factorgraph.
-        FactorGraphRegistry.getRegistry(); 
-        // Call this method for initialization 
-        PathwayPGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        FIPGMConfiguration config = PlugInObjectManager.getManager().getFIPGMConfig();
         LoopyBeliefPropagation lbp = config.getLBP();
         lbp.setInferenceType(InferenceType.MAX_PRODUCT); // Use this as default
         lbpPane = new PGMAlgorithmPanel("Inference Parameters",

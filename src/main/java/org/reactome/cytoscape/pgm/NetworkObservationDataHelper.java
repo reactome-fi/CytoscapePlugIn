@@ -26,12 +26,12 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableHelper;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.Factor;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Observation;
 import org.reactome.factorgraph.Variable;
 import org.reactome.factorgraph.common.DataType;
-import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 import org.reactome.r3.util.FileUtility;
 
 
@@ -232,7 +232,7 @@ public class NetworkObservationDataHelper extends ObservationDataHelper {
     }
     
     protected Variable createObsVariable(String gene, String type) {
-        Variable obsVar = new Variable(PathwayPGMConfiguration.getConfig().getNumberOfStates());
+        Variable obsVar = new Variable(PlugInObjectManager.getManager().getPathwayPGMConfig().getNumberOfStates());
         obsVar.setId(++maxId + "");
         String label = gene + "_" + type + "_obs";
         obsVar.setName(label);

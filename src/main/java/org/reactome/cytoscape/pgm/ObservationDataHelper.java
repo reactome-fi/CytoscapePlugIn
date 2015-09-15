@@ -32,7 +32,6 @@ import org.reactome.factorgraph.common.ObservationFileLoader.ObservationData;
 import org.reactome.factorgraph.common.ObservationRandomizer;
 import org.reactome.factorgraph.common.PGMConfiguration;
 import org.reactome.factorgraph.common.VariableManager;
-import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 import org.reactome.r3.util.FileUtility;
 
 
@@ -150,7 +149,7 @@ public class ObservationDataHelper {
     private ObservationFileLoader initializeDataLoader() {
         // We will use a built-in ObservationFileLoader to perform data load
         ObservationFileLoader dataLoader = new ObservationFileLoader();
-        PGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        PGMConfiguration config = PlugInObjectManager.getManager().getPathwayPGMConfig();
         dataLoader.setPGMConfiguration(config);
         // Chose ObservationFactorHandler based on threshold values
         double[] dnaThresholdValues = FactorGraphRegistry.getRegistry().getThresholds(DataType.CNV);
@@ -370,7 +369,7 @@ public class ObservationDataHelper {
     }
 
     protected List<Double> getFactorValues(DataType dataType) {
-        PGMConfiguration config = PathwayPGMConfiguration.getConfig();
+        PGMConfiguration config = PlugInObjectManager.getManager().getPathwayPGMConfig();
         Map<DataType, double[]> typeToFactorValue = config.getTypeToFactorValues();
         double[] values = typeToFactorValue.get(dataType);
         return PlugInUtilities.convertArrayToList(values);

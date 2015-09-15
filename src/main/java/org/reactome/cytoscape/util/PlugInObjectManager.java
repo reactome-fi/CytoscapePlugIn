@@ -28,6 +28,8 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
+import org.reactome.fi.pgm.FIPGMConfiguration;
+import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +60,9 @@ public class PlugInObjectManager {
     private String fiNetworkVersion;
     // Used for setting colors for pathway diagram highlighting
     private double[] minMaxColorValues = new double[]{-1.0, 1.0};
+    // These two configurations are used for PGM-based analyses
+    private PathwayPGMConfiguration pathwayPGMConfig;
+    private FIPGMConfiguration fiPGMConfig;
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
@@ -70,6 +75,34 @@ public class PlugInObjectManager {
         if (manager == null)
             manager = new PlugInObjectManager();
         return manager;
+    }
+    
+    public PathwayPGMConfiguration getPathwayPGMConfig() {
+        if (pathwayPGMConfig == null) {
+            pathwayPGMConfig = PathwayPGMConfiguration.getConfig();
+            // Need to use resources to load it
+            try {
+                pathwayPGMConfig.config(getClass().getResourceAsStream("PGM_Pathway_Config.xml"));
+            }
+            catch(Exception e) {
+                throw new IllegalStateException("Cannot configure PathwayPGMConfiguration: " + e);
+            }
+        }
+        return pathwayPGMConfig;
+    }
+    
+    public FIPGMConfiguration getFIPGMConfig() {
+        if (fiPGMConfig == null) {
+            fiPGMConfig = FIPGMConfiguration.getConfig();
+         // Need to use resources to load it
+            try {
+                fiPGMConfig.config(getClass().getResourceAsStream("PGM_FI_Config.xml"));
+            }
+            catch(Exception e) {
+                throw new IllegalStateException("Cannot configure FIPGMConfiguration: " + e);
+            }
+        }
+        return fiPGMConfig;
     }
     
     public double[] getMinMaxColorValues() {

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This is the configuration for the PGM_FI model -->
+<pgm_fi_config>
+    <!-- This element should be listed as the first one always so that some of configuration values
+    here can be used in other places -->
+    <properties>
+    </properties>
+    <!-- Threshold values used to discretize continuous values -->
+    <thresholds>
+        <!-- typeToThreshold.put(CNV, 0.9d); typeToThreshold.put(Methylation, 
+            0.5d); typeToThreshold.put(mRNA_EXP, 1.96d); typeToThreshold.put(miRNA, 1.96d); 
+            typeToThreshold.put(Mutation, 0.5d); // Two values only for somatic mutation: 
+            0 and 1. Using 0.5 for easy programming so that -->
+        <threshold type="CNV" value="0.9" />
+        <threshold type="Methylation" value="0.5" />
+        <!-- Use two values for CLG factors -->
+        <threshold type="mRNA_EXP" value="-1.96 1.96" /> 
+        <threshold type="miRNA" value="1.96" />
+        <threshold type="Mutation" value = "0.5"></threshold>
+        <!-- This value is MA score: no value should be less than -10.0. So we actually get two values. -->
+<!--         <threshold type="Mutation" value="-10.0 2.5" /> -->
+    </thresholds>
+    <!-- values learned from the training data for observation factors -->
+    <factorValues>
+        <!-- The following values are copied originally from DataType with comments -->
+        <!-- 
+        //        // mRNA and mRNA observation
+//        double[] values = new double[] {
+//                // Learned with 100 TCGA OV samples (FIPGM_After_Leraned_100Samples_052914.fg)
+////                0.94d, // mRNA 0 exp 0
+////                0.06d, // mRNA 0 exp 1
+////                0.90d, // mRNA 1 exp 0
+////                0.10d  // mRNA 1 exp 1
+//                // Parameters using Reactome pathways: Regulation of Lipid Metabolism by 
+//                // Peroxisome proliferator-activated receptor alpha (PPARalpha): thresholds 1.95 and 1.96
+//                0.997d,
+//                0.003d,
+//                0.947d,
+//                0.053d
+//        };
+//        // CNV and DNA
+//        values = new double[] {
+//                // Learned with 100 TCGA OV samples (FIPGM_After_Leraned_100Samples_052914.fg)
+////                0.96d, // DNA 0 CNV 0
+////                0.04d, // DNA 0 CNV 1
+////                0.73d, // DNA 1 CNV 0
+////                0.27d // DNA 1 CNV 1
+//                // Parameters using Reactome pathways: Regulation of Lipid Metabolism by 
+//                // Peroxisome proliferator-activated receptor alpha (PPARalpha): thresholds 1.95 and 1.96
+//                0.984d,
+//                0.016d,
+//                0.897d,
+//                0.103d
+//        };
+//        // Methylation and DNA
+//        values = new double[] {
+//                // Assigned almost arbitrarily
+//                0.25d, // DNA 0 and Methylation 0
+//                0.75d, // DNA 0 and methylation 1
+//                0.75d, // DNA 1 and Methylation 0
+//                0.25d  // DNA 1 and Methylation 1
+//        };
+//        // mRNA and miRNA
+//        values = new double[] {
+//                // Assigned almost arbitrarily
+//                0.25d, // mRNA 0 and miRNA 0
+//                0.75d, // mRNA 0 and miRNA 1
+//                0.75d, // mRNA 1 and miRNA 0
+//                0.25d  // mRNA 1 and miRNA 1
+//        };
+//        typeToValues.put(miRNA, values);
+//        // somatic mutation and protein
+//        values = new double[] {
+//                // Assigned almost arbitrarily
+//                0.99d, // protein 0 and mutation 0 
+//                0.01d, // protein 0 and mutation 1
+//                0.01d, // protein 1 and mutation 0
+//                0.99d  // protein 1 and mutation 1
+//        };
+         -->
+         <!-- initial parameters for learning -->
+<!--         <factorValue type="CNV" value="0.984 0.016 0.897 0.103" /> -->
+<!--         <factorValue type="Methylation" value="0.25 0.75 0.75 0.25" /> -->
+<!--         <factorValue type="mRNA_EXP" value="0.997 0.003 0.947 0.053" /> -->
+<!--         <factorValue type="miRNA" value="0.25 0.75 0.75 0.25" /> -->
+<!--         <factorValue type="Mutation" value="0.99 0.01 0.01 0.99" /> -->
+        <!-- The following values are based on learned values in file LearnedParameters_072214.txt -->
+<!--         <factorValue type="CNV" value="0.234 0.766 0.156 0.844" /> -->
+<!--         <factorValue type="Methylation" value="0.360 0.640 0.663 0.337" /> -->
+<!--         <factorValue type="mRNA_EXP" value="0.996 0.004 0.961 0.039" /> -->
+<!--         <factorValue type="miRNA" value="0.510 0.490 0.818 0.182" /> -->
+<!--         <factorValue type="Mutation" value="0.996 0.004 0.447 0.553" /> -->
+        <!--The follow values are based on lerned value sin file LearnedParameters_082814.txt 
+            for TCGA BRCA -->
+<!--         <factorValue type="CNV" value="0.988 0.012 0.853 0.147" /> -->
+<!--         <factorValue type="Methylation" value="0.048 0.952 0.190 0.810" /> -->
+<!--         <factorValue type="mRNA_EXP" value="0.999 0.001 0.935 0.065" /> -->
+<!--         <factorValue type="miRNA" value="0.011 0.989 0.173 0.827" /> -->
+<!--         <factorValue type="Mutation" value="0.999 0.001 0.972 0.028" /> -->
+        <!--The follow values are based on learned parameters file LearnedParameters_090814.txt 
+            for TCGA COADREAD -->
+<!--         <factorValue type="CNV" value="0.990 0.010 0.864 0.136" /> -->
+<!--         <factorValue type="Methylation" value="0.020 0.980 0.030 0.970" /> -->
+<!--         <factorValue type="mRNA_EXP" value="0.998 0.002 0.923 0.077" /> -->
+<!--         <factorValue type="miRNA" value="0.051 0.949 0.228 0.772" /> -->
+<!--         <factorValue type="Mutation" value="0.992 0.008 0.126 0.874" /> -->
+        <factorValue type="mRNA_EXP" value="0.99 0.01 0.01 0.99" />
+        <factorValue type="Mutation" value="0.99 0.01 0.01 0.99" />
+    </factorValues>
+        <LoopyBeliefPropagation>
+        <debug>false</debug>
+        <maxIteration>200</maxIteration>
+        <tolerance>1.0e-5</tolerance>
+        <!-- Some pathways are pretty big. It will be better to use logSpace to avoid numeric underflow! -->
+        <logSpace>true</logSpace>
+        <updateViaFactors>false</updateViaFactors>
+        <!-- A little dumping to help some models to converge -->
+        <!-- It seems that there is a little problem with the current implementation, which cause the inference not
+        converging. So use 0.0.-->
+        <dumping>0.0</dumping>
+    </LoopyBeliefPropagation>
+    <dataFiles>
+    </dataFiles>
+</pgm_fi_config>
