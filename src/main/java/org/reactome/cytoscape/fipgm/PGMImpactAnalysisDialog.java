@@ -185,7 +185,11 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
         constraints.gridwidth = 1;
         dataActionPane.add(distributionLabel, constraints);
         // Three distributions
-        DataTypeDistribution[] distTypes = DataTypeDistribution.values();
+//        DataTypeDistribution[] distTypes = DataTypeDistribution.values();
+        // TODO: Support direct use in the future
+        DataTypeDistribution[] distTypes = new DataTypeDistribution[2];
+        distTypes[0] = DataTypeDistribution.Discrete;
+        distTypes[1] = DataTypeDistribution.Empirical;
         distTypeBox = new JComboBox<DataTypeDistribution>(distTypes);
         distTypeBox.setRenderer(new DefaultListCellRenderer() {
 

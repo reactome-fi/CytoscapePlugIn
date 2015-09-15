@@ -10,7 +10,7 @@ package org.reactome.cytoscape.fipgm;
  *
  */
 public class Threshold {
-    private ValueRelation valueRelation;
+    private ValueRelation valueRelation = ValueRelation.greater; // Default
     private double value;
     
     /**

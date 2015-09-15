@@ -10,7 +10,7 @@ import org.reactome.cytoscape.fipgm.Threshold.ThresholdRelation;
 import org.reactome.factorgraph.common.DataType;
 
 /**
- * This class is used to describe a selected data for impact anaysis.
+ * This class is used to describe a selected data for impact analysis.
  * @author gwu
  *
  */

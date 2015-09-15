@@ -106,6 +106,8 @@
 <!--         <factorValue type="Mutation" value="0.992 0.008 0.126 0.874" /> -->
         <factorValue type="mRNA_EXP" value="0.99 0.01 0.01 0.99" />
         <factorValue type="Mutation" value="0.99 0.01 0.01 0.99" />
+        <factorValue type="CNV" value="0.99 0.01 0.01 0.99" />
+        <factorValue type="Methylation" value="0.25 0.75 0.75 0.25" />
     </factorValues>
         <LoopyBeliefPropagation>
         <debug>false</debug>
