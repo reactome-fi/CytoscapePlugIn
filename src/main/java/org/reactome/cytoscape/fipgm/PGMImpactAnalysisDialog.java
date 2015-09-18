@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import javax.jws.soap.SOAPBinding.ParameterStyle;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -578,6 +577,8 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
             // The second threshold
             comps = createThresholdGUIs(contentPane, constraints);
             valueRelationBox2 = (JComboBox<Threshold.ValueRelation>) comps[0];
+            // Choose greater in the second one as default
+            valueRelationBox2.setSelectedIndex(1);
             valueTF2 = (JTextField) comps[1];
             
             getContentPane().add(contentPane, BorderLayout.CENTER);

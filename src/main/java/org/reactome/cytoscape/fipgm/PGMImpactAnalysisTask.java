@@ -12,9 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.math3.random.EmpiricalDistribution;
+import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.service.FIAnalysisTask;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.util.MessageDialog;
@@ -37,6 +39,7 @@ import org.reactome.factorgraph.common.ObservationHelper;
 import org.reactome.fi.pgm.FIPGMConfiguration;
 import org.reactome.fi.pgm.FIPGMConstructor;
 import org.reactome.fi.pgm.FIPGMConstructor.PGMType;
+import org.reactome.r3.util.InteractionUtilities;
 
 /**
  * Customized FIAnalysisTask to perform FI PGM based impact analysis. Use this class to perform PGM-based FI network impact analysis. 
@@ -116,14 +119,22 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
      */
     @Override
     protected void doAnalysis() {
-        // Add GUIs and calculate and update approximate running time
         // Make sure all needed parameters have been set
         if (lbp == null || data == null || data.size() == 0 || pgmType == null) {
             throw new IllegalStateException("Make sure the LBP algorithm, data, and pgmType have been set.");
         }
+        JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+        ProgressPane progPane = new ProgressPane();
+        frame.setGlassPane(progPane);
+        progPane.setTitle("FI PGM Impact Analysis");
+        progPane.setText("Fetching the FI network...");
+        progPane.setIndeterminate(true);
+        progPane.setSize(400, 200);
+        progPane.setVisible(true);
         fetchFIs(); // Need to get all FIs to construct the FI pgm model.
         FIPGMConstructor constructor = getPGMConstructor();
         FactorGraph fg = null;
+        progPane.setText("Constructing the PGM...");
         try {
             fg = constructor.constructFactorGraph(pgmType);
         }
@@ -132,8 +143,10 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                                           "Cannot build a graphical model from the Reactome FI network:\n" + e.getMessage(),
                                           "Error in Constructing Model",
                                           JOptionPane.ERROR_MESSAGE);
+            frame.getGlassPane().setVisible(false);
             return;
         }
+        progPane.setText("Handling observations...");
         List<Observation<Number>> observations = constructor.getObservationLoader().getObservations();
         // Filter observations to have shared data types.
         new ObservationHelper().filterObservationsToHaveSharedDataTypes(observations);
@@ -143,6 +156,9 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         
         Observation<Number> baseObs = createBaseObservation(observations);
         lbp.setObservation(baseObs);
+        progPane.setText("Running prior inference...");
+        // Estimate inference time
+        long time1 = System.currentTimeMillis();
         try {
             lbp.runInference();
         }
@@ -151,8 +167,11 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                                           "The inference cannot converge for the base observation.",
                                           "Inference Cannot Converge",
                                           JOptionPane.ERROR_MESSAGE);
+            frame.getGlassPane().setVisible(false);
             return;
         }
+        long time2 = System.currentTimeMillis();
+        double runningTime = (time2 - time1);
         Set<Variable> fiGeneVariables = getFIGeneVariables(fg);
         for (Variable var : fiGeneVariables) {
             if (var instanceof ContinuousVariable)
@@ -165,7 +184,16 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         
         // A list of observations that cannot converge
         List<String> notConvergedObs = new ArrayList<String>();
+        progPane.setMaximum(observations.size());
+        progPane.setMinimum(0);
+        progPane.setValue(0);
+        progPane.setIndeterminate(false);
+        int count = 0;
+        Map<String, Map<Variable, Double>> sampleToVarToResult = new HashMap<>();
         for (Observation<Number> observation : observations) {
+            showInferenceText(count, observations.size(), runningTime, observation, progPane);
+            time1 = System.currentTimeMillis(); // get a better time
+            progPane.setValue(++ count);
             lbp.setObservation(observation);
             try {
                 lbp.runInference();
@@ -174,16 +202,22 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                 notConvergedObs.add(observation.getName());
                 continue; // Just escape it
             }
-            
+            Map<Variable, Double> varToResult = new HashMap<>();
             for (Variable var : fiGeneVariables) {
                 if (var instanceof ContinuousVariable)
                     continue; // Handle discrete variables only
                 double[] belief = var.getBelief();
                 double[] prior = varToBase.get(var);
                 double logRatio = Math.log10(belief[1] * prior[0] / (belief[0] * prior[1]));
+                varToResult.put(var, logRatio);
             }
-            System.out.println("Finish inference: " + observation.getName());
+            time2 = System.currentTimeMillis();
+            // Average the original runningTime to get a better estimation
+            runningTime = ((time2 - time1) + runningTime) / 2.0d;
+            sampleToVarToResult.put(observation.getName(), varToResult);
         }
+        progPane.setText("The inference is done.");
+        frame.getGlassPane().setVisible(false);
         if (notConvergedObs.size() > 0) {
             // Show a warning message
             StringBuilder builder = new StringBuilder();
@@ -197,6 +231,44 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             dialog.setSize(400, 350);
             dialog.setVisible(true);
         }
+        showResults(sampleToVarToResult);
+    }
+    
+    /**
+     * Show inference results
+     * @param sampleToVarToResult
+     */
+    private void showResults(Map<String, Map<Variable, Double>> sampleToVarToResult) {
+        PGMImpactAnalysisResultDialog dialog = new PGMImpactAnalysisResultDialog();
+        dialog.setSampleResults(sampleToVarToResult);
+        dialog.setModal(true);
+        dialog.setVisible(true);
+        if (!dialog.isOkClicked())
+            return;
+        System.out.println("Generating a sub-network view!");
+    }
+    
+    private void showInferenceText(int current,
+                                   int size,
+                                   double ms,
+                                   Observation<Number> obs,
+                                   ProgressPane progressPane) {
+        double needTime = (size - current) * ms;
+        // Change to minutes
+        needTime /= (1000.0d * 60);
+        int min = (int) (needTime);
+        StringBuilder builder = new StringBuilder();
+        builder.append("<html>Running ");
+        builder.append(obs.getName());
+        builder.append("...<br/>(Remaining time: ");
+        if (min < 1)
+            builder.append("&lt; 1 minute");
+        else if (min == 1)
+            builder.append("about 1 minute");
+        else
+            builder.append("about ").append(min).append(" minutes");
+        builder.append(")</html>");
+        progressPane.setText(builder.toString());
     }
     
     private void fetchFIs() {
@@ -214,7 +286,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
     private Set<Variable> getFIGeneVariables(FactorGraph fg) {
         Set<Variable> variables = new HashSet<Variable>();
         Set<String> fiGenes = getFIGenes();
-        for (Variable var : variables) {
+        for (Variable var : fg.getVariables()) {
             if (fiGenes.contains(var.getName()))
                 variables.add(var);
         }
@@ -222,7 +294,14 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
     }
     
     private Set<String> getFIGenes() {
-        return new HashSet<String>();
+        FIPGMConfiguration config = PlugInObjectManager.getManager().getFIPGMConfig();
+        try {
+            Set<String> fis = config.getFIs();
+            return InteractionUtilities.grepIDsFromInteractions(fis);
+        }
+        catch(IOException e) {
+            throw new IllegalStateException("Cannot get genes in the FI network.");
+        }
     }
     
     /**
