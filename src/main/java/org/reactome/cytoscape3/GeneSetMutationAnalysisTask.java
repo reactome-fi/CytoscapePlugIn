@@ -7,9 +7,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
@@ -74,55 +74,45 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
         progPane.setTitle("Gene Set/Mutation Analysis");
         progPane.setText("Loading gene set...");
         progPane.setValue(25);
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        desktopApp.getJFrame().setGlassPane(progPane);
-        desktopApp.getJFrame().getGlassPane().setVisible(true);
-        try
-        {
+        JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+        frame.setGlassPane(progPane);
+        frame.setVisible(true);
+        try {
             Map<String, Integer> geneToSampleNumber = null;
             Map<String, String> geneToSampleString = null;
             Map<String, Set<String>> sampleToGenes = null;
             Set<String> selectedGenes = null;
 
-            if (format.equals("MAF"))
-            {
-
-                sampleToGenes = new MATFileLoader().loadSampleToGenes(file
-                        .getAbsolutePath(), chooseHomoGenes);
-                selectedGenes = CancerAnalysisUtilitites.selectGenesInSamples(
-                        sampleCutoffValue, sampleToGenes);
+            if (format.equals("MAF")) {
+                sampleToGenes = new MATFileLoader().loadSampleToGenes(file.getAbsolutePath(),
+                                                                      chooseHomoGenes);
+                selectedGenes = CancerAnalysisUtilitites.selectGenesInSamples(sampleCutoffValue, 
+                                                                              sampleToGenes);
             }
-            else if (format.equals("GeneSample"))
-            {
+            else if (format.equals("GeneSample")) {
                 geneToSampleNumber = new HashMap<String, Integer>();
                 geneToSampleString = new HashMap<String, String>();
                 loadGeneSampleFile(file, geneToSampleNumber, geneToSampleString);
-                selectedGenes = selectGenesBasedOnSampleCutoff(
-                        geneToSampleNumber, sampleCutoffValue);
+                selectedGenes = selectGenesBasedOnSampleCutoff(geneToSampleNumber, 
+                                                               sampleCutoffValue);
             }
-            else if (format.equals("GeneSet"))
-            {
+            else if (format.equals("GeneSet")){
                 selectedGenes = loadGeneSetFile(enteredGenes,
                                                 file);
             }
             // Check if it is possible to construct the network
-            // given the sample size.
-            if (useLinkers)
-            {
+            // given the number of selected genes when userLinker = true
+            if (useLinkers) {
                 progPane.setText("Checking FI Network size...");
-                FINetworkService fiService = FIPlugInHelper
-                        .getHelper().getNetworkService();
+                FINetworkService fiService = FIPlugInHelper.getHelper().getNetworkService();
                 Integer cutoff = fiService.getNetworkBuildSizeCutoff();
-                if (cutoff != null && selectedGenes.size() >= cutoff)
-                {
-                    JOptionPane
-                            .showMessageDialog(
-                                    desktopApp.getJFrame(),
+                if (cutoff != null && selectedGenes.size() >= cutoff) {
+                    JOptionPane.showMessageDialog(frame,
                                     "The size of the gene set is too big. Linker genes should not be used!\n"
                                             + "Please try again without using linker genes.",
                                     "Error in Building Network",
                                     JOptionPane.ERROR_MESSAGE);
-                    desktopApp.getJFrame().getGlassPane().setVisible(false);
+                    frame.getGlassPane().setVisible(false);
                     return;
                 }
             }
@@ -137,12 +127,12 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", networkName);
             if (network == null || network.getNodeCount() <= 0)
             {
-                JOptionPane.showMessageDialog(desktopApp.getJFrame(),
+                JOptionPane.showMessageDialog(frame,
                         "Cannot find any functional interaction among provided genes.\n"
                                 + "No network can be constructed.\n"
                                 + "Note: only human gene names are supported.",
                         "Empty Network", JOptionPane.INFORMATION_MESSAGE);
-                desktopApp.getJFrame().getGlassPane().setVisible(false);
+                frame.getGlassPane().setVisible(false);
                 return;
             }
             CyNetworkManager netManager = (CyNetworkManager) context.getService(netManagerRef);
@@ -219,7 +209,7 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             {
                 FIVisualStyle styleHelper = (FIVisualStyle) context.getService(visHelperRef);
                 styleHelper.setVisualStyle(view);
-                styleHelper.setLayout();
+                styleHelper.doLayout();
             }
             // BundleContext context =
             // PlugInScopeObjectManager.getManager().getBundleContext();
@@ -233,13 +223,13 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
         }
         catch (Exception e)
         {
-            JOptionPane.showMessageDialog(desktopApp.getJFrame(),
+            JOptionPane.showMessageDialog(frame,
                     "Error in Loading File: " + e.getMessage(),
                     "Error in Loading", JOptionPane.ERROR_MESSAGE);
-            desktopApp.getJFrame().getGlassPane().setVisible(false);
+            frame.getGlassPane().setVisible(false);
             e.printStackTrace();
         }
-        desktopApp.getJFrame().getGlassPane().setVisible(false);
+        frame.getGlassPane().setVisible(false);
         progPane = null;
     }
 

@@ -16,9 +16,18 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.math3.random.EmpiricalDistribution;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNetworkManager;
+import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.CyNetworkViewFactory;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.gk.util.ProgressPane;
+import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.service.FIAnalysisTask;
+import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FINetworkService;
+import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.MessageDialog;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape3.FIPlugInHelper;
@@ -217,7 +226,6 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             sampleToVarToResult.put(observation.getName(), varToResult);
         }
         progPane.setText("The inference is done.");
-        frame.getGlassPane().setVisible(false);
         if (notConvergedObs.size() > 0) {
             // Show a warning message
             StringBuilder builder = new StringBuilder();
@@ -231,21 +239,65 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             dialog.setSize(400, 350);
             dialog.setVisible(true);
         }
-        showResults(sampleToVarToResult);
+        showResults(sampleToVarToResult,
+                    progPane);
+        frame.getGlassPane().setVisible(false);
     }
     
     /**
      * Show inference results
      * @param sampleToVarToResult
      */
-    private void showResults(Map<String, Map<Variable, Double>> sampleToVarToResult) {
+    private void showResults(Map<String, Map<Variable, Double>> sampleToVarToResult,
+                             ProgressPane progressPane) {
+        progressPane.setText("Selecting genes...");
+        progressPane.setIndeterminate(true);
         PGMImpactAnalysisResultDialog dialog = new PGMImpactAnalysisResultDialog();
         dialog.setSampleResults(sampleToVarToResult);
         dialog.setModal(true);
         dialog.setVisible(true);
         if (!dialog.isOkClicked())
             return;
-        System.out.println("Generating a sub-network view!");
+        Map<String, Double> geneToScore = dialog.getSelectedGeneToScore();
+        constructFINetwork(geneToScore, progressPane);
+    }
+    
+    private void constructFINetwork(Map<String, Double> geneToScore,
+                                    ProgressPane progressPane) {
+        try {
+            progressPane.setText("Constructing FI network...");
+            // Use the cached all FIs so that we don't need to fetch the server again to save
+            // some time.
+            Set<String> allFIs = PlugInObjectManager.getManager().getFIPGMConfig().getFIs();
+            Set<String> fis = InteractionUtilities.getFIs(geneToScore.keySet(), allFIs);
+            FINetworkGenerator generator = new FINetworkGenerator();
+            CyNetwork network = generator.constructFINetwork(fis);
+            network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", 
+                                                                           "FI PGM Impact Analysis Network");
+            // Register and display the network
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            CyNetworkManager netManager = (CyNetworkManager) context.getService(netManagerRef);
+            netManager.addNetwork(network);
+            // We want to put the scores into the table
+            TableHelper tableHelper = new TableHelper();
+            tableHelper.storeNodeAttributesByName(network,
+                                                  FIVisualStyle.GENE_VALUE_ATT,
+                                                  geneToScore);
+            CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) context.getService(viewFactoryRef);
+            CyNetworkView view = viewFactory.createNetworkView(network);
+            CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);
+            viewManager.addNetworkView(view);
+            FIPGMImpactVisualStyle style = new FIPGMImpactVisualStyle();
+            style.setVisualStyle(view);
+            progressPane.setText("Layouting FI network...");
+            style.doLayout();
+        }
+        catch(IOException e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Error in constructing the FI network: " + e.getMessage(),
+                                          "Error in Network Construction",
+                                          JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     private void showInferenceText(int current,

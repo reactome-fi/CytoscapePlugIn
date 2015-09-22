@@ -323,7 +323,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
                                 BundleContext context = PlugInObjectManager.getManager().getBundleContext();
                                 ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
                                 FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
-                                visStyler.setVisualStyle(view);
+                                visStyler.setVisualStyle(view, false); // If there is one already, don't recreate it.
                                 context.ungetService(servRef);
                             }
                             catch (Exception t) {

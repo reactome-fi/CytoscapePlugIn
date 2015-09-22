@@ -249,7 +249,7 @@ public class DiagramAndNetworkSwitcher {
             ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
             FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
             visStyler.setVisualStyle(view);
-            visStyler.setLayout();
+            visStyler.doLayout();
             visStyler = null;
             context.ungetService(servRef);
         }
@@ -259,7 +259,7 @@ public class DiagramAndNetworkSwitcher {
                               tableHelper);
             FIVisualStyle visStyle = new PGMFIVisualStyle();
             visStyle.setVisualStyle(view);
-            visStyle.setLayout();
+            visStyle.doLayout();
         }
         
         taskMonitor.setProgress(1.0d);

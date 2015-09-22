@@ -127,7 +127,7 @@ public class MicroarrayAnalysisTask extends FIAnalysisTask {
                 ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
                 FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
                 visStyler.setVisualStyle(view);
-                visStyler.setLayout();
+                visStyler.doLayout();
                 context.ungetService(servRef);
                 ResultDisplayHelper.getHelper().showMCLModuleInTab(selectedClusters,
                                                                    selectedClusterToCorr,

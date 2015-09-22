@@ -261,7 +261,7 @@ public class DiagramAndFactorGraphSwitcher {
         // avoiding clash with FIVisualStyleImp
         FIVisualStyle visStyler = new FactorGraphVisualStyle();
         visStyler.setVisualStyle(view);
-        visStyler.setLayout();
+        visStyler.doLayout();
         
         // A new set of Popup menus are needed
         PopupMenuManager.getManager().installPopupMenu(ReactomeNetworkType.FactorGraph);

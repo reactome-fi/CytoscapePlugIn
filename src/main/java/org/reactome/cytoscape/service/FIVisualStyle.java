@@ -23,5 +23,5 @@ public interface FIVisualStyle {
      */
     void setVisualStyle(CyNetworkView view, boolean createStyle);
     
-    void setLayout();
+    void doLayout();
 }

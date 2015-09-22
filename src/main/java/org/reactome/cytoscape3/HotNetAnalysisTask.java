@@ -103,11 +103,9 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
                 network = buildFINetwork(selectedModules,
                                          sampleToGenes);
             }
-            TableHelper tableHelper = new TableHelper();
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             TableFormatter tableFormatter = (TableFormatter) context.getService(tableFormatterServRef);
             tableFormatter.makeHotNetAnalysisTables(network);
-            network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", "FI Network for HotNet Analysis");
             if (network == null || network.getNodeCount() <= 0)
             {
                 JOptionPane.showMessageDialog(desktopApp.getJFrame(),
@@ -118,12 +116,14 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
                 desktopApp.getJFrame().getGlassPane().setVisible(false);
                 return;
             }
+            network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", "FI Network for HotNet Analysis");
             Map<String, Integer> nodeToModule = new HashMap<String, Integer>();
             for (int i = 0; i < selectedModules.size(); i++) {
                 HotNetModule module = selectedModules.get(i);
                 for (String gene : module.genes)
                     nodeToModule.put(gene, i);
             }
+            TableHelper tableHelper = new TableHelper();
             tableHelper.storeNodeAttributesByName(network, "module", nodeToModule);
             Map<String, String> geneToSampleString = new HashMap<String, String>();
             Map<String, Set<String>> geneToSamples = InteractionUtilities.switchKeyValues(sampleToGenes);
@@ -147,7 +147,7 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
             ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
             FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
             visStyler.setVisualStyle(view);
-            visStyler.setLayout();
+            visStyler.doLayout();
             ResultDisplayHelper.getHelper().showHotnetModulesInTab(selectedModules,
                                                                    sampleToGenes,
                                                                    view);
@@ -162,9 +162,8 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
         desktopApp.getJFrame().getGlassPane().setVisible(false);
     }
 
-    private CyNetwork buildFINetwork(List<HotNetModule> modules, Map<String, Set<String>> sampleToGenes) throws Exception
-    {
-        TableHelper tableHelper = new TableHelper();
+    private CyNetwork buildFINetwork(List<HotNetModule> modules, 
+                                     Map<String, Set<String>> sampleToGenes) throws Exception {
         Set<String> allGenes = new HashSet<String>();
         for (HotNetModule module : modules)
             allGenes.addAll(module.genes); 

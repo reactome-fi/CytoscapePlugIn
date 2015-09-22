@@ -35,6 +35,11 @@ public class FINetworkGenerator implements NetworkGenerator {
     public FINetworkGenerator() {
     }
     
+    /**
+     * Create a CyNetwork object based on the passed interaction set, fis. If nodes is provided
+     * and some nodes are not used in the fis set, they will be displayed as un-linked nodes in
+     * the generated CyNetwork.
+     */
     public CyNetwork constructFINetwork(Set<String> nodes, Set<String> fis) {
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         // Construct an empty network.
@@ -45,7 +50,6 @@ public class FINetworkGenerator implements NetworkGenerator {
         tableFormatter = null;
         context.ungetService(reference);
         // Generate a source, edge and target for each FI interaction
-        // retrieved from the Reactome database.
         int index = 0;
         Map<String, CyNode> name2Node = new HashMap<String, CyNode>();
         for (String fi : fis) {
@@ -158,6 +162,11 @@ public class FINetworkGenerator implements NetworkGenerator {
         return node;
     }
 
+    /**
+     * Construct a CyNetwork from the passed set of interactions, fis.
+     * @param fis
+     * @return
+     */
     public CyNetwork constructFINetwork(Set<String> fis) {
         // This method is just a convenience method which
         // overloads constructFINetwork.

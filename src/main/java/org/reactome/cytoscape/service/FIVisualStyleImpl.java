@@ -120,65 +120,51 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         VisualMappingFunctionFactory visMapFuncFactoryC = (VisualMappingFunctionFactory) context.getService(referenceC);
         VisualMappingFunctionFactory visMapFuncFactoryD = (VisualMappingFunctionFactory) context.getService(referenceD);
         VisualMappingFunctionFactory visMapFuncFactoryP = (VisualMappingFunctionFactory) context.getService(referenceP);
-        
-        // Set the default node shape and color
-        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_SHAPE,
-                NodeShapeVisualProperty.ELLIPSE);
-        Color color = new Color(0, 204, 0);
-        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_BORDER_PAINT,
-                color);
-        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, color);
-        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_TRANSPARENCY, 100);
-        // Give the nodes a label based on their name
-        String nodeLabelAttrName = "nodeLabel";
-        PassthroughMapping labelFunction = (PassthroughMapping) visMapFuncFactoryP.createVisualMappingFunction(
-                nodeLabelAttrName, String.class, BasicVisualLexicon.NODE_LABEL);
-        String toolTipAttrName = "nodeToolTip";
-        PassthroughMapping toolTipFunction = (PassthroughMapping) visMapFuncFactoryP.createVisualMappingFunction(
-                toolTipAttrName, String.class, BasicVisualLexicon.NODE_TOOLTIP);
-        fiVisualStyle.addVisualMappingFunction(labelFunction);
-        fiVisualStyle.addVisualMappingFunction(toolTipFunction);
-
-        // Set the node color based on module
-        DiscreteMapping colorToModuleFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
-                "module", Integer.class, BasicVisualLexicon.NODE_FILL_COLOR);
-        String moduleColors = PlugInObjectManager.getManager().getProperties().getProperty(
-                "moduleColors");
-        String[] tokens = moduleColors.split(";");
-        for (int i = 0; i < tokens.length; i++)
-        {
-            String[] text = tokens[i].split(",");
-            Color moduleColor = new Color(Integer.parseInt(text[0]),
-                    Integer.parseInt(text[1]), Integer.parseInt(text[2]));
-            colorToModuleFunction.putMapValue(i, moduleColor);
-        }
-        fiVisualStyle.addVisualMappingFunction(colorToModuleFunction);
-
-        // Change the node shape from the default (ellipse)
-        // to diamond if the gene is a linker.
-        DiscreteMapping linkerGeneShapeFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isLinker", 
-                                                                                                                   Boolean.class,
-                                                                                                                   BasicVisualLexicon.NODE_SHAPE);
-        linkerGeneShapeFunction.putMapValue(true,
-                                            NodeShapeVisualProperty.DIAMOND);
-        fiVisualStyle.addVisualMappingFunction(linkerGeneShapeFunction);
-
-        // Set shape for hit genes
-//        DiscreteMapping hitGeneShapeFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isHitGene", 
-//                                                                                                                 Boolean.class,
-//                                                                                                                 BasicVisualLexicon.NODE_SHAPE);
-//        hitGeneShapeFunction.putMapValue(true,
-//                                         NodeShapeVisualProperty.OCTAGON);
-//        fiVisualStyle.addVisualMappingFunction(hitGeneShapeFunction);
+        // Handle node styles
+        setDefaultNodeStyle(fiVisualStyle,
+                            visMapFuncFactoryP);
+        setNodeColors(fiVisualStyle, visMapFuncFactoryD);
+        setNodeSizes(view,
+                     fiVisualStyle, 
+                     visMapFuncFactoryC);
+        setLinkerNodeShape(fiVisualStyle, visMapFuncFactoryD);
         handleNodeHighlight(fiVisualStyle, 
                          visMapFuncFactoryD,
                          visMapFuncFactoryC);
-        
-        // Set default edge color and width
-        fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_UNSELECTED_PAINT,
-                Color.BLUE);
-        fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_WIDTH, 1.5d);
+        // Handle edge styles
+        setDefaultEdgeStyle(fiVisualStyle);
+        setEdgeStyleOnAnnotations(fiVisualStyle, 
+                                  visMapFuncFactoryD);
 
+        context.ungetService(referenceC);
+        context.ungetService(referenceD);
+        context.ungetService(referenceP);
+        return fiVisualStyle;
+    }
+
+    protected void setNodeSizes(CyNetworkView view, VisualStyle fiVisualStyle,
+                              VisualMappingFunctionFactory visMapFuncFactoryC) {
+        // Set the node size based on sample number
+        int[] sampleNumberRange = getSampleNumberRange(view);
+        if (sampleNumberRange != null)
+        {
+            ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) visMapFuncFactoryC.createVisualMappingFunction(
+                    "sampleNumber", Integer.class, BasicVisualLexicon.NODE_SIZE);
+            Integer lowerSampleNumberBound = sampleNumberRange[0];
+            BoundaryRangeValues<Double> lowerBoundary = new BoundaryRangeValues<Double>(
+                    30.0, 30.0, 30.0);
+            Integer upperSampleNumberBound = sampleNumberRange[1];
+            BoundaryRangeValues<Double> upperBoundary = new BoundaryRangeValues<Double>(
+                    100.0, 100.0, 100.0);
+            sampleNumberToSizeFunction.addPoint(lowerSampleNumberBound,
+                    lowerBoundary);
+            sampleNumberToSizeFunction.addPoint(upperSampleNumberBound,
+                    upperBoundary);
+            fiVisualStyle.addVisualMappingFunction(sampleNumberToSizeFunction);
+        }
+    }
+
+    private void setEdgeStyleOnAnnotations(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryD) {
         // Set the edge target arrow shape based on FI Direction
         DiscreteMapping arrowMapping = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
                 "FI Direction", String.class,
@@ -214,28 +200,61 @@ public class FIVisualStyleImpl implements FIVisualStyle {
                 LineTypeVisualProperty.LONG_DASH);
 
         fiVisualStyle.addVisualMappingFunction(edgeLineMapping);
-        // Set the node size based on sample number
-        int[] sampleNumberRange = getSampleNumberRange(view);
-        if (sampleNumberRange != null)
+    }
+
+    protected void setDefaultEdgeStyle(VisualStyle fiVisualStyle) {
+        // Set default edge color and width
+        fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_UNSELECTED_PAINT,
+                                      Color.BLUE);
+        fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_WIDTH, 1.5d);
+    }
+
+    private void setLinkerNodeShape(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryD) {
+        // Change the node shape from the default (ellipse)
+        // to diamond if the gene is a linker.
+        DiscreteMapping linkerGeneShapeFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isLinker", 
+                                                                                                                   Boolean.class,
+                                                                                                                   BasicVisualLexicon.NODE_SHAPE);
+        linkerGeneShapeFunction.putMapValue(true,
+                                            NodeShapeVisualProperty.DIAMOND);
+        fiVisualStyle.addVisualMappingFunction(linkerGeneShapeFunction);
+    }
+
+    private void setNodeColors(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryD) {
+        // Set the node color based on module
+        DiscreteMapping colorToModuleFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
+                "module", Integer.class, BasicVisualLexicon.NODE_FILL_COLOR);
+        String moduleColors = PlugInObjectManager.getManager().getProperties().getProperty(
+                "moduleColors");
+        String[] tokens = moduleColors.split(";");
+        for (int i = 0; i < tokens.length; i++)
         {
-            ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) visMapFuncFactoryC.createVisualMappingFunction(
-                    "sampleNumber", Integer.class, BasicVisualLexicon.NODE_SIZE);
-            Integer lowerSampleNumberBound = sampleNumberRange[0];
-            BoundaryRangeValues<Double> lowerBoundary = new BoundaryRangeValues<Double>(
-                    30.0, 30.0, 30.0);
-            Integer upperSampleNumberBound = sampleNumberRange[1];
-            BoundaryRangeValues<Double> upperBoundary = new BoundaryRangeValues<Double>(
-                    100.0, 100.0, 100.0);
-            sampleNumberToSizeFunction.addPoint(lowerSampleNumberBound,
-                    lowerBoundary);
-            sampleNumberToSizeFunction.addPoint(upperSampleNumberBound,
-                    upperBoundary);
-            fiVisualStyle.addVisualMappingFunction(sampleNumberToSizeFunction);
+            String[] text = tokens[i].split(",");
+            Color moduleColor = new Color(Integer.parseInt(text[0]),
+                    Integer.parseInt(text[1]), Integer.parseInt(text[2]));
+            colorToModuleFunction.putMapValue(i, moduleColor);
         }
-        context.ungetService(referenceC);
-        context.ungetService(referenceD);
-        context.ungetService(referenceP);
-        return fiVisualStyle;
+        fiVisualStyle.addVisualMappingFunction(colorToModuleFunction);
+    }
+
+    private void setDefaultNodeStyle(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryP) {
+        // Set the default node shape and color
+        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_SHAPE,
+                NodeShapeVisualProperty.ELLIPSE);
+        Color color = new Color(0, 204, 0);
+        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_BORDER_PAINT,
+                color);
+        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, color);
+        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_TRANSPARENCY, 100);
+        // Give the nodes a label based on their name
+        String nodeLabelAttrName = "nodeLabel";
+        PassthroughMapping labelFunction = (PassthroughMapping) visMapFuncFactoryP.createVisualMappingFunction(
+                nodeLabelAttrName, String.class, BasicVisualLexicon.NODE_LABEL);
+        String toolTipAttrName = "nodeToolTip";
+        PassthroughMapping toolTipFunction = (PassthroughMapping) visMapFuncFactoryP.createVisualMappingFunction(
+                toolTipAttrName, String.class, BasicVisualLexicon.NODE_TOOLTIP);
+        fiVisualStyle.addVisualMappingFunction(labelFunction);
+        fiVisualStyle.addVisualMappingFunction(toolTipFunction);
     }
 
     protected void handleNodeHighlight(VisualStyle fiVisualStyle,
@@ -300,7 +319,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
     }
 
     @Override
-    public void setLayout() {
+    public void doLayout() {
         // Set the desired layout (yFiles Organic)
         // This method manually clicks the menu item to trigger
         // the new layout, as yFiles layouts are not available

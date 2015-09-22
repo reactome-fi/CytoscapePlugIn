@@ -17,7 +17,7 @@ import org.reactome.cytoscape.service.PathwayDiagramHighlighter;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
- * Customied FIVisualSytle to color nodes based on genes' IPA values.
+ * Customized FIVisualSytle to color nodes based on genes' IPA values.
  * @author gwu
  */
 public class PGMFIVisualStyle extends FIVisualStyleImpl {

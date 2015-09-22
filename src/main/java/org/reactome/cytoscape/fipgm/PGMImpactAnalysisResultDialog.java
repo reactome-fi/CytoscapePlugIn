@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.TableModelEvent;
@@ -41,6 +42,8 @@ import org.reactome.factorgraph.Variable;
  *
  */
 public class PGMImpactAnalysisResultDialog extends JDialog {
+    // A hard-coded list of genes
+    private final int TOTAL_GENE = 1000;
     private JTable resultTable;
     private boolean isOkClicked;
     private JLabel tableLabel;
@@ -54,7 +57,9 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
         setTitle("FI PGM Impact Analysis Results");
         JPanel contentPane = new JPanel();
         contentPane.setLayout(new BorderLayout());
-        contentPane.setBorder(BorderFactory.createEtchedBorder());
+        Border out = BorderFactory.createEtchedBorder();
+        Border in = BorderFactory.createEmptyBorder(2, 2, 2, 2);
+        contentPane.setBorder(BorderFactory.createCompoundBorder(out, in));
         tableLabel = new JLabel("Choose genes to display");
         tableLabel.setFont(tableLabel.getFont().deriveFont(Font.BOLD));
         contentPane.add(tableLabel, BorderLayout.NORTH);
@@ -75,6 +80,8 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
             
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (!validateSelectedGenes())
+                    return;
                 dispose();
                 isOkClicked = true;
             }
@@ -89,35 +96,47 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
         });
     }
     
+    private boolean validateSelectedGenes() {
+        // Check the number of displayed genes
+        int totalGenes = resultTable.getRowCount();
+        if (totalGenes > TOTAL_GENE) {
+            JOptionPane.showMessageDialog(this,
+                                          "Please filter genes to less than " + TOTAL_GENE + ".", 
+                                          "Too Many Genes",
+                                          JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+    
     private JPanel createFilterPane() {
         JPanel pane = new JPanel();
         pane.setBorder(BorderFactory.createEtchedBorder());
         pane.setLayout(new FlowLayout(FlowLayout.LEFT));
         JLabel label = new JLabel("Show rows for genes containing: ");
         pane.add(label);
-        JTextField geneTF = new JTextField();
+        final JTextField geneTF = new JTextField();
         geneTF.setColumns(6);
         pane.add(geneTF);
         String[] andOr = new String[]{"and", "or"};
-        JComboBox<String> andOrBox = new JComboBox<String>(andOr);
+        final JComboBox<String> andOrBox = new JComboBox<String>(andOr);
         pane.add(andOrBox);
         label = new JLabel("Sum of scores greater than: ");
         pane.add(label);
-        JTextField sumTF = new JTextField();
+        final JTextField sumTF = new JTextField();
         sumTF.setColumns(4);
         pane.add(sumTF);
         // Enable filtering
-        final JComponent[] filterGUIs = new JComponent[]{geneTF, andOrBox, sumTF};
         DocumentListener docListener = new DocumentListener() {
             
             @Override
             public void removeUpdate(DocumentEvent e) {
-                filterRows(filterGUIs);
+                filterRows(geneTF, andOrBox, sumTF);
             }
             
             @Override
             public void insertUpdate(DocumentEvent e) {
-                filterRows(filterGUIs);
+                filterRows(geneTF, andOrBox, sumTF);
             }
             
             @Override
@@ -130,30 +149,38 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
             
             @Override
             public void itemStateChanged(ItemEvent e) {
-                filterRows(filterGUIs);
+                filterRows(geneTF, andOrBox, sumTF);
             }
         });
         return pane;
     }
     
-    private void filterRows(final JComponent[] filterGUIs) {
+    private void filterRows(final JTextField geneTF,
+                            final JComboBox<String> andOrBox,
+                            final JTextField sumTF) {
+        // Check to make sure the number is a numer
+        try {
+            String text = sumTF.getText().trim();
+            if (text.length() > 0)
+                new Double(text);
+        }
+        catch(NumberFormatException e) {
+            return; // Just do nothing
+        }
         RowFilter<ResultTableModel, Object> rowFilter = new RowFilter<ResultTableModel, Object>() {
             @Override
             public boolean include(Entry<? extends ResultTableModel, ? extends Object> entry) {
                 // The first GUI should be text for gene
-                JTextField tf = (JTextField) filterGUIs[0];
-                String gene = tf.getText().trim();
+                String gene = geneTF.getText().trim();
                 // The second is AndOr box
-                JComboBox<String> box = (JComboBox<String>) filterGUIs[1];
                 String andOr = null;
                 // The third GUI should be text for sum
-                tf = (JTextField) filterGUIs[2];
-                String sum = tf.getText().trim();
+                String sum = sumTF.getText().trim();
                 boolean rtn = true;
                 if (gene.length() > 0) {
                     String geneEntry = (String) entry.getValue(0);
                     rtn &= geneEntry.contains(gene);
-                    andOr = box.getSelectedItem().toString();
+                    andOr = andOrBox.getSelectedItem().toString();
                 }
                 if (sum.length() > 0) {
                     Double sumEntry = (Double) entry.getValue(1);
@@ -211,6 +238,16 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     
     public boolean isOkClicked() {
         return this.isOkClicked;
+    }
+    
+    public Map<String, Double> getSelectedGeneToScore() {
+        Map<String, Double> geneToScore = new HashMap<>();
+        for (int i = 0; i < resultTable.getRowCount(); i++) {
+            String gene = (String) resultTable.getValueAt(i, 0);
+            Double score = (Double) resultTable.getValueAt(i, 1);
+            geneToScore.put(gene, score);
+        }
+        return geneToScore;
     }
     
     public void setSampleResults(Map<String, Map<Variable, Double>> sampleToVarToScore) {
