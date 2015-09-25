@@ -15,6 +15,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.math3.random.EmpiricalDistribution;
+import org.junit.Test;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.common.DataType;
 import org.reactome.factorgraph.common.EmpiricalFactorHandler;
@@ -66,6 +67,18 @@ public class CyMutationEmpiricalFactorHandler extends EmpiricalFactorHandler {
         catch(Exception e) { // Convert thrown Exceptions into an unchecked exception for super classes.
             throw new IllegalStateException("Exception during loading MA scores: " + e);
         }
+    }
+    
+    @Test
+    public void test() {
+        EmpiricalDistribution dist = getDistribution(DataType.Mutation);
+        System.out.println("Mean: " + dist.getNumericalMean());
+        System.out.println("Bin: " + dist.getBinCount());
+        System.out.println("Variance: " + dist.getNumericalVariance());
+        System.out.println("SuuportLowerBound: " + dist.getSupportLowerBound());
+        System.out.println("UpperBound: " + dist.getSupportUpperBound());
+        double cumProb = dist.cumulativeProbability(-5.41d);
+        System.out.println("Prob for 0.0: " + cumProb);
     }
     
 }

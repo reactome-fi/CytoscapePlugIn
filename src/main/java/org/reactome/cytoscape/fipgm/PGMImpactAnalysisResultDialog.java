@@ -47,6 +47,7 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     private JTable resultTable;
     private boolean isOkClicked;
     private JLabel tableLabel;
+    private JLabel noteLabel;
     
     public PGMImpactAnalysisResultDialog() {
         super(PlugInObjectManager.getManager().getCytoscapeDesktop());
@@ -67,7 +68,16 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
         contentPane.add(new JScrollPane(resultTable), BorderLayout.CENTER);
         // Add filters based on Genes and/or Sum
         JPanel filterPane = createFilterPane();
-        contentPane.add(filterPane, BorderLayout.SOUTH);
+        filterPane.setBorder(BorderFactory.createEtchedBorder());
+        JPanel bottomPane = new JPanel();
+        bottomPane.setBorder(BorderFactory.createEtchedBorder());
+        bottomPane.setLayout(new BoxLayout(bottomPane, BoxLayout.Y_AXIS));
+        bottomPane.add(filterPane);
+        noteLabel = new JLabel("Note:");
+        noteLabel.setFont(noteLabel.getFont().deriveFont(Font.ITALIC));
+        bottomPane.add(noteLabel);
+        contentPane.add(bottomPane, BorderLayout.SOUTH);
+        
         getContentPane().add(contentPane, BorderLayout.CENTER);
         
         DialogControlPane controlPane = new DialogControlPane();
@@ -111,7 +121,7 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     
     private JPanel createFilterPane() {
         JPanel pane = new JPanel();
-        pane.setBorder(BorderFactory.createEtchedBorder());
+//        pane.setBorder(BorderFactory.createEtchedBorder());
         pane.setLayout(new FlowLayout(FlowLayout.LEFT));
         JLabel label = new JLabel("Show rows for genes containing: ");
         pane.add(label);
@@ -263,8 +273,18 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
         model.setGenes(geneList);
         for (String sample : sampleToVarToScore.keySet())
             addSampleResult(sample, sampleToVarToScore.get(sample));
-        
+        model.calcualteMeans();
+        displayNote(sampleToVarToScore);
         model.fireTableStructureChanged();
+    }
+
+    private void displayNote(Map<String, Map<Variable, Double>> sampleToVarToScore) {
+        StringBuilder message = new StringBuilder();
+        message.append("Note: ");
+        message.append(sampleToVarToScore.size()).append(" samples in total. ");
+        if (sampleToVarToScore.size() > 8)
+            message.append("Only 8 samples are listed.");
+        noteLabel.setText(message.toString());
     }
     
     private void addSampleResult(String sample,
@@ -302,22 +322,30 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
         // The results
         private List<SampleResult> sampleResults;
         private List<String> genes;
-        private List<Double> sums; 
+        private List<Double> means; 
         
         public ResultTableModel() {
             // Initialize with empty values to avoid null exception
             sampleResults = new ArrayList<SampleResult>();
             genes = new ArrayList<String>();
-            sums = new ArrayList<Double>();
+            means = new ArrayList<Double>();
         }
         
         public void setGenes(List<String> genes) {
             this.genes.clear();
             this.genes.addAll(genes);
             // Empty sums
-            sums.clear();
+            means.clear();
             for (int i = 0; i < genes.size(); i++)
-                sums.add(0.0d); // Initialize it with 0.
+                means.add(0.0d); // Initialize it with 0.
+        }
+        
+        public void calcualteMeans() {
+            int sampleSize = sampleResults.size();
+            for (int i = 0; i < means.size(); i++) {
+                Double mean = means.get(i);
+                means.set(i, mean / sampleSize);
+            }
         }
         
         public void addSampleResult(SampleResult sampleResult) {
@@ -328,10 +356,10 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
         private void updateSums(SampleResult sampleResult) {
             for (int i = 0; i < genes.size(); i++) {
                 String gene = genes.get(i);
-                Double sum = sums.get(i);
+                Double mean = means.get(i);
                 Double score = sampleResult.geneToScore.get(gene);
-                sum += score;
-                sums.set(i, sum);
+                mean += score;
+                means.set(i, mean);
             }
         }
 
@@ -342,7 +370,12 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
 
         @Override
         public int getColumnCount() {
-            return 2 + sampleResults.size(); // At least two columns
+            // The maximum samples number should be
+            // 10, which is arbitray.
+            int cols = 2 + sampleResults.size(); // At least 10 columns
+            if (cols > 10)
+                cols = 10;
+            return cols;
         }
 
         @Override
@@ -357,7 +390,7 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
             if (columnIndex == 0)
                 return genes.get(rowIndex);
             if (columnIndex == 1)
-                return sums.get(rowIndex);
+                return means.get(rowIndex);
             SampleResult result = sampleResults.get(columnIndex - 2);
             return result.geneToScore.get(genes.get(rowIndex));
         }
@@ -367,7 +400,7 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
             if (column == 0)
                 return "Gene";
             if (column == 1)
-                return "Sum";
+                return "Mean";
             SampleResult result = sampleResults.get(column - 2);
             return result.sampleName;
         }

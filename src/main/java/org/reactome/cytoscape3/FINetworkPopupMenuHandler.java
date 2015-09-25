@@ -47,6 +47,7 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape3.EdgeActionCollection.EdgeQueryFIMenuItem;
 import org.reactome.cytoscape3.NodeActionCollection.CancerGeneIndexMenu;
+import org.reactome.cytoscape3.NodeActionCollection.CosmicMenu;
 import org.reactome.cytoscape3.NodeActionCollection.FetchFIsMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
 import org.reactome.r3.graph.GeneClusterPair;
@@ -195,6 +196,13 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         geneCardProps.setProperty(ServiceProperties.TITLE, "Gene Card");
         geneCardProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, geneCardMenu,
+                CyNodeViewContextMenuFactory.class, geneCardProps);
+        
+        CosmicMenu cosmicMenu = nodeActionCollection.new CosmicMenu();
+        Properties cosmicProps = new Properties();
+        cosmicProps.setProperty(ServiceProperties.TITLE, "Cosmic");
+        cosmicProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
+        addPopupMenu(context, cosmicMenu,
                 CyNodeViewContextMenuFactory.class, geneCardProps);
         
         CancerGeneIndexMenu cgiMenu = nodeActionCollection.new CancerGeneIndexMenu();
@@ -798,7 +806,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
 
         ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
         FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
-        visStyler.setVisualStyle(view);
+        visStyler.setVisualStyle(view, false);
         
         context.ungetService(servRef);
         context.ungetService(tableFormatterServRef);

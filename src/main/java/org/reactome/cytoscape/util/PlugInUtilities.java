@@ -524,6 +524,11 @@ public class PlugInUtilities {
         String url = "http://www.genecards.org/cgi-bin/carddisp.pl?gene=" + gene;
         openURL(url);
     }
+    
+    public static void queryCosmic(String gene) {
+        String url = "http://cancer.sanger.ac.uk/cosmic/gene/overview?ln=" + gene;
+        openURL(url);
+    }
 
     /**
      * Open an OS web browser to display the passed URL.

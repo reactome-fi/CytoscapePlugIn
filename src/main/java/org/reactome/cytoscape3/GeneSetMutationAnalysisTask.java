@@ -120,6 +120,13 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             progPane.setIndeterminate(true);
             progPane.setText("Constructing FI network...");
             CyNetwork network = constructFINetwork(selectedGenes);
+            if (network == null) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "Cannot construct a FI network: No interaction cannot be found.",
+                                              "Empty Network",
+                                              JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             TableFormatter tableFormatter = (TableFormatter) context.getService(tableFormatterServRef);
             tableFormatter.makeGeneSetMutationAnalysisTables(network);

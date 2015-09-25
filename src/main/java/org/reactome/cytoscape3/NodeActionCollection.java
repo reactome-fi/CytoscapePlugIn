@@ -57,6 +57,30 @@ public class NodeActionCollection
             return new CyMenuItem(geneCardMenuItem, 3.0f);
         }
     }
+    
+    class CosmicMenu implements CyNodeViewContextMenuFactory
+    {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView netView,
+                final View<CyNode> nodeView)
+        {
+            JMenuItem cosmicMenuItem = new JMenuItem("Query Cosmic");
+            cosmicMenuItem.addActionListener(new ActionListener()
+            {
+
+                @Override
+                public void actionPerformed(ActionEvent e)
+                {
+                    Long nodeID = nodeView.getModel().getSUID();
+                    String id = netView.getModel().getDefaultNodeTable()
+                            .getRow(nodeID).get("name", String.class);
+                    PlugInUtilities.queryCosmic(id);
+                }
+
+            });
+            return new CyMenuItem(cosmicMenuItem, 4.0f);
+        }
+    }
 
     class FetchFIsMenu implements CyNodeViewContextMenuFactory
     {

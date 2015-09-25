@@ -15,7 +15,6 @@ import java.util.Set;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import org.apache.commons.math3.random.EmpiricalDistribution;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.view.model.CyNetworkView;
@@ -32,7 +31,6 @@ import org.reactome.cytoscape.util.MessageDialog;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape3.FIPlugInHelper;
 import org.reactome.factorgraph.ContinuousVariable;
-import org.reactome.factorgraph.ContinuousVariable.DistributionType;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.InferenceCannotConvergeException;
 import org.reactome.factorgraph.LoopyBeliefPropagation;
@@ -41,7 +39,6 @@ import org.reactome.factorgraph.Variable;
 import org.reactome.factorgraph.VariableAssignment;
 import org.reactome.factorgraph.common.DataType;
 import org.reactome.factorgraph.common.EmpiricalFactorHandler;
-import org.reactome.factorgraph.common.MutationEmpiricalFactorHandler;
 import org.reactome.factorgraph.common.ObservationFactorHandler;
 import org.reactome.factorgraph.common.ObservationFileLoader;
 import org.reactome.factorgraph.common.ObservationHelper;
@@ -57,6 +54,7 @@ import org.reactome.r3.util.InteractionUtilities;
  *
  */
 public class PGMImpactAnalysisTask extends FIAnalysisTask {
+    private final String NON_MUTATION_DATA_KEY = "Non_" + DataType.Mutation;
     private List<DataDescriptor> data;
     private LoopyBeliefPropagation lbp;
     private PGMType pgmType;
@@ -91,36 +89,89 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         this.pgmType = pgmType;
     }
     
-    private Observation<Number> createBaseObservation(List<Observation<Number>> observations) {
-        Map<Variable, EmpiricalDistribution> varToDist = new HashMap<Variable, EmpiricalDistribution>();
-        for (Observation<Number> observation : observations) {
-            List<VariableAssignment<Number>> varAssgns = observation.getVariableAssignments();
-            for (VariableAssignment<Number> varAssgn : varAssgns) {
-                varToDist.put(varAssgn.getVariable(), varAssgn.getDistribution());
-            }
-        }
-        Observation<Number> base = new Observation<Number>();
-        String baseName = "Base";
-        base.setName(baseName);
-        for (Variable var : varToDist.keySet()) {
-            VariableAssignment<Number> varAssgn = new VariableAssignment<Number>();
-            varAssgn.setVariable(var);
-            EmpiricalDistribution dist = varToDist.get(var);
-            if (dist != null && var instanceof ContinuousVariable) {
-                ContinuousVariable cVar = (ContinuousVariable) var;
-                if (cVar.getDistributionType() == DistributionType.TWO_SIDED) {
-                    varAssgn.setAssignment(dist.inverseCumulativeProbability(0.50d));
-//                    varAssgn.setAssignment(dist.getNumericalMean());
-                }
-                else
-                    varAssgn.setAssignment(dist.getSupportLowerBound());
-            }
+    private Map<Variable, Double> runPosteriorInference(Observation<Number> observation,
+                                                        ObservationHelper observationHelper,
+                                                        Map<String, Map<Variable, double[]>> dataTypeToVarToPrior,
+                                                        Set<Variable> fiGeneVariables) throws InferenceCannotConvergeException {
+        // Split the observation into multiple ones according to data types
+        List<Observation<Number>> splitedObservations = observationHelper.splitObservationIntoMutationAndNonMutation(observation);
+        Map<Variable, Double> varToScore = new HashMap<Variable, Double>();
+        for (Observation<Number> dataObs : splitedObservations) {
+            lbp.setObservation(dataObs);
+            //        lbp.setUpdateViaFactors(true);
+            lbp.runInference();
+            String dataType = null;
+            if (isMutationObservation(dataObs))
+                dataType = DataType.Mutation.toString();
             else
-                varAssgn.setAssignment(0);
-            varAssgn.setDistribution(varToDist.get(var));
-            base.addAssignment(varAssgn);
+                dataType = NON_MUTATION_DATA_KEY;
+            Map<Variable, double[]> varToPrior = dataTypeToVarToPrior.get(dataType);
+            for (Variable var : fiGeneVariables) {
+             // There is no need to check this. This has been checked during generation of fiGeneVariables.
+//                if (var instanceof ContinuousVariable)
+//                    continue;
+//                String name = var.getName();
+//                if (name.contains("_"))
+//                    continue;
+                double[] belief = var.getBelief();
+                double[] prior = varToPrior.get(var);
+                double logRatio = Math.log10(belief[1] * prior[0] / (belief[0] * prior[1]));
+                Double oldValue = varToScore.get(var);
+                if (oldValue == null)
+                    varToScore.put(var, logRatio);
+                else
+                    varToScore.put(var, oldValue + logRatio);
+            }
         }
-        return base;
+        return varToScore;
+    }
+    
+    private Map<String, Map<Variable, double[]>> runPriorInference(List<Observation<Number>> observations,
+                                                                   ObservationHelper helper,
+                                                                   Set<Variable> fiGeneVariables) throws InferenceCannotConvergeException {
+        // We want to perform impact inference based two data types: mutation and non-mutation
+        Map<String, Map<Variable, double[]>> dataTypeToVarToPrior = new HashMap<String, Map<Variable,double[]>>();
+        Observation<Number> baseObs = helper.createBaseObservation(observations,
+                                                                   null,
+                                                                   0);
+        List<Observation<Number>> splitedBasedObservations = helper.splitObservationIntoMutationAndNonMutation(baseObs);
+        for (Observation<Number> obs : splitedBasedObservations) {
+            Map<Variable, double[]> varToPrior = new HashMap<Variable, double[]>();
+            String dataType = null;
+            if (isMutationObservation(obs))
+                dataType = DataType.Mutation.toString();
+            else
+                dataType = NON_MUTATION_DATA_KEY;
+            dataTypeToVarToPrior.put(dataType, varToPrior);
+            
+            lbp.setObservation(baseObs);
+            lbp.runInference();
+            for (Variable var : fiGeneVariables) {
+                // There is no need to check this. This has been checked during generation of fiGeneVariables.
+//                if (var instanceof ContinuousVariable)
+//                    continue; // Don't support this query.
+                double[] belief = var.getBelief();
+                double[] prior = new double[belief.length];
+                System.arraycopy(belief, 0, prior, 0, belief.length);
+                varToPrior.put(var, prior);
+            }
+        }
+        return dataTypeToVarToPrior;
+    }
+    
+    /**
+     * Assume the passed Observation has been split into mutation and non-mutation. Otherwise,
+     * the implementation for quick check is not right in this method.
+     * @param obs
+     * @return
+     */
+    private boolean isMutationObservation(Observation<Number> obs) {
+        // Just pick one VariableAssignement
+        VariableAssignment<Number> varAssgn = obs.getVariableAssignments().iterator().next();
+        Variable var = varAssgn.getVariable();
+        if (var.getName().endsWith("_" + DataType.Mutation))
+            return true;
+        return false;
     }
 
     /* (non-Javadoc)
@@ -140,14 +191,15 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         progPane.setIndeterminate(true);
         progPane.setSize(400, 200);
         progPane.setVisible(true);
-        fetchFIs(); // Need to get all FIs to construct the FI pgm model.
-        FIPGMConstructor constructor = getPGMConstructor();
         FactorGraph fg = null;
-        progPane.setText("Constructing the PGM...");
+        FIPGMConstructor constructor = null;
         try {
+            fetchFIs(); // Need to get all FIs to construct the FI pgm model.
+            constructor = getPGMConstructor();
+            progPane.setText("Constructing the PGM...");
             fg = constructor.constructFactorGraph(pgmType);
         }
-        catch(IOException e) {
+        catch(Exception e) { // Stop if any exception is thrown.
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cannot build a graphical model from the Reactome FI network:\n" + e.getMessage(),
                                           "Error in Constructing Model",
@@ -155,21 +207,22 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             frame.getGlassPane().setVisible(false);
             return;
         }
+        if (fg == null || constructor == null) {
+            frame.getGlassPane().setVisible(false);
+            return;
+        }
         progPane.setText("Handling observations...");
         List<Observation<Number>> observations = constructor.getObservationLoader().getObservations();
-        // Filter observations to have shared data types.
-        new ObservationHelper().filterObservationsToHaveSharedDataTypes(observations);
-        
         lbp.setFactorGraph(fg);
-        Map<Variable, double[]> varToBase = new HashMap<Variable, double[]>();
-        
-        Observation<Number> baseObs = createBaseObservation(observations);
-        lbp.setObservation(baseObs);
-        progPane.setText("Running prior inference...");
-        // Estimate inference time
+        Set<Variable> fiGeneVariables = getFIGeneVariables(fg);
+        ObservationHelper helper = new ObservationHelper();
+        Map<String, Map<Variable, double[]>> dataTypeToVarToPrior;
         long time1 = System.currentTimeMillis();
         try {
-            lbp.runInference();
+            progPane.setText("Running prior inference...");
+            dataTypeToVarToPrior = runPriorInference(observations, 
+                                                     helper, 
+                                                     fiGeneVariables);
         }
         catch(InferenceCannotConvergeException e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
@@ -181,15 +234,6 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         }
         long time2 = System.currentTimeMillis();
         double runningTime = (time2 - time1);
-        Set<Variable> fiGeneVariables = getFIGeneVariables(fg);
-        for (Variable var : fiGeneVariables) {
-            if (var instanceof ContinuousVariable)
-                continue; // Don't support this query.
-            double[] belief = var.getBelief();
-            double[] prior = new double[belief.length];
-            System.arraycopy(belief, 0, prior, 0, belief.length);
-            varToBase.put(var, prior);
-        }
         
         // A list of observations that cannot converge
         List<String> notConvergedObs = new ArrayList<String>();
@@ -203,45 +247,46 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             showInferenceText(count, observations.size(), runningTime, observation, progPane);
             time1 = System.currentTimeMillis(); // get a better time
             progPane.setValue(++ count);
-            lbp.setObservation(observation);
+            Map<Variable, Double> varToResult = null;
             try {
-                lbp.runInference();
+                varToResult = runPosteriorInference(observation, 
+                                                    helper,
+                                                    dataTypeToVarToPrior,
+                                                    fiGeneVariables);
             }
             catch(InferenceCannotConvergeException e) {
                 notConvergedObs.add(observation.getName());
                 continue; // Just escape it
             }
-            Map<Variable, Double> varToResult = new HashMap<>();
-            for (Variable var : fiGeneVariables) {
-                if (var instanceof ContinuousVariable)
-                    continue; // Handle discrete variables only
-                double[] belief = var.getBelief();
-                double[] prior = varToBase.get(var);
-                double logRatio = Math.log10(belief[1] * prior[0] / (belief[0] * prior[1]));
-                varToResult.put(var, logRatio);
-            }
             time2 = System.currentTimeMillis();
+            System.out.println("Time for " + observation.getName() + ": " + (time2 - time1) / 1000.0d + " seconds");
             // Average the original runningTime to get a better estimation
             runningTime = ((time2 - time1) + runningTime) / 2.0d;
             sampleToVarToResult.put(observation.getName(), varToResult);
+            if (sampleToVarToResult.size() > 3)
+                break; // This is test code
         }
         progPane.setText("The inference is done.");
         if (notConvergedObs.size() > 0) {
-            // Show a warning message
-            StringBuilder builder = new StringBuilder();
-            builder.append("The inference for the following samples cannot converge:\n");
-            for (String sample : notConvergedObs)
-                builder.append("\t").append(sample);
-            MessageDialog dialog = new MessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
-            dialog.setText(builder.toString());
-            dialog.setModal(true);
-            dialog.setLocationRelativeTo(dialog.getOwner());
-            dialog.setSize(400, 350);
-            dialog.setVisible(true);
+            showNoConvergeInfo(notConvergedObs);
         }
         showResults(sampleToVarToResult,
                     progPane);
         frame.getGlassPane().setVisible(false);
+    }
+
+    private void showNoConvergeInfo(List<String> notConvergedObs) {
+        // Show a warning message
+        StringBuilder builder = new StringBuilder();
+        builder.append("The inference for the following samples cannot converge:\n");
+        for (String sample : notConvergedObs)
+            builder.append("\t").append(sample);
+        MessageDialog dialog = new MessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
+        dialog.setText(builder.toString());
+        dialog.setModal(true);
+        dialog.setLocationRelativeTo(dialog.getOwner());
+        dialog.setSize(400, 350);
+        dialog.setVisible(true);
     }
     
     /**
@@ -323,22 +368,19 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         progressPane.setText(builder.toString());
     }
     
-    private void fetchFIs() {
-        try {
-            FINetworkService networkService = FIPlugInHelper.getHelper().getNetworkService();
-            Set<String> fis = networkService.queryAllFIs();
-            FIPGMConfiguration config = PlugInObjectManager.getManager().getFIPGMConfig();
-            config.setFIs(fis);
-        }
-        catch(Exception e) {
-            throw new RuntimeException("Cannot load the FI network: " + e);
-        }
+    private void fetchFIs() throws Exception {
+        FINetworkService networkService = FIPlugInHelper.getHelper().getNetworkService();
+        Set<String> fis = networkService.queryAllFIs();
+        FIPGMConfiguration config = PlugInObjectManager.getManager().getFIPGMConfig();
+        config.setFIs(fis);
     }
     
     private Set<Variable> getFIGeneVariables(FactorGraph fg) {
         Set<Variable> variables = new HashSet<Variable>();
         Set<String> fiGenes = getFIGenes();
         for (Variable var : fg.getVariables()) {
+            if (var instanceof ContinuousVariable)
+                continue;
             if (fiGenes.contains(var.getName()))
                 variables.add(var);
         }
@@ -394,7 +436,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             }
             else if (desc.getDistribution() == DataTypeDistribution.Empirical) {
                 if (desc.getDataType() == DataType.Mutation) {
-                    handler = new MutationEmpiricalFactorHandler();
+                    handler = new CyMutationEmpiricalFactorHandler();
                 }
                 else
                     handler = new EmpiricalFactorHandler();
