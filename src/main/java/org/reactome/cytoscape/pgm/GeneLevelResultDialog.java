@@ -123,7 +123,6 @@ public class GeneLevelResultDialog extends GeneLevelDialog {
         };
     }
     
-    
     public boolean showResultsForDiagram(RenderablePathway diagram,
                                          Set<String> genes) {
         FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(diagram);

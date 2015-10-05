@@ -317,9 +317,9 @@ public class InferenceRunner {
         List<Observation<Number>> obsCopy = new ArrayList<Observation<Number>>(obs);
         obsCopy.removeAll(convergedObs);
         if (obsCopy.size() > 0) {
-            errorMessage.append("The following observation couldn't converge (" + obsCopy.size() + "/" + obs.size() + "):");
+            errorMessage.append("The inference with the following samples couldn't converge (" + obsCopy.size() + "/" + obs.size() + "):");
             for (Observation<Number> ob : obsCopy) {
-                errorMessage.append("\n\t" + ob.getName());
+                errorMessage.append("\n    " + ob.getName());
             }
         }
         if (errorMessage.length() > 0) {

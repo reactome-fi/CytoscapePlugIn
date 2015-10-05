@@ -63,6 +63,9 @@ public class TTestTablePlotPane<T> extends JPanel {
     private Map<String, List<Double>> nameToValues2;
     private String dataLabel1;
     private String dataLabel2;
+    // To control the data points for plotting. If there are too many data points,
+    // the plot is very slow.
+    private Integer maximumRowsForPlot;
     
     /**
      * Default constructor.
@@ -71,6 +74,14 @@ public class TTestTablePlotPane<T> extends JPanel {
         init();
     }
     
+    public Integer getMaximumRowsForPlot() {
+        return maximumRowsForPlot;
+    }
+
+    public void setMaximumRowsForPlot(Integer maximumRowsForPlot) {
+        this.maximumRowsForPlot = maximumRowsForPlot;
+    }
+
     private void init() {
         setLayout(new BorderLayout());
         
@@ -127,6 +138,10 @@ public class TTestTablePlotPane<T> extends JPanel {
             dataset.add(values1, dataLabel1, name);
             List<Double> values2 = nameToValues2.get(name);
             dataset.add(values2, dataLabel2, name);
+            // If the maximumRowsForPlot is set, we should display plot
+            // for that number
+            if (maximumRowsForPlot != null && i > maximumRowsForPlot)
+                break;
         }
         DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
         plot.datasetChanged(event);
@@ -172,6 +187,14 @@ public class TTestTablePlotPane<T> extends JPanel {
         panel.add(new JScrollPane(tTestResultTable), BorderLayout.CENTER);
         
         return panel;
+    }
+    
+    public JLabel getBottomPValueLabel() {
+        return combinedPValueLabel;
+    }
+    
+    public JLabel getBottomTitleLabel() {
+        return combinedTitleLabel;
     }
     
     private JPanel createCombinedPValuePane() {

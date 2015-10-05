@@ -42,6 +42,7 @@ import org.reactome.factorgraph.common.EmpiricalFactorHandler;
 import org.reactome.factorgraph.common.ObservationFactorHandler;
 import org.reactome.factorgraph.common.ObservationFileLoader;
 import org.reactome.factorgraph.common.ObservationHelper;
+import org.reactome.factorgraph.common.ObservationRandomizer;
 import org.reactome.fi.pgm.FIPGMConfiguration;
 import org.reactome.fi.pgm.FIPGMConstructor;
 import org.reactome.fi.pgm.FIPGMConstructor.PGMType;
@@ -58,6 +59,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
     private List<DataDescriptor> data;
     private LoopyBeliefPropagation lbp;
     private PGMType pgmType;
+    private int numberOfPermutation;
     
     /**
      * Default constructor.
@@ -65,6 +67,14 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
     public PGMImpactAnalysisTask() {
     }
     
+    public int getNumberOfPermutation() {
+        return numberOfPermutation;
+    }
+
+    public void setNumberOfPermutation(int numberOfPermutation) {
+        this.numberOfPermutation = numberOfPermutation;
+    }
+
     public List<DataDescriptor> getData() {
         return data;
     }
@@ -211,8 +221,13 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             frame.getGlassPane().setVisible(false);
             return;
         }
-        progPane.setText("Handling observations...");
+        progPane.setText("Generating random observations...");
         List<Observation<Number>> observations = constructor.getObservationLoader().getObservations();
+        // Generate random observations
+        ObservationRandomizer randomizer = new ObservationRandomizer();
+        randomizer.setNumberOfPermutation(numberOfPermutation);
+        List<Observation<Number>> randomObservations = randomizer.createRandomObservations(observations);
+        
         lbp.setFactorGraph(fg);
         Set<Variable> fiGeneVariables = getFIGeneVariables(fg);
         ObservationHelper helper = new ObservationHelper();
@@ -237,11 +252,45 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         
         // A list of observations that cannot converge
         List<String> notConvergedObs = new ArrayList<String>();
+        Map<String, Map<Variable, Double>> sampleToVarToResult = runPosteriorInferences(observations, 
+                                                                                        fiGeneVariables,
+                                                                                        helper, 
+                                                                                        dataTypeToVarToPrior,
+                                                                                        runningTime,
+                                                                                        notConvergedObs,
+                                                                                        progPane);
+        progPane.setText("Running random samples...");
+        List<String> randomNotConvergedObs = new ArrayList<>();
+        Map<String, Map<Variable, Double>> randomSampleToVarToResult = runPosteriorInferences(randomObservations, 
+                                                                                        fiGeneVariables,
+                                                                                        helper, 
+                                                                                        dataTypeToVarToPrior,
+                                                                                        runningTime,
+                                                                                        notConvergedObs,
+                                                                                        progPane);
+        if (notConvergedObs.size() > 0) {
+            showNoConvergeInfo(notConvergedObs,
+                               randomNotConvergedObs);
+        }
+        showResults(sampleToVarToResult,
+                    randomSampleToVarToResult,
+                    progPane);
+        frame.getGlassPane().setVisible(false);
+    }
+
+    private Map<String, Map<Variable, Double>> runPosteriorInferences(List<Observation<Number>> observations,
+                                                                      Set<Variable> fiGeneVariables,
+                                                                      ObservationHelper helper,
+                                                                      Map<String, Map<Variable, double[]>> dataTypeToVarToPrior,
+                                                                      double runningTime,
+                                                                      List<String> notConvergedObs,
+                                                                      ProgressPane progPane) {
         progPane.setMaximum(observations.size());
         progPane.setMinimum(0);
         progPane.setValue(0);
         progPane.setIndeterminate(false);
         int count = 0;
+        long time1, time2;
         Map<String, Map<Variable, Double>> sampleToVarToResult = new HashMap<>();
         for (Observation<Number> observation : observations) {
             showInferenceText(count, observations.size(), runningTime, observation, progPane);
@@ -266,18 +315,16 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             if (sampleToVarToResult.size() > 3)
                 break; // This is test code
         }
-        progPane.setText("The inference is done.");
-        if (notConvergedObs.size() > 0) {
-            showNoConvergeInfo(notConvergedObs);
-        }
-        showResults(sampleToVarToResult,
-                    progPane);
-        frame.getGlassPane().setVisible(false);
+        return sampleToVarToResult;
     }
 
-    private void showNoConvergeInfo(List<String> notConvergedObs) {
+    private void showNoConvergeInfo(List<String> notConvergedObs,
+                                    List<String> randomNotConveregedSamples) {
         // Show a warning message
         StringBuilder builder = new StringBuilder();
+        if (randomNotConveregedSamples.size() > 0) {
+            builder.append("The inference for " + randomNotConveregedSamples + " random samples cannot converge. ");
+        }
         builder.append("The inference for the following samples cannot converge:\n");
         for (String sample : notConvergedObs)
             builder.append("\t").append(sample);
@@ -294,11 +341,13 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
      * @param sampleToVarToResult
      */
     private void showResults(Map<String, Map<Variable, Double>> sampleToVarToResult,
+                             Map<String, Map<Variable, Double>> randomSampleToVarToResult,
                              ProgressPane progressPane) {
         progressPane.setText("Selecting genes...");
         progressPane.setIndeterminate(true);
         PGMImpactAnalysisResultDialog dialog = new PGMImpactAnalysisResultDialog();
-        dialog.setSampleResults(sampleToVarToResult);
+        dialog.setSampleResults(sampleToVarToResult,
+                                randomSampleToVarToResult);
         dialog.setModal(true);
         dialog.setVisible(true);
         if (!dialog.isOkClicked())

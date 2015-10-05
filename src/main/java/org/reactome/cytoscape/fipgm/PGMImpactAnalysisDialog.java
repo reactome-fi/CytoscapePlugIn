@@ -51,6 +51,7 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
     private JComboBox<DataTypeDistribution> distTypeBox;
     private JLabel annotationLabel;
     private FIPGMParameterPane parameterPane;
+    private JTextField permutationTF;
     
     /**
      * Default constructor.
@@ -91,6 +92,44 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
         return contentPane;
     }
     
+    private JPanel createPermutationPane() {
+        JPanel permutationPane = new JPanel();
+        Border etchedBorder = BorderFactory.createEtchedBorder();
+        permutationPane.setBorder(etchedBorder);
+        JLabel label = new JLabel("Number of permutations:");
+        permutationTF = new JTextField();
+        permutationTF.setText("100"); // Default 100
+        permutationTF.setColumns(4);
+        permutationTF.setInputVerifier(new InputVerifier() {
+            
+            @Override
+            public boolean verify(JComponent input) {
+                String text = permutationTF.getText().trim();
+                if (text.length() == 0) {
+                    JOptionPane.showMessageDialog(input,
+                                                  "Permutation cannot be empty.", 
+                                                  "Empty Permutation",
+                                                  JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+                try {
+                    Integer.parseInt(text);
+                }
+                catch(NumberFormatException e) {
+                    JOptionPane.showMessageDialog(input,
+                                                  "Permutation has to be an integer.", 
+                                                  "Wrong Permutation",
+                                                  JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+                return true;
+            }
+        });
+        permutationPane.add(label);
+        permutationPane.add(permutationTF);
+        return permutationPane;
+    }
+    
     private JPanel createDataPane(Font font) {
         //File parameter panel
         JPanel dataPane = new JPanel();
@@ -109,6 +148,7 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
         
         dataPane.add(dataActionPane);
         dataPane.add(dataListPane);
+        dataPane.add(createPermutationPane());
         
         return dataPane;
     }
@@ -324,6 +364,8 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
         listPane.setBorder(BorderFactory.createEtchedBorder());
         listPane.setLayout(new BorderLayout(4, 4));
         JLabel label = new JLabel("The following data will be used for impact analysis:");
+        Font font = label.getFont();
+        label.setFont(font.deriveFont(Font.BOLD));
         listPane.add(label, BorderLayout.NORTH);
         dataListTable = new JTable();
         dataListTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -367,6 +409,11 @@ public class PGMImpactAnalysisDialog extends FIActionDialog {
     public List<DataDescriptor> getSelectedData() {
         DataTableModel model = (DataTableModel) dataListTable.getModel();
         return model.getDataDescriptors();
+    }
+    
+    public int getNumberOfPermutation() {
+        String text = permutationTF.getText().trim();
+        return new Integer(text);
     }
     
     public LoopyBeliefPropagation getLBP() {

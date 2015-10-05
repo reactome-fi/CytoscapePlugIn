@@ -71,7 +71,7 @@ public class ObservationDataDialog extends GeneLevelDialog {
         };
         List<String> colHeaders = Arrays.asList(headers);
         tableModel.setColHeaders(colHeaders, 1);
-        // Set the lable for the y-axis
+        // Set the label for the y-axis
         tablePlotPane.getPlot().getRangeAxis().setAttributedLabel("Value");
         tablePlotPane.setChartTitle("Boxplot for Observation Data");
         

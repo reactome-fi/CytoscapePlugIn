@@ -35,6 +35,7 @@ public class PGMImpactAnalysisAction extends FICytoscapeAction {
         task.setData(dialog.getSelectedData());
         task.setLbp(dialog.getLBP());
         task.setPGMType(dialog.getPGMType());
+        task.setNumberOfPermutation(dialog.getNumberOfPermutation());
         Thread t = new Thread(task);
         t.start();
     }
