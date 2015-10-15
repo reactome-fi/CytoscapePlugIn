@@ -49,7 +49,6 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  *
  */
 public class TTestTablePlotPane<T> extends JPanel {
-    
     private DefaultBoxAndWhiskerCategoryDataset dataset;
     private CategoryPlot plot;
     private ChartPanel chartPanel;
@@ -65,7 +64,7 @@ public class TTestTablePlotPane<T> extends JPanel {
     private String dataLabel2;
     // To control the data points for plotting. If there are too many data points,
     // the plot is very slow.
-    private Integer maximumRowsForPlot;
+    private Integer maximumRowsForPlot = null;
     
     /**
      * Default constructor.
@@ -430,7 +429,8 @@ public class TTestTablePlotPane<T> extends JPanel {
 //        PValueCombiner combiner = new PValueCombiner();
 //        double combinedPValue = combiner.combinePValue(values,
 //                                                       pvalues);
-        combinedPValueLabel.setText(PlugInUtilities.formatProbability(combinedPValue));
+        combinedPValueLabel.setText(PlugInUtilities.formatProbability(combinedPValue) + 
+                                    (maximumRowsForPlot == null ? "" : ". (Note: Only " + maximumRowsForPlot + " rows are plotted.)"));
     }
     
 }

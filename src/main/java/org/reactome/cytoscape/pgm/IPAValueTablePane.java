@@ -60,7 +60,7 @@ import org.reactome.r3.util.MathUtilities;
  */
 public class IPAValueTablePane extends NetworkModulePanel {
     // Cache a map from CyNode to Variable for very quick access
-    private Map<CyNode, Variable> nodeToVar;
+    protected Map<CyNode, Variable> nodeToVar;
     // Used to draw
     protected PlotTablePanel contentPane;
     // For some reason, a single selection fire too many selection event.
@@ -188,7 +188,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
                        e.getY());
     }
 
-    private void initNodeToVarMap() {
+    protected void initNodeToVarMap() {
         nodeToVar.clear();
         if (view == null)
             return;
@@ -358,12 +358,12 @@ public class IPAValueTablePane extends NetworkModulePanel {
     }
     
     protected class IPAValueTableModel extends NetworkModuleTableModel {
-        private String[] originalHeaders = new String[]{"Sample", "Select Nodes to View"};
+        protected String[] originalHeaders = new String[]{"Sample", "Select Nodes to View"};
         // Cache the list of variables for different view
         protected List<VariableInferenceResults> varResults;
         // A flag to indicate if p-values should be displayed
         // Default is hide for a simply drawing
-        private boolean hideFDRs = true;
+        protected boolean hideFDRs = true;
         
         public IPAValueTableModel() {
             columnHeaders = originalHeaders; // Just some test data

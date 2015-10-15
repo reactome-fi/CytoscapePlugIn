@@ -68,7 +68,8 @@ public class FIPGMParameterPane extends JPanel {
         add(modelPane);
         FIPGMConfiguration config = PlugInObjectManager.getManager().getFIPGMConfig();
         LoopyBeliefPropagation lbp = config.getLBP();
-        lbp.setInferenceType(InferenceType.MAX_PRODUCT); // Use this as default
+        // For FI PGM, we will use SUM_PRODUCT as default
+        lbp.setInferenceType(InferenceType.SUM_PRODUCT);
         lbpPane = new PGMAlgorithmPanel("Inference Parameters",
                                                           lbp);
         add(lbpPane);

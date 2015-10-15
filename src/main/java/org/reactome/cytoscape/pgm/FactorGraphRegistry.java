@@ -26,7 +26,6 @@ import org.reactome.factorgraph.common.DataType;
 import org.reactome.factorgraph.common.ObservationFileLoader;
 import org.reactome.factorgraph.common.ObservationFileLoader.ObservationData;
 import org.reactome.factorgraph.common.PGMConfiguration;
-import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 
 
 /**
@@ -272,6 +271,16 @@ public class FactorGraphRegistry {
             fgToResults.put(factorGraph, fgResults);
         }
         return fgResults;
+    }
+    
+    /**
+     * Get all stored FactorGraphInferenceResults objects.
+     * @return
+     */
+    public List<FactorGraphInferenceResults> getRegisteredResults() {
+        if (fgToResults == null || fgToResults.size() == 0)
+            return new ArrayList<>();
+        return new ArrayList<>(fgToResults.values());
     }
     
     /**

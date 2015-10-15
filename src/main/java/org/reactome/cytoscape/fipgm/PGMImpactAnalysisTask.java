@@ -26,6 +26,7 @@ import org.reactome.cytoscape.service.FIAnalysisTask;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.MessageDialog;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -227,7 +228,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         ObservationRandomizer randomizer = new ObservationRandomizer();
         randomizer.setNumberOfPermutation(numberOfPermutation);
         List<Observation<Number>> randomObservations = randomizer.createRandomObservations(observations);
-        
+            
         lbp.setFactorGraph(fg);
         Set<Variable> fiGeneVariables = getFIGeneVariables(fg);
         ObservationHelper helper = new ObservationHelper();
@@ -276,6 +277,14 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                     randomSampleToVarToResult,
                     progPane);
         frame.getGlassPane().setVisible(false);
+        // If all work fine, we will store information for futher visualization and analyses
+        FIPGMResults results = FIPGMResults.getResults();
+        results.setObservations(observations);
+        results.setRandomObservations(randomObservations);
+        results.setSampleToVarToScore(sampleToVarToResult);
+        results.setRandomSampleToVarToScore(randomSampleToVarToResult);
+        FIPGMResultsControl control = new FIPGMResultsControl();
+        control.showInferneceResults(results);
     }
 
     private Map<String, Map<Variable, Double>> runPosteriorInferences(List<Observation<Number>> observations,
@@ -308,7 +317,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                 continue; // Just escape it
             }
             time2 = System.currentTimeMillis();
-            System.out.println("Time for " + observation.getName() + ": " + (time2 - time1) / 1000.0d + " seconds");
+//            System.out.println("Time for " + observation.getName() + ": " + (time2 - time1) / 1000.0d + " seconds");
             // Average the original runningTime to get a better estimation
             runningTime = ((time2 - time1) + runningTime) / 2.0d;
             sampleToVarToResult.put(observation.getName(), varToResult);
@@ -365,7 +374,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             Set<String> allFIs = PlugInObjectManager.getManager().getFIPGMConfig().getFIs();
             Set<String> fis = InteractionUtilities.getFIs(geneToScore.keySet(), allFIs);
             FINetworkGenerator generator = new FINetworkGenerator();
-            CyNetwork network = generator.constructFINetwork(fis);
+            // We want to list genes that cannot connect, so use this two-parameters method.
+            CyNetwork network = generator.constructFINetwork(geneToScore.keySet(), fis);
             network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", 
                                                                            "FI PGM Impact Analysis Network");
             // Register and display the network
@@ -377,6 +387,9 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             tableHelper.storeNodeAttributesByName(network,
                                                   FIVisualStyle.GENE_VALUE_ATT,
                                                   geneToScore);
+            // Mark this network before creating a view so that the popup menu can be created correctly
+            tableHelper.markAsReactomeNetwork(network, 
+                                              ReactomeNetworkType.PGMFINetwork);
             CyNetworkViewFactory viewFactory = (CyNetworkViewFactory) context.getService(viewFactoryRef);
             CyNetworkView view = viewFactory.createNetworkView(network);
             CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);

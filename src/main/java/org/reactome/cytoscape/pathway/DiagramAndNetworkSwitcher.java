@@ -174,7 +174,7 @@ public class DiagramAndNetworkSwitcher {
                 "FI Nework for " + pathway.getDisplayName());
         TableHelper tableHelper = new TableHelper();
         tableHelper.markAsReactomeNetwork(network,
-                                          ReactomeNetworkType.FINetwork);
+                                          ReactomeNetworkType.PathwayFINetwork);
         tableHelper.storeDataSetType(network, 
                 "PathwayDiagram");
         tableHelper.storeNetworkAttribute(network,

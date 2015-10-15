@@ -100,6 +100,10 @@ public class ObservationDataDialog extends GeneLevelDialog {
         this.targetGenes = targetGenes;
     }
     
+    public TTestTablePlotPane<String> getTTestTablePlotPane() {
+        return this.tablePlotPane;
+    }
+    
     /**
      * Show observations data loaded for the passed RenderablePathway object.
      * @param diagram

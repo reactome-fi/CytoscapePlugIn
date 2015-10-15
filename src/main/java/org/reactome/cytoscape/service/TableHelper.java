@@ -12,6 +12,9 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 
 public class TableHelper {
+    // Some constants used as keys
+    private final String REACTOME_NETWORK_TYPE = "ReactomeNetworkType";
+    
     private static final String MCL_ARRAY_CLUSTERING = TableFormatterImpl
             .getMCLArrayClustering();
     private static final String SAMPLE_MUTATION_DATA = TableFormatterImpl
@@ -44,9 +47,8 @@ public class TableHelper {
     public boolean isReactomeNetwork(CyNetworkView view) {
         CyTable netTable = view.getModel().getDefaultNetworkTable();
         Long netSUID = view.getModel().getSUID();
-        String networkType = netTable.getRow(netSUID).get("ReactomeNetworkType",
+        String networkType = netTable.getRow(netSUID).get(REACTOME_NETWORK_TYPE,
                                                           String.class);
-
         if (networkType != null) 
             return true;
 
@@ -72,7 +74,7 @@ public class TableHelper {
     public ReactomeNetworkType getReactomeNetworkType(CyNetwork network) {
         CyTable netTable = network.getDefaultNetworkTable();
         Long netSUID = network.getSUID();
-        String networkType = netTable.getRow(netSUID).get("ReactomeNetworkType",
+        String networkType = netTable.getRow(netSUID).get(REACTOME_NETWORK_TYPE,
                                                           String.class);
         if (networkType == null)
             return null;
@@ -93,7 +95,7 @@ public class TableHelper {
      */
     public <T> void storeNetworkAttribute(CyNetwork network,
                                           String attName,
-                                          T value) {
+                                          T value) { // Only classes for primitive data type plus String can be saved.
         CyTable networkTable = network.getDefaultNetworkTable();
         // Make sure networkTable has the attName column
         if (networkTable.getColumn(attName) == null) {
@@ -167,8 +169,8 @@ public class TableHelper {
         // Have to store the enum type into a string
         // since the enum type is not supported!
         storeNetworkAttribute(network,
-                              "ReactomeNetworkType",
-                              networkType.toString());
+                              REACTOME_NETWORK_TYPE,
+                              networkType + "");
     }
     
     public void storeClusteringType(CyNetwork network, String clusteringType)

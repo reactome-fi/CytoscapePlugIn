@@ -113,9 +113,13 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
 
         PopupMenuManager popupManager = PopupMenuManager.getManager();
         popupManager.registerMenuHandler(ReactomeNetworkType.FINetwork,
-                                         new FINetworkPopupMenuHandler());
+                                         new GeneSetFINetworkPopupMenuHandler());
+        popupManager.registerMenuHandler(ReactomeNetworkType.PathwayFINetwork,
+                                         new PathwayFINetworkPopupMenuHandler());
         popupManager.registerMenuHandler(ReactomeNetworkType.FactorGraph,
                                          new FactorGraphPopupMenuHandler());
+        popupManager.registerMenuHandler(ReactomeNetworkType.PGMFINetwork,
+                                         new PGMFINetworkPopupMenuHandler());
         
         // Used as the default PopupMenuHandler. Most likely, this is not needed.
         // But keep it here for the time being.

@@ -230,6 +230,25 @@ public class PlugInUtilities {
     }
     
     /**
+     * Get all genes displayed in a network view.
+     * @param networkView
+     * @return
+     */
+    public static Set<String> getDisplayedGenesInNetwork(CyNetwork network) {
+        CyTable nodeTable = network.getDefaultNodeTable();
+        Set<String> genes = new HashSet<String>();
+        List<CyNode> nodes = network.getNodeList();
+        if (nodes != null && nodes.size() > 0) {
+            for (CyNode node : nodes) {
+                String nodeName = nodeTable.getRow(node.getSUID()).get("name", String.class);
+                if (nodeName != null)
+                    genes.add(nodeName);
+            }
+        }
+        return genes;
+    }
+    
+    /**
      * Get the index for a CytoPanelComponent specified by its name in the passed
      * CytoPanel object. If nothing can be found, -1 is going to be returned.
      * @param cytoPanel

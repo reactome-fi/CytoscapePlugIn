@@ -42,8 +42,8 @@ public class PlotTablePanel extends JPanel {
     private final String EMPTY_DATA_MESSAGE = "Select one or more variables having no \"INFINITY\" value to plot.";
     private final String TOO_MANY_LINES_MESSAGE = "Too many columns in the table to draw lines!";
     private final int MAXIMUM_COLUMNS_FOR_PLOT = 13;
-    static final String FDR_COL_NAME_AFFIX = "(FDR)";
-    static final String P_VALUE_COL_NAME_AFFIX = "(pValue)";
+    public static final String FDR_COL_NAME_AFFIX = "(FDR)";
+    public static final String P_VALUE_COL_NAME_AFFIX = "(pValue)";
     // Used to draw
     private DefaultCategoryDataset dataset;
     // For p-values

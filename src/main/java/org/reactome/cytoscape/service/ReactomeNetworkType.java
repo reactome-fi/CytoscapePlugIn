@@ -10,7 +10,9 @@ package org.reactome.cytoscape.service;
  */
 public enum ReactomeNetworkType {
     
-    FINetwork,
-    FactorGraph
+    FINetwork, // Just normal FI network
+    PathwayFINetwork, // A FI converted from a pathway diagram
+    FactorGraph, // A network showing a factor graph
+    PGMFINetwork // FI generated based on FI PGM
     
 }

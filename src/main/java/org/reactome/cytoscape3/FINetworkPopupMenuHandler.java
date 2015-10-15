@@ -15,17 +15,13 @@ import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
-import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
-import org.cytoscape.application.events.SetCurrentNetworkViewListener;
 import org.cytoscape.application.swing.CyEdgeViewContextMenuFactory;
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyEdge;
-import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
-import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.ServiceProperties;
@@ -35,11 +31,9 @@ import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.DiseaseData;
-import org.reactome.cytoscape.pathway.DiagramAndNetworkSwitcher;
 import org.reactome.cytoscape.service.AbstractPopupMenuHandler;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
-import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableFormatter;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.service.TableHelper;
@@ -61,47 +55,41 @@ import org.reactome.r3.util.InteractionUtilities;
  * 
  */
 public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
-    // Keep these two menus and their registration separately for dynmaically on/off
-    private CyNetworkViewContextMenuFactory annotFIsMenu;
-    private CyNetworkViewContextMenuFactory networkToDiagramMenu;
     protected Map<CyNetworkViewContextMenuFactory, ServiceRegistration> menuToRegistration;
     
     public FINetworkPopupMenuHandler() {
         menuToRegistration = new HashMap<CyNetworkViewContextMenuFactory, ServiceRegistration>();
-        // Add a listener for NewtorkView selection
-        SetCurrentNetworkViewListener currentNetworkViewListener = new SetCurrentNetworkViewListener() {
-            
-            @Override
-            public void handleEvent(SetCurrentNetworkViewEvent event) {
-                if (event.getNetworkView() == null)
-                    return; // This is more like a Pathway view
-                CyNetwork network = event.getNetworkView().getModel();
-                // Check if this network is a converted
-                CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
-                String dataSetType = row.get("dataSetType",
-                                             String.class);
-                if ("PathwayDiagram".equals(dataSetType)) {
-                    // Check the ReactomeNetworkType
-                    ReactomeNetworkType type = new TableHelper().getReactomeNetworkType(network);
-                    if (type == ReactomeNetworkType.FINetwork) {
-                        uninstallDynamicMenu(annotFIsMenu);
-                        installConvertToDiagramMenu();
-                    }
-                    else if (type == ReactomeNetworkType.FactorGraph) {
-                        uninstallDynamicMenu(annotFIsMenu);
-                        uninstallDynamicMenu(networkToDiagramMenu);
-                    }
-                }
-                else {
-                    installFIAnnotMenu();
-                    uninstallDynamicMenu(networkToDiagramMenu);
-                }
-            }
-        };
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        context.registerService(SetCurrentNetworkViewListener.class.getName(),
-                                currentNetworkViewListener,
-                                null);
+//        // Add a listener for NewtorkView selection
+//        SetCurrentNetworkViewListener currentNetworkViewListener = new SetCurrentNetworkViewListener() {
+//            
+//            @Override
+//            public void handleEvent(SetCurrentNetworkViewEvent event) {
+//                if (event.getNetworkView() == null)
+//                    return; // This is more like a Pathway view
+//                CyNetwork network = event.getNetworkView().getModel();
+//                // Check if this network is a converted
+//                CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
+//                String dataSetType = row.get("dataSetType",
+//                                             String.class);
+//                if ("PathwayDiagram".equals(dataSetType)) {
+//                    // Check the ReactomeNetworkType
+//                    ReactomeNetworkType type = new TableHelper().getReactomeNetworkType(network);
+//                    if (type == ReactomeNetworkType.FINetwork) {
+//                        installConvertToDiagramMenu();
+//                    }
+//                    else if (type == ReactomeNetworkType.FactorGraph) {
+//                        uninstallDynamicMenu(networkToDiagramMenu);
+//                    }
+//                }
+//                else {
+//                    uninstallDynamicMenu(networkToDiagramMenu);
+//                }
+//            }
+//        };
+//        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+//        context.registerService(SetCurrentNetworkViewListener.class.getName(),
+//                                currentNetworkViewListener,
+//                                null);
     }
     
     private <T> void addPopupMenu(BundleContext context,
@@ -132,7 +120,10 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         netPathProps.setProperty(ServiceProperties.TITLE, "Network Pathway Enrichment");
         String preferredMenuText = PREFERRED_MENU + ".Analyze Network Functions[10]";
         netPathProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
-        addPopupMenu(context, netPathMenu, CyNetworkViewContextMenuFactory.class, netPathProps);
+        addPopupMenu(context,
+                     netPathMenu, 
+                     CyNetworkViewContextMenuFactory.class, 
+                     netPathProps);
         
         NetworkGOCellComponentMenu netGOCellMenu = new NetworkGOCellComponentMenu();
         Properties netGOCellProps = new Properties();
@@ -225,22 +216,8 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         edgeMenuProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, edgeQueryMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
     }
-
-    private void installConvertToDiagramMenu() {
-        if (networkToDiagramMenu == null)
-            networkToDiagramMenu = new NewtorkToDiagramMenu();
-        installDynamicMenu(networkToDiagramMenu,
-                           "Convert to Diagram");
-    }
     
-    private void installFIAnnotMenu() {
-        if (annotFIsMenu == null)
-            annotFIsMenu = new FIAnnotationFetcherMenu();
-        installDynamicMenu(annotFIsMenu,
-                           "Fetch FI Annotations");
-    }
-    
-    private void installDynamicMenu(CyNetworkViewContextMenuFactory menu,
+    protected void installOtherNetworkMenu(CyNetworkViewContextMenuFactory menu,
                                     String title) {
         ServiceRegistration registration = menuToRegistration.get(menu);
         if (registration != null)
@@ -249,28 +226,12 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         props.setProperty(ServiceProperties.TITLE, title);
         props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        registration = context.registerService(CyNetworkViewContextMenuFactory.class.getName(),
-                                               menu,
-                                               props);
-        menuToRegistration.put(menu, registration);
+        addPopupMenu(context,
+                     menu,
+                     CyNetworkViewContextMenuFactory.class, 
+                     props);
     }
     
-    private void uninstallDynamicMenu(CyNetworkViewContextMenuFactory menu) {
-        ServiceRegistration registration = menuToRegistration.get(menu);
-        if (registration == null)
-            return; // This menu has been uninstalled already
-        registration.unregister();
-        menuToRegistration.remove(menu);
-    }
-
-    @Override
-    protected void uninstallMenus() {
-        super.uninstallMenus();
-        // Two dynamic menus
-        uninstallDynamicMenu(annotFIsMenu);
-        uninstallDynamicMenu(networkToDiagramMenu);
-    }
-
     /**
      * A class for the network view right-click menu item which clusters the
      * network and a corresponding task/factory.
@@ -303,53 +264,6 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         }
     }
 
-    /**
-     * A class for the network view context menu item to fetch FI annotations.
-     * 
-     * @author Eric T. Dawson
-     * 
-     */
-    private class FIAnnotationFetcherMenu implements CyNetworkViewContextMenuFactory
-    {
-
-        @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
-            JMenuItem fetchFIAnnotationsMenu = new JMenuItem(
-                    "Fetch FI Annotations");
-            fetchFIAnnotationsMenu.addActionListener(new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    Thread t = new Thread()
-                    {
-                        @Override
-                        public void run() {
-                            try {
-                                EdgeActionCollection.annotateFIs(view);
-                                BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-                                ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-                                FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
-                                visStyler.setVisualStyle(view, false); // If there is one already, don't recreate it.
-                                context.ungetService(servRef);
-                            }
-                            catch (Exception t) {
-                                JOptionPane.showMessageDialog(
-                                        PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                        "The visual style could not be applied.",
-                                        "Visual Style Error",
-                                        JOptionPane.ERROR_MESSAGE);
-                            }
-                        }
-                    };
-                    t.start();
-                }
-            });
-            return new CyMenuItem(fetchFIAnnotationsMenu, 1.0f);
-        }
-
-    }
 
     private class NetworkPathwayEnrichmentMenu implements
             CyNetworkViewContextMenuFactory
@@ -570,25 +484,6 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
             return new CyMenuItem(survivalAnalysisMenuItem, 10.f);
         }
     }
-    
-    // A way to convert from FI network view back to Reactome diagram view
-    private class NewtorkToDiagramMenu implements CyNetworkViewContextMenuFactory {
-        
-        @Override
-        public CyMenuItem createMenuItem(final CyNetworkView networkView) {
-            JMenuItem menuItem = new JMenuItem("Convert to Diagram");
-            menuItem.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent arg0) {
-                    DiagramAndNetworkSwitcher helper = new DiagramAndNetworkSwitcher();
-                    helper.convertToDiagram(networkView);
-                }
-            });
-            CyMenuItem rtn = new CyMenuItem(menuItem, 1.5f);
-            return rtn;
-        }
-    };
 
     private class LoadCancerGeneIndexForNetwork implements
             CyNetworkViewContextMenuFactory
