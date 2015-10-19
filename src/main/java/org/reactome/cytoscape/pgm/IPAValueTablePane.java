@@ -34,6 +34,7 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
@@ -73,6 +74,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
     protected FactorGraphInferenceResults fgInfResults;
     // So that it can be unregister
     private ServiceRegistration graphSelectionRegistration;
+    // A Label at the top showing a little bit note
+    protected JLabel ipaLabel;
     
     /**
      * In order to show title, have to set the title in the constructor.
@@ -110,6 +113,40 @@ public class IPAValueTablePane extends NetworkModulePanel {
                                                              null);
     }
     
+    /**
+     * Select a set of CyNodes based on a set of attribute values.
+     * @param networkView
+     * @param nodeAttName
+     * @param selectedAttValues
+     */
+    protected void selectNodes(CyNetworkView networkView,
+                               String nodeAttName,
+                               Set<String> selectedAttValues) {
+        if (networkView != null) {
+            // Clear all selection
+            TableHelper tableHelper = new TableHelper();
+            CyNetwork network = networkView.getModel();
+            int totalSelected = 0;
+            for (View<CyNode> nodeView : networkView.getNodeViews()) {
+                CyNode node = nodeView.getModel();
+                Long nodeSUID = node.getSUID();
+                String nodeLabel = tableHelper.getStoredNodeAttribute(network,
+                                                                      node, 
+                                                                      nodeAttName, 
+                                                                      String.class);
+                boolean isSelected = selectedAttValues.contains(nodeLabel);
+                if (isSelected)
+                    totalSelected ++;
+                tableHelper.setNodeSelected(network, 
+                                            node,
+                                            isSelected);
+            }
+            PlugInUtilities.zoomToSelected(networkView,
+                                           totalSelected);
+            networkView.updateView();
+        }
+    }
+    
     @Override
     public void close() {
         if (currentViewRegistration != null) {
@@ -127,7 +164,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
             controlToolBar.remove(i);
         }
         // Add a label
-        JLabel ipaLabel = new JLabel("Note: IPA stands for \"Integrated Pathway Activity\" (click for details).");
+        ipaLabel = new JLabel("Note: IPA stands for \"Integrated Pathway Activity\" (click for details).");
         ipaLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         ipaLabel.addMouseListener(new MouseAdapter() {
 

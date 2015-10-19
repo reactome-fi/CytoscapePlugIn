@@ -324,13 +324,13 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     protected void exportAnnotations() {
         // Export annotations in a text file
         Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
-        FileChooserFilter filter = new FileChooserFilter("Annotation File", "txt");
+        FileChooserFilter filter = new FileChooserFilter("Table File", "txt");
         filters.add(filter);
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference reference = context.getServiceReference(FileUtil.class.getName());
         FileUtil fileUtil = (FileUtil) context.getService(reference);
         File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), 
-                                     "Save Annotation File", 
+                                     "Save Table File", 
                                      FileUtil.SAVE,
                                      filters);
         if (file == null)
@@ -372,7 +372,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     
     protected JPopupMenu createExportAnnotationPopup() {
         JPopupMenu popupMenu = new JPopupMenu();
-        JMenuItem export = new JMenuItem("Export Annotations");
+        JMenuItem export = new JMenuItem("Export Table");
         export.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 exportAnnotations();

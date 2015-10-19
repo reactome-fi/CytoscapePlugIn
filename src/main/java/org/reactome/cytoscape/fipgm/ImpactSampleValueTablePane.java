@@ -4,6 +4,8 @@
  */
 package org.reactome.cytoscape.fipgm;
 
+import java.awt.Cursor;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -38,6 +40,29 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
         super(title);
     }
     
+    @Override
+    protected void addTablePlotPane() {
+        super.addTablePlotPane();
+        adjustGUIs();
+    }
+
+    protected void adjustGUIs() {
+        // Make modifications here for sub-classing purpose.
+        // Need to change the label a little bit
+        if (ipaLabel != null) {
+            ipaLabel.setText("Show gene impact scores");
+            // Make it not clickable
+            MouseListener[] listeners = ipaLabel.getMouseListeners();
+            if (listeners != null && listeners.length > 0) {
+                for (MouseListener listener : listeners)
+                    ipaLabel.removeMouseListener(listener);
+            }
+            ipaLabel.setCursor(Cursor.getDefaultCursor());
+        }
+        if (contentPane != null)
+            contentPane.setYAxisLabel("Impact Score");
+    }
+
     @Override
     protected NetworkModuleTableModel createTableModel() {
         return new ImpactSampleValueTableModel();

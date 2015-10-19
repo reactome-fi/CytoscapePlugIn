@@ -7,9 +7,7 @@ package org.reactome.cytoscape.fipgm;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.swing.JDialog;
@@ -19,7 +17,6 @@ import javax.swing.JTable;
 import org.apache.commons.math.MathException;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
-import org.reactome.cytoscape.pgm.TTestTablePlotPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.Variable;
 
@@ -34,7 +31,7 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     private final int TOTAL_GENE = 1000;
     private boolean isOkClicked;
     // To show results by doing t-test
-    private TTestTablePlotPane<Variable> tTestPlotPane;
+    private FilterableTTestTablePlotPane tTestPlotPane;
     private JTable resultTable;
     
     public PGMImpactAnalysisResultDialog() {
@@ -44,12 +41,11 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     
     private void init() {
         setTitle("FI PGM Impact Analysis Results");
-        FilterableTTestTablePlotPane contentPane = new FilterableTTestTablePlotPane();
-        contentPane.setMaximumRowForPlot(MAXIMUM_ROW_FOR_PLOT);
-        getContentPane().add(contentPane, BorderLayout.CENTER);
+        tTestPlotPane = new FilterableTTestTablePlotPane();
+        tTestPlotPane.setMaximumRowForPlot(MAXIMUM_ROW_FOR_PLOT);
+        getContentPane().add(tTestPlotPane, BorderLayout.CENTER);
         // Want to keep these variables in the class
-        tTestPlotPane = contentPane.gettTestPlotPane();
-        resultTable = contentPane.getResultTable();
+        resultTable = tTestPlotPane.getResultTable();
         
         DialogControlPane controlPane = new DialogControlPane();
         getContentPane().add(controlPane, BorderLayout.SOUTH);
@@ -110,53 +106,13 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     public void setSampleResults(Map<String, Map<Variable, Double>> sampleToVarToScore,
                                  Map<String, Map<Variable, Double>> randomSampleToVarToScore) {
         try {
-            Map<Variable, List<Double>> varToScores = getVariableToScores(sampleToVarToScore);
-            Map<Variable, List<Double>> randomVarToScores = getVariableToScores(randomSampleToVarToScore);
-            
-            tTestPlotPane.setDisplayValues("Real Samples",
-                                           varToScores, 
-                                           "Random Samples", 
-                                           randomVarToScores);
-            tTestPlotPane.getBottomPValueLabel().setText(varToScores.size() + " displayed.");
+            tTestPlotPane.setSampleResults(sampleToVarToScore, randomSampleToVarToScore);
         }
         catch(MathException e) {
             JOptionPane.showMessageDialog(this,
                                           "Error in displaying results: " + e,
                                           "Error in Result Display",
                                           JOptionPane.ERROR_MESSAGE);
-            return;
         }
-        //        // Need to get genes
-        //        Set<String> genes = new HashSet<String>();
-        //        // Get from the first result
-        //        Map<Variable, Double> varToScore = sampleToVarToScore.values().iterator().next();
-        //        for (Variable var : varToScore.keySet())
-        //            genes.add(var.getName());
-        //        ResultTableModel model = (ResultTableModel) resultTable.getModel();
-        //        List<String> geneList = new ArrayList<>(genes);
-        //        Collections.sort(geneList);
-        //        model.setGenes(geneList);
-        //        for (String sample : sampleToVarToScore.keySet())
-        //            addSampleResult(sample, sampleToVarToScore.get(sample));
-        //        model.calcualteMeans();
-        //        displayNote(sampleToVarToScore);
-        //        model.fireTableStructureChanged();
-    }
-    
-    private Map<Variable, List<Double>> getVariableToScores(Map<String, Map<Variable, Double>> sampleToVarToScore) {
-        Map<Variable, List<Double>> varToScores = new HashMap<>();
-        for (String sample : sampleToVarToScore.keySet()) {
-            Map<Variable, Double> varToScore = sampleToVarToScore.get(sample);
-            for (Variable var : varToScore.keySet()) {
-                Double score = varToScore.get(var);
-                List<Double> scores = varToScores.get(var);
-                if (scores == null) {
-                    scores = new ArrayList<>();
-                    varToScores.put(var, scores);
-                }
-                scores.add(score);
-            }
-        }
-        return varToScores;
     }
 }

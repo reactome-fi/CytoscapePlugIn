@@ -284,7 +284,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         results.setSampleToVarToScore(sampleToVarToResult);
         results.setRandomSampleToVarToScore(randomSampleToVarToResult);
         FIPGMResultsControl control = new FIPGMResultsControl();
-        control.showInferneceResults(results);
+        control.showInferneceResults();
     }
 
     private Map<String, Map<Variable, Double>> runPosteriorInferences(List<Observation<Number>> observations,

@@ -9,10 +9,13 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -27,6 +30,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.TableRowSorter;
 
+import org.apache.commons.math.MathException;
 import org.gk.qualityCheck.ResultTableModel;
 import org.reactome.cytoscape.pgm.TTestTablePlotPane;
 import org.reactome.cytoscape.service.TTestTableModel;
@@ -42,6 +46,8 @@ public class FilterableTTestTablePlotPane extends JPanel {
     private TTestTablePlotPane<Variable> tTestPlotPane;
     private JTable resultTable;
     private JLabel noteLabel;
+    // Track this so that we can turn it off
+    private JPanel filterPane;
     
     /**
      * Default constructor.
@@ -65,6 +71,39 @@ public class FilterableTTestTablePlotPane extends JPanel {
     public void setMaximumRowForPlot(int maximumRowForPlot) {
         this.maximumRowForPlot = maximumRowForPlot;
     }
+    
+    public void hideFilterPane() {
+        filterPane.setVisible(false);
+    }
+    
+    public void setSampleResults(Map<String, Map<Variable, Double>> sampleToVarToScore,
+                                 Map<String, Map<Variable, Double>> randomSampleToVarToScore) throws MathException {
+        Map<Variable, List<Double>> varToScores = getVariableToScores(sampleToVarToScore);
+        Map<Variable, List<Double>> randomVarToScores = getVariableToScores(randomSampleToVarToScore);
+        
+        tTestPlotPane.setDisplayValues("Real Samples",
+                                       varToScores, 
+                                       "Random Samples", 
+                                       randomVarToScores);
+        tTestPlotPane.getBottomPValueLabel().setText(varToScores.size() + " displayed.");
+    }
+    
+    private Map<Variable, List<Double>> getVariableToScores(Map<String, Map<Variable, Double>> sampleToVarToScore) {
+        Map<Variable, List<Double>> varToScores = new HashMap<>();
+        for (String sample : sampleToVarToScore.keySet()) {
+            Map<Variable, Double> varToScore = sampleToVarToScore.get(sample);
+            for (Variable var : varToScore.keySet()) {
+                Double score = varToScore.get(var);
+                List<Double> scores = varToScores.get(var);
+                if (scores == null) {
+                    scores = new ArrayList<>();
+                    varToScores.put(var, scores);
+                }
+                scores.add(score);
+            }
+        }
+        return varToScores;
+    }
 
     private void init() {
         setLayout(new BorderLayout());
@@ -77,7 +116,7 @@ public class FilterableTTestTablePlotPane extends JPanel {
         add(tTestPlotPane, BorderLayout.CENTER);
 
         // Add filters based on Genes and/or Sum
-        JPanel filterPane = createFilterPane();
+        filterPane = createFilterPane();
         filterPane.setBorder(BorderFactory.createEtchedBorder());
         JPanel bottomPane = new JPanel();
         bottomPane.setBorder(BorderFactory.createEtchedBorder());

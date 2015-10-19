@@ -135,6 +135,15 @@ public class PlotTablePanel extends JPanel {
             fdrAxis.setVisible(isVisible);
     }
     
+    /**
+     * Set the text lable for the Y-axis.
+     * @param label
+     */
+    public void setYAxisLabel(String label) {
+        ValueAxis valueAxis = plot.getRangeAxis(); // This should be y-axis
+        valueAxis.setLabel(label);
+    }
+    
     private JPanel createGraphPane(String axisName,
                                    boolean needPValuePlot) {
         dataset = new DefaultCategoryDataset();

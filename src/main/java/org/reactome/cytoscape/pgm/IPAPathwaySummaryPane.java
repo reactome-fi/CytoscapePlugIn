@@ -37,7 +37,6 @@ import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.View;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
@@ -404,29 +403,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                 sourceIdsForSelection.add(sourceId);
             }
         }
-        if (networkView != null) {
-            // Clear all selection
-            TableHelper tableHelper = new TableHelper();
-            CyNetwork network = networkView.getModel();
-            int totalSelected = 0;
-            for (View<CyNode> nodeView : networkView.getNodeViews()) {
-                CyNode node = nodeView.getModel();
-                Long nodeSUID = node.getSUID();
-                String nodeLabel = tableHelper.getStoredNodeAttribute(network,
-                                                                      node, 
-                                                                      "SourceIds", 
-                                                                      String.class);
-                boolean isSelected = sourceIdsForSelection.contains(nodeLabel);
-                if (isSelected)
-                    totalSelected ++;
-                tableHelper.setNodeSelected(network, 
-                                            node,
-                                            isSelected);
-            }
-            PlugInUtilities.zoomToSelected(networkView,
-                                           totalSelected);
-            networkView.updateView();
-        }
+        selectNodes(networkView, "SourceIds", sourceIdsForSelection);
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         try {
             ServiceReference[] references = context.getServiceReferences(PropertyChangeListener.class.getName(), 

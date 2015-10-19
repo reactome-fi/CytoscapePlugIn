@@ -24,8 +24,9 @@ public class FIPGMResultsControl {
     public FIPGMResultsControl() {
     }
     
-    public void showInferneceResults(FIPGMResults results) {
-        showSampleWiseResults(results);
+    public void showInferneceResults() {
+        showSampleWiseResults();
+        showGeneWiseResults();
     }
     
     /**
@@ -34,7 +35,7 @@ public class FIPGMResultsControl {
      * @param target
      * @return true if values are shown.
      */
-    private void showSampleWiseResults(FIPGMResults results) {
+    private void showSampleWiseResults() {
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
         String title = "Impact Sample Values";
@@ -45,6 +46,20 @@ public class FIPGMResultsControl {
         else
             valuePane = (ImpactSampleValueTablePane) tableBrowserPane.getComponentAt(index);
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
+    }
+    
+    private void showGeneWiseResults() {
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
+        String title = "Impact Gene Values";
+        int index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);
+        ImpactGeneValueTablePane valuePane = null;
+        if (index < 0)
+            valuePane = new ImpactGeneValueTablePane(title);
+        else
+            valuePane = (ImpactGeneValueTablePane) tableBrowserPane.getComponentAt(index);
+        valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
+        valuePane.showResults();
         // Want to select this if this tab is newly created
         // Only select it if this tab is newly created.
         if (index == -1) {
