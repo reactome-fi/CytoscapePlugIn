@@ -54,9 +54,11 @@ public class PGMFINetworkPopupMenuHandler extends GeneSetFINetworkPopupMenuHandl
         List<Observation<Number>> observations = results.getObservations();
         if (observations == null || observations.size() == 0) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Observations have not been loaded.",
+                                          "Observations have not been loaded. Note: Observations have not been saved in\n"
+                                        + "analysis results.",
                                           "Empty Observations",
                                           JOptionPane.INFORMATION_MESSAGE);
+            frame.getGlassPane().setVisible(false);
             return;
         }
         ObservationDataDialog dialog = new ObservationDataDialog();

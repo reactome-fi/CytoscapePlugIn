@@ -18,7 +18,15 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyVetoException;
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,7 +39,6 @@ import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.math.MathException;
 import org.cytoscape.property.CyProperty;
-import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
@@ -887,17 +894,9 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     }
     
     private void openAnalysisResults() {
-        ServiceReference reference = null;
         try {
-            // Get a file
-            Collection<FileChooserFilter> filters = getAnalysisResultFilters();
-            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-            reference = context.getServiceReference(FileUtil.class.getName());
-            FileUtil fileUtil = (FileUtil) context.getService(reference);
-            File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), 
-                                         "Open Analysis Results", 
-                                         FileUtil.LOAD,
-                                         filters);
+            File file = PlugInUtilities.getAnalysisFile("Open Analysis Results",
+                                                        FileUtil.LOAD);
             if (file == null)
                 return;
             JAXBContext jaxbContext = JAXBContext.newInstance(FactorGraphInferenceResults.class);
@@ -919,10 +918,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                           "Error in Opening Results", 
                                           JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
-        }
-        finally {
-            if (reference != null)
-                PlugInObjectManager.getManager().getBundleContext().ungetService(reference);
         }
     }
 
@@ -955,7 +950,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                           JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        ServiceReference reference = null;
         try {
             JAXBContext jaxbContext = JAXBContext.newInstance(FactorGraphInferenceResults.class);
             Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
@@ -963,16 +957,11 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
             
             // Get a file
-            Collection<FileChooserFilter> filters = getAnalysisResultFilters();
-            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-            reference = context.getServiceReference(FileUtil.class.getName());
-            FileUtil fileUtil = (FileUtil) context.getService(reference);
-            File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), 
-                                         "Save Analysis Results", 
-                                         FileUtil.SAVE,
-                                         filters);
-            if (file == null)
+            File file = PlugInUtilities.getAnalysisFile("Save Analysis Results",
+                                                        FileUtil.SAVE);
+            if (file == null) {
                 return; // Canceled
+            }
             // Have to make sure all ids are not null and unique
             results.getFactorGraph().setIdsInFactors();
             RenderablePathway diagram = (RenderablePathway) pathwayEditor.getRenderable();
@@ -986,20 +975,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                           JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }
-        finally {
-            if (reference != null)
-                PlugInObjectManager.getManager().getBundleContext().ungetService(reference);
-        }
     }
 
-    private Collection<FileChooserFilter> getAnalysisResultFilters() {
-        Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
-        FileChooserFilter filter = new FileChooserFilter("Analysis Results",
-                                                         new String[]{"xml", "txt", ".xml", ".txt"});
-        filters.add(filter);
-        return filters;
-    }
-    
     /**
      * Perform factor graph analysis without displaying the converted factor graph in Cytoscape's
      * desktop as the normal function.

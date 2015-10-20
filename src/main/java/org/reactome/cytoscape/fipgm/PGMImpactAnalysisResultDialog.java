@@ -5,19 +5,24 @@
 package org.reactome.cytoscape.fipgm;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JTable;
 
 import org.apache.commons.math.MathException;
-import org.gk.util.DialogControlPane;
+import org.cytoscape.util.swing.FileUtil;
 import org.gk.util.GKApplicationUtilities;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Variable;
 
 /**
@@ -47,13 +52,23 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
         // Want to keep these variables in the class
         resultTable = tTestPlotPane.getResultTable();
         
-        DialogControlPane controlPane = new DialogControlPane();
+        JPanel controlPane = createControlPane();
         getContentPane().add(controlPane, BorderLayout.SOUTH);
         setSize(1000, 650);
         GKApplicationUtilities.center(this);
+    }
+    
+    private JPanel createControlPane() {
+        JPanel controlPane = new JPanel();
+        controlPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        JButton saveBtn = new JButton("Save");
+        JButton okBtn = new JButton("OK");
+        JButton cancelBtn = new JButton("Cancel");
+        controlPane.add(saveBtn);
+        controlPane.add(okBtn);
+        controlPane.add(cancelBtn);
         
-        // Add some controls
-        controlPane.getOKBtn().addActionListener(new ActionListener() {
+        okBtn.addActionListener(new ActionListener() {
             
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -63,7 +78,8 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
                 isOkClicked = true;
             }
         });
-        controlPane.getCancelBtn().addActionListener(new ActionListener() {
+        
+        cancelBtn.addActionListener(new ActionListener() {
             
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -71,6 +87,35 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
                 isOkClicked = false;
             }
         });
+        
+        saveBtn.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveResults();
+            }
+        });
+        
+        return controlPane;
+    }
+    
+    private void saveResults() {
+        // Get a file
+        File file = PlugInUtilities.getAnalysisFile("Save Analysis Results",
+                                                    FileUtil.SAVE);
+        if (file == null)
+            return; // Canceled
+        try {
+            FIPGMResults results = FIPGMResults.getResults();
+            results.saveResults(file);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(this,
+                                          "Cannot save analysis results: " + e,
+                                          "Error in Saving Results", 
+                                          JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }
     
     private boolean validateSelectedGenes() {

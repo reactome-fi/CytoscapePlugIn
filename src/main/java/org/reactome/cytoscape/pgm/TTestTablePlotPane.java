@@ -303,7 +303,7 @@ public class TTestTablePlotPane<T> extends JPanel {
         // Make sure names in the two lists are the same
         for (T name : nameList) {
             if (!nameToValues2.keySet().contains(name)) {
-                throw new IllegalArgumentException("Sample " + name + " is not in " + dataLabel2);
+                throw new IllegalArgumentException("Object " + name + " is not in " + dataLabel2);
             }
         }
         dataset.clear();

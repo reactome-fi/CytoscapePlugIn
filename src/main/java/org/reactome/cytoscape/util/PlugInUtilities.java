@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -52,6 +53,8 @@ import org.cytoscape.session.CySession;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.NetworkTaskFactory;
 import org.cytoscape.task.write.SaveSessionAsTaskFactory;
+import org.cytoscape.util.swing.FileChooserFilter;
+import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.util.swing.OpenBrowser;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
@@ -93,6 +96,39 @@ public class PlugInUtilities {
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * Get a file for analysis.
+     * @param title
+     * @param readOrWrite FileUtil.SAVE or LOAD.
+     * @return
+     */
+    public static File getAnalysisFile(String title,
+                                       int readOrWrite) {
+        // Get a file
+        Collection<FileChooserFilter> filters = PlugInUtilities.getAnalysisResultFilters();
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference reference = context.getServiceReference(FileUtil.class.getName());
+        FileUtil fileUtil = (FileUtil) context.getService(reference);
+        File file = fileUtil.getFile(PlugInObjectManager.getManager().getCytoscapeDesktop(), 
+                                     title, 
+                                     readOrWrite,
+                                     filters);
+        context.ungetService(reference);
+        return file;
+    }
+    
+    /**
+     * Get the filter for analysis results.
+     * @return
+     */
+    private static Collection<FileChooserFilter> getAnalysisResultFilters() {
+        Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
+        FileChooserFilter filter = new FileChooserFilter("Analysis Results",
+                                                         new String[]{"xml", "txt", ".xml", ".txt"});
+        filters.add(filter);
+        return filters;
     }
     
     /**

@@ -27,6 +27,7 @@ import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.fipgm.PGMImpactAnalysisAction;
+import org.reactome.cytoscape.fipgm.PGMImpactAnalysisResultLoadAction;
 import org.reactome.cytoscape.pathway.FactorGraphPopupMenuHandler;
 import org.reactome.cytoscape.pathway.ReactomePathwayAction;
 import org.reactome.cytoscape.service.FIVisualStyle;
@@ -100,12 +101,14 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         ReactomePathwayAction pathwayLoadAction = new ReactomePathwayAction();
         // Perform impact analysis based on PGM
         PGMImpactAnalysisAction pgmImpactAction = new PGMImpactAnalysisAction();
+        PGMImpactAnalysisResultLoadAction pgmLoadAction = new PGMImpactAnalysisResultLoadAction();
         
         // Register said Reactome FI Services with the OSGi framework.
         // An empty property
         Properties prop = new Properties();
         registerAllServices(context, gsma, prop);
         registerAllServices(context, pgmImpactAction, prop);
+        registerAllServices(context, pgmLoadAction, prop);
         registerAllServices(context, hna, prop);
         registerAllServices(context, maa, prop);
         registerAllServices(context, pathwayLoadAction, prop);

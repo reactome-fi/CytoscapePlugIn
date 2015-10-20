@@ -17,7 +17,7 @@ public class MicroarrayAnalysisAction extends FICytoscapeAction
     {
         super("Microarray Data Analysis");
         setPreferredMenu("Apps.Reactome FI");
-        setMenuGravity(2.0f);
+        setMenuGravity(20.0f);
         this.desktopApp = desktopApp;
     }
 

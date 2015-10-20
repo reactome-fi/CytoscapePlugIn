@@ -32,6 +32,7 @@ import org.reactome.cytoscape.util.MessageDialog;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape3.FIPlugInHelper;
 import org.reactome.factorgraph.ContinuousVariable;
+import org.reactome.factorgraph.Factor;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.InferenceCannotConvergeException;
 import org.reactome.factorgraph.LoopyBeliefPropagation;
@@ -222,6 +223,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             frame.getGlassPane().setVisible(false);
             return;
         }
+        resetIds(fg);
         progPane.setText("Generating random observations...");
         List<Observation<Number>> observations = constructor.getObservationLoader().getObservations();
         // Generate random observations
@@ -273,18 +275,44 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             showNoConvergeInfo(notConvergedObs,
                                randomNotConvergedObs);
         }
-        showResults(sampleToVarToResult,
-                    randomSampleToVarToResult,
-                    progPane);
-        frame.getGlassPane().setVisible(false);
-        // If all work fine, we will store information for futher visualization and analyses
+        // Set the sole results so that it can be saved during display
         FIPGMResults results = FIPGMResults.getResults();
         results.setObservations(observations);
         results.setRandomObservations(randomObservations);
         results.setSampleToVarToScore(sampleToVarToResult);
         results.setRandomSampleToVarToScore(randomSampleToVarToResult);
+        // The above intialization code should be coded before this method
+        showResults(sampleToVarToResult, 
+                    randomSampleToVarToResult,
+                    progPane,
+                    frame);
+    }
+
+    protected void showResults(Map<String, Map<Variable, Double>> sampleToVarToResult,
+                               Map<String, Map<Variable, Double>> randomSampleToVarToResult, 
+                               ProgressPane progPane,
+                               JFrame frame) {
+        boolean isOKed = showResults(sampleToVarToResult,
+                                     randomSampleToVarToResult,
+                                     progPane);
+        frame.getGlassPane().setVisible(false);
+        if (!isOKed)
+            return;
+        // If all work fine, we will store information for futher visualization and analyses
         FIPGMResultsControl control = new FIPGMResultsControl();
         control.showInferneceResults();
+    }
+    
+    /**
+     * Just want to make save/load work.
+     * @param fg
+     */
+    private void resetIds(FactorGraph fg) {
+        int id = 0;
+        for (Variable var : fg.getVariables())
+            var.setId(id ++);
+        for (Factor factor : fg.getFactors())
+            factor.setId(id ++);
     }
 
     private Map<String, Map<Variable, Double>> runPosteriorInferences(List<Observation<Number>> observations,
@@ -349,7 +377,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
      * Show inference results
      * @param sampleToVarToResult
      */
-    private void showResults(Map<String, Map<Variable, Double>> sampleToVarToResult,
+    private boolean showResults(Map<String, Map<Variable, Double>> sampleToVarToResult,
                              Map<String, Map<Variable, Double>> randomSampleToVarToResult,
                              ProgressPane progressPane) {
         progressPane.setText("Selecting genes...");
@@ -360,9 +388,10 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         dialog.setModal(true);
         dialog.setVisible(true);
         if (!dialog.isOkClicked())
-            return;
+            return false;
         Map<String, Double> geneToScore = dialog.getSelectedGeneToScore();
         constructFINetwork(geneToScore, progressPane);
+        return true;
     }
     
     private void constructFINetwork(Map<String, Double> geneToScore,
@@ -430,7 +459,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         progressPane.setText(builder.toString());
     }
     
-    private void fetchFIs() throws Exception {
+    protected void fetchFIs() throws Exception {
         FINetworkService networkService = FIPlugInHelper.getHelper().getNetworkService();
         Set<String> fis = networkService.queryAllFIs();
         FIPGMConfiguration config = PlugInObjectManager.getManager().getFIPGMConfig();

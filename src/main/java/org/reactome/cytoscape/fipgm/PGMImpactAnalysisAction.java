@@ -10,12 +10,13 @@ import org.reactome.cytoscape.service.FICytoscapeAction;
 
 /**
  * @author gwu
- *
  */
 public class PGMImpactAnalysisAction extends FICytoscapeAction {
     
     public PGMImpactAnalysisAction() {
-        super("PGM Impact Analysis");
+        super("Analyze");
+        setPreferredMenu("Apps.Reactome FI.PGM Impact Analysis[5]");
+        setMenuGravity(5.0f);
     }
     
     /* (non-Javadoc)

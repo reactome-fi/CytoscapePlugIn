@@ -28,7 +28,7 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         super("Gene Set/Mutation Analysis");
         this.desktopApp = desktopApp;
         setPreferredMenu("Apps.Reactome FI");
-        setMenuGravity(0.0f);
+        setMenuGravity(1.0f);
     }
 
     @Override
