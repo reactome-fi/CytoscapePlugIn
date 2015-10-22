@@ -46,8 +46,6 @@ public class PGMImpactResultLoadTask extends PGMImpactAnalysisTask {
         try {
             FIPGMResults results = FIPGMResults.getResults();
             results.loadResults(file);
-            // Need to refresh the list
-            results = FIPGMResults.getResults();
             // We need to fetch FIs first
             progPane.setText("Fetch FIs...");
             fetchFIs();
