@@ -62,13 +62,16 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
     private LoopyBeliefPropagation lbp;
     private PGMType pgmType;
     private int numberOfPermutation;
+    // A flag
+    protected boolean needToAskSaveResults;
     
     /**
      * Default constructor.
      */
     public PGMImpactAnalysisTask() {
+        needToAskSaveResults = true;
     }
-    
+
     public int getNumberOfPermutation() {
         return numberOfPermutation;
     }
@@ -383,6 +386,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         progressPane.setText("Selecting genes...");
         progressPane.setIndeterminate(true);
         PGMImpactAnalysisResultDialog dialog = new PGMImpactAnalysisResultDialog();
+        dialog.setNeedToAskSaveResults(needToAskSaveResults);
         dialog.setSampleResults(sampleToVarToResult,
                                 randomSampleToVarToResult);
         dialog.setModal(true);

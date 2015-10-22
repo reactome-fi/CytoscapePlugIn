@@ -34,7 +34,6 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.model.CyNetworkView;
-import org.cytoscape.view.model.View;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
@@ -122,29 +121,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
     protected void selectNodes(CyNetworkView networkView,
                                String nodeAttName,
                                Set<String> selectedAttValues) {
-        if (networkView != null) {
-            // Clear all selection
-            TableHelper tableHelper = new TableHelper();
-            CyNetwork network = networkView.getModel();
-            int totalSelected = 0;
-            for (View<CyNode> nodeView : networkView.getNodeViews()) {
-                CyNode node = nodeView.getModel();
-                Long nodeSUID = node.getSUID();
-                String nodeLabel = tableHelper.getStoredNodeAttribute(network,
-                                                                      node, 
-                                                                      nodeAttName, 
-                                                                      String.class);
-                boolean isSelected = selectedAttValues.contains(nodeLabel);
-                if (isSelected)
-                    totalSelected ++;
-                tableHelper.setNodeSelected(network, 
-                                            node,
-                                            isSelected);
-            }
-            PlugInUtilities.zoomToSelected(networkView,
-                                           totalSelected);
-            networkView.updateView();
-        }
+        TableHelper tableHelper = new TableHelper();
+        tableHelper.selectNodes(networkView, nodeAttName, selectedAttValues);
     }
     
     @Override

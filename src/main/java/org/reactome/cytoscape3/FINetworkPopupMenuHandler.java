@@ -92,10 +92,10 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
 //                                null);
     }
     
-    private <T> void addPopupMenu(BundleContext context,
-                                  T menuFactory,
-                                  Class<T> cls,
-                                  Properties properties) {
+    protected <T> void addPopupMenu(BundleContext context,
+                                    T menuFactory,
+                                    Class<T> cls,
+                                    Properties properties) {
         ServiceRegistration registration = context.registerService(cls.getName(),
                                                                    menuFactory,
                                                                    properties);
@@ -218,7 +218,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
     }
     
     protected void installOtherNetworkMenu(CyNetworkViewContextMenuFactory menu,
-                                    String title) {
+                                           String title) {
         ServiceRegistration registration = menuToRegistration.get(menu);
         if (registration != null)
             return; // This menu has been installed.

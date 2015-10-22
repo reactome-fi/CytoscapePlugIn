@@ -46,12 +46,12 @@ public abstract class GeneLevelDialog extends JDialog {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (!e.getValueIsAdjusting())
-                    selectEntitiesInDiagram(table);
+                    handleTableSelection(table);
             }
         });
     }
     
-    private void selectEntitiesInDiagram(JTable table) {
+    protected void handleTableSelection(JTable table) {
         if (pathwayEditor == null || geneToDbIds == null || geneToDbIds.size() == 0)
             return;
         int[] selectedRows = table.getSelectedRows();

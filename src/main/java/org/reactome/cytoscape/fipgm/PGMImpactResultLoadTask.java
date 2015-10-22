@@ -24,6 +24,7 @@ public class PGMImpactResultLoadTask extends PGMImpactAnalysisTask {
      * Default constructor.
      */
     public PGMImpactResultLoadTask() {
+        needToAskSaveResults = false;
     }
 
     @Override

@@ -270,6 +270,9 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         return new TableRowSorter<NetworkModuleTableModel>(model);
     }
     
+    /**
+     * Need to synchronize this method to avoid multiple threading issue.
+     */
     public void close() {
         if (getParent() == null)
             return;

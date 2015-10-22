@@ -49,6 +49,7 @@ import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.session.CySession;
 import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.NetworkTaskFactory;
@@ -271,17 +272,29 @@ public class PlugInUtilities {
      * @return
      */
     public static Set<String> getDisplayedGenesInNetwork(CyNetwork network) {
-        CyTable nodeTable = network.getDefaultNodeTable();
-        Set<String> genes = new HashSet<String>();
         List<CyNode> nodes = network.getNodeList();
-        if (nodes != null && nodes.size() > 0) {
-            for (CyNode node : nodes) {
-                String nodeName = nodeTable.getRow(node.getSUID()).get("name", String.class);
-                if (nodeName != null)
-                    genes.add(nodeName);
-            }
+        return getGeneNamesFromNodes(network, nodes);
+    }
+
+    private static Set<String> getGeneNamesFromNodes(CyNetwork network,
+                                                     List<CyNode> nodes) {
+        if (nodes == null || nodes.size() == 0)
+            return new HashSet<String>();
+        Set<String> genes = new HashSet<>();
+        CyTable nodeTable = network.getDefaultNodeTable();
+        for (CyNode node : nodes) {
+            String nodeName = nodeTable.getRow(node.getSUID()).get("name", String.class);
+            if (nodeName != null)
+                genes.add(nodeName);
         }
         return genes;
+    }
+    
+    public static Set<String> getSelectedGenesInNetwork(CyNetwork network) {
+        List<CyNode> selectedNodes = CyTableUtil.getNodesInState(network,
+                                                                 CyNetwork.SELECTED,
+                                                                 true);
+        return getGeneNamesFromNodes(network, selectedNodes);
     }
     
     /**

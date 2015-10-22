@@ -2,6 +2,7 @@ package org.reactome.cytoscape.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyEdge;
@@ -10,6 +11,8 @@ import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 public class TableHelper {
     // Some constants used as keys
@@ -21,6 +24,40 @@ public class TableHelper {
             .getSampleMutationData();
 
     public TableHelper() {
+    }
+    
+    /**
+     * Select a set of CyNodes based on a set of attribute values. Most likely,
+     * this method should be placed somewhere else. 
+     * @param networkView
+     * @param nodeAttName
+     * @param selectedAttValues
+     */
+    public void selectNodes(CyNetworkView networkView,
+                            String nodeAttName,
+                            Set<String> selectedAttValues) {
+        if (networkView != null) {
+            // Clear all selection
+            CyNetwork network = networkView.getModel();
+            int totalSelected = 0;
+            for (View<CyNode> nodeView : networkView.getNodeViews()) {
+                CyNode node = nodeView.getModel();
+                Long nodeSUID = node.getSUID();
+                String nodeLabel = getStoredNodeAttribute(network,
+                                                          node, 
+                                                          nodeAttName, 
+                                                          String.class);
+                boolean isSelected = selectedAttValues.contains(nodeLabel);
+                if (isSelected)
+                    totalSelected ++;
+                setNodeSelected(network, 
+                                node,
+                                isSelected);
+            }
+            PlugInUtilities.zoomToSelected(networkView,
+                                           totalSelected);
+            networkView.updateView();
+        }
     }
 
     public void createNewColumn(CyTable table, 

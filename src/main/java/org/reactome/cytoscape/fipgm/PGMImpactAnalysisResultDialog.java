@@ -21,6 +21,7 @@ import javax.swing.JTable;
 import org.apache.commons.math.MathException;
 import org.cytoscape.util.swing.FileUtil;
 import org.gk.util.GKApplicationUtilities;
+import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Variable;
@@ -38,12 +39,22 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     // To show results by doing t-test
     private FilterableTTestTablePlotPane tTestPlotPane;
     private JTable resultTable;
+    // a flag
+    private boolean needToAskSaveResults;
     
     public PGMImpactAnalysisResultDialog() {
         super(PlugInObjectManager.getManager().getCytoscapeDesktop());
         init();
     }
     
+    public boolean isNeedToAskSaveResults() {
+        return needToAskSaveResults;
+    }
+
+    public void setNeedToAskSaveResults(boolean needToAskSaveResults) {
+        this.needToAskSaveResults = needToAskSaveResults;
+    }
+
     private void init() {
         setTitle("FI PGM Impact Analysis Results");
         tTestPlotPane = new FilterableTTestTablePlotPane();
@@ -72,10 +83,7 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
             
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (!validateSelectedGenes())
-                    return;
-                dispose();
-                isOkClicked = true;
+                doOKAction();
             }
         });
         
@@ -101,15 +109,33 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     
     private void saveResults() {
         // Get a file
-        File file = PlugInUtilities.getAnalysisFile("Save Analysis Results",
+        final File file = PlugInUtilities.getAnalysisFile("Save Analysis Results",
                                                     FileUtil.SAVE);
         if (file == null)
             return; // Canceled
+        // Save is a kind of slow process, we need to use a new thread 
+        // in order to show process
+        Thread t = new Thread() {
+            public void run() {
+                _saveResults(file);
+            }
+        };
+        t.start();
+    }
+    
+    private void _saveResults(File file) {
         try {
+            ProgressPane progressPane = new ProgressPane();
+            progressPane.setTitle("Saving results...");
+            progressPane.setIndeterminate(true);
+            setGlassPane(progressPane);
+            getGlassPane().setVisible(true);
             FIPGMResults results = FIPGMResults.getResults();
             results.saveResults(file);
+            getGlassPane().setVisible(false);
         }
         catch(Exception e) {
+            getGlassPane().setVisible(false);
             JOptionPane.showMessageDialog(this,
                                           "Cannot save analysis results: " + e,
                                           "Error in Saving Results", 
@@ -130,7 +156,6 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
         }
         return true;
     }
-    
     
     public boolean isOkClicked() {
         return this.isOkClicked;
@@ -159,5 +184,24 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
                                           "Error in Result Display",
                                           JOptionPane.ERROR_MESSAGE);
         }
+    }
+    
+    private void handleSave() {
+        if (!needToAskSaveResults)
+            return;
+        int reply = JOptionPane.showConfirmDialog(this,
+                                                  "Do you want to save the results first?", 
+                                                  "Save Results?", 
+                                                  JOptionPane.YES_NO_OPTION);
+        if (reply == JOptionPane.YES_OPTION)
+            saveResults();
+    }
+
+    private void doOKAction() {
+        handleSave();
+        if (!validateSelectedGenes())
+            return;
+        dispose();
+        isOkClicked = true;
     }
 }
