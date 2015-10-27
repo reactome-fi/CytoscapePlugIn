@@ -352,8 +352,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             // Average the original runningTime to get a better estimation
             runningTime = ((time2 - time1) + runningTime) / 2.0d;
             sampleToVarToResult.put(observation.getName(), varToResult);
-            if (sampleToVarToResult.size() > 3)
-                break; // This is test code
+//            if (sampleToVarToResult.size() > 3)
+//                break; // This is test code
         }
         return sampleToVarToResult;
     }
@@ -383,7 +383,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
     private boolean showResults(Map<String, Map<Variable, Double>> sampleToVarToResult,
                              Map<String, Map<Variable, Double>> randomSampleToVarToResult,
                              ProgressPane progressPane) {
-        progressPane.setText("Selecting genes...");
+        progressPane.setText("Showing results...");
         progressPane.setIndeterminate(true);
         PGMImpactAnalysisResultDialog dialog = new PGMImpactAnalysisResultDialog();
         dialog.setNeedToAskSaveResults(needToAskSaveResults);

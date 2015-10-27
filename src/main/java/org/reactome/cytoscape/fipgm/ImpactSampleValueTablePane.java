@@ -111,11 +111,7 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
         FIPGMResults results = FIPGMResults.getResults();
         if (results == null)
             return;
-        Map<String, Variable> nameToVar = new HashMap<String, Variable>();
-        // Just choose the first results
-        Map<Variable, Double> varToScore = results.getSampleToVarToScore().values().iterator().next();
-        for (Variable var : varToScore.keySet())
-            nameToVar.put(var.getName(), var);
+        Map<String, Variable> nameToVar = results.getNameToVariable();
         Map<String, CyNode> nameToNode = new HashMap<>();
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
         List<CyNode> nodes = view.getModel().getNodeList();

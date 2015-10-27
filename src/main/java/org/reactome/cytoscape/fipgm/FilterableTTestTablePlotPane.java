@@ -59,6 +59,10 @@ public class FilterableTTestTablePlotPane extends JPanel {
     public TTestTablePlotPane<Variable> gettTestPlotPane() {
         return tTestPlotPane;
     }
+    
+    public JLabel getNoteLabel() {
+        return this.noteLabel;
+    }
 
     public JTable getResultTable() {
         return resultTable;

@@ -126,6 +126,21 @@ public class FIPGMResults {
     }
     
     /**
+     * Get the name to variable map.
+     * @return
+     */
+    public Map<String, Variable> getNameToVariable() {
+        Map<String, Variable> nameToVar = new HashMap<String, Variable>();
+        if (sampleToVarToScore.size() > 0) {
+            // Just choose the first results
+            Map<Variable, Double> varToScore = sampleToVarToScore.values().iterator().next();
+            for (Variable var : varToScore.keySet())
+                nameToVar.put(var.getName(), var);
+        }
+        return nameToVar;
+    }
+    
+    /**
      * Load the analysis results saved in a file.
      * @param fileName
      * @throws Exception
