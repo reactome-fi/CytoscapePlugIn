@@ -4,6 +4,8 @@
  */
 package org.reactome.cytoscape.fipgm;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,6 +66,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
     private int numberOfPermutation;
     // A flag
     protected boolean needToAskSaveResults;
+    private boolean isCancelled;
     
     /**
      * Default constructor.
@@ -198,8 +201,23 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         if (lbp == null || data == null || data.size() == 0 || pgmType == null) {
             throw new IllegalStateException("Make sure the LBP algorithm, data, and pgmType have been set.");
         }
-        JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+        final JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         ProgressPane progPane = new ProgressPane();
+        progPane.enableCancelAction(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Make sure the user wants to cancel 
+                int reply = JOptionPane.showConfirmDialog(frame,
+                                                          "Are you sure you want to cancel the analysis?",
+                                                          "Cancel Analysis?",
+                                                          JOptionPane.YES_NO_OPTION);
+                if (reply == JOptionPane.NO_OPTION)
+                    return;
+                frame.getGlassPane().setVisible(false);
+                isCancelled = true;
+            }
+        });
         frame.setGlassPane(progPane);
         progPane.setTitle("FI PGM Impact Analysis");
         progPane.setText("Fetching the FI network...");
@@ -211,6 +229,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         try {
             fetchFIs(); // Need to get all FIs to construct the FI pgm model.
             constructor = getPGMConstructor();
+            if (isCancelled)
+                return;
             progPane.setText("Constructing the PGM...");
             fg = constructor.constructFactorGraph(pgmType);
         }
@@ -227,6 +247,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             return;
         }
         resetIds(fg);
+        if (isCancelled)
+            return;
         progPane.setText("Generating random observations...");
         List<Observation<Number>> observations = constructor.getObservationLoader().getObservations();
         // Generate random observations
@@ -240,6 +262,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         Map<String, Map<Variable, double[]>> dataTypeToVarToPrior;
         long time1 = System.currentTimeMillis();
         try {
+            if (isCancelled)
+                return;
             progPane.setText("Running prior inference...");
             dataTypeToVarToPrior = runPriorInference(observations, 
                                                      helper, 
@@ -265,6 +289,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                                                                                         runningTime,
                                                                                         notConvergedObs,
                                                                                         progPane);
+        if (sampleToVarToResult == null)
+            return; // means the action has been cancelled!
         progPane.setText("Running random samples...");
         List<String> randomNotConvergedObs = new ArrayList<>();
         Map<String, Map<Variable, Double>> randomSampleToVarToResult = runPosteriorInferences(randomObservations, 
@@ -274,6 +300,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                                                                                         runningTime,
                                                                                         notConvergedObs,
                                                                                         progPane);
+        if (randomSampleToVarToResult == null)
+            return; // The analysis has been cancelled!
         if (notConvergedObs.size() > 0) {
             showNoConvergeInfo(notConvergedObs,
                                randomNotConvergedObs);
@@ -333,6 +361,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         long time1, time2;
         Map<String, Map<Variable, Double>> sampleToVarToResult = new HashMap<>();
         for (Observation<Number> observation : observations) {
+            if (isCancelled)
+                return null;
             showInferenceText(count, observations.size(), runningTime, observation, progPane);
             time1 = System.currentTimeMillis(); // get a better time
             progPane.setValue(++ count);
@@ -387,6 +417,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         progressPane.setIndeterminate(true);
         PGMImpactAnalysisResultDialog dialog = new PGMImpactAnalysisResultDialog();
         dialog.setNeedToAskSaveResults(needToAskSaveResults);
+        if (progressPane.isCancelled())
+            return false;
         dialog.setSampleResults(sampleToVarToResult,
                                 randomSampleToVarToResult);
         dialog.setModal(true);
