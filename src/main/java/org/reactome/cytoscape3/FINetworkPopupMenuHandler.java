@@ -21,9 +21,12 @@ import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
 import org.cytoscape.work.ServiceProperties;
 import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
@@ -52,53 +55,51 @@ import org.reactome.r3.util.InteractionUtilities;
  * This class is used to generate popup menus for a FI network.
  * 
  * @author Eric T. Dawson & Guanming Wu
- * 
  */
 public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
     protected Map<CyNetworkViewContextMenuFactory, ServiceRegistration> menuToRegistration;
     
     public FINetworkPopupMenuHandler() {
         menuToRegistration = new HashMap<CyNetworkViewContextMenuFactory, ServiceRegistration>();
-//        // Add a listener for NewtorkView selection
-//        SetCurrentNetworkViewListener currentNetworkViewListener = new SetCurrentNetworkViewListener() {
-//            
-//            @Override
-//            public void handleEvent(SetCurrentNetworkViewEvent event) {
-//                if (event.getNetworkView() == null)
-//                    return; // This is more like a Pathway view
-//                CyNetwork network = event.getNetworkView().getModel();
-//                // Check if this network is a converted
-//                CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
-//                String dataSetType = row.get("dataSetType",
-//                                             String.class);
-//                if ("PathwayDiagram".equals(dataSetType)) {
-//                    // Check the ReactomeNetworkType
-//                    ReactomeNetworkType type = new TableHelper().getReactomeNetworkType(network);
-//                    if (type == ReactomeNetworkType.FINetwork) {
-//                        installConvertToDiagramMenu();
-//                    }
-//                    else if (type == ReactomeNetworkType.FactorGraph) {
-//                        uninstallDynamicMenu(networkToDiagramMenu);
-//                    }
-//                }
-//                else {
-//                    uninstallDynamicMenu(networkToDiagramMenu);
-//                }
-//            }
-//        };
-//        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-//        context.registerService(SetCurrentNetworkViewListener.class.getName(),
-//                                currentNetworkViewListener,
-//                                null);
+        // // Add a listener for NewtorkView selection
+        // SetCurrentNetworkViewListener currentNetworkViewListener = new
+        // SetCurrentNetworkViewListener() {
+        //
+        // @Override
+        // public void handleEvent(SetCurrentNetworkViewEvent event) {
+        // if (event.getNetworkView() == null)
+        // return; // This is more like a Pathway view
+        // CyNetwork network = event.getNetworkView().getModel();
+        // // Check if this network is a converted
+        // CyRow row =
+        // network.getDefaultNetworkTable().getRow(network.getSUID());
+        // String dataSetType = row.get("dataSetType",
+        // String.class);
+        // if ("PathwayDiagram".equals(dataSetType)) {
+        // // Check the ReactomeNetworkType
+        // ReactomeNetworkType type = new
+        // TableHelper().getReactomeNetworkType(network);
+        // if (type == ReactomeNetworkType.FINetwork) {
+        // installConvertToDiagramMenu();
+        // }
+        // else if (type == ReactomeNetworkType.FactorGraph) {
+        // uninstallDynamicMenu(networkToDiagramMenu);
+        // }
+        // }
+        // else {
+        // uninstallDynamicMenu(networkToDiagramMenu);
+        // }
+        // }
+        // };
+        // BundleContext context =
+        // PlugInObjectManager.getManager().getBundleContext();
+        // context.registerService(SetCurrentNetworkViewListener.class.getName(),
+        // currentNetworkViewListener,
+        // null);
     }
     
-    protected <T> void addPopupMenu(BundleContext context,
-                                    T menuFactory,
-                                    Class<T> cls,
-                                    Properties properties) {
-        ServiceRegistration registration = context.registerService(cls.getName(),
-                                                                   menuFactory,
-                                                                   properties);
+    protected <T> void addPopupMenu(BundleContext context, T menuFactory, Class<T> cls, Properties properties) {
+        ServiceRegistration registration = context.registerService(cls.getName(), menuFactory, properties);
         menuRegistrations.add(registration);
     }
     
@@ -110,24 +111,18 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         Properties clusterProps = new Properties();
         clusterProps.setProperty(ServiceProperties.TITLE, "Cluster FI Network");
         clusterProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
-        addPopupMenu(context, 
-                        clusterMenu,
-                        CyNetworkViewContextMenuFactory.class,
-                        clusterProps);
+        addPopupMenu(context, clusterMenu, CyNetworkViewContextMenuFactory.class, clusterProps);
         
         NetworkPathwayEnrichmentMenu netPathMenu = new NetworkPathwayEnrichmentMenu();
         Properties netPathProps = new Properties();
         netPathProps.setProperty(ServiceProperties.TITLE, "Network Pathway Enrichment");
         String preferredMenuText = PREFERRED_MENU + ".Analyze Network Functions[10]";
         netPathProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
-        addPopupMenu(context,
-                     netPathMenu, 
-                     CyNetworkViewContextMenuFactory.class, 
-                     netPathProps);
+        addPopupMenu(context, netPathMenu, CyNetworkViewContextMenuFactory.class, netPathProps);
         
         NetworkGOCellComponentMenu netGOCellMenu = new NetworkGOCellComponentMenu();
         Properties netGOCellProps = new Properties();
-        netGOCellProps.setProperty(ServiceProperties.TITLE, "Network GO Cell Component");
+        netGOCellProps.setProperty(ServiceProperties.TITLE, "Network GO Cellular Component");
         netGOCellProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, netGOCellMenu, CyNetworkViewContextMenuFactory.class, netGOCellProps);
         
@@ -152,7 +147,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         
         ModuleGOCellComponentMenu modCellMenu = new ModuleGOCellComponentMenu();
         Properties modCellProps = new Properties();
-        modCellProps.setProperty(ServiceProperties.TITLE, "Module GO Cell Component");
+        modCellProps.setProperty(ServiceProperties.TITLE, "Module GO Cellular Component");
         modCellProps.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
         addPopupMenu(context, modCellMenu, CyNetworkViewContextMenuFactory.class, modCellProps);
         
@@ -186,15 +181,13 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         Properties geneCardProps = new Properties();
         geneCardProps.setProperty(ServiceProperties.TITLE, "Gene Card");
         geneCardProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
-        addPopupMenu(context, geneCardMenu,
-                CyNodeViewContextMenuFactory.class, geneCardProps);
+        addPopupMenu(context, geneCardMenu, CyNodeViewContextMenuFactory.class, geneCardProps);
         
         CosmicMenu cosmicMenu = nodeActionCollection.new CosmicMenu();
         Properties cosmicProps = new Properties();
         cosmicProps.setProperty(ServiceProperties.TITLE, "Cosmic");
         cosmicProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
-        addPopupMenu(context, cosmicMenu,
-                CyNodeViewContextMenuFactory.class, geneCardProps);
+        addPopupMenu(context, cosmicMenu, CyNodeViewContextMenuFactory.class, geneCardProps);
         
         CancerGeneIndexMenu cgiMenu = nodeActionCollection.new CancerGeneIndexMenu();
         Properties cgiMenuProps = new Properties();
@@ -208,7 +201,33 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         fetchFIsProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, fetchFIs, CyNodeViewContextMenuFactory.class, fetchFIsProps);
         
-        //Instantiate and register the context menus for edge views
+        // For nodes functional annotations
+        preferredMenuText = PREFERRED_MENU + ".Analyze Nodes Functions[10]";
+        String[] titles = new String[] {
+                "Pathway Enrichment",
+                "GO Cellular Component",
+                "GO Biological Process",
+                "GO Molecular Function"
+        };
+        CyNodeViewContextMenuFactory[] menus = new CyNodeViewContextMenuFactory[] {
+                new NodesPathwayEnrichmentMenu(),
+                new NodesGOCellComponentMenu(),
+                new NodesGOBioprocessMenu(),
+                new NodesGOMFMenu()
+        };
+        for (int i = 0; i < titles.length; i++) {
+            Properties properties = new Properties();
+            properties.setProperty(ServiceProperties.TITLE, 
+                                          titles[i]);
+            properties.setProperty(ServiceProperties.PREFERRED_MENU,
+                                          preferredMenuText);
+            addPopupMenu(context, 
+                         menus[i], 
+                         CyNodeViewContextMenuFactory.class,
+                         properties);
+        }
+        
+        // Instantiate and register the context menus for edge views
         EdgeActionCollection edgeAC = new EdgeActionCollection();
         EdgeQueryFIMenuItem edgeQueryMenu = edgeAC.new EdgeQueryFIMenuItem();
         Properties edgeMenuProps = new Properties();
@@ -217,8 +236,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         addPopupMenu(context, edgeQueryMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
     }
     
-    protected void installOtherNetworkMenu(CyNetworkViewContextMenuFactory menu,
-                                           String title) {
+    protected void installOtherNetworkMenu(CyNetworkViewContextMenuFactory menu, String title) {
         ServiceRegistration registration = menuToRegistration.get(menu);
         if (registration != null)
             return; // This menu has been installed.
@@ -226,10 +244,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         props.setProperty(ServiceProperties.TITLE, title);
         props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        addPopupMenu(context,
-                     menu,
-                     CyNetworkViewContextMenuFactory.class, 
-                     props);
+        addPopupMenu(context, menu, CyNetworkViewContextMenuFactory.class, props);
     }
     
     /**
@@ -237,20 +252,15 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
      * network and a corresponding task/factory.
      * 
      * @author Eric T. Dawson
-     * 
      */
-    private class ClusterFINetworkMenu implements CyNetworkViewContextMenuFactory
-    {
-
+    private class ClusterFINetworkMenu implements CyNetworkViewContextMenuFactory {
+        
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
             JMenuItem clusterMenuItem = new JMenuItem("Cluster FI Network");
-            clusterMenuItem.addActionListener(new ActionListener()
-            {
+            clusterMenuItem.addActionListener(new ActionListener() {
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
+                public void actionPerformed(ActionEvent e) {
                     Thread t = new Thread() {
                         public void run() {
                             clusterFINetwork(view);
@@ -259,223 +269,247 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
                     t.start();
                 }
             });
-
+            
             return new CyMenuItem(clusterMenuItem, 20.0f);
         }
     }
-
-
-    private class NetworkPathwayEnrichmentMenu implements
-            CyNetworkViewContextMenuFactory
-    {
-
+    
+    private class NodesPathwayEnrichmentMenu implements CyNodeViewContextMenuFactory {
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
+        public CyMenuItem createMenuItem(final CyNetworkView netView, View<CyNode> nodeView) {
             JMenuItem netPathMenuItem = new JMenuItem("Pathway Enrichment");
-            netPathMenuItem.addActionListener(new ActionListener()
-            {
-
+            netPathMenuItem.addActionListener(new ActionListener() {
+                
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    annotateNetwork(view, "Pathway");
+                public void actionPerformed(ActionEvent e) {
+                    annotateNetwork(netView, "Pathway");
                 }
-
             });
             return new CyMenuItem(netPathMenuItem, 2.0f);
         }
-
     }
-
-    private class NetworkGOCellComponentMenu implements CyNetworkViewContextMenuFactory
-    {
+    
+    private class NetworkPathwayEnrichmentMenu implements CyNetworkViewContextMenuFactory {
+        
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
-            JMenuItem netGOCellComponentMenuItem = new JMenuItem(
-                    "GO Cell Component");
-            netGOCellComponentMenuItem.addActionListener(new ActionListener()
-            {
-
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem netPathMenuItem = new JMenuItem("Pathway Enrichment");
+            netPathMenuItem.addActionListener(new ActionListener() {
+                
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    annotateNetwork(view, "CC");
+                public void actionPerformed(ActionEvent e) {
+                    annotateNetwork(view, "Pathway");
                 }
+            });
+            return new CyMenuItem(netPathMenuItem, 2.0f);
+        }
+        
+    }
+    
+    private class NodesGOCellComponentMenu implements CyNodeViewContextMenuFactory {
 
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView netView, View<CyNode> nodeView) {
+            JMenuItem netGOCellComponentMenuItem = new JMenuItem("GO Cell Component");
+            netGOCellComponentMenuItem.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    annotateNetwork(netView,
+                                    "CC");
+                }
+                
             });
             return new CyMenuItem(netGOCellComponentMenuItem, 3.0f);
-
         }
     }
-
-    private class NetworkGOBioProcessMenu implements CyNetworkViewContextMenuFactory
-    {
+    
+    private class NetworkGOCellComponentMenu implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem netGOCellComponentMenuItem = new JMenuItem("GO Cell Component");
+            netGOCellComponentMenuItem.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    annotateNetwork(view, "CC");
+                }
+                
+            });
+            return new CyMenuItem(netGOCellComponentMenuItem, 3.0f);
+            
+        }
+    }
+    
+    private class NodesGOBioprocessMenu implements CyNodeViewContextMenuFactory {
 
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
+        public CyMenuItem createMenuItem(final CyNetworkView netView, View<CyNode> nodeView) {
             JMenuItem netGOBioMenuItem = new JMenuItem("GO Biological Process");
-            netGOBioMenuItem.addActionListener(new ActionListener()
-            {
-
+            netGOBioMenuItem.addActionListener(new ActionListener() {
+                
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    annotateNetwork(view, "BP");
+                public void actionPerformed(ActionEvent e) {
+                    annotateNetwork(netView, "BP");
                 }
-
+                
             });
             return new CyMenuItem(netGOBioMenuItem, 4.0f);
         }
-
+        
     }
-
-    private class NetworkGOMolecularFunctionMenu implements
-            CyNetworkViewContextMenuFactory
-    {
+    
+    private class NetworkGOBioProcessMenu implements CyNetworkViewContextMenuFactory {
+        
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem netGOBioMenuItem = new JMenuItem("GO Biological Process");
+            netGOBioMenuItem.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    annotateNetwork(view, "BP");
+                }
+                
+            });
+            return new CyMenuItem(netGOBioMenuItem, 4.0f);
+        }
+        
+    }
+    
+    private class NodesGOMFMenu implements CyNodeViewContextMenuFactory {
 
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
-            JMenuItem netGOMolFuncMenuItem = new JMenuItem(
-                    "GO Molecular Function");
-            netGOMolFuncMenuItem.addActionListener(new ActionListener()
-            {
-
+        public CyMenuItem createMenuItem(final CyNetworkView netView, View<CyNode> nodeView) {
+            JMenuItem netGOMolFuncMenuItem = new JMenuItem("GO Molecular Function");
+            netGOMolFuncMenuItem.addActionListener(new ActionListener() {
+                
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    annotateNetwork(view, "MF");
+                public void actionPerformed(ActionEvent e) {
+                    annotateNetwork(netView, "MF");
                 }
-
+                
             });
             return new CyMenuItem(netGOMolFuncMenuItem, 5.0f);
         }
-
+        
     }
-
-    private class ModulePathwayEnrichmentMenu implements
-            CyNetworkViewContextMenuFactory
-    {
-
+    
+    private class NetworkGOMolecularFunctionMenu implements CyNetworkViewContextMenuFactory {
+        
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
-            JMenuItem modPathMenuItem = new JMenuItem("Pathway Enrichment");
-            modPathMenuItem.addActionListener(new ActionListener()
-            {
-
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem netGOMolFuncMenuItem = new JMenuItem("GO Molecular Function");
+            netGOMolFuncMenuItem.addActionListener(new ActionListener() {
+                
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
+                public void actionPerformed(ActionEvent e) {
+                    annotateNetwork(view, "MF");
+                }
+                
+            });
+            return new CyMenuItem(netGOMolFuncMenuItem, 5.0f);
+        }
+        
+    }
+    
+    private class ModulePathwayEnrichmentMenu implements CyNetworkViewContextMenuFactory {
+        
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem modPathMenuItem = new JMenuItem("Pathway Enrichment");
+            modPathMenuItem.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
                     annotateNetworkModules(view, "Pathway");
                 }
-
+                
             });
             return new CyMenuItem(modPathMenuItem, 6.0f);
         }
-
+        
     }
-
-    private class ModuleGOCellComponentMenu implements CyNetworkViewContextMenuFactory
-    {
-
+    
+    private class ModuleGOCellComponentMenu implements CyNetworkViewContextMenuFactory {
+        
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
             JMenuItem modGOCellMenuItem = new JMenuItem("GO Cell Component");
-            modGOCellMenuItem.addActionListener(new ActionListener()
-            {
-
+            modGOCellMenuItem.addActionListener(new ActionListener() {
+                
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
+                public void actionPerformed(ActionEvent e) {
                     annotateNetworkModules(view, "CC");
                 }
-
+                
             });
             return new CyMenuItem(modGOCellMenuItem, 7.0f);
         }
-
+        
     }
-
+    
     /**
      * A class for showing the gene ontology biological processes of a given
      * module using the network view context menu item.
      * 
      * @author Eric T. Dawson
-     * 
      */
-    private class ModuleGOBioProcessMenu implements CyNetworkViewContextMenuFactory
-    {
-
+    private class ModuleGOBioProcessMenu implements CyNetworkViewContextMenuFactory {
+        
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
-            JMenuItem modGOBioProcessMenuItem = new JMenuItem(
-                    "GO Biological Process");
-            modGOBioProcessMenuItem.addActionListener(new ActionListener()
-            {
-
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem modGOBioProcessMenuItem = new JMenuItem("GO Biological Process");
+            modGOBioProcessMenuItem.addActionListener(new ActionListener() {
+                
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
+                public void actionPerformed(ActionEvent e) {
                     annotateNetworkModules(view, "BP");
                 }
-
+                
             });
             return new CyMenuItem(modGOBioProcessMenuItem, 8.0f);
         }
-
+        
     }
-
+    
     /**
      * A class for showing the gene ontology molecular functions of a given
      * module using the given network view context menu item.
      * 
      * @author Eric T. Dawson
-     * 
      */
-    private class ModuleGOMolecularFunctionMenu implements
-            CyNetworkViewContextMenuFactory
-    {
-
+    private class ModuleGOMolecularFunctionMenu implements CyNetworkViewContextMenuFactory {
+        
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
-            JMenuItem modGOMolFuncMenuItem = new JMenuItem(
-                    "GO Molecular Function");
-            modGOMolFuncMenuItem.addActionListener(new ActionListener()
-            {
-
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem modGOMolFuncMenuItem = new JMenuItem("GO Molecular Function");
+            modGOMolFuncMenuItem.addActionListener(new ActionListener() {
+                
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
+                public void actionPerformed(ActionEvent e) {
                     annotateNetworkModules(view, "MF");
                 }
-
+                
             });
             return new CyMenuItem(modGOMolFuncMenuItem, 9.0f);
         }
-
+        
     }
-
+    
     /**
      * A class for performing survival analysis using the network view context
      * menu item.
      * 
      * @author Eric T. Dawson
-     * 
      */
     private class SurvivalAnalysisMenu implements CyNetworkViewContextMenuFactory {
-
+        
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView view) {
             JMenuItem survivalAnalysisMenuItem = new JMenuItem("Survival Analysis");
             survivalAnalysisMenuItem.addActionListener(new ActionListener() {
-
+                
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     doModuleSurvivalAnalysis(view);
@@ -484,34 +518,26 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
             return new CyMenuItem(survivalAnalysisMenuItem, 10.f);
         }
     }
-
-    private class LoadCancerGeneIndexForNetwork implements
-            CyNetworkViewContextMenuFactory
-    {
-
+    
+    private class LoadCancerGeneIndexForNetwork implements CyNetworkViewContextMenuFactory {
+        
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view)
-        {
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
             JMenuItem loadCGIItem = new JMenuItem("Load Cancer Gene Index");
-            loadCGIItem.addActionListener(new ActionListener()
-            {
+            loadCGIItem.addActionListener(new ActionListener() {
                 @Override
-                public void actionPerformed(ActionEvent e)
-                {
+                public void actionPerformed(ActionEvent e) {
                     fetchNetworkCGI(view);
                 }
             });
             return new CyMenuItem(loadCGIItem, 40.0f);
         }
     }
-
-    private void fetchNetworkCGI(final CyNetworkView view)
-    {
-        Thread t = new Thread()
-        {
+    
+    private void fetchNetworkCGI(final CyNetworkView view) {
+        Thread t = new Thread() {
             @Override
-            public void run()
-            {
+            public void run() {
                 ProgressPane progPane = new ProgressPane();
                 progPane.setIndeterminate(true);
                 progPane.setText("Fetching cancer gene index annotations...");
@@ -519,12 +545,9 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
                 JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
                 frame.setGlassPane(progPane);
                 progPane.setVisible(true);
-                try
-                {
-                    NCICancerIndexDiseaseHelper diseaseHelper = new NCICancerIndexDiseaseHelper(
-                            view);
-                    if (!diseaseHelper.areDiseasesShown())
-                    {
+                try {
+                    NCICancerIndexDiseaseHelper diseaseHelper = new NCICancerIndexDiseaseHelper(view);
+                    if (!diseaseHelper.areDiseasesShown()) {
                         progPane.setText("Loading NCI disease terms...");
                         Map<String, DiseaseData> codeToDisease = diseaseHelper.fetchDiseases();
                         diseaseHelper.displayDiseases(codeToDisease);
@@ -535,20 +558,15 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
                     Map<String, String> geneToDiseases = service.queryGeneToDisease(genes);
                     TableHelper tableHelper = new TableHelper();
                     CyTable nodeTable = view.getModel().getDefaultNodeTable();
-                    if (view.getModel().getDefaultNodeTable().getColumn(
-                            "diseases") == null)
-                    {
-                        tableHelper.createNewColumn(nodeTable, "diseases",
-                                String.class);
+                    if (view.getModel().getDefaultNodeTable().getColumn("diseases") == null) {
+                        tableHelper.createNewColumn(nodeTable, "diseases", String.class);
                     }
-                    tableHelper.storeNodeAttributesByName(view.getModel(),
-                            "diseases", geneToDiseases);
+                    tableHelper.storeNodeAttributesByName(view.getModel(), "diseases", geneToDiseases);
                 }
-                catch (Exception e)
-                {
+                catch (Exception e) {
                     e.printStackTrace();
                     PlugInUtilities.showErrorMessage("Error in Loading CGI",
-                            "The network's cancer gene index could not be loaded.");
+                                                     "The network's cancer gene index could not be loaded.");
                 }
                 progPane.setIndeterminate(false);
                 progPane.setVisible(false);
@@ -557,85 +575,78 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         };
         t.start();
     }
-
-    private Set<String> getGenesInNetwork(CyNetworkView view)
-    {
+    
+    private Set<String> getGenesInNetwork(CyNetworkView view) {
         Set<String> genes = new HashSet<String>();
         CyTable netTable = view.getModel().getDefaultNodeTable();
-        for (CyNode node : view.getModel().getNodeList())
-        {
+        for (CyNode node : view.getModel().getNodeList()) {
             Long nodeSUID = node.getSUID();
             String name = netTable.getRow(nodeSUID).get("name", String.class);
             genes.add(name);
         }
         return genes;
     }
-
+    
     private void doModuleSurvivalAnalysis(CyNetworkView view) {
         Map<String, Integer> nodeToModule = extractNodeToModule(view);
-        if (nodeToModule == null || nodeToModule.isEmpty()) 
+        if (nodeToModule == null || nodeToModule.isEmpty())
             return; // There is no data for analysis
-        
+            
         TableHelper tableHelper = new TableHelper();
         String dataType = tableHelper.getDataSetType(view);
-        if (dataType == null) 
+        if (dataType == null)
             return; // The type of data is unknown so nothing can be done.
         try {
             if (dataType.equals(TableFormatterImpl.getSampleMutationData())) {
-                Map<String, Object> nodeToSamples = tableHelper.getNodeTableValuesByName(
-                        view.getModel(), "samples", String.class);
-                if (nodeToSamples == null || 
-                    nodeToSamples.isEmpty()) {
-                    PlugInUtilities.showErrorMessage("No Sample Information",
-                                                     "Survival Analysis can not be performed because no sample information exists.");
+                Map<String, Object> nodeToSamples = tableHelper.getNodeTableValuesByName(view.getModel(), "samples",
+                                                                                         String.class);
+                if (nodeToSamples == null || nodeToSamples.isEmpty()) {
+                    PlugInUtilities
+                            .showErrorMessage("No Sample Information",
+                                              "Survival Analysis can not be performed because no sample information exists.");
                     return;
                 }
                 Map<String, Set<String>> nodeToSampleSet = extractNodeToSampleSet(nodeToSamples);
                 ModuleBasedSurvivalAnalysisHelper survivalHelper = new ModuleBasedSurvivalAnalysisHelper();
-                survivalHelper.doSurvivalAnalysis(nodeToModule, 
-                                                  nodeToSampleSet);
+                survivalHelper.doSurvivalAnalysis(nodeToModule, nodeToSampleSet);
             }
             else if (dataType.equals(TableFormatterImpl.getMCLArrayClustering())) {
-                Map<Integer, Map<String, Double>> moduleToSampleToValue = FIPlugInHelper.getHelper().getMCLModuleToSampleToValue();
-                if (moduleToSampleToValue == null || 
-                    moduleToSampleToValue.size() == 0) {
-                    PlugInUtilities.showErrorMessage(
-                            "No Sample Information",
-                            "No sample information has been provided. Survival analysis cannot be done.");
+                Map<Integer, Map<String, Double>> moduleToSampleToValue = FIPlugInHelper.getHelper()
+                        .getMCLModuleToSampleToValue();
+                if (moduleToSampleToValue == null || moduleToSampleToValue.size() == 0) {
+                    PlugInUtilities
+                            .showErrorMessage("No Sample Information",
+                                              "No sample information has been provided. Survival analysis cannot be done.");
                     return;
                 }
                 ModuleBasedSurvivalAnalysisHelper survivalHelper = new ModuleBasedSurvivalAnalysisHelper();
-                survivalHelper.doSurvivalAnalysisForMCLModules(nodeToModule,
-                                                               moduleToSampleToValue);
+                survivalHelper.doSurvivalAnalysisForMCLModules(nodeToModule, moduleToSampleToValue);
             }
         }
         catch (Exception e) {
             e.printStackTrace();
             PlugInUtilities.showErrorMessage("Error During Survival Analysis",
-                    "Survival Analysis could not be performed.\n Please see the logs.");
+                                             "Survival Analysis could not be performed.\n Please see the logs.");
         }
     }
     
     /**
-     * This method is called by a wrapped thread in the menu item for doing FI network
-     * clustering.
+     * This method is called by a wrapped thread in the menu item for doing FI
+     * network clustering.
      */
     private void clusterFINetwork(CyNetworkView view) {
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         CyTable netTable = view.getModel().getDefaultNetworkTable();
-        String clustering = netTable.getRow(view.getModel().getSUID()).get("clustering_Type",
-                                                                           String.class);
-        if ( clustering != null && 
-            !(clustering.length() <=0) && 
-            !clustering.equals(TableFormatterImpl.getSpectralPartitionCluster())) {
+        String clustering = netTable.getRow(view.getModel().getSUID()).get("clustering_Type", String.class);
+        if (clustering != null && !(clustering.length() <= 0)
+                && !clustering.equals(TableFormatterImpl.getSpectralPartitionCluster())) {
             CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
             int reply = JOptionPane.showConfirmDialog(frame,
                                                       "The displayed network has been clustered before using a different algorithm.\n"
                                                               + "You may get different clustering results using this clustering feature. Do\n"
                                                               + "you want to continue?",
-                                                              "Clustering Algorithm Warning",
-                                                              JOptionPane.OK_CANCEL_OPTION);
-            
+                                                      "Clustering Algorithm Warning", JOptionPane.OK_CANCEL_OPTION);
+                                                      
             if (reply != JOptionPane.OK_OPTION) {
                 return;
             }
@@ -643,12 +654,11 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         
         clusterFINetwork(frame, view);
     }
-
+    
     /**
      * The actual place for doing network clustering.
      */
-    private void clusterFINetwork(JFrame frame, 
-                                  CyNetworkView view) {
+    private void clusterFINetwork(JFrame frame, CyNetworkView view) {
         ProgressPane progPane = new ProgressPane();
         progPane.setIndeterminate(true);
         progPane.setText("Clustering FI network...");
@@ -659,7 +669,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         ServiceReference tableFormatterServRef = context.getServiceReference(TableFormatter.class.getName());
         if (tableFormatterServRef == null)
             return;
-        
+            
         TableFormatterImpl tableFormatter = (TableFormatterImpl) context.getService(tableFormatterServRef);
         tableFormatter.makeModuleAnalysisTables(view.getModel());
         List<CyEdge> edgeList = view.getModel().getEdgeList();
@@ -669,12 +679,9 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
             NetworkClusterResult clusterResult = service.cluster(edgeList, view);
             Map<String, Integer> nodeToCluster = new HashMap<String, Integer>();
             List<GeneClusterPair> geneClusterPairs = clusterResult.getGeneClusterPairs();
-            if (geneClusterPairs != null)
-            {
-                for (GeneClusterPair geneCluster : geneClusterPairs)
-                {
-                    nodeToCluster.put(geneCluster.getGeneId(),
-                                      geneCluster.getCluster());
+            if (geneClusterPairs != null) {
+                for (GeneClusterPair geneCluster : geneClusterPairs) {
+                    nodeToCluster.put(geneCluster.getGeneId(), geneCluster.getCluster());
                 }
             }
             
@@ -682,23 +689,18 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
             tableHelper.storeNodeAttributesByName(view, "module", nodeToCluster);
             
             progPane.setText("Storing clustering results...");
-            tableHelper.storeClusteringType(view,
-                                            TableFormatterImpl.getSpectralPartitionCluster());
-            Map<String, Object> nodeToSamples = tableHelper.getNodeTableValuesByName(view.getModel(), 
-                                                                                     "samples", 
+            tableHelper.storeClusteringType(view, TableFormatterImpl.getSpectralPartitionCluster());
+            Map<String, Object> nodeToSamples = tableHelper.getNodeTableValuesByName(view.getModel(), "samples",
                                                                                      String.class);
-            
-            showModuleInTab(nodeToCluster, nodeToSamples,
-                            clusterResult.getModularity(), view);
+                                                                                     
+            showModuleInTab(nodeToCluster, nodeToSamples, clusterResult.getModularity(), view);
         }
-        catch(Exception e) {
-            JOptionPane.showMessageDialog(frame,
-                                          "Error in clustering FI network: " + e.getMessage(),
-                                          "Error in Clustering",
-                                          JOptionPane.ERROR_MESSAGE);
+        catch (Exception e) {
+            JOptionPane.showMessageDialog(frame, "Error in clustering FI network: " + e.getMessage(),
+                                          "Error in Clustering", JOptionPane.ERROR_MESSAGE);
             frame.getGlassPane().setVisible(false);
         }
-
+        
         ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
         FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
         visStyler.setVisualStyle(view, false);
@@ -708,30 +710,22 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         
         frame.getGlassPane().setVisible(false);
     }
-
-    private void showModuleInTab(Map<String, Integer> nodeToCluster,
-            Map<String, Object> nodeToSamples, Double modularity,
-            CyNetworkView view)
-    {
+    
+    private void showModuleInTab(Map<String, Integer> nodeToCluster, Map<String, Object> nodeToSamples,
+                                 Double modularity, CyNetworkView view) {
         Map<String, Set<String>> nodeToSampleSet = extractNodeToSampleSet(nodeToSamples);
-        ResultDisplayHelper.getHelper().showModuleInTab(nodeToCluster,
-                nodeToSampleSet, modularity, view);
+        ResultDisplayHelper.getHelper().showModuleInTab(nodeToCluster, nodeToSampleSet, modularity, view);
     }
-
-    private Map<String, Set<String>> extractNodeToSampleSet(
-            Map<String, Object> nodeToSamples)
-    {
+    
+    private Map<String, Set<String>> extractNodeToSampleSet(Map<String, Object> nodeToSamples) {
         Map<String, Set<String>> nodeToSampleSet = null;
-        if (nodeToSamples != null)
-        {
+        if (nodeToSamples != null) {
             nodeToSampleSet = new HashMap<String, Set<String>>();
-            for (String node : nodeToSamples.keySet())
-            {
+            for (String node : nodeToSamples.keySet()) {
                 String sampleText = (String) nodeToSamples.get(node);
                 String[] tokens = sampleText.split(";");
                 Set<String> set = new HashSet<String>();
-                for (String token : tokens)
-                {
+                for (String token : tokens) {
                     set.add(token);
                 }
                 nodeToSampleSet.put(node, set);
@@ -739,120 +733,103 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         }
         return nodeToSampleSet;
     }
-
-    protected void annotateNetwork(final CyNetworkView view, final String type)
-    {
+    
+    /**
+     * Annotate network. If there are some nodes selected, the annotation will
+     * be performed for the selected nodes.
+     * 
+     * @param view
+     * @param type
+     */
+    private void annotateNetwork(final CyNetworkView view, final String type) {
         final Set<String> genes = new HashSet<String>();
         // Check if linkers were used.
         Set<String> linkers = new HashSet<String>();
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
-        for (CyNode node : view.getModel().getNodeList())
-        {
+        // Check if there is any node selected
+        List<CyNode> nodeList = CyTableUtil.getNodesInState(view.getModel(), CyNetwork.SELECTED, true);
+        if (nodeList == null || nodeList.size() == 0)
+            nodeList = view.getModel().getNodeList(); // Otherwise, we choose
+                                                      // annotation for the
+                                                      // whole network
+        for (CyNode node : nodeList) {
             Long nodeSUID = node.getSUID();
-            String nodeName = nodeTable.getRow(nodeSUID).get("name",
-                    String.class);
+            String nodeName = nodeTable.getRow(nodeSUID).get("name", String.class);
             genes.add(nodeName);
-            Boolean isLinker = nodeTable.getRow(nodeSUID).get("isLinker",
-                    Boolean.class);
-            if (isLinker != null && isLinker)
-            {
+            Boolean isLinker = nodeTable.getRow(nodeSUID).get("isLinker", Boolean.class);
+            if (isLinker != null && isLinker) {
                 linkers.add(nodeName);
             }
         }
-        if (!linkers.isEmpty())
-        {
-            CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-            int reply = JOptionPane.showConfirmDialog(
-                    desktopApp.getJFrame(),
-                    "Linkers have been used in network construction.\n"
-                            + "Including linkers will bias results. Would you like to include them anyway?",
-                    "Include Linker Genes", JOptionPane.YES_NO_CANCEL_OPTION);
-            if (reply == JOptionPane.CANCEL_OPTION) return;
-            if (reply == JOptionPane.NO_OPTION)
-            {
+        if (!linkers.isEmpty()) {
+            int reply = JOptionPane.showConfirmDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                      "Linkers have been used in network construction. Including linkers will\n"
+                                                     + "bias results. Would you like to include them anyway?",
+                                                      "Include Linker Genes", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (reply == JOptionPane.CANCEL_OPTION)
+                return;
+            if (reply == JOptionPane.NO_OPTION) {
                 genes.removeAll(linkers);
             }
         }
-        Thread t = new Thread()
-        {
+        Thread t = new Thread() {
             @Override
-            public void run()
-            {
+            public void run() {
                 ProgressPane progPane = new ProgressPane();
                 progPane.setIndeterminate(true);
                 progPane.setText("Annotating network...");
-                PlugInObjectManager.getManager().getCytoscapeDesktop().setGlassPane(
-                        progPane);
-                PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(
-                        true);
-                try
-                {
+                JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+                frame.setGlassPane(progPane);
+                frame.getGlassPane().setVisible(true);
+                try {
                     RESTFulFIService fiService = new RESTFulFIService(view);
-                    List<ModuleGeneSetAnnotation> annotations = fiService.annotateGeneSet(
-                            genes, type);
-                    displayModuleAnnotations(annotations, view, type, false);
+                    List<ModuleGeneSetAnnotation> annotations = fiService.annotateGeneSet(genes, type);
+                    // Check if selection is used
+                    List<CyNode> nodeList = CyTableUtil.getNodesInState(view.getModel(), CyNetwork.SELECTED, true);
+                    if (nodeList != null && nodeList.size() > 0)
+                        ResultDisplayHelper.getHelper().displaySelectedGenesAnnotations(annotations, view, type, genes);
+                    else
+                        ResultDisplayHelper.getHelper().displayModuleAnnotations(annotations, view, type, false);
                 }
-                catch (Exception e)
-                {
-                    PlugInUtilities.showErrorMessage(
-                            "Error in Annotating Network",
-                            "Could not annotate network. Please see the logs for details.");
+                catch (Exception e) {
+                    PlugInUtilities.showErrorMessage("Error in Annotating Network",
+                                                     "Could not annotate network. Please see the logs for details.");
                 }
                 progPane.setIndeterminate(false);
-                PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(
-                        false);
+                frame.getGlassPane().setVisible(false);
             }
         };
         t.start();
     }
-
-    private void annotateNetworkModules(final CyNetworkView view,
-            final String type)
-    {
+    
+    private void annotateNetworkModules(final CyNetworkView view, final String type) {
         final Map<String, Integer> nodeToModule = extractNodeToModule(view);
-        if (nodeToModule == null || nodeToModule.isEmpty()) return;
-        Thread t = new Thread()
-        {
+        if (nodeToModule == null || nodeToModule.isEmpty())
+            return;
+        Thread t = new Thread() {
             @Override
-            public void run()
-            {
+            public void run() {
                 ProgressPane progPane = new ProgressPane();
                 progPane.setIndeterminate(true);
                 progPane.setText("Annotating modules...");
-                PlugInObjectManager.getManager().getCytoscapeDesktop().setGlassPane(
-                        progPane);
-                PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(
-                        true);
-                try
-                {
+                PlugInObjectManager.getManager().getCytoscapeDesktop().setGlassPane(progPane);
+                PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(true);
+                try {
                     RESTFulFIService fiService = new RESTFulFIService(view);
-                    List<ModuleGeneSetAnnotation> annotations = fiService.annotateNetworkModules(
-                            nodeToModule, type);
-                    displayModuleAnnotations(annotations, view, type, true);
+                    List<ModuleGeneSetAnnotation> annotations = fiService.annotateNetworkModules(nodeToModule, type);
+                    ResultDisplayHelper.getHelper().displayModuleAnnotations(annotations, view, type, true);
                 }
-                catch (Exception e)
-                {
-                    PlugInUtilities.showErrorMessage(
-                            "Error in Annotating Modules",
-                            "Please see the logs for details.");
+                catch (Exception e) {
+                    PlugInUtilities.showErrorMessage("Error in Annotating Modules", "Please see the logs for details.");
                     e.printStackTrace();
                 }
                 progPane.setIndeterminate(false);
-                PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(
-                        false);
+                PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(false);
             }
         };
         t.start();
     }
-
-    private void displayModuleAnnotations(
-            List<ModuleGeneSetAnnotation> annotations, CyNetworkView view,
-            String type, boolean isForModule)
-    {
-        ResultDisplayHelper.getHelper().displayModuleAnnotations(annotations,
-                view, type, isForModule);
-    }
-
+    
     private Map<String, Integer> extractNodeToModule(CyNetworkView view) {
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
         CyTable netTable = view.getModel().getDefaultNetworkTable();
@@ -860,24 +837,21 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         // Check if the network has been clustered
         if (netTable.getRow(netSUID).get("clustering_Type", String.class) == null) {
             PlugInUtilities.showErrorMessage("Error in Annotating Modules",
-                                              "Please cluster the FI network before annotating modules.");
+                                             "Please cluster the FI network before annotating modules.");
             return null;
         }
         final Map<String, Integer> nodeToModule = new HashMap<String, Integer>();
         Set<String> linkers = new HashSet<String>();
         for (CyNode node : view.getModel().getNodeList()) {
             Long nodeSUID = node.getSUID();
-            String nodeName = nodeTable.getRow(nodeSUID).get("name",
-                                                             String.class);
-            Integer module = nodeTable.getRow(nodeSUID).get("module",
-                                                            Integer.class);
+            String nodeName = nodeTable.getRow(nodeSUID).get("name", String.class);
+            Integer module = nodeTable.getRow(nodeSUID).get("module", Integer.class);
             // Since nodes which are unlinked will have null value for module
             // (as may some other nodes),
             // only use those nodes with value for module.
             if (module != null) {
                 nodeToModule.put(nodeName, module);
-                Boolean isLinker = nodeTable.getRow(nodeSUID)
-                        .get("isLinker", Boolean.class);
+                Boolean isLinker = nodeTable.getRow(nodeSUID).get("isLinker", Boolean.class);
                 if (isLinker != null && isLinker) {
                     linkers.add(nodeName);
                 }
@@ -887,65 +861,55 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         if (cutoff == null)
             return null; // Equivalent to canceling the task.
         if (!linkers.isEmpty()) {
-            CySwingApplication desktopApp = PlugInObjectManager.getManager()
-                    .getCySwingApplication();
-            int reply = JOptionPane
-                    .showConfirmDialog(desktopApp.getJFrame(),
-                                       "Linkers have been used in network construction."
-                                               + " Including linkers\n will bias results. Would you like to exclude them from analysis?",
-                                       "Exclude Linkers?",
-                                       JOptionPane.YES_NO_CANCEL_OPTION);
+            CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+            int reply = JOptionPane.showConfirmDialog(desktopApp.getJFrame(),
+                                                      "Linkers have been used in network construction."
+                                                              + " Including linkers\n will bias results. Would you like to exclude them from analysis?",
+                                                      "Exclude Linkers?", JOptionPane.YES_NO_CANCEL_OPTION);
             if (reply == JOptionPane.CANCEL_OPTION)
                 
                 return null;
             if (reply == JOptionPane.YES_OPTION) {
                 nodeToModule.keySet().removeAll(linkers);
                 if (nodeToModule.isEmpty()) {
-                    JOptionPane
-                            .showMessageDialog(desktopApp.getJFrame(),
-                                               "No genes remain after removing linkers. Annotation cannot be performed.",
-                                               "Cannot Annotate Modules",
-                                               JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(desktopApp.getJFrame(),
+                                                  "No genes remain after removing linkers. Annotation cannot be performed.",
+                                                  "Cannot Annotate Modules", JOptionPane.INFORMATION_MESSAGE);
                     return null;
                 }
             }
         }
         return nodeToModule;
     }
-
-    private Integer applyModuleSizeFiler(Map<String, Integer> nodeToModule)
-    {
+    
+    private Integer applyModuleSizeFiler(Map<String, Integer> nodeToModule) {
         Map<Integer, Set<String>> clusterToGenes = new HashMap<Integer, Set<String>>();
-        for (String node : nodeToModule.keySet())
-        {
+        for (String node : nodeToModule.keySet()) {
             Integer module = nodeToModule.get(node);
             InteractionUtilities.addElementToSet(clusterToGenes, module, node);
         }
         Set<Integer> values = new HashSet<Integer>();
-        for (Set<String> set : clusterToGenes.values())
-        {
+        for (Set<String> set : clusterToGenes.values()) {
             values.add(set.size());
         }
         List<Integer> sizeList = new ArrayList<Integer>(values);
         Collections.sort(sizeList);
-        Integer input = (Integer) JOptionPane.showInputDialog(
-                PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                "Please choose a size cutoff for modules. Modules with sizes equal\n"
-                        + "or more than the cutoff will be used for analysis:",
-                "Choose Module Size", JOptionPane.QUESTION_MESSAGE, null,
-                sizeList.toArray(), sizeList.get(0));
-        if (input == null) return null; // Cancel has been pressed.
+        Integer input = (Integer) JOptionPane.showInputDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                              "Please choose a size cutoff for modules. Modules with sizes equal\n"
+                                                                      + "or more than the cutoff will be used for analysis:",
+                                                              "Choose Module Size", JOptionPane.QUESTION_MESSAGE, null,
+                                                              sizeList.toArray(), sizeList.get(0));
+        if (input == null)
+            return null; // Cancel has been pressed.
         // Do a filtering based on size
         Set<String> filtered = new HashSet<String>();
-        for (Set<String> set : clusterToGenes.values())
-        {
-            if (set.size() < input)
-            {
+        for (Set<String> set : clusterToGenes.values()) {
+            if (set.size() < input) {
                 filtered.addAll(set);
             }
         }
         nodeToModule.keySet().removeAll(filtered);
         return input;
     }
-
+    
 }
