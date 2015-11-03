@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.swing.JComboBox;
@@ -18,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
+import javax.swing.table.TableRowSorter;
 
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
@@ -212,6 +214,50 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
     @Override
     protected NetworkModuleTableModel createTableModel() {
         return new AnnotationTableModel();
+    }
+    
+    @Override
+    protected TableRowSorter<NetworkModuleTableModel> createTableRowSorter(NetworkModuleTableModel model) {
+        return new AnnotationTableRowSorter(model);
+    }
+
+    /**
+     * Use its own TableRowSorter to handle double values.
+     * @author gwu
+     *
+     */
+    private class AnnotationTableRowSorter extends TableRowSorter<NetworkModuleTableModel> {
+        
+        public AnnotationTableRowSorter(NetworkModuleTableModel model) {
+            super(model);
+        }
+
+        @Override
+        public Comparator<?> getComparator(int column) {
+            if (column == 0 || column == 6)
+                return super.getComparator(column);
+            // Something special for FDR since it may contains "<"
+            Comparator<String> comparator = new Comparator<String>() {
+                public int compare(String value1, String value2) {
+                    if (value1.startsWith("<") && value2.startsWith("<")) {
+                        String value11 = value1.substring(1);
+                        String value21 = value2.substring(1);
+                        return new Double(value11).compareTo(new Double(value21));
+                    }
+                    else if (value1.startsWith("<"))
+                        return -1;
+                    else if (value2.startsWith("<"))
+                        return 1;
+                    else {
+                        Double d1 = new Double(value1);
+                        Double d2 = new Double(value2);
+                        return d1.compareTo(d2);
+                    }
+                }
+            };
+            return comparator;
+        }
+        
     }
 
     protected class AnnotationTableModel extends NetworkModuleTableModel {
