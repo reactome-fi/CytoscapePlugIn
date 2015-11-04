@@ -202,6 +202,11 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
                     scores.add(score);
                 }
             }
+            // Need to sort all lists so that they can be used for nominal p-value calculation
+            for (Variable var : varToRandomScores.keySet()) {
+                List<Double> scores = varToRandomScores.get(var);
+                Collections.sort(scores);
+            }
             return varToRandomScores;
         }
 
