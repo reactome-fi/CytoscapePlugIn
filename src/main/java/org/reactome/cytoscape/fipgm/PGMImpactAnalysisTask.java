@@ -123,6 +123,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                 dataType = DataType.Mutation.toString();
             else
                 dataType = NON_MUTATION_DATA_KEY;
+            
             Map<Variable, double[]> varToPrior = dataTypeToVarToPrior.get(dataType);
             for (Variable var : fiGeneVariables) {
              // There is no need to check this. This has been checked during generation of fiGeneVariables.
@@ -162,7 +163,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                 dataType = NON_MUTATION_DATA_KEY;
             dataTypeToVarToPrior.put(dataType, varToPrior);
             
-            lbp.setObservation(baseObs);
+            lbp.setObservation(obs);
             lbp.runInference();
             for (Variable var : fiGeneVariables) {
                 // There is no need to check this. This has been checked during generation of fiGeneVariables.
@@ -174,6 +175,20 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                 varToPrior.put(var, prior);
             }
         }
+        
+//        // Debug code
+//        for (String dataType : dataTypeToVarToPrior.keySet()) {
+//            System.out.println("Data type: " + dataType);
+//            Map<Variable, double[]> varToPrior = dataTypeToVarToPrior.get(dataType);
+//            for (Variable var : varToPrior.keySet()) {
+//                if (var.getName().equals("TP53")) {
+//                    double[] prior = varToPrior.get(var);
+//                    System.out.println(var.getName() + ": " + PlugInUtilities.join(prior));
+//                    break;
+//                }
+//            }
+//        }
+        
         return dataTypeToVarToPrior;
     }
     
@@ -360,6 +375,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         int count = 0;
         long time1, time2;
         Map<String, Map<Variable, Double>> sampleToVarToResult = new HashMap<>();
+        
         for (Observation<Number> observation : observations) {
             if (isCancelled)
                 return null;
@@ -382,7 +398,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             // Average the original runningTime to get a better estimation
             runningTime = ((time2 - time1) + runningTime) / 2.0d;
             sampleToVarToResult.put(observation.getName(), varToResult);
-//            if (sampleToVarToResult.size() > 3)
+//            if (sampleToVarToResult.size() > 5)
 //                break; // This is test code
         }
         return sampleToVarToResult;
@@ -421,6 +437,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             return false;
         dialog.setSampleResults(sampleToVarToResult,
                                 randomSampleToVarToResult);
+        if (progressPane.isCancelled())
+            return false;
         dialog.setModal(true);
         dialog.setVisible(true);
         if (!dialog.isOkClicked())

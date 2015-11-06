@@ -328,6 +328,13 @@ public class PlugInUtilities {
         return marker;
     }
     
+    public static String join(double[] values) {
+        StringBuilder builder = new StringBuilder();
+        for (double v : values)
+            builder.append(v).append(", ");
+        return builder.toString();
+    }
+    
     /**
      * A customized method to zoom into a list of selected node. If there is only
      * one node is selected, some zoom-out is done to provide some context.

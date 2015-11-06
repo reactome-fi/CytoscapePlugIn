@@ -149,5 +149,4 @@ public class FIPGMResults {
         FIPGMResultsIO writer = new FIPGMResultsIO();
         writer.read(this, file);
     }
-    
 }

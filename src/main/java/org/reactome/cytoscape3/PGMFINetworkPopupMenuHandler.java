@@ -91,8 +91,14 @@ public class PGMFINetworkPopupMenuHandler extends GeneSetFINetworkPopupMenuHandl
         List<CyNode> selectedNodes = CyTableUtil.getNodesInState(view.getModel(),
                                                                  CyNetwork.SELECTED,
                                                                  true);
-        if (selectedNodes == null || selectedNodes.size() == 0)
+        if (selectedNodes == null || selectedNodes.size() == 0) {
+            JOptionPane.showMessageDialog(frame,
+                                          "Error in showing results: choose one or more genes first to show results!",
+                                          "Error in Showing Results",
+                                          JOptionPane.ERROR_MESSAGE);
+            frame.getGlassPane().setVisible(false);
             return;
+        }
         Map<String, Variable> nameToVar = results.getNameToVariable();
         Set<Variable> selectedVars = new HashSet<>();
         CyTable nodeTable = view.getModel().getDefaultNodeTable();
