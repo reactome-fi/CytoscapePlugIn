@@ -4,12 +4,9 @@
  */
 package org.reactome.cytoscape3;
 
-import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.swing.JPopupMenu;
 
 import org.reactome.cytoscape.service.NetworkModulePanel;
 

@@ -19,12 +19,21 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  *
  */
 public class PGMImpactResultLoadTask extends PGMImpactAnalysisTask {
+    private boolean usedToShowResults;
     
     /**
      * Default constructor.
      */
     public PGMImpactResultLoadTask() {
         needToAskSaveResults = false;
+    }
+
+    public boolean isUsedToShowResults() {
+        return usedToShowResults;
+    }
+
+    public void setUsedToShowResults(boolean usedToShowResults) {
+        this.usedToShowResults = usedToShowResults;
     }
 
     @Override
@@ -37,19 +46,24 @@ public class PGMImpactResultLoadTask extends PGMImpactAnalysisTask {
         progPane.setIndeterminate(true);
         progPane.setSize(400, 200);
         progPane.setVisible(true);
-        // Get a file
-        File file = PlugInUtilities.getAnalysisFile("Open Analysis Results",
-                                                    FileUtil.LOAD);
-        if (file == null) {
-            frame.getGlassPane().setVisible(false);
-            return;
+        File file = null;
+        if (!usedToShowResults) {
+            // Get a file
+            file = PlugInUtilities.getAnalysisFile("Open Analysis Results",
+                                                   FileUtil.LOAD);
+            if (file == null) {
+                frame.getGlassPane().setVisible(false);
+                return;
+            }
         }
         try {
             FIPGMResults results = FIPGMResults.getResults();
-            results.loadResults(file);
-            // We need to fetch FIs first
-            progPane.setText("Fetch FIs...");
-            fetchFIs();
+            if (file != null) {
+                results.loadResults(file);
+                // We need to fetch FIs first
+                progPane.setText("Fetch FIs...");
+                fetchFIs();
+            }
             showResults(results.getSampleToVarToScore(),
                         results.getRandomSampleToVarToScore(),
                         progPane,

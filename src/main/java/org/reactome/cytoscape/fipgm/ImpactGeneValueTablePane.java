@@ -7,6 +7,8 @@ package org.reactome.cytoscape.fipgm;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.Collection;
 import java.util.HashSet;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -23,6 +26,7 @@ import javax.swing.table.TableModel;
 
 import org.apache.commons.math.MathException;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.Variable;
 
@@ -66,6 +70,38 @@ public class ImpactGeneValueTablePane extends ImpactSampleValueTablePane {
         adjustGUIs();
     }
     
+    /**
+     * A method to display results for all genes in the FI network.
+     */
+    private void showAllResults() {
+        PGMImpactResultLoadTask task = new PGMImpactResultLoadTask();
+        task.setUsedToShowResults(true);
+        Thread t = new Thread(task);
+        t.start();
+    }
+    
+    @Override
+    protected void adjustGUIs() {
+        super.adjustGUIs();
+        // Just want to insert a new button
+        // Re-create control tool bars
+        for (int i = 0; i < controlToolBar.getComponentCount(); i++) {
+            controlToolBar.remove(i);
+        }
+        controlToolBar.add(ipaLabel);
+        controlToolBar.add(closeGlue);
+        JButton showAllResultsBtn = new JButton("Show All Results");
+        showAllResultsBtn.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showAllResults();
+            }
+        });
+        controlToolBar.add(showAllResultsBtn);
+        controlToolBar.add(closeBtn);
+    }
+
     @Override
     protected void doContentTablePopup(MouseEvent e) {
     }

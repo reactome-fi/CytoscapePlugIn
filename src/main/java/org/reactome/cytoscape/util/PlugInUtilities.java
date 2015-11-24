@@ -347,11 +347,9 @@ public class PlugInUtilities {
             return;
         if (totalSelected > 0) {
             networkView.fitSelected();
-            // The following behavior is kind of weird.
-            // Turn it off on Nov 3, 2015.
-//            if (totalSelected == 1)
-//                PlugInUtilities.zoomOut(networkView.getModel(),
-//                                        20); // 20 is rather arbitrary
+            if (totalSelected == 1)
+                PlugInUtilities.zoomOut(networkView.getModel(),
+                                        20); // 20 is rather arbitrary
         }
     }
     

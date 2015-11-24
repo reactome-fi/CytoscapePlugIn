@@ -306,7 +306,6 @@ public class TTestTablePlotPane<T> extends JPanel {
                 throw new IllegalArgumentException("Object " + name + " is not in " + dataLabel2);
             }
         }
-        dataset.clear();
         this.nameToValues1.clear();
         this.nameToValues2.clear();
         // Turn off selection listener for the time being to avoid
@@ -332,14 +331,15 @@ public class TTestTablePlotPane<T> extends JPanel {
         for (T name : nameList) {
             String key = getKey(name);
             List<Double> values1 = nameToValues1.get(name);
-            dataset.add(values1, 
-                        dataLabel1, 
-                        key);
+            // Don't do this: this is very slow by adding values one by one for genes.
+//            dataset.add(values1, 
+//                        dataLabel1, 
+//                        key);
             this.nameToValues1.put(key, values1);
             List<Double> values2 = nameToValues2.get(name);
-            dataset.add(values2,
-                        dataLabel2, 
-                        key);
+//            dataset.add(values2,
+//                        dataLabel2, 
+//                        key);
             this.nameToValues2.put(key, values2);
             double pvalue = tableModel.addRow(values1,
                                               values2,
@@ -361,8 +361,7 @@ public class TTestTablePlotPane<T> extends JPanel {
             axis.setTickLabelsVisible(true);
             axis.setTickMarksVisible(true);
         }
-        DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
-        plot.datasetChanged(event);
+        rePlotData(); // Only need to call this method here to replot. This is very fast!
         // Make a copy to avoid modifying by the called method
         tableModel.calculateFDRs(new ArrayList<Double>(pvalues));
         tableModel.fireTableStructureChanged();

@@ -14,6 +14,7 @@ import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTable;
@@ -43,7 +44,11 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     private boolean needToAskSaveResults;
     
     public PGMImpactAnalysisResultDialog() {
-        super(PlugInObjectManager.getManager().getCytoscapeDesktop());
+        this(PlugInObjectManager.getManager().getCytoscapeDesktop());
+    }
+    
+    public PGMImpactAnalysisResultDialog(JFrame parentFrame) {
+        super(parentFrame);
         init();
     }
     

@@ -5,8 +5,11 @@
 package org.reactome.cytoscape3;
 
 import java.awt.BorderLayout;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,11 +32,15 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableUtil;
+import org.cytoscape.model.events.RowsSetEvent;
+import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.work.ServiceProperties;
 import org.gk.util.DialogControlPane;
 import org.gk.util.ProgressPane;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.fipgm.FIPGMResults;
 import org.reactome.cytoscape.fipgm.FilterableTTestTablePlotPane;
 import org.reactome.cytoscape.pgm.ObservationDataDialog;
@@ -323,14 +330,115 @@ public class PGMFINetworkPopupMenuHandler extends GeneSetFINetworkPopupMenuHandl
     
     private class FIPGMObservationDialog extends ObservationDataDialog {
         private CyNetworkView view;
+        private ServiceRegistration registration;
+        private boolean isRemoved;
+        private List<CyNode> preSelected;
+        // Two flags
+        private boolean isFromTable;
+        private boolean isFromNetwork;
         
         public FIPGMObservationDialog(CyNetworkView view) {
             this.view = view;
         }
+        
+        @Override
+        protected void init() {
+            super.init();
+            // Want to enable selection from the network view
+            RowsSetListener selectionListener = new RowsSetListener() {
+                
+                @Override
+                public void handleEvent(RowsSetEvent e) {
+                    if (e.containsColumn(CyNetwork.SELECTED)) {
+                        handleNodeSelection();
+                    }
+                }
+            };
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            registration = context.registerService(RowsSetListener.class.getName(),
+                                                   selectionListener,
+                                                   null);
+            isRemoved = false;
+            addWindowListener(new WindowAdapter() {
+
+                /**
+                 * This is used to handle the window closing default action.
+                 */
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    unregisterService();
+                }
+
+                /**
+                 * This is used to handle the OK button.
+                 */
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    unregisterService();
+                }
+                
+            });
+        }
+        
+        private void unregisterService() {
+            if (isRemoved)
+                return;
+            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+            registration.unregister();
+            isRemoved = true;
+        }
+        
+        private void handleNodeSelection() {
+            if (isFromTable)
+                return;
+            if (view == null || view.getModel() == null || view.getModel().getDefaultNodeTable() == null)
+                return;
+            CyNetwork network = view.getModel();
+            List<CyNode> selectedNodes = CyTableUtil.getNodesInState(network,
+                                                                     CyNetwork.SELECTED,
+                                                                     true);
+            if (selectedNodes.equals(preSelected))
+                return;
+            isFromNetwork = true;
+            selectNodes(selectedNodes);
+            preSelected = selectedNodes;
+            isFromNetwork = false;
+        }
+        
+        private void selectNodes(List<CyNode> selectedNodes) {
+            Set<String> geneNames = new HashSet<String>();
+            CyNetwork network = view.getModel();
+            for (CyNode node : selectedNodes) {
+                geneNames.add(network.getRow(node).get(CyNetwork.NAME, String.class));
+            }
+            // Will select table rows
+            JTable table = getTTestTablePlotPane().getTable();
+            table.clearSelection();
+            int firstRow = -1;
+            for (int i = 0; i < table.getRowCount(); i++) {
+                String name = (String) table.getValueAt(i, 0);
+                int index = name.indexOf("_");
+                String geneName = name.substring(0,  index);
+                if (geneNames.contains(geneName)) {
+                    table.addRowSelectionInterval(i, i);
+                    if (firstRow < 0)
+                        firstRow = i;
+                }
+            }
+            if (firstRow > 0) {
+                // Need to scroll
+                Rectangle rect = table.getCellRect(firstRow, 0, false);
+                table.scrollRectToVisible(rect);
+            }
+        }
 
         @Override
         protected void handleTableSelection(JTable table) {
+            if (isFromNetwork)
+                return;
+            isFromTable = true;
             PGMFINetworkPopupMenuHandler.this.handleTableSelection(table, view);
+            isFromTable = false;
         }
         
     }
