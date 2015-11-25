@@ -25,8 +25,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableModel;
 
 import org.apache.commons.math.MathException;
+import org.cytoscape.view.model.CyNetworkView;
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.Variable;
 
@@ -109,6 +109,14 @@ public class ImpactGeneValueTablePane extends ImpactSampleValueTablePane {
     @Override
     protected void handleGraphEditorSelection(PathwayEditor editor) {
     }
+    
+    @Override
+    public void setNetworkView(CyNetworkView view) {
+        if (this.view == view)
+            return; // There is no need to do anything
+        super.setNetworkView(view);
+        showResults();
+    }
 
     @Override
     protected void doTableSelection(ListSelectionEvent e) {
@@ -165,6 +173,8 @@ public class ImpactGeneValueTablePane extends ImpactSampleValueTablePane {
      * Show inference results for the displayed FI network.
      */
     public void showResults() {
+        if (view == null)
+            return; // There is no need to do this. This may occur during a network view switch when a new network is created.
         Collection<Variable> variables = nodeToVar.values();
         Map<String, Map<Variable, Double>> sampleToVarToScore = FIPGMResults.getResults().getSampleToVarToScore(variables);
         Map<String, Map<Variable, Double>> randomSampleToVarToScore = FIPGMResults.getResults().getRandomSampleToVarToScore(variables);

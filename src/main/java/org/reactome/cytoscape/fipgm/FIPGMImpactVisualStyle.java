@@ -6,10 +6,13 @@ package org.reactome.cytoscape.fipgm;
 
 import java.awt.Color;
 import java.awt.Paint;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.model.VisualLexicon;
 import org.cytoscape.view.model.VisualProperty;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
@@ -29,16 +32,26 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  *
  */
 public class FIPGMImpactVisualStyle extends FIVisualStyleImpl {
+    private CyNetworkViewManager viewManager;
     
     /**
      * Default constructor.
      */
     public FIPGMImpactVisualStyle() {
     }
+    
+    public CyNetworkViewManager getViewManager() {
+        return viewManager;
+    }
+
+    public void setViewManager(CyNetworkViewManager viewManager) {
+        this.viewManager = viewManager;
+    }
 
     @Override
     @SuppressWarnings("rawtypes")
-    protected void setNodeSizes(CyNetworkView view, VisualStyle fiVisualStyle,
+    protected void setNodeSizes(CyNetworkView view, 
+                                VisualStyle fiVisualStyle,
                                 VisualMappingFunctionFactory visMapFuncFactoryC) {
         // Set the node size based on sample number
         double[] scoreRange = getGeneScoreRange(view);
@@ -59,10 +72,31 @@ public class FIPGMImpactVisualStyle extends FIVisualStyleImpl {
     }
     
     private double[] getGeneScoreRange(CyNetworkView view) {
-        Map<Long, Object> idToValue = new TableHelper().getNodeTableValuesBySUID(view.getModel(), 
-                                                                                 FIVisualStyle.GENE_VALUE_ATT, 
-                                                                                 Double.class);
-        if (idToValue == null || idToValue.isEmpty())
+        Map<Long, Object> idToValue = new HashMap<Long, Object>();
+        TableHelper helper = new TableHelper();
+        if (viewManager != null) {
+            Set<CyNetworkView> views = viewManager.getNetworkViewSet();
+            if (views != null) {
+                for (CyNetworkView view1 : views) {
+                    if(!helper.isReactomeNetwork(view1))
+                        continue;
+                    Map<Long, Object> idToValue1 = helper.getNodeTableValuesBySUID(view1.getModel(), 
+                                                                                   FIVisualStyle.GENE_VALUE_ATT, 
+                                                                                   Double.class);
+                    if (idToValue1 == null || idToValue1.size() == 0)
+                        continue;
+                    idToValue.putAll(idToValue1);
+                }
+            }
+        }
+        else {
+            Map<Long, Object> idToValue1 = new TableHelper().getNodeTableValuesBySUID(view.getModel(), 
+                                                                                      FIVisualStyle.GENE_VALUE_ATT, 
+                                                                                      Double.class);
+            if (idToValue1 != null && idToValue1.size() > 0)
+                idToValue.putAll(idToValue1);
+        }
+        if (idToValue.size() == 0)
             return null;
         double min = Double.POSITIVE_INFINITY;
         double max = Double.NEGATIVE_INFINITY;

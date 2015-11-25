@@ -75,8 +75,11 @@ public class FIVisualStyleImpl implements FIVisualStyle {
                 break;
             }
         }
-        if (style == null)
+        if (style == null) {
             style = createVisualStyle(view);
+            if (style != null)
+                visMapManager.addVisualStyle(style);
+        }
         if (style == null)
             return; // Cannot do anything
         // Apply the visual style and update the network view.

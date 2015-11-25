@@ -344,7 +344,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         frame.getGlassPane().setVisible(false);
         if (!isOKed)
             return;
-        // If all work fine, we will store information for futher visualization and analyses
+        // If all work fine, we will store information for further visualization and analysis
         FIPGMResultsControl control = new FIPGMResultsControl();
         control.showInferneceResults();
     }
@@ -478,7 +478,19 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
             CyNetworkViewManager viewManager = (CyNetworkViewManager) context.getService(viewManagerRef);
             viewManager.addNetworkView(view);
             FIPGMImpactVisualStyle style = new FIPGMImpactVisualStyle();
-            style.setVisualStyle(view);
+            style.setViewManager(viewManager);
+            // Need to recreate visual style so that node sizes can be reset.
+            style.setVisualStyle(view, true);
+            // Need to update other views too
+            Set<CyNetworkView> views = viewManager.getNetworkViewSet();
+            if (views != null) {
+                for (CyNetworkView view1 : views) {
+                    if (view1 == view)
+                        continue;
+                    if (tableHelper.isReactomeNetwork(view1))
+                        style.setVisualStyle(view1, false); // Now we should not recrease a new style since the size has been set now.
+                }
+            }
             progressPane.setText("Layouting FI network...");
             style.doLayout();
         }

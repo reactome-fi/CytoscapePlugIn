@@ -12,7 +12,7 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
- * Control how to display infernece results after a FI network is constructed.
+ * Control how to display inference results after a FI network is constructed.
  * @author gwu
  *
  */
@@ -58,8 +58,9 @@ public class FIPGMResultsControl {
             valuePane = new ImpactGeneValueTablePane(title);
         else
             valuePane = (ImpactGeneValueTablePane) tableBrowserPane.getComponentAt(index);
+        // Need to call this method in case the network is the first one to be displayed.
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
-        valuePane.showResults();
+//        valuePane.showResults();
         // Want to select this if this tab is newly created
         // Only select it if this tab is newly created.
         if (index == -1) {
