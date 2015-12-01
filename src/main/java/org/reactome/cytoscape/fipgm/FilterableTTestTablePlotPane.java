@@ -28,6 +28,8 @@ import javax.swing.RowFilter;
 import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableRowSorter;
 
 import org.apache.commons.math.MathException;
@@ -135,6 +137,19 @@ public class FilterableTTestTablePlotPane extends JPanel {
         notePane.setBorder(BorderFactory.createEtchedBorder());
         bottomPane.add(notePane);
         add(bottomPane, BorderLayout.SOUTH);
+        
+        // Want to show how many genes are selected
+        resultTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                JLabel label = tTestPlotPane.getBottomPValueLabel();
+                if (resultTable.getSelectedRowCount() == 0)
+                    label.setText(resultTable.getRowCount() + " displayed.");
+                else
+                    label.setText(resultTable.getRowCount() + " displayed (" + resultTable.getSelectedRowCount() + " selected).");
+            }
+        });
     }
     
     private TTestTablePlotPane<Variable> createTablePlotPane() {
@@ -178,7 +193,7 @@ public class FilterableTTestTablePlotPane extends JPanel {
         font = font.deriveFont(Font.BOLD);
         tablePlotPane.getBottomPValueLabel().setFont(font);
         tablePlotPane.getBottomTitleLabel().setFont(font);
-        tablePlotPane.getBottomTitleLabel().setText("Choose genes to construct a FI network: ");
+        tablePlotPane.getBottomTitleLabel().setText("Choose genes to construct a FI network (if you have selection, only selected genes will be used): ");
         // Set labels
         tablePlotPane.getPlot().getRangeAxis().setAttributedLabel("Impact Score");
         tablePlotPane.getPlot().getDomainAxis().setAttributedLabel("Protein");

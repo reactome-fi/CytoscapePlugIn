@@ -67,7 +67,7 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
         getContentPane().add(tTestPlotPane, BorderLayout.CENTER);
         // Want to keep these variables in the class
         resultTable = tTestPlotPane.getResultTable();
-        
+
         JPanel controlPane = createControlPane();
         getContentPane().add(controlPane, BorderLayout.SOUTH);
         setSize(1000, 650);
@@ -151,7 +151,9 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     
     private boolean validateSelectedGenes() {
         // Check the number of displayed genes
-        int totalGenes = resultTable.getRowCount();
+        int totalGenes = resultTable.getSelectedRowCount();
+        if (totalGenes == 0)
+            totalGenes = resultTable.getRowCount();
         if (totalGenes > TOTAL_GENE) {
             JOptionPane.showMessageDialog(this,
                                           "Please filter genes to less than " + TOTAL_GENE + ".", 
@@ -168,12 +170,24 @@ public class PGMImpactAnalysisResultDialog extends JDialog {
     
     public Map<String, Double> getSelectedGeneToScore() {
         Map<String, Double> geneToScore = new HashMap<>();
-        for (int i = 0; i < resultTable.getRowCount(); i++) {
-            String gene = (String) resultTable.getValueAt(i, 0);
-            // Use the average score
-            String scoreText = (String) resultTable.getValueAt(i, 1);
-            Double score = new Double(scoreText);
-            geneToScore.put(gene, score);
+        int[] selectedRows = resultTable.getSelectedRows();
+        if (selectedRows == null || selectedRows.length == 0) {
+            for (int i = 0; i < resultTable.getRowCount(); i++) {
+                String gene = (String) resultTable.getValueAt(i, 0);
+                // Use the average score
+                String scoreText = (String) resultTable.getValueAt(i, 1);
+                Double score = new Double(scoreText);
+                geneToScore.put(gene, score);
+            }
+        }
+        else { // We should have some selections
+            for (int i = 0; i < selectedRows.length; i++) {
+                String gene = (String) resultTable.getValueAt(selectedRows[i], 0);
+                // Use the average score
+                String scoreText = (String) resultTable.getValueAt(selectedRows[i], 1);
+                Double score = new Double(scoreText);
+                geneToScore.put(gene, score);
+            }
         }
         return geneToScore;
     }

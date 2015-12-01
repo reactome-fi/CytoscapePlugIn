@@ -573,7 +573,7 @@ public class PlugInUtilities {
     public static String formatProbability(double value) {
         if (Double.isNaN(value))
             return value + "";
-        return String.format("%1.2E", value);
+        return String.format("%1.4E", value);
     }
 
     /**
