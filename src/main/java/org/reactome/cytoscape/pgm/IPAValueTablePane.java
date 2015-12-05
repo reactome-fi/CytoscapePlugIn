@@ -435,31 +435,37 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
         
         protected void resetDataWithPValues(List<String> sampleList) {
-            if (fgInfResults.isUsedForTwoCases())
-                throw new IllegalStateException("This operation is not supported when two-cases analysis is performed!");
-            columnHeaders = new String[varResults.size() * 3 + 1];
+            Map<String, String> sampleToType = fgInfResults.getSampleToType();
+            final int dataIndex = (sampleToType != null && sampleToType.size() > 0) ? 2 : 1;
+            columnHeaders = new String[varResults.size() * 3 + dataIndex];
             columnHeaders[0] = "Sample";
+            if (dataIndex == 2)
+                columnHeaders[1] = "Type";
             for (int i = 0; i < varResults.size(); i++) {
                 String label = varResults.get(i).getVariable().getName();
-                columnHeaders[3 * i + 1] = label;
-                columnHeaders[3 * i + 2] = label + PlotTablePanel.P_VALUE_COL_NAME_AFFIX;
-                columnHeaders[3 * i + 3] = label + PlotTablePanel.FDR_COL_NAME_AFFIX;
+                columnHeaders[3 * i + dataIndex] = label;
+                columnHeaders[3 * i + dataIndex + 1] = label + PlotTablePanel.P_VALUE_COL_NAME_AFFIX;
+                columnHeaders[3 * i + dataIndex + 2] = label + PlotTablePanel.FDR_COL_NAME_AFFIX;
             }
             // In order to calculate p-values
             Map<Variable, List<Double>> varToRandomIPAs = generateRandomIPAs(varResults);
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[varResults.size() * 3 + 1];
+                String[] rowData = new String[varResults.size() * 3 + dataIndex];
                 rowData[0] = sampleList.get(i);
+                if (dataIndex == 2) {
+                    String type = sampleToType.get(rowData[0]);
+                    rowData[1] = (type == null) ? "" : type;
+                }
                 for (int j = 0; j < varResults.size(); j++) {
                     VariableInferenceResults varResult = varResults.get(j);
                     Map<String, List<Double>> posteriors = varResult.getPosteriorValues();
                     List<Double> postProbs = posteriors.get(rowData[0]);
                     double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(),
                                                             postProbs);
-                    rowData[3 * j + 1] = PlugInUtilities.formatProbability(ipa);
+                    rowData[3 * j + dataIndex] = PlugInUtilities.formatProbability(ipa);
                     List<Double> randomIPAs = varToRandomIPAs.get(varResult.getVariable());
                     double pvalue = calculatePValue(ipa, randomIPAs);
-                    rowData[3 * j + 2] = pvalue + "";
+                    rowData[3 * j + dataIndex + 1] = pvalue + "";
                 }
                 tableData.add(rowData);
             }
@@ -471,14 +477,14 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 final int index = j;
                 Collections.sort(tableData, new Comparator<String[]>() {
                     public int compare(String[] row1, String[] row2) {
-                        Double pvalue1 = new Double(row1[3 * index + 2]);
-                        Double pvalue2 = new Double(row2[3 * index + 2]);   
+                        Double pvalue1 = new Double(row1[3 * index + 1 + dataIndex]);
+                        Double pvalue2 = new Double(row2[3 * index + 1 + dataIndex]);   
                         return pvalue1.compareTo(pvalue2);
                     }
                 });
                 for (int i = 0; i < tableData.size(); i++) {
                     String[] row = tableData.get(i);
-                    Double pvalue = new Double(row[3 * j + 2]);
+                    Double pvalue = new Double(row[3 * j + 1 + dataIndex]);
                     if (pvalue.equals(0.0d)) 
                         pvalue = 1.0d / (totalPermutation + 1); // Use the closest double value for a conservative calculation
                     pvalues.add(pvalue);
@@ -487,7 +493,8 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 // Replace p-values with FDRs
                 for (int i = 0; i < tableData.size(); i++) {
                     String[] row = tableData.get(i);
-                    row[3 * j + 3] = String.format("%.3f", fdrs.get(i));
+//                    row[3 * j + dataIndex + 2] = fdrs.get(i) + "";
+                    row[3 * j + dataIndex + 2] = String.format("%.3f", fdrs.get(i));
                 }
             }
             // Need to sort the table back as the original

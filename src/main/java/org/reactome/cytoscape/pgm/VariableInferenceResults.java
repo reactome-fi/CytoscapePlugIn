@@ -66,7 +66,7 @@ public class VariableInferenceResults {
     
     public void setSampleToValues(Map<String, ArrayList<Double>> sampleToValues) {
         if (sampleToValues instanceof HashMap)
-            this.sampleToValues = (HashMap<String, ArrayList<Double>>)this.sampleToValues;
+            this.sampleToValues = (HashMap<String, ArrayList<Double>>) sampleToValues;
         else
             this.sampleToValues = new HashMap<String, ArrayList<Double>>(sampleToValues);
     }

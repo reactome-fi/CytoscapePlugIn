@@ -197,10 +197,12 @@ public class PlotTablePanel extends JPanel {
             // to get values. For some reason, the table's data is not correct!
             // Most likely, this is because the use of a RowSorter.
             for (int col = 1; col < model.getColumnCount(); col++) {
+                String colName = model.getColumnName(col);
+                if (colName.equals("Type"))
+                    continue; // Escape sample type
                 List<Double> values = readValues(model, col);
                 if (values == null)
                     continue;
-                String colName = model.getColumnName(col);
                 for (int row = 0; row < model.getRowCount(); row++) {
                     int index = contentTable.convertRowIndexToModel(row);
                     String sample = (String) model.getValueAt(index, 0);

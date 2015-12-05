@@ -132,7 +132,10 @@ public class FIPGMTests {
         String fileName = "/Users/gwu/Documents/EclipseWorkspace/caBigR3/test_data/tcga_ov/fi_pgm_ov_cnv_mutation_random_100_110515.xml";
         File file = new File(fileName);
         FIPGMResults results = FIPGMResults.getResults();
+        long time1 = System.currentTimeMillis();
         results.loadResults(file);
+        long time11 = System.currentTimeMillis();
+        System.out.println("Time for loading: " + (time11 - time1));
         System.out.println("Total samples: " + results.getObservations().size());
         System.out.println("Total random samples: " + results.getRandomObservations().size());
         for (Observation<Number> obs : results.getObservations()) {
@@ -153,6 +156,8 @@ public class FIPGMTests {
                     System.out.println(sample + "\t" + var.getName() + "\t" + varToScore.get(var));
             }
         }
+        long time2 = System.currentTimeMillis();
+        System.out.println("Total time: " + (time2 - time1));
     }
     
     @Test

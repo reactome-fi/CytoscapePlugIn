@@ -164,9 +164,10 @@ public class FactorGraphAnalyzer {
         else {
             // Need to remove the originally set sample information
             setTwoCasesSampleInfoFile(null);
-            registry.setNumberOfPermtation(dataPane.getNumberOfPermutation());
         }
-            
+        // As of Dec 3, 2015, random permutation should be ran for two-case studies in order to
+        // calculate p-values for individual samples regardless of their types.
+        registry.setNumberOfPermtation(dataPane.getNumberOfPermutation());
         InferenceAlgorithmPane algPane = dialog.getAlgorithmPane();
         setAlgorithms(algPane.getSelectedAlgorithms());
     }

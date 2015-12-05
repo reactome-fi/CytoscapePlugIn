@@ -33,9 +33,6 @@ import java.util.regex.Pattern;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.math.MathException;
 import org.cytoscape.property.CyProperty;
@@ -899,9 +896,13 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                                                         FileUtil.LOAD);
             if (file == null)
                 return;
-            JAXBContext jaxbContext = JAXBContext.newInstance(FactorGraphInferenceResults.class);
-            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            FactorGraphInferenceResults results = (FactorGraphInferenceResults) unmarshaller.unmarshal(file);
+//            JAXBContext jaxbContext = JAXBContext.newInstance(FactorGraphInferenceResults.class);
+//            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+//            FactorGraphInferenceResults results = (FactorGraphInferenceResults) unmarshaller.unmarshal(file);
+            
+            FactorGraphInferenceResultsIO reader = new FactorGraphInferenceResultsIO();
+            FactorGraphInferenceResults results = reader.read(file);
+            
             RenderablePathway diagram = (RenderablePathway) pathwayEditor.getRenderable();
             if (!(diagram.getReactomeDiagramId().equals(results.getPathwayDiagramId()))) {
                 JOptionPane.showMessageDialog(this,
@@ -951,11 +952,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             return;
         }
         try {
-            JAXBContext jaxbContext = JAXBContext.newInstance(FactorGraphInferenceResults.class);
-            Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-            
-            jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-            
             // Get a file
             File file = PlugInUtilities.getAnalysisFile("Save Analysis Results",
                                                         FileUtil.SAVE);
@@ -966,7 +962,12 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             results.getFactorGraph().setIdsInFactors();
             RenderablePathway diagram = (RenderablePathway) pathwayEditor.getRenderable();
             results.setPathwayDiagramId(diagram.getReactomeDiagramId());
-            jaxbMarshaller.marshal(results, file);
+            FactorGraphInferenceResultsIO writer = new FactorGraphInferenceResultsIO();
+            writer.write(results, file);
+            //          JAXBContext jaxbContext = JAXBContext.newInstance(FactorGraphInferenceResults.class);
+            //          Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+            //          jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            //            jaxbMarshaller.marshal(results, file);
         }
         catch(Exception e) {
             JOptionPane.showMessageDialog(this,

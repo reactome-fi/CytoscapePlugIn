@@ -59,7 +59,8 @@ public class FactorGraphRegistry {
     // Number of permutation
     private Integer numberOfPermtation = 100; // Default is 100
     // To control if a feature warning is needed
-    private boolean needFeatureWarning = true;
+    // As of Dec 3, 2015, the default is false: No warning is going to be shown.
+    private boolean needFeatureWarning = false;
     
     public static final FactorGraphRegistry getRegistry() {
         if (registry == null)

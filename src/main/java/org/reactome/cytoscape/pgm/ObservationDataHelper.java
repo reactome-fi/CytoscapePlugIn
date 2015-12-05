@@ -131,7 +131,7 @@ public class ObservationDataHelper {
         // Even though we want to perform two-case analysis, we still need to generate
         // random samples for p-values and FDRs calculations regarding individual samples
         // and objects in the pathway. But it can be turned off by using a flag.
-        if (sampleInfoFile == null) {
+//        if (sampleInfoFile == null) {
             if (progressPane != null)
                 progressPane.setText("Generating random data...");
             List<ObservationData> randomData = getRandomObservationData(observationData,
@@ -142,7 +142,7 @@ public class ObservationDataHelper {
                                                                                                randomData,
                                                                                                dataLoader.getDataTypeToObservationFactorHandler());
             FactorGraphRegistry.getRegistry().setRandomObservations(fg, randomObservations);
-        }
+//        }
         return true;
     }
 

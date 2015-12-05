@@ -12,6 +12,7 @@ import org.apache.commons.math.MathException;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.application.swing.CytoPanelState;
 import org.gk.render.RenderablePathway;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -116,6 +117,21 @@ public class InferenceResultsControl {
             if (hiliteControlPane.getPathwayEditor() != null)
                 outputPane.setPathwayDiagram((RenderablePathway)hiliteControlPane.getPathwayEditor().getRenderable());
         }
+        // Show samples for the user's selection
+        CytoPanel eastPane = desktopApp.getCytoPanel(CytoPanelName.EAST);
+        // We want the east pane in the dock state
+        if (eastPane.getState() != CytoPanelState.DOCK)
+            eastPane.setState(CytoPanelState.DOCK);
+        SampleListComponent samplePane = null;
+        index = PlugInUtilities.getCytoPanelComponent(eastPane, SampleListComponent.TITLE);
+        if (index > -1)
+            samplePane = (SampleListComponent) eastPane.getComponentAt(index);
+        else {
+            samplePane = new SampleListComponent();
+            index = eastPane.indexOfComponent(samplePane);
+        }
+        if (index > -1)
+            eastPane.setSelectedIndex(index);
     }
     
     private double[] getMinMaxValues(Map<String, Double> idToValue) {
@@ -130,6 +146,13 @@ public class InferenceResultsControl {
         // Want to keep to two digits
         min = Math.floor(min * 100) / 100.0d;
         max = Math.ceil(max * 100) / 100.0d;
+        // If one is negative and one is positive, we want them to have
+        // the same absolute values for easy comparison
+        if (min < 0 && max > 0) {
+            double tmp = Math.max(-min, max);
+            min = -tmp;
+            max = tmp;
+        }
         return (new double[]{min, max});
     }
 

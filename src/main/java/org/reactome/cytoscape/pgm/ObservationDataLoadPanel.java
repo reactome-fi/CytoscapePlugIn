@@ -59,7 +59,7 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         dnaTFs = new ArrayList<JTextField>();
         JPanel dnaPane = createDataPane("CNV", 
                                         dnaTFs,
-                                        new double[]{-0.95, 0.95});
+                                        new double[]{-1.95, 1.95});
         Border titleBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
                                                               "DNA Data",
                                                               TitledBorder.LEFT,
@@ -71,7 +71,7 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         geneExpTFs = new ArrayList<JTextField>();
         JPanel geneExpressionPane = createDataPane("gene expression", 
                                                    geneExpTFs,
-                                                   new double[]{-1.64, 1.64});
+                                                   new double[]{-1.96, 1.96});
         titleBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
                                                        "Gene Expression",
                                                        TitledBorder.LEFT,
@@ -179,6 +179,7 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         constraints.gridwidth = 3;
         pane.add(ta, constraints);
         
+        // As of Dec 3, 2015, random permuation should be run for two-cases studies
         useTwoCasesBox.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
@@ -187,8 +188,8 @@ public abstract class ObservationDataLoadPanel extends JPanel {
                 twoCaseFileTF.setEnabled(enabled);
                 browseBtn.setEnabled(enabled);
                 ta.setEnabled(enabled);
-                numberOfPermutationLbl.setEnabled(!enabled);
-                numberOfPermutationTF.setEnabled(!enabled);
+//                numberOfPermutationLbl.setEnabled(!enabled);
+//                numberOfPermutationTF.setEnabled(!enabled);
             }
         });
         // The following should be disabled first
@@ -285,11 +286,11 @@ public abstract class ObservationDataLoadPanel extends JPanel {
                     comp.setEnabled(isSelected);
             }
         });
-        // Default use empirical distribution
-        useEmpricalDistributionBtn.setSelected(true);
+        // Default use discrete variables
+        chooseThresholdValuesBtn.setSelected(true);
         // Disable state GUIs first
-        for (JComponent comp : stateGUIs)
-            comp.setEnabled(false);
+//        for (JComponent comp : stateGUIs)
+//            comp.setEnabled(false);
         return pane;
     }
     
@@ -329,8 +330,6 @@ public abstract class ObservationDataLoadPanel extends JPanel {
     }
     
     public Integer getNumberOfPermutation() {
-        if (isTwoCasesAnalysisSelected())
-            return null;
         return new Integer(numberOfPermutationTF.getText().trim());
     }
     
