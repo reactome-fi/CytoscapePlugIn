@@ -67,10 +67,10 @@ public class PGMFINetworkPopupMenuHandler extends GeneSetFINetworkPopupMenuHandl
     protected void installMenus() {
         super.installMenus();
         ShowObservationsMenu menu = new ShowObservationsMenu();
-        installOtherNetworkMenu(menu, "Show Observations");
+        installOtherNetworkMenu(menu, "Show Observation");
         // Add a popup menu for nodes
         ShowGeneObservationsMenu geneMenu = new ShowGeneObservationsMenu();
-        addNodePopup(geneMenu, "Show Observations");
+        addNodePopup(geneMenu, "Show Observation");
         
         ShowGeneInferenceMenu infResultsMenu = new ShowGeneInferenceMenu();
         addNodePopup(infResultsMenu, "Show Inference Results");
@@ -238,7 +238,7 @@ public class PGMFINetworkPopupMenuHandler extends GeneSetFINetworkPopupMenuHandl
 
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView, View<CyNode> nodeView) {
-            JMenuItem showObservations = new JMenuItem("Show Observations");
+            JMenuItem showObservations = new JMenuItem("Show Observation");
             showObservations.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -263,7 +263,7 @@ public class PGMFINetworkPopupMenuHandler extends GeneSetFINetworkPopupMenuHandl
 
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView view) {
-            JMenuItem showObservations = new JMenuItem("Show Observations");
+            JMenuItem showObservations = new JMenuItem("Show Observation");
             showObservations.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {

@@ -2,7 +2,7 @@
  * Created on Dec 2, 2015
  *
  */
-package org.reactome.cytoscape.pathway;
+package org.reactome.cytoscape.pgm;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,8 +38,6 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.gk.util.StringUtils;
 import org.junit.Test;
-import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
-import org.reactome.cytoscape.pgm.VariableInferenceResults;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Observation;
 import org.reactome.factorgraph.Variable;

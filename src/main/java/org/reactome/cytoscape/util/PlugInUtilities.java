@@ -22,15 +22,18 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.RowSorter;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.SortOrder;
+import javax.swing.SwingUtilities;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
@@ -73,8 +76,10 @@ import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
 import org.jfree.chart.plot.CategoryMarker;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleEvent;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.SynchronousBundleListener;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
@@ -537,6 +542,57 @@ public class PlugInUtilities {
         networkFactory = null;
         context.ungetService(reference);
         return network;
+    }
+    
+    public static void registerCytoPanelComponent(final CytoPanelComponent comp) {
+        // As of Dec 5, 2015, manual insert tab to control close during Quit.
+        // Otherwise, index exception thrown for tabs used for PGMs.
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        CytoPanel cytoPane = desktopApp.getCytoPanel(comp.getCytoPanelName());
+        JTabbedPane tabbedPane = getTabbedPane(cytoPane);
+        if (tabbedPane == null)
+            context.registerService(CytoPanelComponent.class.getName(), 
+                                    comp, 
+                                    new Properties());
+        else { // Control self to avoid bug related to thread issues
+            tabbedPane.add(comp.getTitle(), 
+                           comp.getComponent());
+            // Need to remove it when this bundle is closed
+            context.addBundleListener(new SynchronousBundleListener() {
+
+                @Override
+                public void bundleChanged(BundleEvent event) {
+                    if (event.getType() == BundleEvent.STOPPING) {
+                        try {
+                            SwingUtilities.invokeAndWait(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Container container = comp.getComponent().getParent();
+                                    if (container != null)
+                                        container.remove(comp.getComponent());
+                                }
+                            });
+                        }
+                        catch(Exception e) {e.printStackTrace();} 
+                    }
+                }
+                
+            });
+        }
+    }
+    
+    public static JTabbedPane getTabbedPane(CytoPanel panel) {
+        Component comp = panel.getThisComponent();
+        if (comp instanceof Container) {
+            Container container = (Container) comp;
+            for (int i = 0; i < container.getComponentCount(); i++) {
+                Component comp1 = container.getComponent(i);
+                if (comp1 instanceof JTabbedPane)
+                    return (JTabbedPane) comp1;
+            }
+        }
+        return null;
     }
 
     /**

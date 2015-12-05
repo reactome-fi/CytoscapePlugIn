@@ -916,7 +916,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         if (results.size() == 0) {
             JOptionPane.showMessageDialog(this,
                                           "Cannot find any pathway or reaction for \"" + key + "\".",
-                                          "Result Result", 
+                                          "Empty Result", 
                                           JOptionPane.INFORMATION_MESSAGE);
             return;
         }

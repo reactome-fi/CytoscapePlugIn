@@ -101,7 +101,7 @@ public class InferenceResultsControl {
                                           fgResults.isUsedForTwoCases() ? fgResults.getSampleToType() : null);
             outputPane.setFGInferenceResults(fgResults);
         }
-        // Only select it if this tab is newly created.
+//         Only select it if this tab is newly created.
         if (index == -1) {
             index = tableBrowserPane.indexOfComponent(outputPane);
             if (index >= 0) // Select this as the default table for viewing the results
@@ -132,6 +132,7 @@ public class InferenceResultsControl {
         }
         if (index > -1)
             eastPane.setSelectedIndex(index);
+        samplePane.setInferenceResults(fgResults);
     }
     
     private double[] getMinMaxValues(Map<String, Double> idToValue) {

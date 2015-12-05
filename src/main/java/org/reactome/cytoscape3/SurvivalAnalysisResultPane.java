@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -80,9 +79,6 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
         setTitle(title);
         init();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        context.registerService(CytoPanelComponent.class.getName(), 
-                                this, 
-                                new Properties());
         SessionLoadedListener sessionListener = new SessionLoadedListener() {
             
             @Override
@@ -93,6 +89,7 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
         context.registerService(SessionLoadedListener.class.getName(),
                                 sessionListener,
                                 null);
+        PlugInUtilities.registerCytoPanelComponent(this);
     }
     
     private void init() {

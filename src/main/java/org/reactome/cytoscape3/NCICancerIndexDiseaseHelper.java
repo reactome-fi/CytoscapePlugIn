@@ -54,6 +54,7 @@ import org.reactome.cancerindex.data.NCIDiseaseHandler;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.util.NodeUtilitiesImpl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape.util.SearchDialog;
 
 
@@ -274,7 +275,6 @@ public class NCICancerIndexDiseaseHelper
         public DiseaseDisplayPane() {
             init();
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-            ServiceRegistration servReg = context.registerService(CytoPanelComponent.class.getName(), this, new Properties());
             SessionLoadedListener sessionListener = new SessionLoadedListener() {
                 
                 @Override
@@ -286,6 +286,7 @@ public class NCICancerIndexDiseaseHelper
             context.registerService(SessionLoadedListener.class.getName(),
                                     sessionListener,
                                     null);
+            PlugInUtilities.registerCytoPanelComponent(this);
         }
         
         private List<DiseaseData> searchTopDiseases(Map<String, DiseaseData> codeToDisease) {

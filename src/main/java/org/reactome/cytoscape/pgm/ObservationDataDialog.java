@@ -158,7 +158,8 @@ public class ObservationDataDialog extends GeneLevelDialog {
         for (int i = 0; i < typeList.size(); i++) {
             String type = typeList.get(i);
             for (Observation<Number> obs : observations) {
-                if (obs.getAnnoation() == null || !obs.getAnnoation().equals(type))
+                String obsType = sampleToType.get(obs.getName());
+                if (!type.equals(obsType))
                     continue;
                 Map<Variable, Number> varToState = obs.getVariableToAssignment();
                 if (i == 0)
@@ -167,10 +168,24 @@ public class ObservationDataDialog extends GeneLevelDialog {
                     addValues(nameToValues1, varToState);
             }
         }
-        tablePlotPane.setDisplayValues(typeList.get(0), 
-                                       nameToValues0, 
-                                       typeList.get(1), 
-                                       nameToValues1);
+        showResults(typeList.get(0), 
+                    nameToValues0, 
+                    typeList.get(1), 
+                    nameToValues1);
+    }
+    
+    private void showResults(String type1,
+                             Map<String, List<Double>> nameToValues1,
+                             String type2,
+                             Map<String, List<Double>> nameToValues2) throws MathException {
+        if (nameToValues1.size() == 0 | nameToValues2.size() == 0) {
+            JOptionPane.showMessageDialog(this,
+                                          "No value available for displaying.",
+                                          "Empty Value",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        tablePlotPane.setDisplayValues(type1, nameToValues1, type2, nameToValues2);
     }
     
     /**
@@ -187,10 +202,10 @@ public class ObservationDataDialog extends GeneLevelDialog {
         Map<String, List<Double>> nameToRandomValues = new HashMap<String, List<Double>>();
         for (Observation<Number> obs : randomObservations)
             addValues(nameToRandomValues, obs.getVariableToAssignment());
-        tablePlotPane.setDisplayValues("Real Samples", 
-                                       nameToRealValues,
-                                       "Random Samples",
-                                       nameToRandomValues);
+        showResults("Real Samples", 
+                    nameToRealValues,
+                    "Random Samples",
+                    nameToRandomValues);
     }
     
     private void addValues(Map<String, List<Double>> nameToValues,

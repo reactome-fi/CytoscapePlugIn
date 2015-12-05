@@ -50,6 +50,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
+import org.reactome.cytoscape.pgm.FactorGraphInferenceResultsIO;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.GeneLevelResultDialog;
 import org.reactome.cytoscape.pgm.ObservationDataDialog;
@@ -315,7 +316,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             }
         });
         popup.add(showGeneData);
-        JMenuItem showObservation = new JMenuItem("Show Observations");
+        JMenuItem showObservation = new JMenuItem("Show Observation");
         showObservation.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -681,7 +682,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             });
             popup.addSeparator();
             popup.add(showGeneLevelPGMResults);
-            JMenuItem showObservations = new JMenuItem("Show Observations");
+            JMenuItem showObservations = new JMenuItem("Show Observation");
             showObservations.addActionListener(new ActionListener() {
                 
                 @Override

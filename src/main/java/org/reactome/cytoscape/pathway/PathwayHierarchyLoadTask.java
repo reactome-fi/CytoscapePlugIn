@@ -19,6 +19,7 @@ import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,9 +79,7 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
                          e);
             e.printStackTrace();
         }
-        context.registerService(CytoPanelComponent.class.getName(),
-                                controlPane,
-                                null);
+        PlugInUtilities.registerCytoPanelComponent(controlPane);
         // Make sure if a new Reactome control panel can be selected
         // Note: This may not work if the above call is asynchronous!
         index = getIndexOfPathwayControlPane(panel);

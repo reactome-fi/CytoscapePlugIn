@@ -72,8 +72,6 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     protected NetworkModulePanel(String title) {
         setTitle(title);
         init();
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        context.registerService(CytoPanelComponent.class.getName(), this, null);
         // Most likely SessionAboutToBeLoadedListener should be used in 3.1.0.
         SessionLoadedListener sessionListener = new SessionLoadedListener() {
             
@@ -82,9 +80,12 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
                 close();
             }
         };
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         context.registerService(SessionLoadedListener.class.getName(),
                                 sessionListener, 
                                 null);
+        
+        PlugInUtilities.registerCytoPanelComponent(this);
     }
     
     public void setNetworkView(CyNetworkView view)
