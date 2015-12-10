@@ -13,6 +13,7 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.application.swing.CytoPanelState;
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.RenderablePathway;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -28,7 +29,9 @@ import org.reactome.factorgraph.Variable;
  */
 public class InferenceResultsControl {
     // For highlighting
-    private PathwayHighlightControlPanel hiliteControlPane; 
+    private PathwayHighlightControlPanel hiliteControlPane;
+    // For showing results in diagram
+    private PathwayEditor pathwayEditor;
     
     /**
      * Default constructor.
@@ -36,6 +39,14 @@ public class InferenceResultsControl {
     public InferenceResultsControl() {
     }
     
+    public PathwayEditor getPathwayEditor() {
+        return pathwayEditor;
+    }
+
+    public void setPathwayEditor(PathwayEditor pathwayEditor) {
+        this.pathwayEditor = pathwayEditor;
+    }
+
     public PathwayHighlightControlPanel getHiliteControlPane() {
         return hiliteControlPane;
     }
@@ -132,7 +143,8 @@ public class InferenceResultsControl {
         }
         if (index > -1)
             eastPane.setSelectedIndex(index);
-        samplePane.setInferenceResults(fgResults);
+        samplePane.setInferenceResults(fgResults,
+                                       pathwayEditor);
     }
     
     private double[] getMinMaxValues(Map<String, Double> idToValue) {

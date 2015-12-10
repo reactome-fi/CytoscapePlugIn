@@ -935,8 +935,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
 
     private FactorGraphAnalyzer getFactorGraphAnalyzer() {
         FactorGraphAnalyzer analyzer = new FactorGraphAnalyzer();
-        analyzer.setPathwayId(pathwayEditor.getRenderable().getReactomeId());
-        analyzer.setPathwayDiagram((RenderablePathway)pathwayEditor.getRenderable());
+        analyzer.setPathwayEditor(pathwayEditor);
         analyzer.setHighlightControlPane(hiliteControlPane);
         return analyzer;
     }

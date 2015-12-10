@@ -18,12 +18,16 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.gk.graphEditor.PathwayEditor;
+import org.gk.model.ReactomeJavaConstants;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.ContinuousVariable;
 import org.reactome.factorgraph.ContinuousVariable.DistributionType;
@@ -49,6 +53,8 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     private Map<String, String> sampleToType;
     // Cached information for display
     private FactorGraphInferenceResults results;
+    // For synchronization
+    private GeneToPathwayEntityHandler observationTableHandler;
     
     public SampleListComponent() {
         init();
@@ -78,6 +84,18 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         observationTable = new JTable(observationModel);
         observationTable.setRowSorter(observationSorter);
         tabbedPane.addTab("Observation", new JScrollPane(observationTable));
+        observationTableHandler = new GeneToPathwayEntityHandler();
+        observationTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) {
+                    observationTableHandler.handleTableSelection(observationTable,
+                                                                 0);
+                }
+            }
+        });
+        
         
         // Set up the table for inference
         SampleInferenceModel inferenceModel = new SampleInferenceModel();
@@ -85,8 +103,33 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         inferenceTable = new JTable(inferenceModel);
         inferenceTable.setRowSorter(inferenceSorter);
         tabbedPane.addTab("Inference", new JScrollPane(inferenceTable));
+        inferenceTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting())
+                    handleInferenceTableSelection();
+            }
+        });
         
         add(tabbedPane, BorderLayout.CENTER);
+    }
+    
+    private void handleInferenceTableSelection() {
+        if (observationTableHandler.getPathwayEditor() == null)
+            return;
+        PathwayEditor pathwayEditor = observationTableHandler.getPathwayEditor();
+        SampleInferenceModel model = (SampleInferenceModel) inferenceTable.getModel();
+        List<Long> dbIds = new ArrayList<>();
+        int[] selectedRows = inferenceTable.getSelectedRows();
+        if (selectedRows != null) {
+            for (int selectedRow : selectedRows) {
+                Long dbId = model.getDBId(inferenceTable.convertRowIndexToModel(selectedRow));
+                dbIds.add(dbId);
+            }
+        }
+        PlugInUtilities.selectByDbIds(pathwayEditor,
+                                      dbIds);
     }
 
     private void initNorthPane() {
@@ -170,8 +213,10 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
      * Set the inference results to be displayed in this component.
      * @param results
      */
-    public void setInferenceResults(FactorGraphInferenceResults results) {
+    public void setInferenceResults(FactorGraphInferenceResults results,
+                                    PathwayEditor pathwayEditor) {
         this.results = results;
+        observationTableHandler.enableDiagramSelection(pathwayEditor);
         // Initialize the sample box
         DefaultComboBoxModel<String> sampleModel = (DefaultComboBoxModel<String>) sampleBox.getModel();
         sampleModel.removeAllElements();
@@ -199,6 +244,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     
     private class SampleInferenceModel extends SampleModel {
         public SampleInferenceModel() {
+            startIndex = 1;
         }
 
         @Override
@@ -206,8 +252,8 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             data.clear();
             if (results == null)
                 return;
-            Set<Variable> outputVars = PlugInUtilities.getOutputVariables(results.getFactorGraph());
-            List<VariableInferenceResults> varResults = results.getVariableInferenceResults(outputVars);
+            Set<Variable> pathwayVars = PlugInUtilities.getPathwayVars(results.getFactorGraph());
+            List<VariableInferenceResults> varResults = results.getVariableInferenceResults(pathwayVars);
             // In order to calculate p-values
             Map<Variable, List<Double>> varToRandomIPAs = results.generateRandomIPAs(varResults);
             for (VariableInferenceResults varResult : varResults) {
@@ -218,6 +264,13 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                 Double ipa = IPACalculator.calculateIPA(prior, posterior);
                 List<Object> row = new ArrayList<>();
                 data.add(row);
+                String propValue = var.getProperty(ReactomeJavaConstants.DB_ID);
+                if (propValue != null) {
+                    Long dbId = new Long(var.getProperty(ReactomeJavaConstants.DB_ID));
+                    row.add(dbId);
+                }
+                else
+                    row.add(null); // Use for the position filling
                 row.add(var.getName());
                 row.add(ipa);
                 // Calculate p-value
@@ -230,11 +283,19 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             calculateFDRs(totalPermutation);
         }
         
+        public Long getDBId(int rowIndex) {
+            if (rowIndex >= data.size())
+                return null;
+            List<Object> row = data.get(rowIndex);
+            return (Long) row.get(0);
+        }
+        
     }
     
     private class SampleObservationModel extends SampleModel {
         
         public SampleObservationModel() {
+            startIndex = 0;
         }
 
         @Override
@@ -348,6 +409,10 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         protected List<List<Object>> data;
         // Selected sample
         protected String sample;
+        // The first value to be displayed in data for each row
+        // We can store some information in each row that doesn't
+        // need to be displayed
+        protected int startIndex;
         
         public SampleModel() {
             data = new ArrayList<>();
@@ -390,8 +455,8 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             if (rowIndex >= data.size())
                 return null;
             List<Object> row = data.get(rowIndex);
-            if (columnIndex < row.size())
-                return row.get(columnIndex);
+            if (columnIndex + startIndex < row.size())
+                return row.get(columnIndex + startIndex);
             return null;
         }
 

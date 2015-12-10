@@ -11,6 +11,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.math.MathException;
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.RenderablePathway;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.ProgressPane;
@@ -33,10 +34,8 @@ import org.reactome.factorgraph.common.DataType;
  *
  */
 public class FactorGraphAnalyzer {
-    // If this analyzer is used for a sinle pathway run, the following two memeber
-    // variables should be provided
-    private Long pathwayId;
-    private RenderablePathway pathwayDiagram;
+    // To link back the results to pathway
+    private PathwayEditor pathwayEditor;
     private PathwayHighlightControlPanel hiliteControlPane;
     // Information entered by the user
     private File geneExpFile;
@@ -89,20 +88,14 @@ public class FactorGraphAnalyzer {
         return FactorGraphRegistry.getRegistry().getLoadedAlgorithms();
     }
 
-    public Long getPathwayId() {
-        return pathwayId;
-    }
-
-    public void setPathwayId(Long pathwayId) {
-        this.pathwayId = pathwayId;
-    }
-
     public RenderablePathway getPathwayDiagram() {
-        return pathwayDiagram;
+        if (pathwayEditor == null)
+            return null;
+        return (RenderablePathway) pathwayEditor.getRenderable();
     }
 
-    public void setPathwayDiagram(RenderablePathway pathwayDiagram) {
-        this.pathwayDiagram = pathwayDiagram;
+    public void setPathwayEditor(PathwayEditor pathwayEditor) {
+        this.pathwayEditor = pathwayEditor;
     }
     
     /**
@@ -177,9 +170,9 @@ public class FactorGraphAnalyzer {
      */
     protected void runFactorGraphAnalysis() {
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
-        if (pathwayId == null || pathwayDiagram == null) {
+        if (pathwayEditor == null) {
             JOptionPane.showMessageDialog(frame,
-                                          "Both pathwayId and pathwayDiagram should be provided.", 
+                                          "The original pathway information should be provided.", 
                                           "Not Enough Information",
                                           JOptionPane.ERROR_MESSAGE);
             return;
@@ -189,7 +182,8 @@ public class FactorGraphAnalyzer {
         DiagramAndFactorGraphSwitcher switcher = new DiagramAndFactorGraphSwitcher();
         try {
             progressPane.setText("Converting pathway into graphical model...");
-            FactorGraph factorGraph = switcher.convertPathwayToFactorGraph(pathwayId, pathwayDiagram);
+            FactorGraph factorGraph = switcher.convertPathwayToFactorGraph(pathwayEditor.getRenderable().getReactomeId(), 
+                                                                           (RenderablePathway)pathwayEditor.getRenderable());
             if (factorGraph == null) {
                 progressPane.setVisible(false);
                 return; // Something may be wrong
@@ -258,12 +252,14 @@ public class FactorGraphAnalyzer {
      * @param fgResults
      */
     public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
-        if (pathwayDiagram == null || hiliteControlPane == null)
+        if (pathwayEditor == null || hiliteControlPane == null)
             return; // Cannot do anything here
         InferenceResultsControl control = new InferenceResultsControl();
         control.setHiliteControlPane(hiliteControlPane);
+        control.setPathwayEditor(pathwayEditor);
         control.showInferenceResults(fgResults);
-        FactorGraphRegistry.getRegistry().registerDiagramToFactorGraph(pathwayDiagram, fgResults.getFactorGraph());
+        FactorGraphRegistry.getRegistry().registerDiagramToFactorGraph((RenderablePathway)pathwayEditor.getRenderable(),
+                                                                       fgResults.getFactorGraph());
         FactorGraphRegistry.getRegistry().registerInferenceResults(fgResults);
     }
 }

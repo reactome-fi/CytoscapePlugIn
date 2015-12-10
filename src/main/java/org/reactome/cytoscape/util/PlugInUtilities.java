@@ -295,6 +295,24 @@ public class PlugInUtilities {
     }
     
     /**
+     * Get a set of Variables directly related to a pathway.
+     * In other words, the original entities used to generate variables
+     * should be displayed in a pathway diagram.
+     * @param fg
+     * @return
+     */
+    public static Set<Variable> getPathwayVars(FactorGraph fg) {
+        Set<Variable> pathwayVars = new HashSet<Variable>();
+        // If a variable's reactome id is in this list, it should be a output
+        for (Variable var : fg.getVariables()) {
+            String roles = var.getProperty("role");
+            if (roles != null && roles.length() > 0)
+                pathwayVars.add(var); // If there is a role assigned to the variable, it should be used as a pathway variable
+        }
+        return pathwayVars;
+    }
+    
+    /**
      * Do selection based on a list of DB_IDs for objects displayed in
      * the provided PathwayEditor.
      * @param pathwayEditor
