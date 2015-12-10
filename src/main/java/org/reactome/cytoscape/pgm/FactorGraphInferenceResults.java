@@ -7,6 +7,7 @@ package org.reactome.cytoscape.pgm;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +27,7 @@ import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Observation;
 import org.reactome.factorgraph.Variable;
 import org.reactome.factorgraph.common.DataType;
+import org.reactome.pathway.factorgraph.IPACalculator;
 
 /**
  * Inference results for a FactorGraph object for the whole data set.
@@ -216,6 +218,28 @@ public class FactorGraphInferenceResults {
     
     public void clear() {
         varResults.clear();
+    }
+    
+    /**
+     * A kind of utility method.
+     * @param varResults
+     * @return
+     */
+    public Map<Variable, List<Double>> generateRandomIPAs(List<VariableInferenceResults> varResults) {
+        Map<Variable, List<Double>> varToRandomIPAs = new HashMap<Variable, List<Double>>();
+        for (VariableInferenceResults varResult : varResults) {
+            List<Double> ipas = new ArrayList<Double>();
+            varToRandomIPAs.put(varResult.getVariable(),
+                                ipas);
+            Map<String, List<Double>> randomPosts = varResult.getRandomPosteriorValues();
+            for (String sample : randomPosts.keySet()) {
+                double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(),
+                                                        randomPosts.get(sample));
+                ipas.add(ipa);
+            }
+            Collections.sort(ipas);
+        }
+        return varToRandomIPAs;
     }
     
     @Test

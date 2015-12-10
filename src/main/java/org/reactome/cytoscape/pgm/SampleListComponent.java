@@ -11,15 +11,27 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.factorgraph.ContinuousVariable;
+import org.reactome.factorgraph.ContinuousVariable.DistributionType;
 import org.reactome.factorgraph.Observation;
+import org.reactome.factorgraph.Variable;
+import org.reactome.factorgraph.VariableAssignment;
+import org.reactome.pathway.factorgraph.IPACalculator;
+import org.reactome.r3.util.MathUtilities;
 
 /**
  * @author gwu
@@ -31,8 +43,12 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     private JComboBox<String> sampleBox;
     private JPanel typePane;
     private JLabel typeBox;
+    private JTable observationTable;
+    private JTable inferenceTable;
     // Data to be displayed
     private Map<String, String> sampleToType;
+    // Cached information for display
+    private FactorGraphInferenceResults results;
     
     public SampleListComponent() {
         init();
@@ -48,12 +64,28 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEtchedBorder());
         initNorthPane();
-        
+        initCenerPane();
+    }
+
+    private void initCenerPane() {
         // Use JTabbedPane for showing observations and inference results
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
-        tabbedPane.addTab("Observation", new JScrollPane(new JTable()));
-        tabbedPane.addTab("Inference", new JScrollPane(new JTable()));
+        
+        // Set up the table for observation
+        SampleObservationModel observationModel = new SampleObservationModel();
+        TableRowSorter<TableModel> observationSorter = new TableRowSorter<TableModel>(observationModel);
+        observationTable = new JTable(observationModel);
+        observationTable.setRowSorter(observationSorter);
+        tabbedPane.addTab("Observation", new JScrollPane(observationTable));
+        
+        // Set up the table for inference
+        SampleInferenceModel inferenceModel = new SampleInferenceModel();
+        TableRowSorter<TableModel> inferenceSorter = new TableRowSorter<TableModel>(inferenceModel);
+        inferenceTable = new JTable(inferenceModel);
+        inferenceTable.setRowSorter(inferenceSorter);
+        tabbedPane.addTab("Inference", new JScrollPane(inferenceTable));
+        
         add(tabbedPane, BorderLayout.CENTER);
     }
 
@@ -78,6 +110,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         // Show type information
         JLabel typeLabel = new JLabel("Type:");
         typeBox = new JLabel();
+        typeBox.setOpaque(true);
         typeBox.setBackground(Color.WHITE);
         typePane = new JPanel();
         typePane.setBorder(BorderFactory.createEtchedBorder());
@@ -98,13 +131,19 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     }
 
     private void handleSampleSelection() {
-        if (sampleToType == null || sampleToType.size() == 0)
-            return;
-        String type = sampleToType.get(sampleBox.getSelectedItem());
-        if (type == null)
-            typeBox.setText("");
-        else
-            typeBox.setText(type);
+        String selectedSample = (String) sampleBox.getSelectedItem();
+        if (sampleToType != null && sampleToType.size() > 0) {
+            String type = sampleToType.get(selectedSample);
+            if (type == null)
+                typeBox.setText("");
+            else
+                typeBox.setText(type);
+        }
+        // Show observation
+        SampleObservationModel observationModel = (SampleObservationModel) observationTable.getModel();
+        observationModel.setSample(selectedSample);
+        SampleInferenceModel inferenceModel = (SampleInferenceModel) inferenceTable.getModel();
+        inferenceModel.setSample(selectedSample);
     }
     
     @Override
@@ -132,6 +171,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
      * @param results
      */
     public void setInferenceResults(FactorGraphInferenceResults results) {
+        this.results = results;
         // Initialize the sample box
         DefaultComboBoxModel<String> sampleModel = (DefaultComboBoxModel<String>) sampleBox.getModel();
         sampleModel.removeAllElements();
@@ -155,6 +195,231 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             sampleNames.add(obs.getName());
         Collections.sort(sampleNames);
         return sampleNames;
+    }
+    
+    private class SampleInferenceModel extends SampleModel {
+        public SampleInferenceModel() {
+        }
+
+        @Override
+        protected void resetData() {
+            data.clear();
+            if (results == null)
+                return;
+            Set<Variable> outputVars = PlugInUtilities.getOutputVariables(results.getFactorGraph());
+            List<VariableInferenceResults> varResults = results.getVariableInferenceResults(outputVars);
+            // In order to calculate p-values
+            Map<Variable, List<Double>> varToRandomIPAs = results.generateRandomIPAs(varResults);
+            for (VariableInferenceResults varResult : varResults) {
+                Variable var = varResult.getVariable();
+                Map<String, ArrayList<Double>> sampleToValues = varResult.getSampleToValues();
+                List<Double> posterior = sampleToValues.get(sample);
+                List<Double> prior = varResult.getPriorValues();
+                Double ipa = IPACalculator.calculateIPA(prior, posterior);
+                List<Object> row = new ArrayList<>();
+                data.add(row);
+                row.add(var.getName());
+                row.add(ipa);
+                // Calculate p-value
+                // RandomIPAs should be sorted already
+                List<Double> randomIPAs = varToRandomIPAs.get(var);
+                Double pvalue = PlugInUtilities.calculateIPAPValue(ipa, randomIPAs);
+                row.add(pvalue);
+            }
+            int totalPermutation = varToRandomIPAs.values().iterator().next().size();
+            calculateFDRs(totalPermutation);
+        }
+        
+    }
+    
+    private class SampleObservationModel extends SampleModel {
+        
+        public SampleObservationModel() {
+        }
+
+        @Override
+        protected void resetData() {
+            data.clear();
+            if (results == null)
+                return; // Cannot do anything here
+            // Extract observation for this sample
+            Observation<Number> observation = null;
+            for (Observation<Number> obs : results.getObservations()) {
+                if (obs.getName().equals(sample)) {
+                    observation = obs;
+                    break;
+                }
+            }
+            if (observation == null)
+                throw new IllegalStateException("Cannot find observation for " + sample);
+            // Get a list of variables
+            List<VariableAssignment<Number>> varAssgns = observation.getVariableAssignments();
+            // To calculate p-values
+            Map<Variable, List<Double>> varToRandomValues = getVarToRandomVarAssgns();
+            for (VariableAssignment<Number> varAssgn : varAssgns) {
+                Variable var = varAssgn.getVariable();
+                List<Object> row = new ArrayList<>();
+                data.add(row);
+                row.add(var.getName());
+                row.add(varAssgn.getAssignment());
+                List<Double> randomValues = varToRandomValues.get(var);
+                // If we cannot find a list of random values, we just assume it has the largest p-value
+                if (randomValues == null) 
+                    row.add(1.0d);
+                else {
+                    Double pvalue = calculatePValue(varAssgn, randomValues);
+                    row.add(pvalue);
+                }
+            }
+            // To calculate FDRs
+            int totalPermutation = varToRandomValues.values().iterator().next().size();
+            calculateFDRs(totalPermutation);
+        }
+        
+        private double calculatePValue(VariableAssignment<Number> varAssgn,
+                                       List<Double> randomValues) {
+            Variable var = varAssgn.getVariable();
+            double value = varAssgn.getAssignment().doubleValue();
+            double pvalue = 1.0d;
+            if (var instanceof ContinuousVariable) {
+                ContinuousVariable cVar = (ContinuousVariable) var;
+                if (cVar.getDistributionType() == DistributionType.ONE_SIDED) {
+                    pvalue = PlugInUtilities.calculateNominalPValue(value, 
+                                                                    randomValues, 
+                                                                    "right");
+                }
+                else { // What we should do if this is two-sides
+                    double mean = MathUtilities.calculateMean(randomValues);
+                    if (value > mean)
+                        pvalue = PlugInUtilities.calculateNominalPValue(value, randomValues, "right");
+                    else if (value < mean)
+                        pvalue = PlugInUtilities.calculateNominalPValue(value, randomValues, "left");
+                    // Otherwise pvalue = 1.0d;
+                }
+            }
+            else { // Discrete variable
+                if (var.getStates() == 3) { // Three states: 0, 1, 2
+                    if (value < 1)
+                        pvalue = PlugInUtilities.calculateNominalPValue(value, randomValues, "left");
+                    else if (value > 1)
+                        pvalue = PlugInUtilities.calculateNominalPValue(value, randomValues, "right");
+                }
+                else if (var.getStates() == 2) { // Two states: 0, 1
+                    if (value > 0)
+                        pvalue = PlugInUtilities.calculateNominalPValue(value, randomValues, "right");
+                }
+                // Don't support other states
+            }
+            return pvalue;
+        }
+        
+        private Map<Variable, List<Double>> getVarToRandomVarAssgns() {
+            Map<Variable, List<Double>> varToAssgns = new HashMap<>();
+            List<Observation<Number>> randomObservations = results.getRandomObservations();
+            for (Observation<Number> obs : randomObservations) {
+                Map<Variable, Number> varToAssgn = obs.getVariableToAssignment();
+                for (Variable var : varToAssgn.keySet()) {
+                    Number value = varToAssgn.get(var);
+                    List<Double> values = varToAssgns.get(var);
+                    if (values == null) {
+                        values = new ArrayList<>();
+                        varToAssgns.put(var, values);
+                    }
+                    values.add(value.doubleValue());
+                }
+            }
+            return varToAssgns;
+        }
+    }
+    
+    /**
+     * Customized table for showing observations and infernece results.
+     * @author gwu
+     *
+     */
+    private abstract class SampleModel extends AbstractTableModel {
+        private String[] headers = new String[] {
+                "Name",
+                "Value",
+                "p-value",
+                "FDR"
+        };
+        // For showing data
+        protected List<List<Object>> data;
+        // Selected sample
+        protected String sample;
+        
+        public SampleModel() {
+            data = new ArrayList<>();
+        }
+        
+        public void setSample(String sample) {
+            this.sample = sample;
+            resetData();
+            fireTableDataChanged();
+        }
+        
+        protected abstract void resetData();
+        
+        @Override
+        public String getColumnName(int column) {
+            return headers[column];
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            if (columnIndex == 0)
+                return String.class;
+            return Double.class;
+        }
+
+        @Override
+        public int getRowCount() {
+            return data.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return headers.length;
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            // This is weird: in theory, we should not check this.
+            // But sometime, we just get exception
+            if (rowIndex >= data.size())
+                return null;
+            List<Object> row = data.get(rowIndex);
+            if (columnIndex < row.size())
+                return row.get(columnIndex);
+            return null;
+        }
+
+        protected void calculateFDRs(int totalPermutation) {
+            // Sort data based on p-values
+            Collections.sort(data, new Comparator<List<Object>>() {
+                public int compare(List<Object> row1, List<Object> row2) {
+                    Double pvalue1 = (Double) row1.get(row1.size() - 1);
+                    Double pvalue2 = (Double) row2.get(row2.size() - 1);
+                    return pvalue1.compareTo(pvalue2);
+                }
+            }); 
+            // Get a list of p-values for FDRs calculation
+            List<Double> pvalues = new ArrayList<>();
+            for (List<Object> row : data) {
+                Double pvalue = (Double) row.get(row.size() - 1);
+                if (pvalue.equals(0.0d)) 
+                    pvalue = 1.0d / (totalPermutation + 1); // Use the closest double value for a conservative calculation
+                pvalues.add(pvalue);
+            }
+            List<Double> fdrs = MathUtilities.calculateFDRWithBenjaminiHochberg(pvalues);
+            for (int i = 0; i < fdrs.size(); i++) {
+                Double fdr = fdrs.get(i);
+                List<Object> row = data.get(i);
+                row.add(fdr);
+            }
+        }
+        
     }
     
 }

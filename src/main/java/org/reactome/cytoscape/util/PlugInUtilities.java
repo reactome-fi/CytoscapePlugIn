@@ -184,6 +184,99 @@ public class PlugInUtilities {
     }
     
     /**
+     * Split the random values into two parts: one for positive and another for negative.
+     * P-values should be calculated based on these two parts. In other words, this should
+     * be a two-tailed test.
+     * @param value
+     * @param randomValues
+     * @return
+     */
+    public static double calculateIPAPValue(double value, List<Double> randomValues) {
+        if (value == 0.0d)
+            return 1.0; // Always
+        if (value > 0.0d) {
+            return calculateNominalPValue(value, randomValues, "right");
+        }
+        else {
+            return calculateNominalPValue(value, randomValues, "left");
+        }
+    }
+    
+    /**
+     * Calculate nominal p-value based on a list of random values.
+     * @param value
+     * @param randomValues values should be sorted already from small to large.
+     * @param leftOrRight value of left or right.
+     * @return
+     */
+    public static double calculateNominalPValue(double value,
+                                                List<Double> randomValues,
+                                                String leftOrRight) {
+        // Make sure leftOrRight is correct
+        if (!leftOrRight.equals("left") && !leftOrRight.equals("right"))
+            throw new IllegalArgumentException("leftOrRight should be one of left or right.");
+        double pvalue = 1.0d;
+        if (leftOrRight.equals("left")) { // Check the left-side value
+            int supposedIndex = -1;
+            for (int i = 0; i < randomValues.size(); i++) {
+                // Find the value that is largest than the real value
+                if (randomValues.get(i) < value) {
+                    supposedIndex = i;
+                    break;
+                }
+            }
+            pvalue = (double) (supposedIndex + 1) / randomValues.size();
+        }
+        else { // Check the right-side value
+            int supposedIndex = randomValues.size();
+            for (int i = randomValues.size() - 1; i >= 0; i--) {
+                if (randomValues.get(i) > value) {
+                    supposedIndex = i;
+                    break;
+                }
+            }
+            pvalue = (double) (randomValues.size() - supposedIndex) / randomValues.size();
+        }
+        return pvalue;
+    }
+    
+    private static double calculateIPAPValueRightTail(double value, 
+                                                      List<Double> randomValues) {
+        // Values in copy should be sorted already.
+        int index = -1;
+        for (int i = randomValues.size() - 1; i >= 0; i--) {
+            if (randomValues.get(i) < value) {
+                index = i;
+                break;
+            }
+        }
+        // In order to plot and sort, use 0.0 for "<"
+//        if (index == randomValues.size() - 1)
+//            return "<" + (1.0d / randomValues.size());
+        if (index == -1)
+            return 1.0d;
+        // Move the count one position ahead
+        return (double) (randomValues.size() - index - 1) / randomValues.size();
+    }
+    
+    private static double calculateIPAPValueLeftTail(double value, List<Double> randomValues) {
+        // Values in copy should be sorted already.
+        int index = -1;
+        for (int i = 0; i < randomValues.size(); i++) {
+            if (randomValues.get(i) > value) {
+                index = i;
+                break;
+            }
+        }
+        // In order to plot and sort, use 0.0 for "<"
+//        if (index == 0)
+//            return "<" + (1.0d / randomValues.size());
+        if (index == -1)
+            return 1.0;
+        return (double) index / randomValues.size();
+    }
+    
+    /**
      * Get a set of variables converted from outputs in pathways.
      * @param fg
      * @return

@@ -448,7 +448,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 columnHeaders[3 * i + dataIndex + 2] = label + PlotTablePanel.FDR_COL_NAME_AFFIX;
             }
             // In order to calculate p-values
-            Map<Variable, List<Double>> varToRandomIPAs = generateRandomIPAs(varResults);
+            Map<Variable, List<Double>> varToRandomIPAs = fgInfResults.generateRandomIPAs(varResults);
             for (int i = 0; i < sampleList.size(); i++) {
                 String[] rowData = new String[varResults.size() * 3 + dataIndex];
                 rowData[0] = sampleList.get(i);
@@ -464,7 +464,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
                                                             postProbs);
                     rowData[3 * j + dataIndex] = PlugInUtilities.formatProbability(ipa);
                     List<Double> randomIPAs = varToRandomIPAs.get(varResult.getVariable());
-                    double pvalue = calculatePValue(ipa, randomIPAs);
+                    double pvalue = PlugInUtilities.calculateIPAPValue(ipa, randomIPAs);
                     rowData[3 * j + dataIndex + 1] = pvalue + "";
                 }
                 tableData.add(rowData);
@@ -564,77 +564,6 @@ public class IPAValueTablePane extends NetworkModulePanel {
             else
                 resetDataWithPValues(sampleList);
             fireTableStructureChanged();
-        }
-        
-        /**
-         * Split the random values into two parts: one for positive and another for negative.
-         * P-values should be calculated based on these two parts. In other words, this should
-         * be a two-tailed test.
-         * @param value
-         * @param randomValues
-         * @return
-         */
-        protected double calculatePValue(double value, List<Double> randomValues) {
-            if (value == 0.0d)
-                return 1.0; // Always
-            if (value > 0.0d) {
-                return calculatePValueRightTail(value, randomValues);
-            }
-            else {
-                return calculatePValueLeftTail(value, randomValues);
-            }
-        }
-        
-        private double calculatePValueRightTail(double value, List<Double> randomValues) {
-            // Values in copy should be sorted already.
-            int index = -1;
-            for (int i = randomValues.size() - 1; i >= 0; i--) {
-                if (randomValues.get(i) < value) {
-                    index = i;
-                    break;
-                }
-            }
-            // In order to plot and sort, use 0.0 for "<"
-//            if (index == randomValues.size() - 1)
-//                return "<" + (1.0d / randomValues.size());
-            if (index == -1)
-                return 1.0d;
-            // Move the count one position ahead
-            return (double) (randomValues.size() - index - 1) / randomValues.size();
-        }
-        
-        private double calculatePValueLeftTail(double value, List<Double> randomValues) {
-            // Values in copy should be sorted already.
-            int index = -1;
-            for (int i = 0; i < randomValues.size(); i++) {
-                if (randomValues.get(i) > value) {
-                    index = i;
-                    break;
-                }
-            }
-            // In order to plot and sort, use 0.0 for "<"
-//            if (index == 0)
-//                return "<" + (1.0d / randomValues.size());
-            if (index == -1)
-                return 1.0;
-            return (double) index / randomValues.size();
-        }
-        
-        private Map<Variable, List<Double>> generateRandomIPAs(List<VariableInferenceResults> varResults) {
-            Map<Variable, List<Double>> varToRandomIPAs = new HashMap<Variable, List<Double>>();
-            for (VariableInferenceResults varResult : varResults) {
-                List<Double> ipas = new ArrayList<Double>();
-                varToRandomIPAs.put(varResult.getVariable(),
-                                    ipas);
-                Map<String, List<Double>> randomPosts = varResult.getRandomPosteriorValues();
-                for (String sample : randomPosts.keySet()) {
-                    double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(),
-                                                            randomPosts.get(sample));
-                    ipas.add(ipa);
-                }
-                Collections.sort(ipas);
-            }
-            return varToRandomIPAs;
         }
         
     }

@@ -169,10 +169,10 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
                         positive += ipa;
                 }
                 rowData[1] = PlugInUtilities.formatProbability(negative);
-                double pvalue = calculatePValue(negative, randomPerturbs.get(0));
+                double pvalue = PlugInUtilities.calculateIPAPValue(negative, randomPerturbs.get(0));
                 rowData[2] = PlugInUtilities.formatProbability(pvalue);
                 rowData[4] = PlugInUtilities.formatProbability(positive);
-                pvalue = calculatePValue(positive, randomPerturbs.get(1));
+                pvalue = PlugInUtilities.calculateIPAPValue(positive, randomPerturbs.get(1));
                 rowData[5] = PlugInUtilities.formatProbability(pvalue);
                 tableData.add(rowData);
             }
