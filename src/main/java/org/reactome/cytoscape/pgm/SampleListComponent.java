@@ -7,12 +7,15 @@ package org.reactome.cytoscape.pgm;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Rectangle;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,8 +29,12 @@ import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.gk.graphEditor.GraphEditorActionEvent;
+import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
+import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
+import org.gk.render.Renderable;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.ContinuousVariable;
 import org.reactome.factorgraph.ContinuousVariable.DistributionType;
@@ -55,6 +62,9 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     private FactorGraphInferenceResults results;
     // For synchronization
     private GeneToPathwayEntityHandler observationTableHandler;
+    private PathwayEditor pathwayEditor;
+    private GraphEditorActionListener graphSelectionListener;
+    private SampleTableSelectionHandler selectionHandler;
     
     public SampleListComponent() {
         init();
@@ -63,6 +73,19 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     private void init() {
         initGUIs();
         PlugInUtilities.registerCytoPanelComponent(this);
+        selectionHandler = new SampleTableSelectionHandler();
+        graphSelectionListener = new GraphEditorActionListener() {
+            
+            @Override
+            public void graphEditorAction(GraphEditorActionEvent e) {
+                if (e.getID() == ActionType.SELECTION) {
+                    selectionHandler.handlePathwaySelection(pathwayEditor,
+                                                            inferenceTable);
+                    observationTableHandler.handlePathwaySelection(observationTable, 
+                                                                   0);
+                }
+            }
+        };
     }
 
     private void initGUIs() {
@@ -70,10 +93,10 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createEtchedBorder());
         initNorthPane();
-        initCenerPane();
+        initCenterPane();
     }
 
-    private void initCenerPane() {
+    private void initCenterPane() {
         // Use JTabbedPane for showing observations and inference results
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
@@ -108,30 +131,13 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (!e.getValueIsAdjusting())
-                    handleInferenceTableSelection();
+                    selectionHandler.handleTableSelection(pathwayEditor, inferenceTable);
             }
         });
         
         add(tabbedPane, BorderLayout.CENTER);
     }
     
-    private void handleInferenceTableSelection() {
-        if (observationTableHandler.getPathwayEditor() == null)
-            return;
-        PathwayEditor pathwayEditor = observationTableHandler.getPathwayEditor();
-        SampleInferenceModel model = (SampleInferenceModel) inferenceTable.getModel();
-        List<Long> dbIds = new ArrayList<>();
-        int[] selectedRows = inferenceTable.getSelectedRows();
-        if (selectedRows != null) {
-            for (int selectedRow : selectedRows) {
-                Long dbId = model.getDBId(inferenceTable.convertRowIndexToModel(selectedRow));
-                dbIds.add(dbId);
-            }
-        }
-        PlugInUtilities.selectByDbIds(pathwayEditor,
-                                      dbIds);
-    }
-
     private void initNorthPane() {
         // There are two panels in the north: one for listing samples
         // another for showing sample type if any
@@ -232,6 +238,12 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             // Somehow we have to set the type manually
             handleSampleSelection();
         }
+        // For graph selection
+        if (this.pathwayEditor != null) {
+            this.pathwayEditor.getSelectionModel().removeGraphEditorActionListener(graphSelectionListener);
+        }
+        this.pathwayEditor = pathwayEditor;
+        this.pathwayEditor.getSelectionModel().addGraphEditorActionListener(graphSelectionListener);
     }
     
     private List<String> getSampleNames(FactorGraphInferenceResults results) {
@@ -245,6 +257,18 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     private class SampleInferenceModel extends SampleModel {
         public SampleInferenceModel() {
             startIndex = 1;
+        }
+        
+        public List<Integer> getRowsForDBIds(Collection<Long> dbIds) {
+            List<Integer> rtn = new ArrayList<>();
+            int index = 0;
+            for (List<Object> row : data) {
+                Long dbId = (Long) row.get(0);
+                if (dbIds.contains(dbId))
+                    rtn.add(index);
+                index ++;
+            }
+            return rtn;
         }
 
         @Override
@@ -289,7 +313,77 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             List<Object> row = data.get(rowIndex);
             return (Long) row.get(0);
         }
+    }
+    
+    /**
+     * This small class is used to handle sample table selection.
+     * @author gwu
+     *
+     */
+    private class SampleTableSelectionHandler {
+        private boolean isFromPathway;
+        private boolean isFromTable;
         
+        public SampleTableSelectionHandler() {
+            
+        }
+        
+        public void handleTableSelection(PathwayEditor pathwayEditor,
+                                         JTable inferenceTable) {
+            if (isFromPathway) // If it is from pathway selection, we should not do anything here
+                return;
+            isFromTable = true;
+            SampleInferenceModel model = (SampleInferenceModel) inferenceTable.getModel();
+            List<Long> dbIds = new ArrayList<>();
+            int[] selectedRows = inferenceTable.getSelectedRows();
+            if (selectedRows != null) {
+                for (int selectedRow : selectedRows) {
+                    Long dbId = model.getDBId(inferenceTable.convertRowIndexToModel(selectedRow));
+                    dbIds.add(dbId);
+                }
+            }
+            PlugInUtilities.selectByDbIds(pathwayEditor,
+                                          dbIds);
+            isFromTable = false;
+        }
+        
+        public void handlePathwaySelection(PathwayEditor pathwayEditor,
+                                           JTable inferenceTable) {
+            if (isFromTable)
+                return;
+            isFromPathway = true;
+            @SuppressWarnings("unchecked")
+            List<Renderable> selected = pathwayEditor.getSelection();
+            // Get a list of objects to be selected
+            Set<Long> dbIds = new HashSet<>();
+            if (selected != null && selected.size() > 0) {
+                for (Renderable r : selected)
+                    dbIds.add(r.getReactomeId());
+            }
+            selectRows(inferenceTable, dbIds);
+            isFromPathway = false;
+        }
+        
+        private void selectRows(JTable table, 
+                                Set<Long> dbIds) {
+            ListSelectionModel selectionModel = table.getSelectionModel();
+            selectionModel.clearSelection();
+            selectionModel.setValueIsAdjusting(true);
+            int index = 0;
+            SampleInferenceModel inferenceModel = (SampleInferenceModel) table.getModel();
+            List<Integer> rows = inferenceModel.getRowsForDBIds(dbIds);
+            for (Integer modelRow : rows) {
+                int viewRow = table.convertRowIndexToView(modelRow);
+                selectionModel.addSelectionInterval(viewRow, viewRow);
+            }
+            selectionModel.setValueIsAdjusting(false);
+            // Need to scroll
+            int selected = table.getSelectedRow();
+            if (selected > -1) {
+                Rectangle rect = table.getCellRect(selected, 0, false);
+                table.scrollRectToVisible(rect);
+            }
+        }
     }
     
     private class SampleObservationModel extends SampleModel {
@@ -301,7 +395,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         @Override
         protected void resetData() {
             data.clear();
-            if (results == null)
+            if (results == null || sample == null)
                 return; // Cannot do anything here
             // Extract observation for this sample
             Observation<Number> observation = null;
@@ -484,7 +578,6 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                 row.add(fdr);
             }
         }
-        
     }
     
 }
