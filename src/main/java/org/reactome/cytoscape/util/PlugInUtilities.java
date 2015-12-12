@@ -192,8 +192,8 @@ public class PlugInUtilities {
      * @return
      */
     public static double calculateIPAPValue(double value, List<Double> randomValues) {
-        if (value == 0.0d)
-            return 1.0; // Always
+//        if (value == 0.0d)
+//            return 1.0; // Always
         if (value > 0.0d) {
             return calculateNominalPValue(value, randomValues, "right");
         }
@@ -219,23 +219,26 @@ public class PlugInUtilities {
         if (leftOrRight.equals("left")) { // Check the left-side value
             int supposedIndex = -1;
             for (int i = 0; i < randomValues.size(); i++) {
-                // Find the value that is largest than the real value
-                if (randomValues.get(i) < value) {
-                    supposedIndex = i;
-                    break;
-                }
-            }
-            pvalue = (double) (supposedIndex + 1) / randomValues.size();
-        }
-        else { // Check the right-side value
-            int supposedIndex = randomValues.size();
-            for (int i = randomValues.size() - 1; i >= 0; i--) {
+                // Find the value that is larger than the real value
                 if (randomValues.get(i) > value) {
                     supposedIndex = i;
                     break;
                 }
             }
-            pvalue = (double) (randomValues.size() - supposedIndex) / randomValues.size();
+            if (supposedIndex == -1)
+                supposedIndex = randomValues.size();
+            pvalue = (double) supposedIndex / randomValues.size();
+        }
+        else { // Check the right-side value
+            int supposedIndex = -1;
+            for (int i = randomValues.size() - 1; i >= 0; i--) {
+                // Find the value that is less than the real value
+                if (randomValues.get(i) < value) {
+                    supposedIndex = i;
+                    break;
+                }
+            }
+            pvalue = (double) (randomValues.size() - supposedIndex - 1) / randomValues.size();
         }
         return pvalue;
     }

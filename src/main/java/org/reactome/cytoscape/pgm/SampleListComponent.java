@@ -35,6 +35,8 @@ import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
+import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.ContinuousVariable;
 import org.reactome.factorgraph.ContinuousVariable.DistributionType;
@@ -56,6 +58,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     private JLabel typeBox;
     private JTable observationTable;
     private JTable inferenceTable;
+    private JRadioButton highlightPathwayBtn;
     // Data to be displayed
     private Map<String, String> sampleToType;
     // Cached information for display
@@ -65,6 +68,9 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     private PathwayEditor pathwayEditor;
     private GraphEditorActionListener graphSelectionListener;
     private SampleTableSelectionHandler selectionHandler;
+    private PathwayHighlightControlPanel highlightControlPane;
+    private double minIPA;
+    private double maxIPA;
     
     public SampleListComponent() {
         init();
@@ -101,6 +107,11 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.BOTTOM);
         
+        // Set up the table for inference
+        // Want to have a checkbox to color pathway diagram
+        JPanel inferencePane = createInferencePane();
+        tabbedPane.addTab("Inference", inferencePane);
+        
         // Set up the table for observation
         SampleObservationModel observationModel = new SampleObservationModel();
         TableRowSorter<TableModel> observationSorter = new TableRowSorter<TableModel>(observationModel);
@@ -119,13 +130,32 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             }
         });
         
-        
-        // Set up the table for inference
+        add(tabbedPane, BorderLayout.CENTER);
+    }
+
+    private JPanel createInferencePane() {
+        JPanel inferencePane = new JPanel();
+        inferencePane.setBorder(BorderFactory.createEtchedBorder());
+        inferencePane.setLayout(new BorderLayout());
         SampleInferenceModel inferenceModel = new SampleInferenceModel();
         TableRowSorter<TableModel> inferenceSorter = new TableRowSorter<TableModel>(inferenceModel);
         inferenceTable = new JTable(inferenceModel);
         inferenceTable.setRowSorter(inferenceSorter);
-        tabbedPane.addTab("Inference", new JScrollPane(inferenceTable));
+        inferencePane.add(new JScrollPane(inferenceTable), BorderLayout.CENTER);
+        highlightPathwayBtn = new JRadioButton("Highlight pathway for sample");
+        PlugInObjectManager.getManager().registerRadioButton("HighlightPathway",
+                                                             highlightPathwayBtn);
+        highlightPathwayBtn.addItemListener(new ItemListener() {
+            
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED)
+                    highlightPathwayFromSample();
+            }
+        });
+        
+        highlightPathwayBtn.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+        inferencePane.add(highlightPathwayBtn, BorderLayout.SOUTH);
         inferenceTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             
             @Override
@@ -134,8 +164,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                     selectionHandler.handleTableSelection(pathwayEditor, inferenceTable);
             }
         });
-        
-        add(tabbedPane, BorderLayout.CENTER);
+        return inferencePane;
     }
     
     private void initNorthPane() {
@@ -193,6 +222,17 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         observationModel.setSample(selectedSample);
         SampleInferenceModel inferenceModel = (SampleInferenceModel) inferenceTable.getModel();
         inferenceModel.setSample(selectedSample);
+        highlightPathwayFromSample();
+    }
+    
+    private void highlightPathwayFromSample() {
+        if (!highlightPathwayBtn.isSelected() || highlightControlPane == null)
+            return;
+        SampleInferenceModel model = (SampleInferenceModel) inferenceTable.getModel();
+        Map<String, Double> idToValue = model.getIdToValue();
+        highlightControlPane.setIdToValue(idToValue);
+        double[] minMax = highlightControlPane.calculateMinMaxValues(minIPA, maxIPA);
+        highlightControlPane.resetMinMaxValues(minMax);
     }
     
     @Override
@@ -220,7 +260,10 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
      * @param results
      */
     public void setInferenceResults(FactorGraphInferenceResults results,
-                                    PathwayEditor pathwayEditor) {
+                                    PathwayEditor pathwayEditor,
+                                    PathwayHighlightControlPanel highlightControlPane,
+                                    double minIPA,
+                                    double maxIPA) {
         this.results = results;
         observationTableHandler.enableDiagramSelection(pathwayEditor);
         // Initialize the sample box
@@ -243,7 +286,11 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             this.pathwayEditor.getSelectionModel().removeGraphEditorActionListener(graphSelectionListener);
         }
         this.pathwayEditor = pathwayEditor;
-        this.pathwayEditor.getSelectionModel().addGraphEditorActionListener(graphSelectionListener);
+        if (this.pathwayEditor != null)
+            this.pathwayEditor.getSelectionModel().addGraphEditorActionListener(graphSelectionListener);
+        this.highlightControlPane = highlightControlPane;
+        this.minIPA = minIPA;
+        this.maxIPA = maxIPA;
     }
     
     private List<String> getSampleNames(FactorGraphInferenceResults results) {
@@ -269,6 +316,16 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                 index ++;
             }
             return rtn;
+        }
+        
+        public Map<String, Double> getIdToValue() {
+            Map<String, Double> idToValue = new HashMap<>();
+            for (List<Object> row : data) {
+                String id = row.get(0).toString();
+                Double value = (Double) row.get(startIndex + 1);
+                idToValue.put(id, value);
+            }
+            return idToValue;
         }
 
         @Override
@@ -447,17 +504,16 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                     double mean = MathUtilities.calculateMean(randomValues);
                     if (value > mean)
                         pvalue = PlugInUtilities.calculateNominalPValue(value, randomValues, "right");
-                    else if (value < mean)
+                    else
                         pvalue = PlugInUtilities.calculateNominalPValue(value, randomValues, "left");
-                    // Otherwise pvalue = 1.0d;
                 }
             }
             else { // Discrete variable
                 if (var.getStates() == 3) { // Three states: 0, 1, 2
-                    if (value < 1)
-                        pvalue = PlugInUtilities.calculateNominalPValue(value, randomValues, "left");
-                    else if (value > 1)
+                    if (value > 1)
                         pvalue = PlugInUtilities.calculateNominalPValue(value, randomValues, "right");
+                    else
+                        pvalue = PlugInUtilities.calculateNominalPValue(value, randomValues, "left");
                 }
                 else if (var.getStates() == 2) { // Two states: 0, 1
                     if (value > 0)
@@ -482,6 +538,11 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                     }
                     values.add(value.doubleValue());
                 }
+            }
+            // Need to sort for p-value calculation
+            for (Variable var : varToAssgns.keySet()) {
+                List<Double> values = varToAssgns.get(var);
+                Collections.sort(values);
             }
             return varToAssgns;
         }

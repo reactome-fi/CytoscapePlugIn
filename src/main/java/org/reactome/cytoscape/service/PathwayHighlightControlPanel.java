@@ -17,6 +17,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
+import java.util.Collection;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -27,8 +28,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import org.gk.graphEditor.PathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -99,6 +100,38 @@ public class PathwayHighlightControlPanel extends JPanel {
 
     public void setIdToValue(Map<String, Double> idToValue) {
         this.idToValue = idToValue;
+    }
+    
+    /**
+     * Calculate a better min/max values for displaying.
+     * @param min
+     * @param max
+     * @return
+     */
+    public double[] calculateMinMaxValues(double min, double max) {
+        // Want to keep to two digits
+        min = Math.floor(min * 100) / 100.0d;
+        max = Math.ceil(max * 100) / 100.0d;
+        // If one is negative and one is positive, we want them to have
+        // the same absolute values for easy comparison
+        if (min < 0 && max > 0) {
+            double tmp = Math.max(-min, max);
+            min = -tmp;
+            max = tmp;
+        }
+        return (new double[]{min, max});
+    }
+    
+    public double[] calculateMinMaxValues(Collection<Double> values) {
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+        for (Double value : values) {
+            if (value < min)
+                min = value;
+            if (value > max)
+                max = value;
+        }
+        return calculateMinMaxValues(min, max);
     }
 
     public void resetMinMaxValues(double[] minMaxValues) {

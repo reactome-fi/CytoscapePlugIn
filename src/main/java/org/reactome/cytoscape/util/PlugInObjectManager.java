@@ -15,8 +15,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JRadioButton;
 
 import org.cytoscape.app.CyAppAdapter;
 import org.cytoscape.application.swing.CySwingApplication;
@@ -63,6 +65,8 @@ public class PlugInObjectManager {
     // These two configurations are used for PGM-based analyses
     private PathwayPGMConfiguration pathwayPGMConfig;
     private FIPGMConfiguration fiPGMConfig;
+    // To control radio button
+    private Map<String, ButtonGroup> btnNameToGroup;
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
@@ -89,6 +93,18 @@ public class PlugInObjectManager {
             }
         }
         return pathwayPGMConfig;
+    }
+    
+    public void registerRadioButton(String groupName,
+                                    JRadioButton button) {
+        if (btnNameToGroup == null)
+            btnNameToGroup = new HashMap<>();
+        ButtonGroup group = btnNameToGroup.get(groupName);
+        if (group == null) {
+            group = new ButtonGroup();
+            btnNameToGroup.put(groupName, group);
+        }
+        group.add(button);
     }
     
     public FIPGMConfiguration getFIPGMConfig() {

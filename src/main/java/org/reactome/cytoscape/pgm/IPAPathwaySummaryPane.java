@@ -12,6 +12,8 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.beans.PropertyChangeEvent;
@@ -47,6 +49,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -82,6 +85,12 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     // In order to simplify views
     private RenderablePathway pathwayDiagram;
     private boolean simpleEntitiesHidden;
+    // Two scores
+    private Double maxSampleIPA;
+    private Double minSampleIPA;
+    // To control pathway highlight
+    private JRadioButton highlightPathwayBtn;
+    private PathwayHighlightControlPanel hiliteControlPane;
     
     /**
      * @param title
@@ -90,6 +99,14 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         super(title);
     }        
     
+    public Double getMaxSampleIPA() {
+        return maxSampleIPA;
+    }
+
+    public Double getMinSampleIPA() {
+        return minSampleIPA;
+    }
+
     public RenderablePathway getPathwayDiagram() {
         return pathwayDiagram;
     }
@@ -113,6 +130,18 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         outputResultLabel = new JLabel("Total checked outputs:");
         controlToolBar.add(outputResultLabel);
         controlToolBar.add(closeGlue);
+        highlightPathwayBtn = new JRadioButton("Highlight pathway");
+        highlightPathwayBtn.addItemListener(new ItemListener() {
+            
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED)
+                    _highlightPathway();
+            }
+        });
+        PlugInObjectManager.getManager().registerRadioButton("HighlightPathway",
+                                                             highlightPathwayBtn);
+        controlToolBar.add(highlightPathwayBtn);
         recheckOutuptBtn = new JButton("Reset Cutoffs");
         recheckOutuptBtn.addActionListener(new ActionListener() {
             
@@ -521,6 +550,30 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         }
     }
     
+    public void highlightPathway() {
+        highlightPathwayBtn.setSelected(true);
+    }
+    
+    public PathwayHighlightControlPanel getHiliteControlPane() {
+        return hiliteControlPane;
+    }
+
+    public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
+        this.hiliteControlPane = hiliteControlPane;
+    }
+
+    private void _highlightPathway() {
+        if (!highlightPathwayBtn.isSelected() || hiliteControlPane == null)
+            return;
+        // Highlight pathway diagram
+        if (hiliteControlPane != null) {
+            Map<String, Double> idToValue = getReactomeIdToIPADiff();
+            hiliteControlPane.setIdToValue(idToValue);
+            double[] minMaxValues = hiliteControlPane.calculateMinMaxValues(idToValue.values());
+            hiliteControlPane.resetMinMaxValues(minMaxValues);
+        }
+    }
+    
     /**
      * Call this method will only set a member property and will not display results.
      * Call another method, setVariableResults(), to display results.
@@ -568,6 +621,22 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                                        sortedTypes.get(1), 
                                        varToIPAs2,
                                        outputVars);
+        extraMinMaxSampleIPAs(varToIPAs1, varToIPAs2);
+    }
+    
+    private void extraMinMaxSampleIPAs(Map<Variable, List<Double>>... varToIPAs) {
+        minSampleIPA = Double.POSITIVE_INFINITY;
+        maxSampleIPA = Double.NEGATIVE_INFINITY;
+        for (Map<Variable, List<Double>> varToIPAs1 : varToIPAs) {
+            for (List<Double> ipas : varToIPAs1.values()) {
+                for (Double ipa : ipas) {
+                    if (ipa > maxSampleIPA)
+                        maxSampleIPA = ipa;
+                    if (ipa < minSampleIPA)
+                        minSampleIPA = ipa;
+                }
+            }
+        }
     }
 
     private void parseResults(List<VariableInferenceResults> varResultList) throws MathException {
@@ -586,6 +655,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
                                        "Random Samples",
                                        varToRandomIPAs,
                                        outputVars);
+        extraMinMaxSampleIPAs(varToRealIPAs);
     }
     
     protected String getVariableKey(Variable var) {

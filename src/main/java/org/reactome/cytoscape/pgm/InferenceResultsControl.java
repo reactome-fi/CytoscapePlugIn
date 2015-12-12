@@ -5,7 +5,6 @@
 package org.reactome.cytoscape.pgm;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.math.MathException;
@@ -99,34 +98,32 @@ public class InferenceResultsControl {
         // Show outputs results
         title = "IPA Pathway Analysis";
         index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);
-        IPAPathwaySummaryPane outputPane = null;
+        IPAPathwaySummaryPane summaryPane = null;
         if (index > -1)
-            outputPane = (IPAPathwaySummaryPane) tableBrowserPane.getComponentAt(index);
+            summaryPane = (IPAPathwaySummaryPane) tableBrowserPane.getComponentAt(index);
         else
-            outputPane = new IPAPathwaySummaryPane(title);
-        if (outputPane.getFGInferenceResults() != fgResults) {
-            outputPane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
+            summaryPane = new IPAPathwaySummaryPane(title);
+        if (summaryPane.getFGInferenceResults() != fgResults) {
+            summaryPane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
             Set<Variable> outputVars = PlugInUtilities.getOutputVariables(fgResults.getFactorGraph());
-            outputPane.setVariableResults(valuePane.getInferenceResults(),
+            summaryPane.setVariableResults(valuePane.getInferenceResults(),
                                           outputVars,
                                           fgResults.isUsedForTwoCases() ? fgResults.getSampleToType() : null);
-            outputPane.setFGInferenceResults(fgResults);
+            summaryPane.setFGInferenceResults(fgResults);
         }
 //         Only select it if this tab is newly created.
         if (index == -1) {
-            index = tableBrowserPane.indexOfComponent(outputPane);
+            index = tableBrowserPane.indexOfComponent(summaryPane);
             if (index >= 0) // Select this as the default table for viewing the results
                 tableBrowserPane.setSelectedIndex(index);
         }
         // Highlight pathway diagram
         if (hiliteControlPane != null) {
-            Map<String, Double> idToValue = outputPane.getReactomeIdToIPADiff();
-            hiliteControlPane.setIdToValue(idToValue);
-            double[] minMaxValues = getMinMaxValues(idToValue);
-            hiliteControlPane.resetMinMaxValues(minMaxValues);
-            hiliteControlPane.setVisible(true);
+            summaryPane.setHiliteControlPane(hiliteControlPane);
             if (hiliteControlPane.getPathwayEditor() != null)
-                outputPane.setPathwayDiagram((RenderablePathway)hiliteControlPane.getPathwayEditor().getRenderable());
+                summaryPane.setPathwayDiagram((RenderablePathway)hiliteControlPane.getPathwayEditor().getRenderable());
+            summaryPane.highlightPathway();
+            hiliteControlPane.setVisible(true);
         }
         // Show samples for the user's selection
         CytoPanel eastPane = desktopApp.getCytoPanel(CytoPanelName.EAST);
@@ -144,31 +141,12 @@ public class InferenceResultsControl {
         if (index > -1)
             eastPane.setSelectedIndex(index);
         samplePane.setInferenceResults(fgResults,
-                                       pathwayEditor);
+                                       pathwayEditor,
+                                       hiliteControlPane,
+                                       summaryPane.getMinSampleIPA(),
+                                       summaryPane.getMaxSampleIPA());
     }
     
-    private double[] getMinMaxValues(Map<String, Double> idToValue) {
-        double min = Double.POSITIVE_INFINITY;
-        double max = Double.NEGATIVE_INFINITY;
-        for (Double value : idToValue.values()) {
-            if (value < min)
-                min = value;
-            if (value > max)
-                max = value;
-        }
-        // Want to keep to two digits
-        min = Math.floor(min * 100) / 100.0d;
-        max = Math.ceil(max * 100) / 100.0d;
-        // If one is negative and one is positive, we want them to have
-        // the same absolute values for easy comparison
-        if (min < 0 && max > 0) {
-            double tmp = Math.max(-min, max);
-            min = -tmp;
-            max = tmp;
-        }
-        return (new double[]{min, max});
-    }
-
     public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
         showIPANodeValues(fgResults);
         showIPAPathwayValues(fgResults);
