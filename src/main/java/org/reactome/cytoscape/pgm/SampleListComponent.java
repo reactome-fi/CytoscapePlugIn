@@ -35,6 +35,8 @@ import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
+import org.reactome.cytoscape.service.AnimationPlayer;
+import org.reactome.cytoscape.service.AnimationPlayerControl;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -183,6 +185,13 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         samplePane.setBorder(BorderFactory.createEtchedBorder());
         samplePane.add(sampleLabel);
         samplePane.add(sampleBox);
+        // For performing animation
+        AnimationPlayerControl animiationControl = new AnimationPlayerControl();
+        SampleListAnimationPlayer player = new SampleListAnimationPlayer();
+        animiationControl.setPlayer(player);
+        animiationControl.setInterval(500); // 0.5 second per sample
+        samplePane.add(animiationControl);
+        
         northPane.add(samplePane);
         
         // Show type information
@@ -639,6 +648,29 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                 row.add(fdr);
             }
         }
+    }
+    
+    private class SampleListAnimationPlayer implements AnimationPlayer {
+        
+        public SampleListAnimationPlayer() {
+        }
+
+        @Override
+        public void forward() {
+            int selectedIndex = sampleBox.getSelectedIndex();
+            if (selectedIndex == sampleBox.getItemCount() - 1)
+                selectedIndex = -1;
+            sampleBox.setSelectedIndex(selectedIndex + 1);
+        }
+
+        @Override
+        public void backward() {
+            int selectedIndex = sampleBox.getSelectedIndex();
+            if (selectedIndex == 0)
+                selectedIndex = sampleBox.getItemCount();
+            sampleBox.setSelectedIndex(selectedIndex - 1);
+        }
+        
     }
     
 }
