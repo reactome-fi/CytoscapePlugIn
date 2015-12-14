@@ -154,7 +154,7 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
             // In order to calculate p-values
             List<List<Double>> randomPerturbs = generateRandomPerturbations();
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[columnHeaders.length];
+                Object[] rowData = new Object[columnHeaders.length];
                 rowData[0] = sampleList.get(i);
                 double negative = 0.0d;
                 double positive = 0.0d;
@@ -168,12 +168,18 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
                     else if (ipa > 0.0d)
                         positive += ipa;
                 }
-                rowData[1] = PlugInUtilities.formatProbability(negative);
-                double pvalue = PlugInUtilities.calculateIPAPValue(negative, randomPerturbs.get(0));
-                rowData[2] = PlugInUtilities.formatProbability(pvalue);
-                rowData[4] = PlugInUtilities.formatProbability(positive);
-                pvalue = PlugInUtilities.calculateIPAPValue(positive, randomPerturbs.get(1));
-                rowData[5] = PlugInUtilities.formatProbability(pvalue);
+                rowData[1] = negative;
+                // Need to calcaulte from the left side
+                double pvalue = PlugInUtilities.calculateNominalPValue(negative,
+                                                                       randomPerturbs.get(0),
+                                                                       "left");
+                rowData[2] = pvalue;
+                rowData[4] = positive;
+                // Need to calculate from the right side
+                pvalue = PlugInUtilities.calculateNominalPValue(positive, 
+                                                                randomPerturbs.get(1),
+                                                                "right");
+                rowData[5] = pvalue;
                 tableData.add(rowData);
             }
             int totalPermutation = varResults.get(0).getRandomPosteriorValues().size();
@@ -183,16 +189,16 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
                 List<Double> pvalues = new ArrayList<Double>();
                 // Sort the rows based on p-values
                 final int index1 = index;
-                Collections.sort(tableData, new Comparator<String[]>() {
-                    public int compare(String[] row1, String[] row2) {
-                        Double pvalue1 = new Double(row1[index1]);
-                        Double pvalue2 = new Double(row2[index1]);   
+                Collections.sort(tableData, new Comparator<Object[]>() {
+                    public int compare(Object[] row1, Object[] row2) {
+                        Double pvalue1 = (Double)row1[index1];
+                        Double pvalue2 = (Double)row2[index1];   
                         return pvalue1.compareTo(pvalue2);
                     }
                 });
                 for (int i = 0; i < tableData.size(); i++) {
-                    String[] row = tableData.get(i);
-                    Double pvalue = new Double(row[index]);
+                    Object[] row = tableData.get(i);
+                    Double pvalue = (Double)row[index];
                     if (pvalue.equals(0.0d)) 
                         pvalue = 1.0d / (totalPermutation + 1); // Use the closest double value for a conservative calculation
                     pvalues.add(pvalue);
@@ -200,14 +206,14 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
                 List<Double> fdrs = MathUtilities.calculateFDRWithBenjaminiHochberg(pvalues);
                 // Replace p-values with FDRs
                 for (int i = 0; i < tableData.size(); i++) {
-                    String[] row = tableData.get(i);
-                    row[index + 1] = String.format("%.3f", fdrs.get(i));
+                    Object[] row = tableData.get(i);
+                    row[index + 1] = fdrs.get(i);
                 }
             }
             // Need to sort the table back as the original
-            Collections.sort(tableData, new Comparator<String[]>() {
-                public int compare(String[] row1, String[] row2) {
-                    return row1[0].compareTo(row2[0]);
+            Collections.sort(tableData, new Comparator<Object[]>() {
+                public int compare(Object[] row1, Object[] row2) {
+                    return row1[0].toString().compareTo(row2[0].toString());
                 }
             });
         }
@@ -216,7 +222,7 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
         protected void resetDataWithoutPValues(List<String> sampleList) {
             columnHeaders = colums_without_pvalues;
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[columnHeaders.length];
+                Object[] rowData = new Object[columnHeaders.length];
                 rowData[0] = sampleList.get(i);
                 double negativePerturbations = 0.0d;
                 double positivePerturbations = 0.0d;
@@ -230,8 +236,8 @@ public class IPASampleAnalysisPane extends IPAValueTablePane {
                     else if (ipa > 0.0d)
                         positivePerturbations += ipa;
                 }
-                rowData[1] = PlugInUtilities.formatProbability(negativePerturbations);
-                rowData[2] = PlugInUtilities.formatProbability(positivePerturbations);
+                rowData[1] = negativePerturbations;
+                rowData[2] = positivePerturbations;
                 tableData.add(rowData);
             }
         }

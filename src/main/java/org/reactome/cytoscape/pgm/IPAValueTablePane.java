@@ -337,33 +337,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
     
     @Override
     protected TableRowSorter<NetworkModuleTableModel> createTableRowSorter(NetworkModuleTableModel model) {
-        TableRowSorter<NetworkModuleTableModel> sorter = new TableRowSorter<NetworkModuleTableModel>(model) {
-
-            @Override
-            public Comparator<?> getComparator(int column) {
-                if (column == 0)
-                    return super.getComparator(0);
-                if (fgInfResults.getSampleToType() != null &&
-                    fgInfResults.getSampleToType().size() > 0 &&
-                    column == 1) // The sample type should be listed here. Sort based on String.
-                    return super.getComparator(1);
-                Comparator<String> comparator = new Comparator<String>() {
-                    public int compare(String value1, String value2) {
-                        if (value1 == null || value1.length() == 0 ||
-                            value2 == null || value2.length() == 0)
-                            return 0;
-                        if (value1.equals("-INFINITY") || value2.equals("INFINITY"))
-                            return -1;
-                        if (value2.equals("-INFINITY") || value1.equals("INFINITY"))
-                            return 1;
-                        Double d1 = new Double(value1);
-                        Double d2 = new Double(value2);
-                        return d1.compareTo(d2);
-                    }
-                };
-                return comparator;
-            }
-        };
+        TableRowSorter<NetworkModuleTableModel> sorter = new TableRowSorter<NetworkModuleTableModel>(model);
         return sorter;
     }
     
@@ -377,14 +351,29 @@ public class IPAValueTablePane extends NetworkModulePanel {
         // Cache the list of variables for different view
         protected List<VariableInferenceResults> varResults;
         // A flag to indicate if p-values should be displayed
-        // Default is hide for a simply drawing
-        protected boolean hideFDRs = true;
+        // Default is showing assuming only one node is selected
+        protected boolean hideFDRs = false;
         
         public IPAValueTableModel() {
             columnHeaders = originalHeaders; // Just some test data
-            tableData = new ArrayList<String[]>();
+            tableData = new ArrayList<Object[]>();
         }
         
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            // The first column is the sample name
+            if (columnIndex == 0)
+                return String.class;
+            if (columnIndex == 1) {
+                Map<String, String> sampleToType = fgInfResults.getSampleToType();
+                if (sampleToType == null || sampleToType.size() == 0)
+                    return Double.class;
+                else
+                    return String.class;
+            }
+            return Double.class;
+        }
+
         public void setSamples(List<String> samples) {
             Collections.sort(samples);
             tableData.clear();
@@ -398,11 +387,14 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 originalHeaders = new String[]{"Sample", "Select Nodes to View"};
             }
             for (String sample : samples) {
-                String[] values = null;
+                Object[] values = null;
                 if (sampleToType != null && sampleToType.size() > 0) 
-                    values = new String[]{sample, sampleToType.get(sample), ""};
+                    values = new Object[]{sample, 
+                                          sampleToType.get(sample), 
+                                          null};
                 else
-                    values = new String[]{sample, ""};
+                    values = new Object[]{sample, 
+                                          null};
                 tableData.add(values);
             }
             // Before firing table structure change, have to make sure columnHeaders are correct
@@ -450,7 +442,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
             // In order to calculate p-values
             Map<Variable, List<Double>> varToRandomIPAs = fgInfResults.generateRandomIPAs(varResults);
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[varResults.size() * 3 + dataIndex];
+                Object[] rowData = new Object[varResults.size() * 3 + dataIndex];
                 rowData[0] = sampleList.get(i);
                 if (dataIndex == 2) {
                     String type = sampleToType.get(rowData[0]);
@@ -462,10 +454,10 @@ public class IPAValueTablePane extends NetworkModulePanel {
                     List<Double> postProbs = posteriors.get(rowData[0]);
                     double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(),
                                                             postProbs);
-                    rowData[3 * j + dataIndex] = PlugInUtilities.formatProbability(ipa);
+                    rowData[3 * j + dataIndex] = ipa;
                     List<Double> randomIPAs = varToRandomIPAs.get(varResult.getVariable());
                     double pvalue = PlugInUtilities.calculateIPAPValue(ipa, randomIPAs);
-                    rowData[3 * j + dataIndex + 1] = pvalue + "";
+                    rowData[3 * j + dataIndex + 1] = pvalue;
                 }
                 tableData.add(rowData);
             }
@@ -475,16 +467,16 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 List<Double> pvalues = new ArrayList<Double>();
                 // Sort the rows based on p-values
                 final int index = j;
-                Collections.sort(tableData, new Comparator<String[]>() {
-                    public int compare(String[] row1, String[] row2) {
-                        Double pvalue1 = new Double(row1[3 * index + 1 + dataIndex]);
-                        Double pvalue2 = new Double(row2[3 * index + 1 + dataIndex]);   
+                Collections.sort(tableData, new Comparator<Object[]>() {
+                    public int compare(Object[] row1, Object[] row2) {
+                        Double pvalue1 = (Double) row1[3 * index + 1 + dataIndex];
+                        Double pvalue2 = (Double) row2[3 * index + 1 + dataIndex];   
                         return pvalue1.compareTo(pvalue2);
                     }
                 });
                 for (int i = 0; i < tableData.size(); i++) {
-                    String[] row = tableData.get(i);
-                    Double pvalue = new Double(row[3 * j + 1 + dataIndex]);
+                    Object[] row = tableData.get(i);
+                    Double pvalue = (Double) row[3 * j + 1 + dataIndex];
                     if (pvalue.equals(0.0d)) 
                         pvalue = 1.0d / (totalPermutation + 1); // Use the closest double value for a conservative calculation
                     pvalues.add(pvalue);
@@ -492,15 +484,15 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 List<Double> fdrs = MathUtilities.calculateFDRWithBenjaminiHochberg(pvalues);
                 // Replace p-values with FDRs
                 for (int i = 0; i < tableData.size(); i++) {
-                    String[] row = tableData.get(i);
-//                    row[3 * j + dataIndex + 2] = fdrs.get(i) + "";
-                    row[3 * j + dataIndex + 2] = String.format("%.3f", fdrs.get(i));
+                    Object[] row = tableData.get(i);
+                    row[3 * j + dataIndex + 2] = fdrs.get(i);
+//                    row[3 * j + dataIndex + 2] = String.format("%.3f", fdrs.get(i));
                 }
             }
             // Need to sort the table back as the original
-            Collections.sort(tableData, new Comparator<String[]>() {
-                public int compare(String[] row1, String[] row2) {
-                    return row1[0].compareTo(row2[0]);
+            Collections.sort(tableData, new Comparator<Object[]>() {
+                public int compare(Object[] row1, Object[] row2) {
+                    return row1[0].toString().compareTo(row2[0].toString());
                 }
             });
         }
@@ -523,9 +515,9 @@ public class IPAValueTablePane extends NetworkModulePanel {
                 columnHeaders[i + dataIndex] = name;
             }
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[columnHeaders.length];
+                Object[] rowData = new Object[columnHeaders.length];
                 rowData[0] = sampleList.get(i);
-                if (sampleToType != null)
+                if (sampleToType != null && sampleToType.size() > 0)
                     rowData[1] = sampleToType.get(sampleList.get(i));
                 for (int j = 0; j < varResults.size(); j++) {
                     VariableInferenceResults varResult = varResults.get(j);
@@ -533,7 +525,7 @@ public class IPAValueTablePane extends NetworkModulePanel {
                     List<Double> postProbs = posteriors.get(rowData[0]);
                     double ipa = IPACalculator.calculateIPA(varResult.getPriorValues(),
                                                             postProbs);
-                    rowData[j + dataIndex] = PlugInUtilities.formatProbability(ipa);
+                    rowData[j + dataIndex] = ipa;
                 }
                 tableData.add(rowData);
             }
@@ -543,9 +535,9 @@ public class IPAValueTablePane extends NetworkModulePanel {
             if (varResults == null || varResults.size() == 0) {
                 columnHeaders = originalHeaders;
                 // Refresh the tableData
-                for (String[] values : tableData) {
+                for (Object[] values : tableData) {
                     for (int i = 1; i < values.length; i++)
-                        values[i] = "";
+                        values[i] = null;
                 }
                 fireTableStructureChanged();
                 return;

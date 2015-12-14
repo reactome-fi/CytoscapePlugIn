@@ -248,8 +248,8 @@ public class PlotTablePanel extends JPanel {
         List<Double> rtn = new ArrayList<Double>();
         try {
             for (int row = 0; row < model.getRowCount(); row ++) {
-                String value = (String) model.getValueAt(row, col);
-                rtn.add(new Double(value));
+                Double value = (Double) model.getValueAt(row, col);
+                rtn.add(value);
             }
         }
         catch(NumberFormatException e) {

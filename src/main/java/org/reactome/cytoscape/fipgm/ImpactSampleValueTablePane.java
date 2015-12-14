@@ -164,7 +164,7 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
             if (FIPGMResults.getResults() == null || variables == null || variables.size() == 0) {
                 columnHeaders = originalHeaders;
                 // Refresh the tableData
-                for (String[] values : tableData) {
+                for (Object[] values : tableData) {
                     for (int i = 1; i < values.length; i++)
                         values[i] = "";
                 }
@@ -245,16 +245,16 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
                 List<Double> pvalues = new ArrayList<Double>();
                 // Sort the rows based on p-values
                 final int index = j;
-                Collections.sort(tableData, new Comparator<String[]>() {
-                    public int compare(String[] row1, String[] row2) {
-                        Double pvalue1 = new Double(row1[3 * index + 2]);
-                        Double pvalue2 = new Double(row2[3 * index + 2]);   
+                Collections.sort(tableData, new Comparator<Object[]>() {
+                    public int compare(Object[] row1, Object[] row2) {
+                        Double pvalue1 = new Double(row1[3 * index + 2].toString());
+                        Double pvalue2 = new Double(row2[3 * index + 2].toString());   
                         return pvalue1.compareTo(pvalue2);
                     }
                 });
                 for (int i = 0; i < tableData.size(); i++) {
-                    String[] row = tableData.get(i);
-                    Double pvalue = new Double(row[3 * j + 2]);
+                    Object[] row = tableData.get(i);
+                    Double pvalue = new Double(row[3 * j + 2].toString());
                     if (pvalue.equals(0.0d)) 
                         pvalue = 1.0d / (totalPermutation + 1); // Use the closest double value for a conservative calculation
                     pvalues.add(pvalue);
@@ -262,14 +262,14 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
                 List<Double> fdrs = MathUtilities.calculateFDRWithBenjaminiHochberg(pvalues);
                 // Assign FDRs
                 for (int i = 0; i < tableData.size(); i++) {
-                    String[] row = tableData.get(i);
+                    Object[] row = tableData.get(i);
                     row[3 * j + 3] = String.format("%.3f", fdrs.get(i));
                 }
             }
             // Need to sort the table back as the original
-            Collections.sort(tableData, new Comparator<String[]>() {
-                public int compare(String[] row1, String[] row2) {
-                    return row1[0].compareTo(row2[0]);
+            Collections.sort(tableData, new Comparator<Object[]>() {
+                public int compare(Object[] row1, Object[] row2) {
+                    return row1[0].toString().compareTo(row2[0].toString());
                 }
             });
         }

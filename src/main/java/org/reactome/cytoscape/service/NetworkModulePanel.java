@@ -422,11 +422,11 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     }
     
     protected abstract class NetworkModuleTableModel extends AbstractTableModel {
-        protected List<String[]> tableData;
+        protected List<Object[]> tableData;
         protected String[] columnHeaders;
         
         public NetworkModuleTableModel() {
-            tableData = new ArrayList<String[]>();
+            tableData = new ArrayList<Object[]>();
         }
         
         protected int getNodeIdColumn() {
@@ -442,8 +442,8 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
             List<String> rtn = new ArrayList<String>();
             int idCol = getNodeIdColumn();
             for (int row : rows) {
-                String[] rowData = tableData.get(row);
-                rtn.add(rowData[idCol]);
+                Object[] rowData = tableData.get(row);
+                rtn.add(rowData[idCol] + "");
             }
             return rtn;
         }
@@ -457,8 +457,8 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
             List<Integer> rows = new ArrayList<Integer>();
             int idCol = getNodeIdColumn();
             for (int i = 0; i < tableData.size(); i++) {
-                String[] rowData = tableData.get(i);
-                String[] ids = rowData[idCol].split(",");
+                Object[] rowData = tableData.get(i);
+                String[] ids = rowData[idCol].toString().split(",");
                 for (String id : ids) {
                     if (nodes.contains(id)) {
                         rows.add(i);
@@ -481,7 +481,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
             // Just in case
             if (rowIndex >= tableData.size())
                 return null;
-            String[] rowData = tableData.get(rowIndex);
+            Object[] rowData = tableData.get(rowIndex);
             return rowData[columnIndex];
         }
 
