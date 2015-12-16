@@ -928,7 +928,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
      * @param results
      * @throws MathException
      */
-    public void showInferenceResults(FactorGraphInferenceResults results) throws MathException {
+    public void showInferenceResults(FactorGraphInferenceResults results) throws MathException, IllegalAccessException, InstantiationException {
         FactorGraphAnalyzer analyzer = getFactorGraphAnalyzer();
         analyzer.showInferenceResults(results);
     }

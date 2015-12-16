@@ -77,6 +77,14 @@ public class IPAValueTablePane extends NetworkModulePanel {
     protected JLabel ipaLabel;
     
     /**
+     * This constructor is used only for subclasses and expects subclasses
+     * to handle title.
+     */
+    protected IPAValueTablePane() {
+        this(null); 
+    }
+    
+    /**
      * In order to show title, have to set the title in the constructor.
      */
     public IPAValueTablePane(String title) {

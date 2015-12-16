@@ -13,7 +13,6 @@ import java.util.Set;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.apache.commons.math.MathException;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyRow;
@@ -102,7 +101,7 @@ public class DiagramAndNetworkSwitcher {
             try {
                 editor.showInferenceResults(results);
             }
-            catch(MathException e) {
+            catch(Exception e) {
                 e.printStackTrace(System.err);
                 JOptionPane.showMessageDialog(editor,
                                               "Error in showing graphical model analysis results: " + e,

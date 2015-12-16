@@ -251,7 +251,7 @@ public class FactorGraphAnalyzer {
      * Call this method to display a saved results from a file.
      * @param fgResults
      */
-    public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
+    public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException, IllegalAccessException, InstantiationException {
         if (pathwayEditor == null || hiliteControlPane == null)
             return; // Cannot do anything here
         InferenceResultsControl control = new InferenceResultsControl();

@@ -5,7 +5,9 @@
 package org.reactome.cytoscape.fipgm;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,6 +115,32 @@ public class FIPGMResults {
 
     public void setRandomSampleToVarToScore(Map<String, Map<Variable, Double>> randomSampleToVarToScore) {
         this.randomSampleToVarToScore = randomSampleToVarToScore;
+    }
+    
+    public Map<Variable, List<Double>> getRandomScores(Collection<Variable> variables) {
+        Map<Variable, List<Double>> varToRandomScores = new HashMap<>();
+        if (randomSampleToVarToScore == null)
+            return varToRandomScores;
+        for (String sample : randomSampleToVarToScore.keySet()) {
+            Map<Variable, Double> varToScore = randomSampleToVarToScore.get(sample);
+            for (Variable var : variables) {
+                Double score = varToScore.get(var);
+                if (score == null)
+                    continue;
+                List<Double> scores = varToRandomScores.get(var);
+                if (scores == null) {
+                    scores = new ArrayList<>();
+                    varToRandomScores.put(var, scores);
+                }
+                scores.add(score);
+            }
+        }
+        // Need to sort all lists so that they can be used for nominal p-value calculation
+        for (Variable var : varToRandomScores.keySet()) {
+            List<Double> scores = varToRandomScores.get(var);
+            Collections.sort(scores);
+        }
+        return varToRandomScores;
     }
     
     /**

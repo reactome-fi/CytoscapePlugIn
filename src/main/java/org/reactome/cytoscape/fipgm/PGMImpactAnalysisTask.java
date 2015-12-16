@@ -344,9 +344,18 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
         frame.getGlassPane().setVisible(false);
         if (!isOKed)
             return;
-        // If all work fine, we will store information for further visualization and analysis
-        FIPGMResultsControl control = new FIPGMResultsControl();
-        control.showInferneceResults();
+        try {
+            // If all work fine, we will store information for further visualization and analysis
+            FIPGMResultsControl control = new FIPGMResultsControl();
+            control.showInferenceResults();
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(frame,
+                                          "Cannot show results: " + e.getMessage(),
+                                          "Error in Showing Results",
+                                          JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     /**

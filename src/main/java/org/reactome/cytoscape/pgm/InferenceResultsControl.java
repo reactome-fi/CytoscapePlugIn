@@ -11,7 +11,6 @@ import org.apache.commons.math.MathException;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
-import org.cytoscape.application.swing.CytoPanelState;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.RenderablePathway;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
@@ -76,7 +75,7 @@ public class InferenceResultsControl {
         valuePane.setFGInferenceResults(fgResults);
     }
     
-    private void showIPAPathwayValues(FactorGraphInferenceResults fgResults) throws MathException {
+    private void showIPAPathwayValues(FactorGraphInferenceResults fgResults) throws MathException, IllegalAccessException, InstantiationException {
         if (!fgResults.hasPosteriorResults())
             return; 
         String title = "IPA Sample Analysis";
@@ -125,21 +124,10 @@ public class InferenceResultsControl {
             summaryPane.highlightPathway();
             hiliteControlPane.setVisible(true);
         }
-        // Show samples for the user's selection
-        CytoPanel eastPane = desktopApp.getCytoPanel(CytoPanelName.EAST);
-        // We want the east pane in the dock state
-        if (eastPane.getState() != CytoPanelState.DOCK)
-            eastPane.setState(CytoPanelState.DOCK);
-        SampleListComponent samplePane = null;
-        index = PlugInUtilities.getCytoPanelComponent(eastPane, SampleListComponent.TITLE);
-        if (index > -1)
-            samplePane = (SampleListComponent) eastPane.getComponentAt(index);
-        else {
-            samplePane = new SampleListComponent();
-            index = eastPane.indexOfComponent(samplePane);
-        }
-        if (index > -1)
-            eastPane.setSelectedIndex(index);
+        
+        SampleListComponent samplePane = (SampleListComponent) PlugInUtilities.getCytoPanelComponent(SampleListComponent.class,
+                                                                                                     CytoPanelName.EAST,
+                                                                                                     SampleListComponent.TITLE);
         samplePane.setInferenceResults(fgResults,
                                        pathwayEditor,
                                        hiliteControlPane,
@@ -147,7 +135,7 @@ public class InferenceResultsControl {
                                        summaryPane.getMaxSampleIPA());
     }
     
-    public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
+    public void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException, IllegalAccessException, InstantiationException{
         showIPANodeValues(fgResults);
         showIPAPathwayValues(fgResults);
     }

@@ -158,7 +158,7 @@ public class InferenceRunner {
         }
     }
 
-    private void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException {
+    private void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException, IllegalAccessException, InstantiationException {
         InferenceResultsControl control = new InferenceResultsControl();
         control.setHiliteControlPane(hiliteControlPane);
         control.showInferenceResults(fgResults);

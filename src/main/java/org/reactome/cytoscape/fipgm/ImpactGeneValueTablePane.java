@@ -36,6 +36,8 @@ import org.reactome.factorgraph.Variable;
  *
  */
 public class ImpactGeneValueTablePane extends ImpactSampleValueTablePane {
+    public static final String TITLE = "Impact Gene Values";
+    
     private FilterableTTestTablePlotPane tTestPane;
     // Two flags to control action
     private boolean isFromTable;
@@ -44,8 +46,12 @@ public class ImpactGeneValueTablePane extends ImpactSampleValueTablePane {
     /**
      * @param title
      */
-    public ImpactGeneValueTablePane(String title) {
-        super(title);
+    public ImpactGeneValueTablePane() {
+    }
+    
+    @Override
+    public String getTitle() {
+        return TITLE;
     }
 
     @Override

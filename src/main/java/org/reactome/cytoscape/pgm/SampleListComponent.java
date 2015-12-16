@@ -55,11 +55,11 @@ import org.reactome.r3.util.MathUtilities;
 public class SampleListComponent extends JPanel implements CytoPanelComponent {
     public static final String TITLE = "Sample List";
     // GUIs
-    private JComboBox<String> sampleBox;
+    protected JComboBox<String> sampleBox;
     private JPanel typePane;
     private JLabel typeBox;
-    private JTable observationTable;
-    private JTable inferenceTable;
+    protected JTable observationTable;
+    protected JTable inferenceTable;
     private JRadioButton highlightPathwayBtn;
     // Data to be displayed
     private Map<String, String> sampleToType;
@@ -115,7 +115,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         tabbedPane.addTab("Inference", inferencePane);
         
         // Set up the table for observation
-        SampleObservationModel observationModel = new SampleObservationModel();
+        SampleModel observationModel = createObservationTableModel();
         TableRowSorter<TableModel> observationSorter = new TableRowSorter<TableModel>(observationModel);
         observationTable = new JTable(observationModel);
         observationTable.setRowSorter(observationSorter);
@@ -126,8 +126,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (!e.getValueIsAdjusting()) {
-                    observationTableHandler.handleTableSelection(observationTable,
-                                                                 0);
+                    handleObservationTableSelection();
                 }
             }
         });
@@ -135,11 +134,16 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         add(tabbedPane, BorderLayout.CENTER);
     }
 
+    protected SampleModel createObservationTableModel() {
+        SampleModel observationModel = new SampleObservationModel();
+        return observationModel;
+    }
+
     private JPanel createInferencePane() {
         JPanel inferencePane = new JPanel();
         inferencePane.setBorder(BorderFactory.createEtchedBorder());
         inferencePane.setLayout(new BorderLayout());
-        SampleInferenceModel inferenceModel = new SampleInferenceModel();
+        SampleModel inferenceModel = createInferenceTableModel();
         TableRowSorter<TableModel> inferenceSorter = new TableRowSorter<TableModel>(inferenceModel);
         inferenceTable = new JTable(inferenceModel);
         inferenceTable.setRowSorter(inferenceSorter);
@@ -163,10 +167,24 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (!e.getValueIsAdjusting())
-                    selectionHandler.handleTableSelection(pathwayEditor, inferenceTable);
+                    handleInferenceTableSelection();
             }
         });
         return inferencePane;
+    }
+    
+    protected void handleInferenceTableSelection() {
+        selectionHandler.handleTableSelection(pathwayEditor, inferenceTable);
+    }
+    
+    protected void handleObservationTableSelection() {
+        observationTableHandler.handleTableSelection(observationTable,
+                                                     0);
+    }
+
+    protected SampleModel createInferenceTableModel() {
+        SampleModel inferenceModel = new SampleInferenceModel();
+        return inferenceModel;
     }
     
     private void initNorthPane() {
@@ -210,14 +228,15 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             
             @Override
             public void itemStateChanged(ItemEvent e) {
-                handleSampleSelection();
+                if (e.getStateChange() == ItemEvent.SELECTED)
+                    handleSampleSelection();
             }
         });
         
         add(northPane, BorderLayout.NORTH);
     }
 
-    private void handleSampleSelection() {
+    private synchronized void handleSampleSelection() {
         String selectedSample = (String) sampleBox.getSelectedItem();
         if (sampleToType != null && sampleToType.size() > 0) {
             String type = sampleToType.get(selectedSample);
@@ -227,9 +246,9 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                 typeBox.setText(type);
         }
         // Show observation
-        SampleObservationModel observationModel = (SampleObservationModel) observationTable.getModel();
+        SampleModel observationModel = (SampleModel) observationTable.getModel();
         observationModel.setSample(selectedSample);
-        SampleInferenceModel inferenceModel = (SampleInferenceModel) inferenceTable.getModel();
+        SampleModel inferenceModel = (SampleModel) inferenceTable.getModel();
         inferenceModel.setSample(selectedSample);
         highlightPathwayFromSample();
     }
@@ -452,7 +471,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         }
     }
     
-    private class SampleObservationModel extends SampleModel {
+    protected class SampleObservationModel extends SampleModel {
         
         public SampleObservationModel() {
             startIndex = 0;
@@ -463,9 +482,28 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             data.clear();
             if (results == null || sample == null)
                 return; // Cannot do anything here
+            resetData(results.getObservations(),
+                      results.getRandomObservations(),
+                      null);
+        }
+        
+        private boolean shouldAdd(Variable var,
+                                  Set<String> targetGenes) {
+            if (targetGenes == null)
+                return true;
+            // Check if this var is in the gene set
+            String name = var.getName();
+            int index = name.indexOf("_");
+            String gene = name.substring(0, index);
+            return targetGenes.contains(gene);
+        }
+        
+        protected void resetData(List<Observation<Number>> observations,
+                                 List<Observation<Number>> randomObservations,
+                                 Set<String> targetGenes) {
             // Extract observation for this sample
             Observation<Number> observation = null;
-            for (Observation<Number> obs : results.getObservations()) {
+            for (Observation<Number> obs : observations) {
                 if (obs.getName().equals(sample)) {
                     observation = obs;
                     break;
@@ -476,9 +514,12 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             // Get a list of variables
             List<VariableAssignment<Number>> varAssgns = observation.getVariableAssignments();
             // To calculate p-values
-            Map<Variable, List<Double>> varToRandomValues = getVarToRandomVarAssgns();
+            Map<Variable, List<Double>> varToRandomValues = getVarToRandomVarAssgns(randomObservations,
+                                                                                    targetGenes);
             for (VariableAssignment<Number> varAssgn : varAssgns) {
                 Variable var = varAssgn.getVariable();
+                if (!shouldAdd(var, targetGenes))
+                    continue;
                 List<Object> row = new ArrayList<>();
                 data.add(row);
                 row.add(var.getName());
@@ -533,12 +574,14 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             return pvalue;
         }
         
-        private Map<Variable, List<Double>> getVarToRandomVarAssgns() {
+        private Map<Variable, List<Double>> getVarToRandomVarAssgns(List<Observation<Number>> randomObservations,
+                                                                    Set<String> targetGenes) {
             Map<Variable, List<Double>> varToAssgns = new HashMap<>();
-            List<Observation<Number>> randomObservations = results.getRandomObservations();
             for (Observation<Number> obs : randomObservations) {
                 Map<Variable, Number> varToAssgn = obs.getVariableToAssignment();
                 for (Variable var : varToAssgn.keySet()) {
+                    if (!shouldAdd(var, targetGenes))
+                        continue; // Should not do anything
                     Number value = varToAssgn.get(var);
                     List<Double> values = varToAssgns.get(var);
                     if (values == null) {
@@ -562,7 +605,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
      * @author gwu
      *
      */
-    private abstract class SampleModel extends AbstractTableModel {
+    protected abstract class SampleModel extends AbstractTableModel {
         private String[] headers = new String[] {
                 "Name",
                 "Value",

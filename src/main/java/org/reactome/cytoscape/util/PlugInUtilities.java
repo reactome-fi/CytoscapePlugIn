@@ -46,6 +46,8 @@ import org.apache.commons.math.MathException;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
+import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
@@ -394,7 +396,7 @@ public class PlugInUtilities {
         List<CyNode> nodes = network.getNodeList();
         return getGeneNamesFromNodes(network, nodes);
     }
-
+    
     private static Set<String> getGeneNamesFromNodes(CyNetwork network,
                                                      List<CyNode> nodes) {
         if (nodes == null || nodes.size() == 0)
@@ -434,6 +436,40 @@ public class PlugInUtilities {
         }
         return -1;
     }
+    
+    /**
+     * Get the index of a CytoPanelComponent. If this CytoPanelComponent doesn't exit,
+     * this method will initialize it.
+     * @param cytoPanelCls
+     * @param name
+     * @param title
+     * @return
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     */
+    public static CytoPanelComponent getCytoPanelComponent(Class<?> cytoPanelCls,
+                                                           CytoPanelName name,
+                                                           String title) throws IllegalAccessException, InstantiationException{
+        // Show samples for the user's selection
+        CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(name);
+        // We want the east pane in the dock state
+        if (cytoPanel.getState() != CytoPanelState.DOCK)
+            cytoPanel.setState(CytoPanelState.DOCK);
+        CytoPanelComponent component = null;
+        int index = PlugInUtilities.getCytoPanelComponent(cytoPanel, 
+                                                          title);
+        // The class should return itself in method getComponent() to make this work
+        if (index > -1) 
+            component = (CytoPanelComponent) cytoPanel.getComponentAt(index); 
+        else {
+            component = (CytoPanelComponent) cytoPanelCls.newInstance();
+            index = cytoPanel.indexOfComponent(component.getComponent());
+        }
+        if (index > -1)
+            cytoPanel.setSelectedIndex(index);
+        return component;
+    }
+                                            
     
     /**
      * Create a mark for the plot.

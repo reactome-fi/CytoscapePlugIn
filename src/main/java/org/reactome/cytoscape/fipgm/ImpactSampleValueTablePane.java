@@ -32,18 +32,23 @@ import org.reactome.r3.util.MathUtilities;
  *
  */
 public class ImpactSampleValueTablePane extends IPAValueTablePane {
+    public static final String TITLE = "Impact Sample Values";
     
     /**
      * @param title
      */
-    public ImpactSampleValueTablePane(String title) {
-        super(title);
+    public ImpactSampleValueTablePane() {
     }
     
     @Override
     protected void addTablePlotPane() {
         super.addTablePlotPane();
         adjustGUIs();
+    }
+    
+    @Override
+    public String getTitle() {
+        return TITLE;
     }
 
     protected void adjustGUIs() {
@@ -76,28 +81,7 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
     
     @Override
     protected TableRowSorter<NetworkModuleTableModel> createTableRowSorter(NetworkModuleTableModel model) {
-        TableRowSorter<NetworkModuleTableModel> sorter = new TableRowSorter<NetworkModuleTableModel>(model) {
-            @Override
-            public Comparator<?> getComparator(int column) {
-                if (column == 0)
-                    return super.getComparator(0);
-                Comparator<String> comparator = new Comparator<String>() {
-                    public int compare(String value1, String value2) {
-                        if (value1 == null || value1.length() == 0 ||
-                            value2 == null || value2.length() == 0)
-                            return 0;
-                        if (value1.equals("-INFINITY") || value2.equals("INFINITY"))
-                            return -1;
-                        if (value2.equals("-INFINITY") || value1.equals("INFINITY"))
-                            return 1;
-                        Double d1 = new Double(value1);
-                        Double d2 = new Double(value2);
-                        return d1.compareTo(d2);
-                    }
-                };
-                return comparator;
-            }
-        };
+        TableRowSorter<NetworkModuleTableModel> sorter = new TableRowSorter<NetworkModuleTableModel>(model);
         return sorter;
     }
 
@@ -142,7 +126,14 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
         private List<Variable> variables; // Results to be displayed for this variable
         
         public ImpactSampleValueTableModel() {
-            
+        }
+        
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            // The first column is the sample name
+            if (columnIndex == 0)
+                return String.class;
+            return Double.class;
         }
 
         /**
@@ -163,10 +154,19 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
         protected void resetData() {
             if (FIPGMResults.getResults() == null || variables == null || variables.size() == 0) {
                 columnHeaders = originalHeaders;
-                // Refresh the tableData
-                for (Object[] values : tableData) {
-                    for (int i = 1; i < values.length; i++)
-                        values[i] = "";
+                tableData.clear();
+                // Show samples
+                List<String> sampleList = new ArrayList<>();
+                if (FIPGMResults.getResults() != null && FIPGMResults.getResults().getSampleToVarToScore() != null)
+                    sampleList.addAll(FIPGMResults.getResults().getSampleToVarToScore().keySet());
+                Collections.sort(sampleList);
+                for (int i = 0; i < sampleList.size(); i++) {
+                    String sample = sampleList.get(i);
+                    Object[] row = new Object[columnHeaders.length];
+                    row[0] = sample;
+                    for (int j = 1; j < row.length; j++)
+                        row[j] = null;
+                    tableData.add(row);
                 }
                 fireTableStructureChanged();
                 return;
@@ -184,32 +184,6 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
             fireTableStructureChanged();
         }
         
-        private Map<Variable, List<Double>> getRandomScores() {
-            Map<Variable, List<Double>> varToRandomScores = new HashMap<>();
-            FIPGMResults results = FIPGMResults.getResults();
-            Map<String, Map<Variable, Double>> randomSampleToVarToScore = results.getRandomSampleToVarToScore();
-            for (String sample : randomSampleToVarToScore.keySet()) {
-                Map<Variable, Double> varToScore = randomSampleToVarToScore.get(sample);
-                for (Variable var : variables) {
-                    Double score = varToScore.get(var);
-                    if (score == null)
-                        continue;
-                    List<Double> scores = varToRandomScores.get(var);
-                    if (scores == null) {
-                        scores = new ArrayList<>();
-                        varToRandomScores.put(var, scores);
-                    }
-                    scores.add(score);
-                }
-            }
-            // Need to sort all lists so that they can be used for nominal p-value calculation
-            for (Variable var : varToRandomScores.keySet()) {
-                List<Double> scores = varToRandomScores.get(var);
-                Collections.sort(scores);
-            }
-            return varToRandomScores;
-        }
-
         @Override
         protected void resetDataWithPValues(List<String> sampleList) {
             columnHeaders = new String[variables.size() * 3 + 1];
@@ -221,20 +195,20 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
                 columnHeaders[3 * i + 3] = label + PlotTablePanel.FDR_COL_NAME_AFFIX;
             }
             // In order to calculate p-values
-            Map<Variable, List<Double>> varToRandomScores = getRandomScores();
+            Map<Variable, List<Double>> varToRandomScores = FIPGMResults.getResults().getRandomScores(variables);
             // Set scores and p-values
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[variables.size() * 3 + 1];
+                Object[] rowData = new Object[variables.size() * 3 + 1];
                 String sample = sampleList.get(i);
                 rowData[0] = sample;
                 Map<Variable, Double> varToScore = FIPGMResults.getResults().getSampleToVarToScore().get(sample);
                 for (int j = 0; j < variables.size(); j++) {
                     Variable variable = variables.get(j);
                     Double score = varToScore.get(variable);
-                    rowData[3 * j + 1] = PlugInUtilities.formatProbability(score);
+                    rowData[3 * j + 1] = score;
                     List<Double> randomIPAs = varToRandomScores.get(variable);
                     double pvalue = PlugInUtilities.calculateIPAPValue(score, randomIPAs);
-                    rowData[3 * j + 2] = pvalue + "";
+                    rowData[3 * j + 2] = pvalue;
                 }
                 tableData.add(rowData);
             }
@@ -263,7 +237,7 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
                 // Assign FDRs
                 for (int i = 0; i < tableData.size(); i++) {
                     Object[] row = tableData.get(i);
-                    row[3 * j + 3] = String.format("%.3f", fdrs.get(i));
+                    row[3 * j + 3] = fdrs.get(i);
                 }
             }
             // Need to sort the table back as the original
@@ -284,14 +258,14 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
                 columnHeaders[i + dataIndex] = name;
             }
             for (int i = 0; i < sampleList.size(); i++) {
-                String[] rowData = new String[columnHeaders.length];
+                Object[] rowData = new Object[columnHeaders.length];
                 String sample = sampleList.get(i);
                 rowData[0] = sample;
                 Map<Variable, Double> varToScore = FIPGMResults.getResults().getSampleToVarToScore().get(sample);
                 for (int j = 0; j < variables.size(); j++) {
                     Variable variable = variables.get(j);
                     Double score = varToScore.get(variable);
-                    rowData[j + dataIndex] = PlugInUtilities.formatProbability(score);
+                    rowData[j + dataIndex] = score;
                 }
                 tableData.add(rowData);
             }
