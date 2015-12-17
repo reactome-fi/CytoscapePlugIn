@@ -4,8 +4,10 @@
  */
 package org.reactome.cytoscape.fipgm;
 
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ import org.gk.graphEditor.SelectionMediator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.SampleListComponent;
+import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -44,6 +47,8 @@ public class FIPGMSampleListComponent extends SampleListComponent {
     private Selectable infTableHandler;
     private Selectable obsTableHandler;
     private Selectable networkHandler;
+    // Just cache a copy for helping
+    private TableHelper tableHelper;
     
     /**
      * Default constructor.
@@ -81,8 +86,72 @@ public class FIPGMSampleListComponent extends SampleListComponent {
         selectable = new NetworkViewSelectionHandler();
         selectionMediator.addSelectable(selectable);
         networkHandler = selectable;
+        // Modify the text a little bit
+        highlightViewBtn.setText("Highlight network for sample");
     }
     
+    @Override
+    protected void registerRadioButton() {
+        PlugInObjectManager.getManager().registerRadioButton("HighlightNetwork",
+                                                             highlightViewBtn);
+    }
+    
+    @Override
+    protected void handleViewBtnSelectionEvent() {
+        FIPGMResults results = FIPGMResults.getResults();
+        Set<Variable> geneVars = getDisplayedVariables();
+        Map<String, Map<Variable, Double>> sampleToVarToScore = results.getSampleToVarToScore(geneVars);
+        double[] minMaxScore = getMinMaxScore(sampleToVarToScore);
+        FIPGMImpactVisualStyle style = new FIPGMImpactVisualStyle();
+        style.setMinMaxGeneValues(minMaxScore);
+        // Need to recreate visual style so that node sizes can be reset.
+        style.setVisualStyle(networkView, true);
+        highlightViewFromSample();
+    }
+    
+    private double[] getMinMaxScore(Map<String, Map<Variable, Double>> sampleToVarToScore) {
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+        for (Map<Variable, Double> varToScore : sampleToVarToScore.values()) {
+            for (Double score : varToScore.values()) {
+                if (score > max)
+                    max = score;
+                if (score < min)
+                    min = score;
+            }
+        }
+        return new double[]{min, max};
+    }
+    
+    private Set<Variable> getDisplayedVariables() {
+        FIPGMResults results = FIPGMResults.getResults();
+        if (results == null || networkView == null || networkView.getModel() == null)
+            return new HashSet<>();
+        Set<String> genes = PlugInUtilities.getDisplayedGenesInNetwork(networkView.getModel());
+        Map<String, Variable> nameToVar = results.getNameToVariable();
+        Set<Variable> geneVars = new HashSet<>();
+        for (String gene : genes) {
+            Variable var = nameToVar.get(gene);
+            if (var != null)
+                geneVars.add(nameToVar.get(gene));
+        }
+        return geneVars;
+    }
+    
+    @Override
+    protected void highlightViewFromSample() {
+        if (!highlightViewBtn.isSelected() || networkView == null || networkView.getModel() == null)
+            return;
+        if (tableHelper == null)
+            tableHelper = new TableHelper();
+        FIPGMSampleInferenceModel model = (FIPGMSampleInferenceModel) inferenceTable.getModel();
+        Map<String, Double> geneToScore = model.getGeneToScore();
+        tableHelper.storeNodeAttributesByName(networkView.getModel(),
+                                              FIVisualStyle.GENE_VALUE_ATT,
+                                              geneToScore);
+        networkView.updateView();
+    }
+
     private void handleNetworkSelection(RowsSetEvent e) {
         if(!e.containsColumn(CyNetwork.SELECTED))
             return;
@@ -96,6 +165,7 @@ public class FIPGMSampleListComponent extends SampleListComponent {
                                  boolean isForObservation) {
         table.clearSelection();
         if (selectedGenes != null && selectedGenes.size() > 0) {
+            int firstIndex = -1;
             ListSelectionModel selectionModel = table.getSelectionModel();
             selectionModel.setValueIsAdjusting(true);
             for (int i = 0; i < table.getRowCount(); i++) {
@@ -104,10 +174,17 @@ public class FIPGMSampleListComponent extends SampleListComponent {
                     int index = name.indexOf("_");
                     name = name.substring(0, index);
                 }
-                if (selectedGenes.contains(name))
+                if (selectedGenes.contains(name)) {
                     selectionModel.addSelectionInterval(i, i);
+                    if (firstIndex == -1)
+                        firstIndex = i;
+                }
             }
             selectionModel.setValueIsAdjusting(false);
+            if (firstIndex > -1) {
+                Rectangle rect = table.getCellRect(firstIndex, 0, false);
+                table.scrollRectToVisible(rect);
+            }
         }
     }
     
@@ -210,21 +287,18 @@ public class FIPGMSampleListComponent extends SampleListComponent {
         public FIPGMSampleInferenceModel() {
         }
         
-        private Set<Variable> getDisplayedVariables() {
-            FIPGMResults results = FIPGMResults.getResults();
-            if (results == null || networkView == null || networkView.getModel() == null)
-                return new HashSet<>();
-            Set<String> genes = PlugInUtilities.getDisplayedGenesInNetwork(networkView.getModel());
-            Map<String, Variable> nameToVar = results.getNameToVariable();
-            Set<Variable> geneVars = new HashSet<>();
-            for (String gene : genes) {
-                Variable var = nameToVar.get(gene);
-                if (var != null)
-                    geneVars.add(nameToVar.get(gene));
+        public Map<String, Double> getGeneToScore() {
+            Map<String, Double> geneToScore = new HashMap<>();
+            if (data != null) {
+                for (List<Object> row : data) {
+                    String gene = (String) row.get(0);
+                    Double score = (Double) row.get(1);
+                    geneToScore.put(gene, score);
+                }
             }
-            return geneVars;
+            return geneToScore;
         }
-
+        
         @Override
         protected void resetData() {
             data.clear();

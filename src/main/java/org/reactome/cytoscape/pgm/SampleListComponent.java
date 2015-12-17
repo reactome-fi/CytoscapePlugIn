@@ -60,7 +60,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     private JLabel typeBox;
     protected JTable observationTable;
     protected JTable inferenceTable;
-    private JRadioButton highlightPathwayBtn;
+    protected JRadioButton highlightViewBtn;
     // Data to be displayed
     private Map<String, String> sampleToType;
     // Cached information for display
@@ -148,20 +148,19 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         inferenceTable = new JTable(inferenceModel);
         inferenceTable.setRowSorter(inferenceSorter);
         inferencePane.add(new JScrollPane(inferenceTable), BorderLayout.CENTER);
-        highlightPathwayBtn = new JRadioButton("Highlight pathway for sample");
-        PlugInObjectManager.getManager().registerRadioButton("HighlightPathway",
-                                                             highlightPathwayBtn);
-        highlightPathwayBtn.addItemListener(new ItemListener() {
+        highlightViewBtn = new JRadioButton("Highlight pathway for sample");
+        registerRadioButton();
+        highlightViewBtn.addItemListener(new ItemListener() {
             
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED)
-                    highlightPathwayFromSample();
+                    handleViewBtnSelectionEvent();
             }
         });
         
-        highlightPathwayBtn.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
-        inferencePane.add(highlightPathwayBtn, BorderLayout.SOUTH);
+        highlightViewBtn.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+        inferencePane.add(highlightViewBtn, BorderLayout.SOUTH);
         inferenceTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             
             @Override
@@ -171,6 +170,15 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
             }
         });
         return inferencePane;
+    }
+    
+    protected void handleViewBtnSelectionEvent() {
+        highlightViewFromSample();
+    }
+
+    protected void registerRadioButton() {
+        PlugInObjectManager.getManager().registerRadioButton("HighlightPathway",
+                                                             highlightViewBtn);
     }
     
     protected void handleInferenceTableSelection() {
@@ -250,11 +258,11 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         observationModel.setSample(selectedSample);
         SampleModel inferenceModel = (SampleModel) inferenceTable.getModel();
         inferenceModel.setSample(selectedSample);
-        highlightPathwayFromSample();
+        highlightViewFromSample();
     }
     
-    private void highlightPathwayFromSample() {
-        if (!highlightPathwayBtn.isSelected() || highlightControlPane == null)
+    protected void highlightViewFromSample() {
+        if (!highlightViewBtn.isSelected() || highlightControlPane == null)
             return;
         SampleInferenceModel model = (SampleInferenceModel) inferenceTable.getModel();
         Map<String, Double> idToValue = model.getIdToValue();

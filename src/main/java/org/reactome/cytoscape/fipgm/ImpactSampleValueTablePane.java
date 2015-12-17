@@ -206,8 +206,10 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
                     Variable variable = variables.get(j);
                     Double score = varToScore.get(variable);
                     rowData[3 * j + 1] = score;
-                    List<Double> randomIPAs = varToRandomScores.get(variable);
-                    double pvalue = PlugInUtilities.calculateIPAPValue(score, randomIPAs);
+                    List<Double> randomScores = varToRandomScores.get(variable);
+                    double pvalue = PlugInUtilities.calculateNominalPValue(score,
+                                                                           randomScores,
+                                                                           "right");
                     rowData[3 * j + 2] = pvalue;
                 }
                 tableData.add(rowData);

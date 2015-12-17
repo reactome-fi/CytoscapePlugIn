@@ -9,8 +9,11 @@ import java.awt.Component;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +21,7 @@ import java.util.Set;
 
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.event.ListSelectionEvent;
@@ -27,6 +31,8 @@ import javax.swing.table.TableModel;
 import org.apache.commons.math.MathException;
 import org.cytoscape.view.model.CyNetworkView;
 import org.gk.graphEditor.PathwayEditor;
+import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.Variable;
 
@@ -39,6 +45,7 @@ public class ImpactGeneValueTablePane extends ImpactSampleValueTablePane {
     public static final String TITLE = "Impact Gene Values";
     
     private FilterableTTestTablePlotPane tTestPane;
+    private JRadioButton highlightNetworkBtn;
     // Two flags to control action
     private boolean isFromTable;
     private boolean isFromNetwork;
@@ -96,6 +103,20 @@ public class ImpactGeneValueTablePane extends ImpactSampleValueTablePane {
         }
         controlToolBar.add(ipaLabel);
         controlToolBar.add(closeGlue);
+        
+        // For network size-based highlighting
+        highlightNetworkBtn = new JRadioButton("Highlight Network");
+        PlugInObjectManager.getManager().registerRadioButton("HighlightNetwork", highlightNetworkBtn);
+        highlightNetworkBtn.addItemListener(new ItemListener() {
+            
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED)
+                    _highlightNetwork();
+            }
+        });
+        controlToolBar.add(highlightNetworkBtn);
+        
         JButton showAllResultsBtn = new JButton("Show All Results");
         showAllResultsBtn.addActionListener(new ActionListener() {
             
@@ -106,6 +127,40 @@ public class ImpactGeneValueTablePane extends ImpactSampleValueTablePane {
         });
         controlToolBar.add(showAllResultsBtn);
         controlToolBar.add(closeBtn);
+    }
+    
+    public void selectViewButtonWithoutFiringEvent() {
+        ItemListener[] listeners = highlightNetworkBtn.getItemListeners();
+        if (listeners != null && listeners.length > 0)
+            for (ItemListener l : listeners)
+                highlightNetworkBtn.removeItemListener(l);
+        highlightNetworkBtn.setSelected(true);
+        if (listeners != null && listeners.length > 0)
+            for (ItemListener l : listeners)
+                highlightNetworkBtn.addItemListener(l);
+    }
+    
+    private void _highlightNetwork() {
+        Map<String, Double> geneToScore = getGeneToScore();
+        TableHelper tableHelper = new TableHelper();
+        tableHelper.storeNodeAttributesByName(view.getModel(),
+                                              FIVisualStyle.GENE_VALUE_ATT,
+                                              geneToScore);
+        FIPGMImpactVisualStyle style = new FIPGMImpactVisualStyle();
+        // Need to recreate visual style so that node sizes can be reset.
+        style.setVisualStyle(view, true);
+        view.updateView();
+    }
+    
+    private Map<String, Double> getGeneToScore() {
+        TableModel model = (TableModel) tTestPane.getResultTable().getModel();
+        Map<String, Double> geneToScore = new HashMap<>();
+        for (int i = 0; i < model.getRowCount(); i++) {
+            String gene = (String) model.getValueAt(i, 0);
+            Double score = new Double(model.getValueAt(i, 1).toString());
+            geneToScore.put(gene, score);
+        }
+        return geneToScore;
     }
 
     @Override

@@ -33,6 +33,7 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  */
 public class FIPGMImpactVisualStyle extends FIVisualStyleImpl {
     private CyNetworkViewManager viewManager;
+    private double[] minMaxGeneValues;
     
     /**
      * Default constructor.
@@ -40,6 +41,14 @@ public class FIPGMImpactVisualStyle extends FIVisualStyleImpl {
     public FIPGMImpactVisualStyle() {
     }
     
+    public double[] getMinMaxGeneValues() {
+        return minMaxGeneValues;
+    }
+
+    public void setMinMaxGeneValues(double[] minMaxGeneValues) {
+        this.minMaxGeneValues = minMaxGeneValues;
+    }
+
     public CyNetworkViewManager getViewManager() {
         return viewManager;
     }
@@ -72,6 +81,8 @@ public class FIPGMImpactVisualStyle extends FIVisualStyleImpl {
     }
     
     private double[] getGeneScoreRange(CyNetworkView view) {
+        if (minMaxGeneValues != null)
+            return minMaxGeneValues;
         Map<Long, Object> idToValue = new HashMap<Long, Object>();
         TableHelper helper = new TableHelper();
         if (viewManager != null) {

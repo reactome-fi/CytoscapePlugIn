@@ -497,7 +497,7 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
                     if (view1 == view)
                         continue;
                     if (tableHelper.isReactomeNetwork(view1))
-                        style.setVisualStyle(view1, false); // Now we should not recrease a new style since the size has been set now.
+                        style.setVisualStyle(view1, false); // Now we should not create a new style since the size has been set now.
                 }
             }
             progressPane.setText("Layouting FI network...");

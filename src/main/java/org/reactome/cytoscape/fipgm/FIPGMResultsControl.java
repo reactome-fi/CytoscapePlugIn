@@ -54,6 +54,7 @@ public class FIPGMResultsControl {
                                                                                                               ImpactGeneValueTablePane.TITLE);
         // Need to call this method in case the network is the first one to be displayed.
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
+        valuePane.selectViewButtonWithoutFiringEvent();
 //        valuePane.showResults();
     }
     
