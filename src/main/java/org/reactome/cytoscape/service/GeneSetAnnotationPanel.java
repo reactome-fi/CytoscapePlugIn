@@ -52,9 +52,10 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
         controlToolBar.addSeparator();
         controlToolBar.add(filterLabel);
         Double fdrValues[] = new Double[] {
-                0.001d, 0.005d, 0.01d, 0.05d, 0.10d, 0.25d, 0.50d, 1.00d
+                0.0001d, 0.001d, 0.005d, 0.01d, 0.05d, 0.10d, 0.25d, 0.50d, 1.00d
         };
         fdrFilter = new JComboBox(fdrValues);
+        fdrFilter.setEditable(true); // Enable editable for customized data.
         fdrFilter.setFont(font);
         fdrFilter.setSelectedItem(0.25d); // Default
         JLabel fdrLabel = new JLabel(" FDR");
@@ -294,14 +295,23 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
                         row[start ++] = String.format("%.4f", annot.getRatioOfTopic());
                         row[start ++] = annot.getNumberInTopic() + "";
                         row[start ++] = annot.getHitNumber() + "";
-                        row[start ++] = String.format("%.4f", annot.getPValue());
-                        row[start ++] = annot.getFdr() + "";
+                        row[start ++] = formatPValue(annot.getPValue());
+                        String fdr = annot.getFdr(); // FDRs are calculated based on Benjamni-Hocherber.
+                                                     // It should be safe to convert it into double
+                        row[start ++] = formatPValue(new Double(fdr));
                         row[start] = StringUtils.join(",", annot.getHitIds());
                         tableData.add(row);
                     }
                 }
             }
             fireTableDataChanged();
+        }
+        
+        protected String formatPValue(double pvalue) {
+            if (pvalue < 0.01)
+                return String.format("%.4E", pvalue);
+            else
+                return String.format("%.4f", pvalue);
         }
 
     }

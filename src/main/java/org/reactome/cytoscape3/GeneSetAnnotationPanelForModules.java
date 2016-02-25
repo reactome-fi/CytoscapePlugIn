@@ -137,8 +137,10 @@ public class GeneSetAnnotationPanelForModules extends GeneSetAnnotationPanel {
                     row[start ++] = String.format("%.4f", annot.getRatioOfTopic());
                     row[start ++] = annot.getNumberInTopic() + "";
                     row[start ++] = annot.getHitNumber() + "";
-                    row[start ++] = String.format("%.4f", annot.getPValue());
-                    row[start ++] = annot.getFdr() + "";
+                    row[start ++] = formatPValue(annot.getPValue());
+                    String fdr = annot.getFdr(); // FDRs are calculated based on Benjamni-Hocherber.
+                    // It should be safe to convert it into double
+                    row[start ++] = formatPValue(new Double(fdr));
                     row[start] = StringUtils.join(",", annot.getHitIds());
                     tableData.add(row);
                 }

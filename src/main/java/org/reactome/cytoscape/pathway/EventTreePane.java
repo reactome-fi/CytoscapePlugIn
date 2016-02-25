@@ -1030,7 +1030,11 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             }
             else {
                 setBackgroundNonSelectionColor(getFDRColor(annotation));
-                setText(event.name + " (FDR: " + annotation.getFdr() + ")");
+                String fdr = annotation.getFdr();
+                if (!fdr.startsWith("<")) {
+                    fdr = PlugInUtilities.formatProbability(new Double(fdr));
+                }
+                setText(event.name + " (FDR: " + fdr + ")");
             }
             if (event.isPathway)
                 setIcon(pathwayIcon);
