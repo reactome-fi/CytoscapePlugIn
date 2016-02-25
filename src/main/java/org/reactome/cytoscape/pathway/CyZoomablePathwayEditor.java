@@ -406,6 +406,14 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         });
         popup.add(searchDiagram);
         
+        addExportDiagramMenu(popup);
+        
+        popup.show(getPathwayEditor(),
+                   e.getX(),
+                   e.getY());
+    }
+
+    protected void addExportDiagramMenu(JPopupMenu popup) {
         JMenuItem exportDiagram = new JMenuItem("Export Diagram");
         exportDiagram.addActionListener(new ActionListener() {
             
@@ -424,10 +432,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             }
         });
         popup.add(exportDiagram);
-        
-        popup.show(getPathwayEditor(),
-                   e.getX(),
-                   e.getY());
     }
     
     /**
@@ -540,10 +544,13 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 popup.add(queryGeneCard);
             }
         }
-        if (popup != null)
+        if (popup != null) {
+            popup.addSeparator();
+            addExportDiagramMenu(popup);
             popup.show(getPathwayEditor(),
                        event.getX(),
                        event.getY());
+        }
     }
     
     private JMenuItem createQueryFISourceMenuItem(RenderableInteraction interaction) {
@@ -609,8 +616,15 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             doPathwayPopup(event);
             return;
         }
-        if (selection.size() != 1)
+        if (selection.size() != 1) {
+            // Add a feature to export selected diagrams
+            JPopupMenu popup = new JPopupMenu();
+            addExportDiagramMenu(popup);
+            popup.show(getPathwayEditor(), 
+                       event.getX(),
+                       event.getY());
             return;
+        }
         Renderable r = selection.get(0);
         if (r.getReactomeId() == null) {
             doPopupForNewObject(r, event);
@@ -717,6 +731,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 popup.add(removeFIs);
             }
         }
+        popup.addSeparator();
+        addExportDiagramMenu(popup);
         popup.show(getPathwayEditor(), 
                    event.getX(),
                    event.getY());
