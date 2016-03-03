@@ -28,6 +28,7 @@ import java.util.Set;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.RowSorter;
@@ -82,6 +83,7 @@ import org.osgi.framework.BundleEvent;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
+import org.reactome.cytoscape.fipgm.FIPGMSampleListComponent;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
@@ -459,9 +461,19 @@ public class PlugInUtilities {
         int index = PlugInUtilities.getCytoPanelComponent(cytoPanel, 
                                                           title);
         // The class should return itself in method getComponent() to make this work
-        if (index > -1) 
+        if (index > -1) {
             component = (CytoPanelComponent) cytoPanel.getComponentAt(index); 
-        else {
+            // Make sure component is the required type
+            if(!cytoPanelCls.isInstance(component)) {
+                // A little bit hack way
+                if (cytoPanel instanceof JPanel) {
+                    JPanel pane = (JPanel) cytoPanel;
+                    pane.getParent().remove(pane);
+                    index = -1;
+                }
+            }
+        }
+        if (index < 0) {
             component = (CytoPanelComponent) cytoPanelCls.newInstance();
             index = cytoPanel.indexOfComponent(component.getComponent());
         }

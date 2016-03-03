@@ -217,6 +217,7 @@ public class FactorGraphAnalyzer {
         inferenceRunner.setProgressPane(progressPane);
         inferenceRunner.setAlgorithms(FactorGraphRegistry.getRegistry().getLoadedAlgorithms());
         inferenceRunner.setHiliteControlPane(this.hiliteControlPane);
+        inferenceRunner.setPathwayEditor(this.pathwayEditor);
         // Now call for inference
         inferenceRunner.performInference(true);
     }

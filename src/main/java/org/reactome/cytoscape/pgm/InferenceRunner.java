@@ -14,6 +14,7 @@ import java.util.Map;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.math.MathException;
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.MessageDialog;
@@ -46,6 +47,8 @@ public class InferenceRunner {
     private boolean usedForTwoCases;
     // For highlighting
     private PathwayHighlightControlPanel hiliteControlPane;
+    // For synnchronizeation
+    private PathwayEditor pathwayEditor;
     
     /**
      * Default constructor.
@@ -53,6 +56,14 @@ public class InferenceRunner {
     public InferenceRunner() {
     }
     
+    public PathwayEditor getPathwayEditor() {
+        return pathwayEditor;
+    }
+
+    public void setPathwayEditor(PathwayEditor pathwayEditor) {
+        this.pathwayEditor = pathwayEditor;
+    }
+
     public PathwayHighlightControlPanel getHiliteControlPane() {
         return hiliteControlPane;
     }
@@ -161,6 +172,7 @@ public class InferenceRunner {
     private void showInferenceResults(FactorGraphInferenceResults fgResults) throws MathException, IllegalAccessException, InstantiationException {
         InferenceResultsControl control = new InferenceResultsControl();
         control.setHiliteControlPane(hiliteControlPane);
+        control.setPathwayEditor(pathwayEditor);
         control.showInferenceResults(fgResults);
     }
     

@@ -29,12 +29,15 @@ import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.session.events.SessionLoadedEvent;
+import org.cytoscape.session.events.SessionLoadedListener;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
+import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.service.AnimationPlayer;
 import org.reactome.cytoscape.service.AnimationPlayerControl;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
@@ -94,6 +97,18 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                 }
             }
         };
+        // Most likely SessionAboutToBeLoadedListener should be used in 3.1.0.
+        SessionLoadedListener sessionListener = new SessionLoadedListener() {
+            
+            @Override
+            public void handleEvent(SessionLoadedEvent e) {
+                getParent().remove(SampleListComponent.this);
+            }
+        };
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        context.registerService(SessionLoadedListener.class.getName(),
+                                sessionListener, 
+                                null);
     }
 
     private void initGUIs() {
