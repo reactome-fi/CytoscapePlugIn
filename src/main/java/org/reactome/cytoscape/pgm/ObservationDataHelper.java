@@ -199,6 +199,7 @@ public class ObservationDataHelper {
                                            File geneExpFile,
                                            ProgressPane progressPane,
                                            ObservationFileLoader dataLoader) throws IOException {
+//        System.out.println("Loading data to fg: " + fg.getName());
         List<ObservationData> observationData = null;
         // If both dnaFile and geneExpFile are null, we should use the cached data
         if (dnaFile == null && geneExpFile == null) {

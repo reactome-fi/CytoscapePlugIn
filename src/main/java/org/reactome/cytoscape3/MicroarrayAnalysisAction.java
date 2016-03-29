@@ -15,7 +15,7 @@ public class MicroarrayAnalysisAction extends FICytoscapeAction
 
     public MicroarrayAnalysisAction(CySwingApplication desktopApp)
     {
-        super("Microarray Data Analysis");
+        super("Gene Expression Analysis");
         setPreferredMenu("Apps.Reactome FI");
         setMenuGravity(20.0f);
         this.desktopApp = desktopApp;

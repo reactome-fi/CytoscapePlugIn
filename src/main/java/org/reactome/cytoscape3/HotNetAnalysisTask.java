@@ -95,27 +95,28 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
             progPane.setIndeterminate(false);
             progPane.setText("Choosing HotNet modules...");
             List<HotNetModule> selectedModules = displayModules(hotNetResult);
-            CyNetwork network = null;
-            if (selectedModules != null && !selectedModules.isEmpty())
-            {
-                progPane.setText("Building FI network...");
-                progPane.setIndeterminate(true);
-                network = buildFINetwork(selectedModules,
-                                         sampleToGenes);
+            if (selectedModules == null || selectedModules.isEmpty()) {
+                // Maybe canceled or nothing displayed.
+                // Just remove the glass pane silently
+                desktopApp.getJFrame().getGlassPane().setVisible(false);
+                return;
+            }
+            progPane.setText("Building FI network...");
+            progPane.setIndeterminate(true);
+            CyNetwork network = buildFINetwork(selectedModules,
+                                               sampleToGenes);
+            if (network == null || network.getNodeCount() <= 0) {
+                JOptionPane.showMessageDialog(desktopApp.getJFrame(),
+                                              "Cannot find any functional interaction among provided genes.\n"
+                                                      + "No network can be constructed.",
+                                                      "Empty Network", 
+                                                      JOptionPane.INFORMATION_MESSAGE);
+                desktopApp.getJFrame().getGlassPane().setVisible(false);
+                return;
             }
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             TableFormatter tableFormatter = (TableFormatter) context.getService(tableFormatterServRef);
             tableFormatter.makeHotNetAnalysisTables(network);
-            if (network == null || network.getNodeCount() <= 0)
-            {
-                JOptionPane.showMessageDialog(desktopApp.getJFrame(),
-                                              "Cannot find any functional interaction among provided genes.\n"
-                                                      + "No network can be constructed.\n"
-                                                      + "Note: only human gene names are supported.",
-                                                      "Empty Network", JOptionPane.INFORMATION_MESSAGE);
-                desktopApp.getJFrame().getGlassPane().setVisible(false);
-                return;
-            }
             network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", "FI Network for HotNet Analysis");
             Map<String, Integer> nodeToModule = new HashMap<String, Integer>();
             for (int i = 0; i < selectedModules.size(); i++) {

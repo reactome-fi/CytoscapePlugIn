@@ -45,6 +45,8 @@
 				<include name="org/reactome/pathway/factorgraph/*.class" />
 				<exclude name="org/reactome/pathway/factorgraph/DRMAAJobScheduler*.class" />
 				<exclude name="org/reactome/pathway/factorgraph/AlgorithmTester*.class" />
+				<include name="org/reactome/fi/pgm/*.class" />
+				<exclude name="org/reactome/fi/pgm/AlgorithmTester*.class" />
 			</fileset>
 		</jar>
 		<exec executable="${targetDir}/installJar.sh">

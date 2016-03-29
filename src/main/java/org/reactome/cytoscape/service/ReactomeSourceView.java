@@ -94,6 +94,7 @@ public class ReactomeSourceView {
         }
         
         private void init() {
+            setTitle("Reactome Instance View");
             htmlPane = new JEditorPane();
             htmlPane.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
             htmlPane.setEditable(false);

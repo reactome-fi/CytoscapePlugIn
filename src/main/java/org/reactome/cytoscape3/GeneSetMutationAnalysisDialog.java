@@ -196,7 +196,7 @@ public class GeneSetMutationAnalysisDialog extends FIActionDialog {
         constraints.weightx = 0.0d;
         fetchFIAnnotations = new JCheckBox("Fetch FI annotations");
         JLabel label = new JLabel("* Annotations may be fetched later.");
-        label.setFont(font2);
+        label.setFont(font2.deriveFont(Font.ITALIC, font2.getSize2D() - 1.0f));
         constructPanel.add(fetchFIAnnotations, constraints);
         constraints.gridy = 1;
         constraints.insets = new Insets(0, 4, 0, 4);

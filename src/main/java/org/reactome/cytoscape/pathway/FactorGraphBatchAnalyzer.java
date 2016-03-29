@@ -88,8 +88,11 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
             List<FactorGraph> failedFGs = new ArrayList<FactorGraph>();
             boolean isAborted = false;
             for (FactorGraph fg : factorGraphs) {
-                progressPane.setText("Analyzing " + fg.getName());
-                progressPane.setValue(count);
+                progressPane.setText("Analyzing " + fg.getName() + 
+                                     " (" + count + "/" + factorGraphs.size() + ")");
+                // Since progressPane is used by other process, show the progress in the title
+                // as above.
+//                progressPane.setValue(count);
                 PathwayResultSummary result = null;
                 try {
                     result = runFactorGraphAnalysis(fg, 

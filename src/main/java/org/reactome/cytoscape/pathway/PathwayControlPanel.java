@@ -141,12 +141,18 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                     switchToOverview(pathwayFrame);
                 }
             }
+
+            @Override
+            public void internalFrameClosed(InternalFrameEvent e) {
+                if(PathwayDiagramRegistry.getRegistry().getSelectedPathwayFrame() == null) {
+                    resetOverviewPane();
+                }
+            }
             
         };
         PathwayDiagramRegistry.getRegistry().addInternalFrameListener(listener);
         
         PropertyChangeListener propListener = new PropertyChangeListener() {
-            
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 String propName = evt.getPropertyName();

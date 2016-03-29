@@ -70,8 +70,7 @@ public class FIPlugInHelper {
         Properties prop = PlugInObjectManager.getManager().getProperties();
         String clsName = prop.getProperty("networkService",
                 "org.reactome.cytoscape.service.LocalService");
-        FINetworkService networkService = (FINetworkService) Class.forName(
-                clsName).newInstance();
+        FINetworkService networkService = (FINetworkService) Class.forName(clsName).newInstance();
         return networkService;
     }
 

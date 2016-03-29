@@ -126,6 +126,7 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "Cannot construct a FI network: No interaction cannot be found.",
                                               "Empty Network", JOptionPane.INFORMATION_MESSAGE);
+                frame.getGlassPane().setVisible(false);
                 return;
             }
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
