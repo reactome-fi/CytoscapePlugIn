@@ -2,12 +2,14 @@ package org.reactome.cytoscape3;
 
 import java.awt.Font;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JLabel;
+import javax.swing.table.TableRowSorter;
 
 import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.r3.util.InteractionUtilities;
@@ -53,6 +55,35 @@ public class NetworkModuleBrowser extends NetworkModulePanel {
                                 String.format("%.4f", modularity));
     }
     
+    @Override
+    protected TableRowSorter<NetworkModuleTableModel> createTableRowSorter(NetworkModuleTableModel model) {
+        return new ModuleTableSorter(model);
+    }
+
+    private class ModuleTableSorter extends TableRowSorter<NetworkModuleTableModel> {
+        
+        public ModuleTableSorter(NetworkModuleTableModel model) {
+            super(model);
+        }
+
+        @Override
+        public Comparator<?> getComparator(int column) {
+            if (column == 5)
+                return super.getComparator(column);
+            // Change to double sorter
+            Comparator<String> comparator = new Comparator<String>() {
+                @Override
+                public int compare(String o1, String o2) {
+                    Double d1 = new Double(o1);
+                    Double d2 = new Double(o2);
+                    return d1.compareTo(d2);
+                }
+            };
+            return comparator;
+        }
+        
+    }
+
     private class ModuleTableModel extends NetworkModuleTableModel {
         
         public ModuleTableModel() {

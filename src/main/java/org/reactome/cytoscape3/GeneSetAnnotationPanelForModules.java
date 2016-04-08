@@ -18,6 +18,7 @@ import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.table.TableRowSorter;
 
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
@@ -99,6 +100,49 @@ public class GeneSetAnnotationPanelForModules extends GeneSetAnnotationPanel {
         return new AnnotationTableModelForModules();
     }
 
+    @Override
+    protected TableRowSorter<NetworkModuleTableModel> createTableRowSorter(NetworkModuleTableModel model) {
+        return new AnnotationTableRowSorterForModules(model);
+    }
+
+    /**
+     * Sorter for table models for modules.
+     * @author gwu
+     *
+     */
+    private class AnnotationTableRowSorterForModules extends TableRowSorter<NetworkModuleTableModel> {
+        
+        public AnnotationTableRowSorterForModules(NetworkModuleTableModel model) {
+            super(model);
+        }
+
+        @Override
+        public Comparator<?> getComparator(int column) {
+            if (column == 1 || column == 7)
+                return super.getComparator(column);
+            // Something special for FDR since it may contains "<"
+            Comparator<String> comparator = new Comparator<String>() {
+                public int compare(String value1, String value2) {
+                    if (value1.startsWith("<") && value2.startsWith("<")) {
+                        String value11 = value1.substring(1);
+                        String value21 = value2.substring(1);
+                        return new Double(value11).compareTo(new Double(value21));
+                    }
+                    else if (value1.startsWith("<"))
+                        return -1;
+                    else if (value2.startsWith("<"))
+                        return 1;
+                    else {
+                        Double d1 = new Double(value1);
+                        Double d2 = new Double(value2);
+                        return d1.compareTo(d2);
+                    }
+                }
+            };
+            return comparator;
+        }
+    }
+    
     protected class AnnotationTableModelForModules extends AnnotationTableModel {
         private String[] moduleHeaders = new String[] {
                 "Module",
