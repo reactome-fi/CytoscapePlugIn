@@ -1052,7 +1052,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                     return fdrColors.get(0);
                 if (value >= 0.01d)
                     return fdrColors.get(1);
-                return fdrColors.get(2);
+                if (value >= 0.001d)
+                    return fdrColors.get(2);
+                return fdrColors.get(3);
             }
         }
     }
