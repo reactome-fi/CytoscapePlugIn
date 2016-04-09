@@ -136,11 +136,13 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED)
-                    _highlightPathway();
+                    highlightPathway();
             }
         });
         PlugInObjectManager.getManager().registerRadioButton("HighlightPathway",
                                                              highlightPathwayBtn);
+        // This should be selected as default
+        highlightPathwayBtn.setSelected(true);
         controlToolBar.add(highlightPathwayBtn);
         recheckOutuptBtn = new JButton("Reset Cutoffs");
         recheckOutuptBtn.addActionListener(new ActionListener() {
@@ -550,10 +552,6 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         }
     }
     
-    public void highlightPathway() {
-        highlightPathwayBtn.setSelected(true);
-    }
-    
     public PathwayHighlightControlPanel getHiliteControlPane() {
         return hiliteControlPane;
     }
@@ -562,7 +560,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         this.hiliteControlPane = hiliteControlPane;
     }
 
-    private void _highlightPathway() {
+    public void highlightPathway() {
         if (!highlightPathwayBtn.isSelected() || hiliteControlPane == null)
             return;
         // Highlight pathway diagram
