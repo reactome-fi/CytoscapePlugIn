@@ -35,6 +35,8 @@ import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.Selectable;
+import org.gk.graphEditor.SelectionMediator;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
 import org.osgi.framework.BundleContext;
@@ -55,7 +57,7 @@ import org.reactome.r3.util.MathUtilities;
  * @author gwu
  *
  */
-public class SampleListComponent extends JPanel implements CytoPanelComponent {
+public class SampleListComponent extends JPanel implements CytoPanelComponent, Selectable {
     public static final String TITLE = "Sample List";
     // GUIs
     protected JComboBox<String> sampleBox;
@@ -76,6 +78,8 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     private PathwayHighlightControlPanel highlightControlPane;
     private double minIPA;
     private double maxIPA;
+    // A flag to block row selection sync
+    protected boolean blockRowSelectionSync;
     
     public SampleListComponent() {
         init();
@@ -109,6 +113,28 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         context.registerService(SessionLoadedListener.class.getName(),
                                 sessionListener, 
                                 null);
+        synchronizeSampleSelection();
+    }
+    
+    /**
+     * TODO: The implementation of this method may cause a memory leak. Need to remove the registration
+     * of this object after it is closed.
+     */
+    private void synchronizeSampleSelection() {
+        // Register this as a sample selection listener if needed
+        final SelectionMediator mediator = FactorGraphRegistry.getRegistry().getSampleSelectionMediator();
+        List<?> selectables = mediator.getSelectables();
+        if (selectables == null || !selectables.contains(this))
+            mediator.addSelectable(this);
+        sampleBox.addItemListener(new ItemListener() {
+            
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    mediator.fireSelectionEvent(SampleListComponent.this);
+                }
+            }
+        });
     }
 
     private void initGUIs() {
@@ -154,6 +180,31 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
         return observationModel;
     }
 
+    // The following two methods are used for synchronizing sample selection with
+    // other components showing samples.
+    /**
+     * Select a sample from selection.
+     */
+    @Override
+    public void setSelection(List selection) {
+        if (selection == null || selection.size() == 0)
+            return;
+        Object sample = selection.get(selection.size() - 1); // Used the last selected object
+        sampleBox.setSelectedItem(sample);
+    }
+
+    /**
+     * Get the displayed sample in this component.
+     */
+    @Override
+    public List getSelection() {
+        List<String> samples = new ArrayList<>();
+        String sample = (String) sampleBox.getSelectedItem();
+        if (sample != null)
+            samples.add(sample);
+        return samples;
+    }
+
     private JPanel createInferencePane() {
         JPanel inferencePane = new JPanel();
         inferencePane.setBorder(BorderFactory.createEtchedBorder());
@@ -197,10 +248,14 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
     }
     
     protected void handleInferenceTableSelection() {
+        if (blockRowSelectionSync)
+            return;
         selectionHandler.handleTableSelection(pathwayEditor, inferenceTable);
     }
     
     protected void handleObservationTableSelection() {
+        if (blockRowSelectionSync)
+            return;
         observationTableHandler.handleTableSelection(observationTable,
                                                      0);
     }
@@ -269,11 +324,50 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                 typeBox.setText(type);
         }
         // Show observation
+        // Make sure selection stuck
+        blockRowSelectionSync = true;
+        Set<String> observationSelectedValues = getSelectedValues(observationTable);
+        Set<String> inferenceSelectedValues = getSelectedValues(inferenceTable);
+        int[] inferenceSelectionRows = inferenceTable.getSelectedRows();
         SampleModel observationModel = (SampleModel) observationTable.getModel();
         observationModel.setSample(selectedSample);
+        recoverTableSelections(observationTable, observationSelectedValues);
         SampleModel inferenceModel = (SampleModel) inferenceTable.getModel();
         inferenceModel.setSample(selectedSample);
+        recoverTableSelections(inferenceTable, inferenceSelectedValues);
         highlightViewFromSample();
+        blockRowSelectionSync = false;
+    }
+    
+    private Set<String> getSelectedValues(JTable table) { 
+        Set<String> values = new HashSet<>();
+        int[] rows = table.getSelectedRows();
+        if (rows != null && rows.length > 0) {
+            for (int row : rows) {
+                String value = table.getValueAt(row, 0).toString();
+                values.add(value);
+            }
+        }
+        return values;
+    }
+    
+    private void recoverTableSelections(JTable table,
+                                        Set<String> selectedValues) {
+        if (selectedValues.size() == 0)
+            return;
+        table.clearSelection();
+        int lastRow = -1;
+        for (int i = 0; i < table.getRowCount(); i++) {
+            String value = table.getValueAt(i, 0).toString();
+            if (selectedValues.contains(value)) {
+                table.addRowSelectionInterval(i, i);
+                lastRow = i;
+            }
+        }
+        if (lastRow > -1) {
+            Rectangle rect = table.getCellRect(lastRow, 0, false);
+            table.scrollRectToVisible(rect);
+        }
     }
     
     protected void highlightViewFromSample() {
@@ -442,7 +536,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent {
                 return;
             isFromTable = true;
             SampleInferenceModel model = (SampleInferenceModel) inferenceTable.getModel();
-            List<Long> dbIds = new ArrayList<>();
+            Set<Long> dbIds = new HashSet<>();
             int[] selectedRows = inferenceTable.getSelectedRows();
             if (selectedRows != null) {
                 for (int selectedRow : selectedRows) {

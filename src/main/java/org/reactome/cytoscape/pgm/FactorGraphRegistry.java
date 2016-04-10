@@ -16,6 +16,7 @@ import javax.swing.JOptionPane;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.events.NetworkAboutToBeDestroyedEvent;
 import org.cytoscape.model.events.NetworkAboutToBeDestroyedListener;
+import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -61,6 +62,8 @@ public class FactorGraphRegistry {
     // To control if a feature warning is needed
     // As of Dec 3, 2015, the default is false: No warning is going to be shown.
     private boolean needFeatureWarning = false;
+    // List here for the time being. Probably this should be kept somewhere else
+    private SelectionMediator sampleSelectionMediator;
     
     public static final FactorGraphRegistry getRegistry() {
         if (registry == null)
@@ -99,6 +102,17 @@ public class FactorGraphRegistry {
         context.registerService(NetworkAboutToBeDestroyedListener.class.getName(),
                                 listener,
                                 null);
+    }
+    
+    /**
+     * Get a SelectionMediator for synchronizing sample selection across multiple GUIs
+     * for factor graph modeling.
+     * @return
+     */
+    public SelectionMediator getSampleSelectionMediator() {
+        if (sampleSelectionMediator == null)
+            sampleSelectionMediator = new SelectionMediator();
+        return sampleSelectionMediator;
     }
     
     public Integer getNumberOfPermtation() {

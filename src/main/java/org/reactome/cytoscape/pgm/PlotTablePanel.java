@@ -81,6 +81,10 @@ public class PlotTablePanel extends JPanel {
         jsp.setRightComponent(tableJsp);
     }
     
+    public JTable getTable() {
+        return this.contentTable;
+    }
+    
     public void setTable(JTable table) {
         this.contentTable = table;
         // Replace the original default table with this one.

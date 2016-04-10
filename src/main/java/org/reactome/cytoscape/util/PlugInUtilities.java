@@ -83,7 +83,6 @@ import org.osgi.framework.BundleEvent;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
-import org.reactome.cytoscape.fipgm.FIPGMSampleListComponent;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
@@ -327,6 +326,14 @@ public class PlugInUtilities {
      */
     public static void selectByDbIds(PathwayEditor pathwayEditor,
                                      Collection<Long> sourceIds) {
+        // Check if the passed ids are the same as ids of selected objects
+        Set<Long> originalIds = new HashSet<>();
+        List<Renderable> oldSelection = pathwayEditor.getSelection();
+        for (Renderable r : oldSelection) {
+            originalIds.add(r.getReactomeId());
+        }
+        if (sourceIds.equals(originalIds))
+            return; // No need to do anything
         List<Renderable> selection = new ArrayList<Renderable>();
         for (Object o : pathwayEditor.getDisplayedObjects()) {
             Renderable r = (Renderable) o;

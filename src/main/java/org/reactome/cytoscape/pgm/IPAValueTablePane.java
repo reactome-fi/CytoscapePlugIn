@@ -7,6 +7,7 @@ package org.reactome.cytoscape.pgm;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -24,7 +25,9 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
@@ -38,6 +41,8 @@ import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.Selectable;
+import org.gk.graphEditor.SelectionMediator;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
@@ -58,7 +63,7 @@ import org.reactome.r3.util.MathUtilities;
  * @author gwu
  *
  */
-public class IPAValueTablePane extends NetworkModulePanel {
+public class IPAValueTablePane extends NetworkModulePanel implements Selectable {
     // Cache a map from CyNode to Variable for very quick access
     protected Map<CyNode, Variable> nodeToVar;
     // Used to draw
@@ -118,6 +123,21 @@ public class IPAValueTablePane extends NetworkModulePanel {
         graphSelectionRegistration = context.registerService(GraphEditorActionListener.class.getName(),
                                                              graphListener,
                                                              null);
+        synchronizeSampleSelection();
+    }
+
+    protected void synchronizeSampleSelection() {
+        final SelectionMediator mediator = FactorGraphRegistry.getRegistry().getSampleSelectionMediator();
+        List<?> selectables = mediator.getSelectables();
+        if (selectables == null || !selectables.contains(this))
+            mediator.addSelectable(this);
+        contentPane.getTable().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                mediator.fireSelectionEvent(IPAValueTablePane.this);
+            }
+        });
     }
     
     /**
@@ -179,6 +199,19 @@ public class IPAValueTablePane extends NetworkModulePanel {
         contentPane = new PlotTablePanel("IPA", true);
         contentPane.setTable(contentTable);
         add(contentPane, BorderLayout.CENTER);
+    }
+    
+    // The following two methods are used to handle sample selection for syncrhonization.
+    @Override
+    public void setSelection(List selection) {
+        if (selection == null || selection.size() == 0)
+            return;
+        selectSamples(selection);
+    }
+
+    @Override
+    public List getSelection() {
+        return getSelectedSamples();
     }
     
     @Override
@@ -333,6 +366,46 @@ public class IPAValueTablePane extends NetworkModulePanel {
         }
         IPAValueTableModel model = (IPAValueTableModel) contentPane.getTableModel();
         model.setVarResults(varResults);
+    }
+    
+    /**
+     * Select a list of samples in this table.
+     * @param samples
+     */
+    public void selectSamples(List<String> samples) {
+        JTable table = contentPane.getTable();
+        // Clean it first
+        table.clearSelection();
+        // The first column should be the sample
+        // For scroll
+        int lastRow = -1;
+        for (int i = 0; i < table.getRowCount(); i++) {
+            Object value = table.getValueAt(i, 0);
+            if (samples.contains(value)) {
+                table.addRowSelectionInterval(i, i);
+                lastRow = i;
+            }
+        }
+        if (lastRow > -1) {
+            // Scroll
+            Rectangle rect = table.getCellRect(lastRow, 0, false);
+            table.scrollRectToVisible(rect);
+        }
+    }
+    
+    /**
+     * Get a list of selected samples.
+     * @return
+     */
+    public List<String> getSelectedSamples() {
+        List<String> samples = new ArrayList<>();
+        JTable table = contentPane.getTable();
+        int[] selectedRows = table.getSelectedRows();
+        for (int row : selectedRows) {
+            Object value = table.getValueAt(row, 0);
+            samples.add(value.toString());
+        }
+        return samples;
     }
 
     /* (non-Javadoc)

@@ -5,6 +5,7 @@
 package org.reactome.cytoscape.pgm;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.math.MathException;
@@ -12,6 +13,7 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.RenderablePathway;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -128,6 +130,7 @@ public class InferenceResultsControl {
         SampleListComponent samplePane = (SampleListComponent) PlugInUtilities.getCytoPanelComponent(SampleListComponent.class,
                                                                                                      CytoPanelName.EAST,
                                                                                                      SampleListComponent.TITLE);
+            
         samplePane.setInferenceResults(fgResults,
                                        pathwayEditor,
                                        hiliteControlPane,

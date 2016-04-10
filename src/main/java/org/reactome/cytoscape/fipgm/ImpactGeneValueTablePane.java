@@ -83,6 +83,10 @@ public class ImpactGeneValueTablePane extends ImpactSampleValueTablePane {
         adjustGUIs();
     }
     
+    @Override
+    protected void synchronizeSampleSelection() {
+    }
+    
     /**
      * A method to display results for all genes in the FI network.
      */

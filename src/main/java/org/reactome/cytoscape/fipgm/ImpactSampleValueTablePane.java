@@ -39,7 +39,7 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
      */
     public ImpactSampleValueTablePane() {
     }
-    
+
     @Override
     protected void addTablePlotPane() {
         super.addTablePlotPane();

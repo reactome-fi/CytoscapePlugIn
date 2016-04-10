@@ -97,8 +97,15 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
      */
     public IPAPathwaySummaryPane(String title) {
         super(title);
-    }        
+    }  
     
+    /**
+     * Since there is no sample listed in this GUI, don't do anything here.
+     */
+    @Override
+    protected void synchronizeSampleSelection() {
+    }
+
     public Double getMaxSampleIPA() {
         return maxSampleIPA;
     }

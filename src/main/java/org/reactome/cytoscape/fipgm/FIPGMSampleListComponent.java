@@ -228,11 +228,15 @@ public class FIPGMSampleListComponent extends SampleListComponent {
     
     @Override
     protected void handleInferenceTableSelection() {
+        if (blockRowSelectionSync)
+            return;
         selectionMediator.fireSelectionEvent(infTableHandler);
     }
     
     @Override
     protected void handleObservationTableSelection() {
+        if (blockRowSelectionSync)
+            return;
         selectionMediator.fireSelectionEvent(obsTableHandler);
     }
 
