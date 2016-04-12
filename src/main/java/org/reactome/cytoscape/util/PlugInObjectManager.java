@@ -26,6 +26,7 @@ import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.work.TaskManager;
+import org.gk.graphEditor.SelectionMediator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceReference;
@@ -67,6 +68,8 @@ public class PlugInObjectManager {
     private FIPGMConfiguration fiPGMConfig;
     // To control radio button
     private Map<String, ButtonGroup> btnNameToGroup;
+    // To synchronize selection of Reactome objects based on DB_IDs.
+    private SelectionMediator dbIdSelectionMediator;
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
@@ -95,6 +98,12 @@ public class PlugInObjectManager {
         return pathwayPGMConfig;
     }
     
+    public SelectionMediator getDBIdSelectionMediator() {
+        if (dbIdSelectionMediator == null)
+            dbIdSelectionMediator = new SelectionMediator();
+        return dbIdSelectionMediator;
+    }
+
     public void registerRadioButton(String groupName,
                                     JRadioButton button) {
         if (btnNameToGroup == null)

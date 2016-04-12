@@ -23,6 +23,7 @@ import java.util.Set;
 
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -32,6 +33,7 @@ import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
 import org.cytoscape.application.events.SetCurrentNetworkViewListener;
+import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTableUtil;
@@ -220,6 +222,49 @@ public class IPAValueTablePane extends NetworkModulePanel implements Selectable 
         initNodeToVarMap();
     }
     
+    /**
+     * Compare two selected samples.
+     */
+    protected void compareSamples() {
+        IPAValueTableModel tableModel = (IPAValueTableModel) contentPane.getTableModel();
+        // Check if we can compare two samples
+        String firstColName = tableModel.getColumnName(0);
+        if (!firstColName.equals("Sample")) {
+            JOptionPane.showMessageDialog(this,
+                                          "Cannot find selected samples for comparison!",
+                                          "No Samples Selected",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        JTable table = contentPane.getTable();
+        // Only work for two samples
+        int[] selectedRows = table.getSelectedRows();
+        if (selectedRows == null || selectedRows.length != 2) {
+            JOptionPane.showMessageDialog(this,
+                                          "Select two samples for comparison!",
+                                          "Two Samples Needed",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        String sample1 = (String) table.getValueAt(selectedRows[0], 0);
+        String sample2 = (String) table.getValueAt(selectedRows[1], 0);
+        try {
+            SampleComparisonPanel comparisonPane = (SampleComparisonPanel) PlugInUtilities.getCytoPanelComponent(SampleComparisonPanel.class,
+                                                                                                                 CytoPanelName.SOUTH, 
+                                                                                                                 SampleComparisonPanel.TITLE);
+            comparisonPane.setData(sample1, 
+                                   sample2,
+                                   fgInfResults);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(this,
+                                          "Cannot perform sample comparison: " + e,
+                                          "Error in Sample Comparison",
+                                          JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+    
     @Override
     protected void doContentTablePopup(MouseEvent e) {
         JPopupMenu popupMenu = createExportAnnotationPopup();
@@ -239,6 +284,25 @@ public class IPAValueTablePane extends NetworkModulePanel implements Selectable 
             }
         });
         popupMenu.add(item);
+        
+        // Check if we can compare two samples
+        String firstColName = tableModel.getColumnName(0);
+        if (firstColName.equals("Sample")) {
+            // Only work for two samples
+            int count = contentPane.getTable().getSelectedRowCount();
+            if (count == 2) {
+                item = new JMenuItem("Compare Samples");
+                item.addActionListener(new ActionListener() {
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        compareSamples();
+                    }
+                });
+                popupMenu.add(item);
+            }
+        }
+        
         popupMenu.show(contentTable, 
                        e.getX(), 
                        e.getY());

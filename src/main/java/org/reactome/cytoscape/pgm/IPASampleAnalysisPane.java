@@ -15,7 +15,6 @@ import java.util.Set;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.view.model.CyNetworkView;
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.graphEditor.Selectable;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;

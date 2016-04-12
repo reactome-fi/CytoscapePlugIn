@@ -75,7 +75,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     private CyNetworkView networkView;
     private ServiceRegistration networkSelectionRegistration;
     // For showing a summarized result
-    private JLabel outputResultLabel;
+    protected JLabel outputResultLabel;
     // Add a button to recheck outputs
     private JButton recheckOutuptBtn;
     // Cache these values for rechecking
@@ -89,8 +89,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     private Double maxSampleIPA;
     private Double minSampleIPA;
     // To control pathway highlight
-    private JRadioButton highlightPathwayBtn;
-    private PathwayHighlightControlPanel hiliteControlPane;
+    protected JRadioButton highlightPathwayBtn;
+    protected PathwayHighlightControlPanel hiliteControlPane;
     
     /**
      * @param title
