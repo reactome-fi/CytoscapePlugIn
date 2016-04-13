@@ -33,6 +33,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.RowSorter;
 import javax.swing.RowSorter.SortKey;
+import javax.swing.table.TableModel;
 import javax.swing.SortOrder;
 import javax.swing.SwingUtilities;
 

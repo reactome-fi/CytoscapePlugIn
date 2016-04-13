@@ -195,9 +195,9 @@ public class FIPGMSampleListComponent extends SampleListComponent {
         if (networkView == null || networkView.getModel() == null)
             return;
         String sample = (String) sampleBox.getSelectedItem();
-        SampleModel model = (SampleModel) inferenceTable.getModel();
+        SampleTableModel model = (SampleTableModel) inferenceTable.getModel();
         model.setSample(sample);
-        model = (SampleModel) observationTable.getModel();
+        model = (SampleTableModel) observationTable.getModel();
         model.setSample(sample);
     }
     
@@ -257,16 +257,16 @@ public class FIPGMSampleListComponent extends SampleListComponent {
     }
 
     @Override
-    protected SampleModel createInferenceTableModel() {
+    protected SampleTableModel createInferenceTableModel() {
         return new FIPGMSampleInferenceModel();
     }
     
     @Override
-    protected SampleModel createObservationTableModel() {
+    protected SampleTableModel createObservationTableModel() {
         return new FIPGMSampleObservationModel();
     }
 
-    private class FIPGMSampleObservationModel extends SampleObservationModel {
+    private class FIPGMSampleObservationModel extends ObservationTableModel {
         
         public FIPGMSampleObservationModel() {
         }
@@ -286,7 +286,7 @@ public class FIPGMSampleListComponent extends SampleListComponent {
         }
     }
 
-    private class FIPGMSampleInferenceModel extends SampleModel {
+    private class FIPGMSampleInferenceModel extends SampleTableModel {
         
         public FIPGMSampleInferenceModel() {
         }

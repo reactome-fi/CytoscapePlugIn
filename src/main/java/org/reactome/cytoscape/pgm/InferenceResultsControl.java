@@ -73,6 +73,7 @@ public class InferenceResultsControl {
             valuePane = (IPAValueTablePane) tableBrowserPane.getComponentAt(index);
         valuePane.setNetworkView(PopupMenuManager.getManager().getCurrentNetworkView());
         valuePane.setFGInferenceResults(fgResults);
+        valuePane.setHiliteControlPane(hiliteControlPane);
     }
     
     private void showIPAPathwayValues(FactorGraphInferenceResults fgResults) throws MathException, IllegalAccessException, InstantiationException {
@@ -94,6 +95,7 @@ public class InferenceResultsControl {
             Set<Variable> pathwayVars = getPathwayVars(fgResults.getFactorGraph());
             valuePane.setInferenceResults(fgResults, pathwayVars);
         }
+        valuePane.setHiliteControlPane(hiliteControlPane);
         // Show outputs results
         title = "IPA Pathway Analysis";
         index = PlugInUtilities.getCytoPanelComponent(tableBrowserPane, title);

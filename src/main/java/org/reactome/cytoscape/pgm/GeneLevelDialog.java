@@ -4,12 +4,15 @@
  */
 package org.reactome.cytoscape.pgm;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
 import javax.swing.JDialog;
 import javax.swing.JTable;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.SelectionMediator;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
@@ -19,16 +22,33 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  */
 public abstract class GeneLevelDialog extends JDialog {
     // For diagram selection
-    private GeneToPathwayEntityHandler handler;
+    protected GeneLevelSelectionHandler selectionHandler;
     
     /**
      * Default constructor.
      */
     public GeneLevelDialog() {
         super(PlugInObjectManager.getManager().getCytoscapeDesktop());
-        handler = new GeneToPathwayEntityHandler();
+        selectionHandler = createSelectionHandler();
+        final SelectionMediator mediator = PlugInObjectManager.getManager().getObservationVarSelectionMediator();
+        mediator.addSelectable(selectionHandler);
+        addWindowFocusListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                mediator.getSelectables().remove(selectionHandler);
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+                mediator.getSelectables().remove(selectionHandler);
+            }
+            
+        });
         init();
     }
+    
+    protected abstract GeneLevelSelectionHandler createSelectionHandler();
     
     protected abstract void init();
     
@@ -44,11 +64,7 @@ public abstract class GeneLevelDialog extends JDialog {
     }
     
     protected void handleTableSelection(JTable table) {
-        handler.handleTableSelection(table, 0);
+        selectionHandler.setGeneLevelTable(table);
+        PlugInObjectManager.getManager().getObservationVarSelectionMediator().fireSelectionEvent(selectionHandler);
     }
-    
-    public void enableDiagramSelection(PathwayEditor editor) {
-        handler.enableDiagramSelection(editor);
-    }
-    
 }

@@ -49,7 +49,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
-import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -90,7 +89,6 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     private Double minSampleIPA;
     // To control pathway highlight
     protected JRadioButton highlightPathwayBtn;
-    protected PathwayHighlightControlPanel hiliteControlPane;
     
     /**
      * @param title
@@ -559,14 +557,6 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         }
     }
     
-    public PathwayHighlightControlPanel getHiliteControlPane() {
-        return hiliteControlPane;
-    }
-
-    public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
-        this.hiliteControlPane = hiliteControlPane;
-    }
-
     public void highlightPathway() {
         if (!highlightPathwayBtn.isSelected() || hiliteControlPane == null)
             return;

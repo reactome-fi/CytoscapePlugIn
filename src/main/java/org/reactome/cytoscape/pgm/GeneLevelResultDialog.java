@@ -26,6 +26,7 @@ import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.factorgraph.Variable;
+import org.reactome.factorgraph.common.DataType;
 
 /**
  * This customized JDialog is used to show the observation data for a displayed pathway diagram.
@@ -46,6 +47,46 @@ public class GeneLevelResultDialog extends GeneLevelDialog {
         return summaryPane;
     }
     
+    @Override
+    protected GeneLevelSelectionHandler createSelectionHandler() {
+        GeneLevelSelectionHandler handler = new GeneLevelSelectionHandler() {
+
+            @Override
+            public void setSelection(List selection) {
+                // Need some kind of modification
+                List<String> modified = new ArrayList<>();
+                for (Object obj : selection) {
+                    String typeName = obj.toString();
+                    int index = typeName.indexOf("_");
+                    if (index > 0) {
+                        String gene = typeName.substring(0, index);
+                        modified.add(gene + "_mRNA");
+                    }
+                }
+                super.setSelection(modified);
+            }
+
+            @Override
+            public List getSelection() {
+                List<?> selection = super.getSelection();
+                // Need to make some modification since displayed name is GENE_mRNA
+                List<Object> rtn = new ArrayList<>();
+                for (Object obj : selection) {
+                    String var = (String) obj;
+                    int index = var.indexOf("_");
+                    if (index > 0) {
+                        String gene = var.substring(0, index);
+                        for (DataType type : DataType.values())
+                            rtn.add(gene + "_" + type);
+                    }
+                }
+                return rtn;
+            }
+            
+        };
+        return handler;
+    }
+
     protected void init() {
         setTitle("Gene Level Results");
         summaryPane = createSummaryPane();
@@ -183,5 +224,4 @@ public class GeneLevelResultDialog extends GeneLevelDialog {
     public boolean showResultsForDiagram(RenderablePathway diagram) {
         return showResultsForDiagram(diagram, null);
     }
-    
 }

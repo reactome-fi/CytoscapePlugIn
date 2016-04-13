@@ -20,6 +20,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -101,21 +102,40 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
         installListeners();
     }
     
+    
+    @Override
+    public Map<String, Double> getReactomeIdToIPADiff() {
+        InferenceComparisonTableModel tableModel = (InferenceComparisonTableModel) inferenceTable.getModel();
+        return tableModel.getDBIdToDiff();
+    }
+
     /**
      * Synchronize selections.
      */
     private void installListeners() {
-        final SelectionMediator selectionMediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         inferenceTableSelectionHandler = new InferenceTableSelectionHandler();
-        observationTableSelectionHandler = new ObservationTableSelectionHandler();
-        selectionMediator.addSelectable(inferenceTableSelectionHandler);
-        selectionMediator.addSelectable(observationTableSelectionHandler);
+        PlugInObjectManager.getManager().getDBIdSelectionMediator().addSelectable(inferenceTableSelectionHandler);
+        observationTableSelectionHandler = new GeneLevelSelectionHandler();
+        ((GeneLevelSelectionHandler)observationTableSelectionHandler).setGeneLevelTable(observationTable);
+        PlugInObjectManager.getManager().getObservationVarSelectionMediator().addSelectable(observationTableSelectionHandler);
         
         inferenceTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                if (!e.getValueIsAdjusting())
+                if (!e.getValueIsAdjusting()) {
+                    SelectionMediator selectionMediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
                     selectionMediator.fireSelectionEvent(inferenceTableSelectionHandler);
+                }
+            }
+        });
+        
+        observationTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()) {
+                    PlugInObjectManager.getManager().getObservationVarSelectionMediator().fireSelectionEvent(observationTableSelectionHandler);
+                }
             }
         });
     }
@@ -133,6 +153,7 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
         model.setSamples(sample1, sample2, results);
         model = (ComparisonTableModel) observationTable.getModel();
         model.setSamples(sample1, sample2, results);
+        highlightPathway(); // Need to highlight with new values
     }
     
     private class InferenceComparisonTableModel extends ComparisonTableModel {
@@ -144,7 +165,19 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
             Object text = data.get(row).get(0);
             if (text == null)
                 return null;
-            return new Long(text.toString());
+            return (Long) text;
+        }
+        
+        public Map<String, Double> getDBIdToDiff() {
+            Map<String, Double> dbIdToDiff = new HashMap<>();
+            for (List<Object> row : data) {
+                Object dbId = row.get(0);
+                if (dbId == null)
+                    continue;
+                dbIdToDiff.put(dbId.toString(),
+                               (Double) row.get(row.size() - 1));
+            }
+            return dbIdToDiff;
         }
 
         @Override
@@ -323,6 +356,8 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
             if (selection == null || selection.size() == 0)
                 return;
             InferenceComparisonTableModel model = (InferenceComparisonTableModel) inferenceTable.getModel();
+            ListSelectionModel selectionModel = inferenceTable.getSelectionModel();
+            selectionModel.setValueIsAdjusting(true);
             int lastRow = -1;
             for (int i = 0; i < inferenceTable.getRowCount(); i++) {
                 int modelRow = inferenceTable.convertRowIndexToModel(i);
@@ -332,6 +367,7 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
                     lastRow = i;
                 }
             }
+            selectionModel.setValueIsAdjusting(false);
             if (lastRow > -1) {
                 Rectangle rect = inferenceTable.getCellRect(lastRow, 0, false);
                 inferenceTable.scrollRectToVisible(rect);
@@ -359,17 +395,4 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
         
     }
     
-    private class ObservationTableSelectionHandler implements Selectable {
-
-        @Override
-        public void setSelection(List selection) {
-        }
-
-        @Override
-        public List getSelection() {
-            
-            return null;
-        }
-        
-    }
 }

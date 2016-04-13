@@ -309,7 +309,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 GeneLevelResultDialog dialog = new GeneLevelResultDialog();
                 if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable()))
                     return; // Nothing to be displayed
-                dialog.enableDiagramSelection(pathwayEditor);
                 dialog.setSize(750, 600);
 //                dialog.setModal(true);
                 dialog.setVisible(true);
@@ -323,7 +322,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 ObservationDataDialog dialog = new ObservationDataDialog();
                 if(!dialog.showResultsForDiagram((RenderablePathway)pathwayEditor.getRenderable()))
                     return; // Nothing to be displayed
-                dialog.enableDiagramSelection(pathwayEditor);
                 dialog.setSize(750, 600);
 //                dialog.setModal(true);
                 dialog.setVisible(true);

@@ -31,14 +31,10 @@ import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.session.events.SessionLoadedEvent;
 import org.cytoscape.session.events.SessionLoadedListener;
-import org.gk.graphEditor.GraphEditorActionEvent;
-import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
-import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
 import org.gk.model.ReactomeJavaConstants;
-import org.gk.render.Renderable;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.service.AnimationPlayer;
 import org.reactome.cytoscape.service.AnimationPlayerControl;
@@ -72,9 +68,8 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
     private FactorGraphInferenceResults results;
     // For synchronization
     private GeneToPathwayEntityHandler observationTableHandler;
-    private PathwayEditor pathwayEditor;
-    private GraphEditorActionListener graphSelectionListener;
-    private SampleTableSelectionHandler selectionHandler;
+    private Selectable observationVarSelectionHandler;
+    private InferenceTableSelectionHandler selectionHandler;
     private PathwayHighlightControlPanel highlightControlPane;
     private double minIPA;
     private double maxIPA;
@@ -88,19 +83,9 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
     private void init() {
         initGUIs();
         PlugInUtilities.registerCytoPanelComponent(this);
-        selectionHandler = new SampleTableSelectionHandler();
-        graphSelectionListener = new GraphEditorActionListener() {
-            
-            @Override
-            public void graphEditorAction(GraphEditorActionEvent e) {
-                if (e.getID() == ActionType.SELECTION) {
-                    selectionHandler.handlePathwaySelection(pathwayEditor,
-                                                            inferenceTable);
-                    observationTableHandler.handlePathwaySelection(observationTable, 
-                                                                   0);
-                }
-            }
-        };
+        selectionHandler = new InferenceTableSelectionHandler();
+        SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
+        mediator.addSelectable(selectionHandler);
         // Most likely SessionAboutToBeLoadedListener should be used in 3.1.0.
         SessionLoadedListener sessionListener = new SessionLoadedListener() {
             
@@ -156,12 +141,14 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
         tabbedPane.addTab("Inference", inferencePane);
         
         // Set up the table for observation
-        SampleModel observationModel = createObservationTableModel();
+        SampleTableModel observationModel = createObservationTableModel();
         TableRowSorter<TableModel> observationSorter = new TableRowSorter<TableModel>(observationModel);
         observationTable = new JTable(observationModel);
         observationTable.setRowSorter(observationSorter);
         tabbedPane.addTab("Observation", new JScrollPane(observationTable));
         observationTableHandler = new GeneToPathwayEntityHandler();
+        observationTableHandler.setObservationTable(observationTable);
+        PlugInObjectManager.getManager().getDBIdSelectionMediator().addSelectable(observationTableHandler);
         observationTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             
             @Override
@@ -171,12 +158,16 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
                 }
             }
         });
+        // Synchronize variable selection across the whole application
+        observationVarSelectionHandler = new GeneLevelSelectionHandler();
+        ((GeneLevelSelectionHandler)observationVarSelectionHandler).setGeneLevelTable(observationTable);
+        PlugInObjectManager.getManager().getObservationVarSelectionMediator().addSelectable(observationVarSelectionHandler);
         
         add(tabbedPane, BorderLayout.CENTER);
     }
 
-    protected SampleModel createObservationTableModel() {
-        SampleModel observationModel = new SampleObservationModel();
+    protected SampleTableModel createObservationTableModel() {
+        SampleTableModel observationModel = new ObservationTableModel();
         return observationModel;
     }
 
@@ -209,7 +200,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
         JPanel inferencePane = new JPanel();
         inferencePane.setBorder(BorderFactory.createEtchedBorder());
         inferencePane.setLayout(new BorderLayout());
-        SampleModel inferenceModel = createInferenceTableModel();
+        SampleTableModel inferenceModel = createInferenceTableModel();
         TableRowSorter<TableModel> inferenceSorter = new TableRowSorter<TableModel>(inferenceModel);
         inferenceTable = new JTable(inferenceModel);
         inferenceTable.setRowSorter(inferenceSorter);
@@ -250,18 +241,21 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
     protected void handleInferenceTableSelection() {
         if (blockRowSelectionSync)
             return;
-        selectionHandler.handleTableSelection(pathwayEditor, inferenceTable);
+        SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
+        mediator.fireSelectionEvent(selectionHandler);
     }
     
     protected void handleObservationTableSelection() {
         if (blockRowSelectionSync)
             return;
-        observationTableHandler.handleTableSelection(observationTable,
-                                                     0);
+        SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
+        mediator.fireSelectionEvent(observationTableHandler);
+        mediator = PlugInObjectManager.getManager().getObservationVarSelectionMediator();
+        mediator.fireSelectionEvent(observationVarSelectionHandler);
     }
 
-    protected SampleModel createInferenceTableModel() {
-        SampleModel inferenceModel = new SampleInferenceModel();
+    protected SampleTableModel createInferenceTableModel() {
+        SampleTableModel inferenceModel = new InferenceTableModel();
         return inferenceModel;
     }
     
@@ -329,10 +323,10 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
         Set<String> observationSelectedValues = getSelectedValues(observationTable);
         Set<String> inferenceSelectedValues = getSelectedValues(inferenceTable);
         int[] inferenceSelectionRows = inferenceTable.getSelectedRows();
-        SampleModel observationModel = (SampleModel) observationTable.getModel();
+        SampleTableModel observationModel = (SampleTableModel) observationTable.getModel();
         observationModel.setSample(selectedSample);
         recoverTableSelections(observationTable, observationSelectedValues);
-        SampleModel inferenceModel = (SampleModel) inferenceTable.getModel();
+        SampleTableModel inferenceModel = (SampleTableModel) inferenceTable.getModel();
         inferenceModel.setSample(selectedSample);
         recoverTableSelections(inferenceTable, inferenceSelectedValues);
         highlightViewFromSample();
@@ -373,7 +367,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
     protected void highlightViewFromSample() {
         if (!highlightViewBtn.isSelected() || highlightControlPane == null)
             return;
-        SampleInferenceModel model = (SampleInferenceModel) inferenceTable.getModel();
+        InferenceTableModel model = (InferenceTableModel) inferenceTable.getModel();
         Map<String, Double> idToValue = model.getIdToValue();
         highlightControlPane.setIdToValue(idToValue);
         double[] minMax = highlightControlPane.calculateMinMaxValues(minIPA, maxIPA);
@@ -426,13 +420,6 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
             // Somehow we have to set the type manually
             handleSampleSelection();
         }
-        // For graph selection
-        if (this.pathwayEditor != null) {
-            this.pathwayEditor.getSelectionModel().removeGraphEditorActionListener(graphSelectionListener);
-        }
-        this.pathwayEditor = pathwayEditor;
-        if (this.pathwayEditor != null)
-            this.pathwayEditor.getSelectionModel().addGraphEditorActionListener(graphSelectionListener);
         this.highlightControlPane = highlightControlPane;
         this.minIPA = minIPA;
         this.maxIPA = maxIPA;
@@ -446,8 +433,8 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
         return sampleNames;
     }
     
-    private class SampleInferenceModel extends SampleModel {
-        public SampleInferenceModel() {
+    private class InferenceTableModel extends SampleTableModel {
+        public InferenceTableModel() {
             startIndex = 1;
         }
         
@@ -522,75 +509,52 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
      * @author gwu
      *
      */
-    private class SampleTableSelectionHandler {
-        private boolean isFromPathway;
-        private boolean isFromTable;
+    private class InferenceTableSelectionHandler implements Selectable {
+        private List<Long> selectedIds;
         
-        public SampleTableSelectionHandler() {
-            
+        public InferenceTableSelectionHandler() {
+            selectedIds = new ArrayList<>();
         }
         
-        public void handleTableSelection(PathwayEditor pathwayEditor,
-                                         JTable inferenceTable) {
-            if (isFromPathway) // If it is from pathway selection, we should not do anything here
-                return;
-            isFromTable = true;
-            SampleInferenceModel model = (SampleInferenceModel) inferenceTable.getModel();
-            Set<Long> dbIds = new HashSet<>();
-            int[] selectedRows = inferenceTable.getSelectedRows();
-            if (selectedRows != null) {
-                for (int selectedRow : selectedRows) {
-                    Long dbId = model.getDBId(inferenceTable.convertRowIndexToModel(selectedRow));
-                    dbIds.add(dbId);
-                }
-            }
-            PlugInUtilities.selectByDbIds(pathwayEditor,
-                                          dbIds);
-            isFromTable = false;
-        }
-        
-        public void handlePathwaySelection(PathwayEditor pathwayEditor,
-                                           JTable inferenceTable) {
-            if (isFromTable)
-                return;
-            isFromPathway = true;
-            @SuppressWarnings("unchecked")
-            List<Renderable> selected = pathwayEditor.getSelection();
-            // Get a list of objects to be selected
-            Set<Long> dbIds = new HashSet<>();
-            if (selected != null && selected.size() > 0) {
-                for (Renderable r : selected)
-                    dbIds.add(r.getReactomeId());
-            }
-            selectRows(inferenceTable, dbIds);
-            isFromPathway = false;
-        }
-        
-        private void selectRows(JTable table, 
-                                Set<Long> dbIds) {
-            ListSelectionModel selectionModel = table.getSelectionModel();
+        @Override
+        public void setSelection(List selection) {
+            ListSelectionModel selectionModel = inferenceTable.getSelectionModel();
             selectionModel.clearSelection();
             selectionModel.setValueIsAdjusting(true);
             int index = 0;
-            SampleInferenceModel inferenceModel = (SampleInferenceModel) table.getModel();
-            List<Integer> rows = inferenceModel.getRowsForDBIds(dbIds);
+            InferenceTableModel inferenceModel = (InferenceTableModel) inferenceTable.getModel();
+            List<Integer> rows = inferenceModel.getRowsForDBIds(selection);
             for (Integer modelRow : rows) {
-                int viewRow = table.convertRowIndexToView(modelRow);
+                int viewRow = inferenceTable.convertRowIndexToView(modelRow);
                 selectionModel.addSelectionInterval(viewRow, viewRow);
             }
             selectionModel.setValueIsAdjusting(false);
             // Need to scroll
-            int selected = table.getSelectedRow();
+            int selected = inferenceTable.getSelectedRow();
             if (selected > -1) {
-                Rectangle rect = table.getCellRect(selected, 0, false);
-                table.scrollRectToVisible(rect);
+                Rectangle rect = inferenceTable.getCellRect(selected, 0, false);
+                inferenceTable.scrollRectToVisible(rect);
             }
+        }
+
+        @Override
+        public List getSelection() {
+            selectedIds.clear();
+            InferenceTableModel model = (InferenceTableModel) inferenceTable.getModel();
+            int[] selectedRows = inferenceTable.getSelectedRows();
+            if (selectedRows != null) {
+                for (int selectedRow : selectedRows) {
+                    Long dbId = model.getDBId(inferenceTable.convertRowIndexToModel(selectedRow));
+                    selectedIds.add(dbId);
+                }
+            }
+            return selectedIds;
         }
     }
     
-    protected class SampleObservationModel extends SampleModel {
+    protected class ObservationTableModel extends SampleTableModel {
         
-        public SampleObservationModel() {
+        public ObservationTableModel() {
             startIndex = 0;
         }
 
@@ -722,7 +686,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
      * @author gwu
      *
      */
-    protected abstract class SampleModel extends AbstractTableModel {
+    protected abstract class SampleTableModel extends AbstractTableModel {
         private String[] headers = new String[] {
                 "Name",
                 "Value",
@@ -738,7 +702,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
         // need to be displayed
         protected int startIndex;
         
-        public SampleModel() {
+        public SampleTableModel() {
             data = new ArrayList<>();
         }
         

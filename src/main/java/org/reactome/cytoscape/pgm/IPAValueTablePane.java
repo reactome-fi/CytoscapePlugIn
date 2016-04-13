@@ -51,6 +51,7 @@ import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.service.NetworkModulePanel;
+import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -82,6 +83,7 @@ public class IPAValueTablePane extends NetworkModulePanel implements Selectable 
     private ServiceRegistration graphSelectionRegistration;
     // A Label at the top showing a little bit note
     protected JLabel ipaLabel;
+    protected PathwayHighlightControlPanel hiliteControlPane;
     
     /**
      * This constructor is used only for subclasses and expects subclasses
@@ -252,6 +254,7 @@ public class IPAValueTablePane extends NetworkModulePanel implements Selectable 
             SampleComparisonPanel comparisonPane = (SampleComparisonPanel) PlugInUtilities.getCytoPanelComponent(SampleComparisonPanel.class,
                                                                                                                  CytoPanelName.SOUTH, 
                                                                                                                  SampleComparisonPanel.TITLE);
+            comparisonPane.setHiliteControlPane(hiliteControlPane);
             comparisonPane.setData(sample1, 
                                    sample2,
                                    fgInfResults);
@@ -491,6 +494,14 @@ public class IPAValueTablePane extends NetworkModulePanel implements Selectable 
         // Do nothing for the super class.
     }
     
+    public PathwayHighlightControlPanel getHiliteControlPane() {
+        return hiliteControlPane;
+    }
+
+    public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
+        this.hiliteControlPane = hiliteControlPane;
+    }
+
     protected class IPAValueTableModel extends NetworkModuleTableModel {
         protected String[] originalHeaders = new String[]{"Sample", "Select Nodes to View"};
         // Cache the list of variables for different view

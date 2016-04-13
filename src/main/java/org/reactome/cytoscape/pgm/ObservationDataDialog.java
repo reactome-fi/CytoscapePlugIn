@@ -42,6 +42,11 @@ public class ObservationDataDialog extends GeneLevelDialog {
     public ObservationDataDialog() {
     }
     
+    @Override
+    protected GeneLevelSelectionHandler createSelectionHandler() {
+        return new GeneLevelSelectionHandler();
+    }
+
     protected void init() {
         setTitle("Observation Data");
         

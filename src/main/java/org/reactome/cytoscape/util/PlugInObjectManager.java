@@ -70,6 +70,8 @@ public class PlugInObjectManager {
     private Map<String, ButtonGroup> btnNameToGroup;
     // To synchronize selection of Reactome objects based on DB_IDs.
     private SelectionMediator dbIdSelectionMediator;
+    // To syncrhonize observation variable selection
+    private SelectionMediator observationSelectionMediator;
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
@@ -96,6 +98,12 @@ public class PlugInObjectManager {
             }
         }
         return pathwayPGMConfig;
+    }
+    
+    public SelectionMediator getObservationVarSelectionMediator() {
+        if (observationSelectionMediator == null)
+            observationSelectionMediator = new SelectionMediator();
+        return observationSelectionMediator;
     }
     
     public SelectionMediator getDBIdSelectionMediator() {
