@@ -15,12 +15,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JOptionPane;
 import javax.swing.table.TableRowSorter;
 
+import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.reactome.cytoscape.pgm.IPAValueTablePane;
 import org.reactome.cytoscape.pgm.PlotTablePanel;
+import org.reactome.cytoscape.pgm.SampleComparisonPanel;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Variable;
 import org.reactome.r3.util.MathUtilities;
@@ -116,6 +119,27 @@ public class ImpactSampleValueTablePane extends IPAValueTablePane {
         }
     }
     
+    @Override
+    protected void compareSamples() {
+        String[] samples = getSamplesForComparison();
+        if (samples == null)
+            return;
+        try {
+            FIPGMSampleComparisonPanel comparisonPane = (FIPGMSampleComparisonPanel) PlugInUtilities.getCytoPanelComponent(FIPGMSampleComparisonPanel.class,
+                                                                                                                           CytoPanelName.SOUTH, 
+                                                                                                                           SampleComparisonPanel.TITLE);
+            comparisonPane.compare(samples[0], 
+                                   samples[1]);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(this,
+                                          "Cannot perform sample comparison: " + e,
+                                          "Error in Sample Comparison",
+                                          JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
     /**
      * A customized table model to show a list of impact analysis for one selected node (aka gene)
      * from the displayed FI network.

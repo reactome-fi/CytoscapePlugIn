@@ -43,11 +43,13 @@ import org.reactome.pathway.factorgraph.IPACalculator;
  */
 public class SampleComparisonPanel extends IPAPathwaySummaryPane {
     public static final String TITLE = "Sample Comparison";
-    private JTable inferenceTable;
-    private JTable observationTable;
+    protected JTable inferenceTable;
+    protected JTable observationTable;
     // Used to synchronize selection
     private Selectable inferenceTableSelectionHandler;
-    private Selectable observationTableSelectionHandler;
+    protected Selectable observationTableSelectionHandler;
+    // Results to be displayed
+    private FactorGraphInferenceResults fgResults;
     
     public SampleComparisonPanel() {
         super(TITLE);
@@ -68,32 +70,30 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
         outputResultLabel = new JLabel("Comparison between ");
         controlToolBar.add(outputResultLabel);
         controlToolBar.add(closeGlue);
-        highlightPathwayBtn = new JRadioButton("Highlight pathway with difference");
-        highlightPathwayBtn.addItemListener(new ItemListener() {
+        
+        createHighlightViewBtn();
+        
+        highlightViewBtn.addItemListener(new ItemListener() {
             
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED)
-                    highlightPathway();
+                    highlightView();
             }
         });
-        PlugInObjectManager.getManager().registerRadioButton("HighlightPathway",
-                                                             highlightPathwayBtn);
-        // This should be un-selected as default
-        highlightPathwayBtn.setSelected(false);
-        controlToolBar.add(highlightPathwayBtn);
+        controlToolBar.add(highlightViewBtn);
         controlToolBar.add(closeBtn);
         
         // Show two tables in a tab
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.TOP);
         inferenceTable = new JTable();
-        InferenceComparisonTableModel inferenceModel = new InferenceComparisonTableModel();
+        ComparisonTableModel inferenceModel = createInferenceTableModel();
         inferenceTable.setModel(inferenceModel);
         inferenceTable.setAutoCreateRowSorter(true);
         tabbedPane.addTab("Inference", new JScrollPane(inferenceTable));
         observationTable = new JTable();
-        ObservationComparisonTableModel observationModel = new ObservationComparisonTableModel();
+        ComparisonTableModel observationModel = createObservationTableModel();
         observationTable.setModel(observationModel);
         observationTable.setAutoCreateRowSorter(true);
         tabbedPane.add("Observation", new JScrollPane(observationTable));
@@ -102,6 +102,24 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
         installListeners();
     }
     
+    
+    
+    @Override
+    protected void createHighlightViewBtn() {
+        highlightViewBtn = new JRadioButton("Highlight pathway with difference");
+        PlugInObjectManager.getManager().registerRadioButton("HighlightPathway",
+                                                             highlightViewBtn);
+        // This should be selected as default
+        highlightViewBtn.setSelected(false);
+    }
+
+    protected ComparisonTableModel createInferenceTableModel() {
+        return new InferenceComparisonTableModel();
+    }
+    
+    protected ComparisonTableModel createObservationTableModel() {
+        return new ObservationComparisonTableModel();
+    }
     
     @Override
     public Map<String, Double> getReactomeIdToIPADiff() {
@@ -113,12 +131,13 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
      * Synchronize selections.
      */
     private void installListeners() {
+        installInferenceTableListeners();
+        installObservationTableListeners();
+    }
+
+    protected void installInferenceTableListeners() {
         inferenceTableSelectionHandler = new InferenceTableSelectionHandler();
         PlugInObjectManager.getManager().getDBIdSelectionMediator().addSelectable(inferenceTableSelectionHandler);
-        observationTableSelectionHandler = new GeneLevelSelectionHandler();
-        ((GeneLevelSelectionHandler)observationTableSelectionHandler).setGeneLevelTable(observationTable);
-        PlugInObjectManager.getManager().getObservationVarSelectionMediator().addSelectable(observationTableSelectionHandler);
-        
         inferenceTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -128,7 +147,12 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
                 }
             }
         });
-        
+    }
+
+    protected void installObservationTableListeners() {
+        observationTableSelectionHandler = new GeneLevelSelectionHandler();
+        ((GeneLevelSelectionHandler)observationTableSelectionHandler).setGeneLevelTable(observationTable);
+        PlugInObjectManager.getManager().getObservationVarSelectionMediator().addSelectable(observationTableSelectionHandler);
         observationTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             
             @Override
@@ -147,13 +171,14 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
     public void setData(String sample1,
                         String sample2,
                         FactorGraphInferenceResults results) {
+        this.fgResults = results;
         // Need to make sure the original selection is kept
         outputResultLabel.setText("Comparing samples: " + sample1 + " and " + sample2);
         ComparisonTableModel model = (ComparisonTableModel) inferenceTable.getModel();
-        model.setSamples(sample1, sample2, results);
+        model.setSamples(sample1, sample2);
         model = (ComparisonTableModel) observationTable.getModel();
-        model.setSamples(sample1, sample2, results);
-        highlightPathway(); // Need to highlight with new values
+        model.setSamples(sample1, sample2);
+        highlightView(); // Need to highlight with new values
     }
     
     private class InferenceComparisonTableModel extends ComparisonTableModel {
@@ -182,15 +207,14 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
 
         @Override
         protected void resetData(String sample1, 
-                                 String sample2, 
-                                 FactorGraphInferenceResults results) {
+                                 String sample2) {
             data.clear();
-            if (results == null)
+            if (fgResults == null)
                 return;
-            Set<Variable> pathwayVars = PlugInUtilities.getPathwayVars(results.getFactorGraph());
-            List<VariableInferenceResults> varResults = results.getVariableInferenceResults(pathwayVars);
+            Set<Variable> pathwayVars = PlugInUtilities.getPathwayVars(fgResults.getFactorGraph());
+            List<VariableInferenceResults> varResults = fgResults.getVariableInferenceResults(pathwayVars);
             // In order to calculate p-values
-            Map<Variable, List<Double>> varToRandomIPAs = results.generateRandomIPAs(varResults);
+            Map<Variable, List<Double>> varToRandomIPAs = fgResults.generateRandomIPAs(varResults);
             for (VariableInferenceResults varResult : varResults) {
                 Variable var = varResult.getVariable();
                 Map<String, ArrayList<Double>> sampleToValues = varResult.getSampleToValues();
@@ -226,19 +250,29 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
         
     }
     
-    private class ObservationComparisonTableModel extends ComparisonTableModel {
+    protected class ObservationComparisonTableModel extends ComparisonTableModel {
         
         public ObservationComparisonTableModel() {
         }
 
         @Override
         protected void resetData(String sample1, 
+                                 String sample2) {
+            data.clear();
+            resetData(sample1, 
+                      sample2, 
+                      fgResults.getObservations(),
+                      null);
+        }
+        
+        protected void resetData(String sample1, 
                                  String sample2,
-                                 FactorGraphInferenceResults results) {
-            Observation<Number> observation1 = getSampleObservation(sample1, results);
+                                 List<Observation<Number>> observations,
+                                 Set<String> genes) {
+            Observation<Number> observation1 = getSampleObservation(sample1, observations);
             if (observation1 == null)
                 throw new IllegalStateException("Cannot find observation for " + sample1);
-            Observation<Number> observation2 = getSampleObservation(sample2, results);
+            Observation<Number> observation2 = getSampleObservation(sample2, observations);
             if (observation2 == null)
                 throw new IllegalStateException("Cannot find observation for " + sample2);
             // Get a list of variables
@@ -250,6 +284,8 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
             Set<Variable> allVars = new HashSet<Variable>(varToValue1.keySet());
             allVars.addAll(varToValue2.keySet());
             for (Variable var : allVars) {
+                if (!shouldAdd(var, genes))
+                    continue;
                 Number value1 = varToValue1.get(var);
                 Number value2 = varToValue2.get(var);
                 List<Object> row = new ArrayList<>();
@@ -264,6 +300,16 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
             }
         }
         
+        protected boolean shouldAdd(Variable var, Set<String> genes) {
+            if (genes == null)
+                return true;
+            String name = var.getName();
+            int index = name.indexOf("_");
+            if (index < 0)
+                return false;
+            return genes.contains(name.substring(0, index));
+        }
+        
         private Map<Variable, Number> getVarToValue(List<VariableAssignment<Number>> varAssgns) {
             Map<Variable, Number> varToValue = new HashMap<Variable, Number>();
             for (VariableAssignment<Number> varAssgn : varAssgns) {
@@ -273,11 +319,11 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
             return varToValue;
         }
 
-        protected Observation<Number> getSampleObservation(String sample,
-                                                           FactorGraphInferenceResults results) {
+        private Observation<Number> getSampleObservation(String sample,
+                                                         List<Observation<Number>> observations) {
             // Extract observation for this sample
             Observation<Number> observation = null;
-            for (Observation<Number> obs : results.getObservations()) {
+            for (Observation<Number> obs : observations) {
                 if (obs.getName().equals(sample)) {
                     observation = obs;
                     break;
@@ -288,7 +334,7 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
         
     }
     
-    private abstract class ComparisonTableModel extends AbstractTableModel {
+    protected abstract class ComparisonTableModel extends AbstractTableModel {
         private String[] columnNames = new String[] {
                 "Entity",
                 "Sample1",
@@ -303,17 +349,15 @@ public class SampleComparisonPanel extends IPAPathwaySummaryPane {
         }
         
         public void setSamples(String sample1, 
-                               String sample2,
-                               FactorGraphInferenceResults results) {
+                               String sample2) {
             columnNames[1] = sample1;
             columnNames[2] = sample2;
-            resetData(sample1, sample2, results);
+            resetData(sample1, sample2);
             fireTableStructureChanged(); // So the column names can be updated
         }
         
         protected abstract void resetData(String sample1, 
-                                          String sample2,
-                                          FactorGraphInferenceResults results);
+                                          String sample2);
         
         @Override
         public int getRowCount() {

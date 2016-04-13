@@ -68,7 +68,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
     private FactorGraphInferenceResults results;
     // For synchronization
     private GeneToPathwayEntityHandler observationTableHandler;
-    private Selectable observationVarSelectionHandler;
+    protected Selectable observationVarSelectionHandler;
     private InferenceTableSelectionHandler selectionHandler;
     private PathwayHighlightControlPanel highlightControlPane;
     private double minIPA;
@@ -83,9 +83,6 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
     private void init() {
         initGUIs();
         PlugInUtilities.registerCytoPanelComponent(this);
-        selectionHandler = new InferenceTableSelectionHandler();
-        SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
-        mediator.addSelectable(selectionHandler);
         // Most likely SessionAboutToBeLoadedListener should be used in 3.1.0.
         SessionLoadedListener sessionListener = new SessionLoadedListener() {
             
@@ -146,9 +143,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
         observationTable = new JTable(observationModel);
         observationTable.setRowSorter(observationSorter);
         tabbedPane.addTab("Observation", new JScrollPane(observationTable));
-        observationTableHandler = new GeneToPathwayEntityHandler();
-        observationTableHandler.setObservationTable(observationTable);
-        PlugInObjectManager.getManager().getDBIdSelectionMediator().addSelectable(observationTableHandler);
+        
         observationTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             
             @Override
@@ -158,12 +153,24 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
                 }
             }
         });
+        enableViewSelectionSyn();
+        
         // Synchronize variable selection across the whole application
         observationVarSelectionHandler = new GeneLevelSelectionHandler();
         ((GeneLevelSelectionHandler)observationVarSelectionHandler).setGeneLevelTable(observationTable);
         PlugInObjectManager.getManager().getObservationVarSelectionMediator().addSelectable(observationVarSelectionHandler);
         
         add(tabbedPane, BorderLayout.CENTER);
+    }
+    
+    protected void enableViewSelectionSyn() {
+        selectionHandler = new InferenceTableSelectionHandler();
+        SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
+        mediator.addSelectable(selectionHandler);
+        
+        observationTableHandler = new GeneToPathwayEntityHandler();
+        observationTableHandler.setObservationTable(observationTable);
+        PlugInObjectManager.getManager().getDBIdSelectionMediator().addSelectable(observationTableHandler);
     }
 
     protected SampleTableModel createObservationTableModel() {

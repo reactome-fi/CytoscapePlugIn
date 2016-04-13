@@ -17,7 +17,6 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 
-import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.events.SetCurrentNetworkViewEvent;
 import org.cytoscape.application.events.SetCurrentNetworkViewListener;
 import org.cytoscape.model.CyNetwork;
@@ -27,7 +26,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.pgm.GeneLevelSelectionHandler;
 import org.reactome.cytoscape.pgm.SampleListComponent;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableHelper;
@@ -90,6 +89,10 @@ public class FIPGMSampleListComponent extends SampleListComponent {
         highlightViewBtn.setText("Highlight network for sample");
     }
     
+    @Override
+    protected void enableViewSelectionSyn() {
+    }
+
     @Override
     protected void registerRadioButton() {
         PlugInObjectManager.getManager().registerRadioButton("HighlightNetwork",
@@ -206,12 +209,7 @@ public class FIPGMSampleListComponent extends SampleListComponent {
             return; // Nothing to be displayed.
         showSamples();
         // Show detailed information for the selected network
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceReference sf = context.getServiceReference(CyApplicationManager.class.getName());
-        CyApplicationManager appManager = (CyApplicationManager) context.getService(sf);
-        if (appManager != null && appManager.getCurrentNetworkView() != null)
-            setNetworkView(appManager.getCurrentNetworkView());
-        context.ungetService(sf);
+        setNetworkView(PlugInUtilities.getCurrentNetworkView());
     }
     
     private void showSamples() {
@@ -238,6 +236,7 @@ public class FIPGMSampleListComponent extends SampleListComponent {
         if (blockRowSelectionSync)
             return;
         selectionMediator.fireSelectionEvent(obsTableHandler);
+        PlugInObjectManager.getManager().getObservationVarSelectionMediator().fireSelectionEvent(observationVarSelectionHandler);
     }
 
     private Set<String> getTableSelectedGenes(JTable table, boolean isForObservation) {

@@ -88,7 +88,7 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
     private Double maxSampleIPA;
     private Double minSampleIPA;
     // To control pathway highlight
-    protected JRadioButton highlightPathwayBtn;
+    protected JRadioButton highlightViewBtn;
     
     /**
      * @param title
@@ -135,20 +135,19 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         outputResultLabel = new JLabel("Total checked outputs:");
         controlToolBar.add(outputResultLabel);
         controlToolBar.add(closeGlue);
-        highlightPathwayBtn = new JRadioButton("Highlight pathway");
-        highlightPathwayBtn.addItemListener(new ItemListener() {
+        
+        createHighlightViewBtn();
+        
+        highlightViewBtn.addItemListener(new ItemListener() {
             
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED)
-                    highlightPathway();
+                    highlightView();
             }
         });
-        PlugInObjectManager.getManager().registerRadioButton("HighlightPathway",
-                                                             highlightPathwayBtn);
-        // This should be selected as default
-        highlightPathwayBtn.setSelected(true);
-        controlToolBar.add(highlightPathwayBtn);
+        controlToolBar.add(highlightViewBtn);
+        
         recheckOutuptBtn = new JButton("Reset Cutoffs");
         recheckOutuptBtn.addActionListener(new ActionListener() {
             
@@ -163,6 +162,14 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         addContentPane();
         
         installListeners();
+    }
+
+    protected void createHighlightViewBtn() {
+        highlightViewBtn = new JRadioButton("Highlight pathway");
+        PlugInObjectManager.getManager().registerRadioButton("HighlightPathway",
+                                                             highlightViewBtn);
+        // This should be selected as default
+        highlightViewBtn.setSelected(true);
     }
     
     public void hideControlToolBar() {
@@ -557,8 +564,8 @@ public class IPAPathwaySummaryPane extends IPAValueTablePane {
         }
     }
     
-    public void highlightPathway() {
-        if (!highlightPathwayBtn.isSelected() || hiliteControlPane == null)
+    public void highlightView() {
+        if (!highlightViewBtn.isSelected() || hiliteControlPane == null)
             return;
         // Highlight pathway diagram
         if (hiliteControlPane != null) {

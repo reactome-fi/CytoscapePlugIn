@@ -33,7 +33,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.RowSorter;
 import javax.swing.RowSorter.SortKey;
-import javax.swing.table.TableModel;
 import javax.swing.SortOrder;
 import javax.swing.SwingUtilities;
 
@@ -45,6 +44,7 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.math.MathException;
+import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
@@ -106,6 +106,19 @@ public class PlugInUtilities {
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
 
     public PlugInUtilities() {
+    }
+    
+    public static CyNetworkView getCurrentNetworkView() {
+        // Show detailed information for the selected network
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference sf = context.getServiceReference(CyApplicationManager.class.getName());
+        CyApplicationManager appManager = (CyApplicationManager) context.getService(sf);
+        CyNetworkView networkView = null;
+        if (appManager != null && appManager.getCurrentNetworkView() != null) {
+            networkView = appManager.getCurrentNetworkView();
+        }
+        context.ungetService(sf);
+        return networkView;
     }
     
     /**

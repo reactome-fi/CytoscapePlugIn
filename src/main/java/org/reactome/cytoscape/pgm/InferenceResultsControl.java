@@ -123,7 +123,7 @@ public class InferenceResultsControl {
             summaryPane.setHiliteControlPane(hiliteControlPane);
             if (hiliteControlPane.getPathwayEditor() != null)
                 summaryPane.setPathwayDiagram((RenderablePathway)hiliteControlPane.getPathwayEditor().getRenderable());
-            summaryPane.highlightPathway();
+            summaryPane.highlightView();
             hiliteControlPane.setVisible(true);
         }
         

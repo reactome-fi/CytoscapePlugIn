@@ -224,10 +224,7 @@ public class IPAValueTablePane extends NetworkModulePanel implements Selectable 
         initNodeToVarMap();
     }
     
-    /**
-     * Compare two selected samples.
-     */
-    protected void compareSamples() {
+    protected String[] getSamplesForComparison() {
         IPAValueTableModel tableModel = (IPAValueTableModel) contentPane.getTableModel();
         // Check if we can compare two samples
         String firstColName = tableModel.getColumnName(0);
@@ -236,7 +233,7 @@ public class IPAValueTablePane extends NetworkModulePanel implements Selectable 
                                           "Cannot find selected samples for comparison!",
                                           "No Samples Selected",
                                           JOptionPane.INFORMATION_MESSAGE);
-            return;
+            return null;
         }
         JTable table = contentPane.getTable();
         // Only work for two samples
@@ -246,17 +243,27 @@ public class IPAValueTablePane extends NetworkModulePanel implements Selectable 
                                           "Select two samples for comparison!",
                                           "Two Samples Needed",
                                           JOptionPane.INFORMATION_MESSAGE);
-            return;
+            return null;
         }
         String sample1 = (String) table.getValueAt(selectedRows[0], 0);
         String sample2 = (String) table.getValueAt(selectedRows[1], 0);
+        return new String[] {sample1, sample2};
+    }
+    
+    /**
+     * Compare two selected samples.
+     */
+    protected void compareSamples() {
+        String[] samples = getSamplesForComparison();
+        if (samples == null)
+            return;
         try {
             SampleComparisonPanel comparisonPane = (SampleComparisonPanel) PlugInUtilities.getCytoPanelComponent(SampleComparisonPanel.class,
                                                                                                                  CytoPanelName.SOUTH, 
                                                                                                                  SampleComparisonPanel.TITLE);
             comparisonPane.setHiliteControlPane(hiliteControlPane);
-            comparisonPane.setData(sample1, 
-                                   sample2,
+            comparisonPane.setData(samples[0], 
+                                   samples[1],
                                    fgInfResults);
         }
         catch(Exception e) {

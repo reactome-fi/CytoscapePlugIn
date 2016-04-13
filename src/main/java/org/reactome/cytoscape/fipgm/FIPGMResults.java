@@ -18,6 +18,10 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import org.cytoscape.session.events.SessionAboutToBeLoadedEvent;
+import org.cytoscape.session.events.SessionAboutToBeLoadedListener;
+import org.osgi.framework.BundleContext;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.factorgraph.Observation;
 import org.reactome.factorgraph.Variable;
 
@@ -46,6 +50,19 @@ public class FIPGMResults {
      * Default constructor should not be called.
      */
     private FIPGMResults() {
+        // Most likely SessionAboutToBeLoadedListener should be used in 3.1.0.
+        SessionAboutToBeLoadedListener sessionListener = new SessionAboutToBeLoadedListener() {
+            
+            @Override
+            public void handleEvent(SessionAboutToBeLoadedEvent arg0) {
+                if (results != null)
+                    results = null;
+            }
+        };
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        context.registerService(SessionAboutToBeLoadedListener.class.getName(),
+                                sessionListener, 
+                                null);
     }
     
     public static FIPGMResults getResults() {
