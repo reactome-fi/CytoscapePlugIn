@@ -60,9 +60,10 @@ public class FIPGMResults {
             }
         };
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        context.registerService(SessionAboutToBeLoadedListener.class.getName(),
-                                sessionListener, 
-                                null);
+        if (context != null) // Make happend during test
+            context.registerService(SessionAboutToBeLoadedListener.class.getName(),
+                                    sessionListener, 
+                                    null);
     }
     
     public static FIPGMResults getResults() {

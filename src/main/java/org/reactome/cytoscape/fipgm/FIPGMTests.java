@@ -129,7 +129,11 @@ public class FIPGMTests {
     
     @Test
     public void testLoadResults() throws Exception {
-        String fileName = "/Users/gwu/Documents/EclipseWorkspace/caBigR3/test_data/tcga_ov/fi_pgm_ov_cnv_mutation_random_100_110515.xml";
+//        try {
+//            Thread.sleep(5000);
+//        }
+//        catch(Exception e) {}
+        String fileName = "/Users/gwu/Documents/EclipseWorkspace/caBigR3/test_data/tcga_ov/fi_pgm_ov_mutation_random_100_3_samples.xml";
         File file = new File(fileName);
         FIPGMResults results = FIPGMResults.getResults();
         long time1 = System.currentTimeMillis();
@@ -158,6 +162,7 @@ public class FIPGMTests {
         }
         long time2 = System.currentTimeMillis();
         System.out.println("Total time: " + (time2 - time1));
+        System.out.println("Total memory: " + (double) Runtime.getRuntime().totalMemory() / (1024 * 1024) + " MB");
     }
     
     @Test
