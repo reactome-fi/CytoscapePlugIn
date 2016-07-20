@@ -283,7 +283,7 @@ public class DiagramAndFactorGraphSwitcher {
         FactorGraph fg = fiService.convertPathwayToFactorGraph(pathwayId,
                                                                escapeNames);
         if (fg == null || fg.getFactors() == null || fg.getFactors().size() == 0) {
-            JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Pathway" + "\"" + pathway.getDisplayName() + "\"" + 
                                           " cannot be converted into a factor graph.",
                                           "No Factor Graph",

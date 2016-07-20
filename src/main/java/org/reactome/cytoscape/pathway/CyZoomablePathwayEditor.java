@@ -16,7 +16,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.beans.PropertyVetoException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -156,6 +155,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                     selection.add(r);
                 }
             }
+            if (editor.getSelection().equals(selection))
+                return; // There is no need to do anything
             editor.setSelection(selection);
             editor.repaint(editor.getVisibleRect());
             return;
@@ -164,12 +165,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         JInternalFrame frame = (JInternalFrame) SwingUtilities.getAncestorOfClass(JInternalFrame.class,
                                                                                   this);
         if (frame != null) {
-            try {
-                frame.setSelected(true); // Select this PathwayInternalFrame too!
-            }
-            catch(PropertyVetoException e) {
-                logger.error("Error in eventSelected: " + e, e);
-            }
+            PathwayDiagramRegistry.getRegistry().showPathwayDiagramFrame(frame);
         }
         Long eventId = selectionEvent.getEventId();
         PathwayEditor editor = getPathwayEditor();
@@ -663,11 +659,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     PathwayDiagramRegistry.getRegistry().showPathwayDiagram(dbId, name);
-                    PathwayInternalFrame pathwayFrame = PathwayDiagramRegistry.getRegistry().getPathwayFrameWithWait(dbId);
-                    if (pathwayFrame != null) {
-                        PathwayEnrichmentHighlighter.getHighlighter().highlightPathway(pathwayFrame, 
-                                                                                        name);
-                    }
                 }
             });
             popup.add(openInDiagram);

@@ -72,11 +72,6 @@ public class DiagramAndNetworkSwitcher {
             return;
         PathwayDiagramRegistry registry = PathwayDiagramRegistry.getRegistry();
         registry.showPathwayDiagram(pathwayId);
-        // Need to highlight if any
-        PathwayInternalFrame frame = registry.getPathwayFrameWithWait(pathwayId);
-        if (frame != null) {
-            highlightPathway(frame);
-        }
         // If the following code is invoked before the above statement is finished (it is possible since
         // a new thread is going to be used), a null exception may be thrown. So wrap it in an invokeLater method
         SwingUtilities.invokeLater(new Runnable() {
@@ -150,7 +145,7 @@ public class DiagramAndNetworkSwitcher {
             taskMonitor.setProgress(1.0d);
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
+                    JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                                   "There is no FI existing in the selected pathway.",
                                                   "No FI in Pathway",
                                                   JOptionPane.INFORMATION_MESSAGE);
@@ -162,6 +157,7 @@ public class DiagramAndNetworkSwitcher {
         // Make sure this PathwayInternalFrame should be closed
         pathwayFrame.setVisible(false);
         pathwayFrame.dispose();
+        // Mimc manual closing
         
         taskMonitor.setProgress(0.50d);
         // Need to create a new CyNetwork

@@ -4,8 +4,6 @@
  */
 package org.reactome.cytoscape.pathway;
 
-import java.beans.PropertyVetoException;
-
 import javax.swing.JDesktopPane;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
@@ -19,7 +17,6 @@ import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * This class is used to load pathway diagram from a Reactome database via RESTful API.
@@ -29,12 +26,18 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 public class PathwayDiagramLoadTask extends AbstractTask {
     // DB_ID to be used for opening pathway diagram
     private Long pathwayId;
+    // Pathway name for highlight
+    private String pathwayName;
     
     public PathwayDiagramLoadTask() {
     }
     
     public void setPathwayId(Long dbId) {
         this.pathwayId = dbId;
+    }
+    
+    public void setPathwayName(String name) {
+        this.pathwayName = name;
     }
     
     @Override
@@ -50,18 +53,18 @@ public class PathwayDiagramLoadTask extends AbstractTask {
         String text = ReactomeRESTfulService.getService().pathwayDiagram(pathwayId);
         taskMonitor.setProgress(0.50d);
         taskMonitor.setStatusMessage("Open pathway diagram...");
-//        System.out.println(text);
-        PathwayInternalFrame pathwayFrame = createPathwayFrame(text);
+        //        System.out.println(text);
+        final PathwayInternalFrame pathwayFrame = createPathwayFrame(text);
         pathwayFrame.setPathwayId(pathwayId);
-        JDesktopPane desktop = PlugInUtilities.getCytoscapeDesktop();
+        final JDesktopPane desktop = PlugInObjectManager.getManager().getPathwayDesktop();
+        if (desktop == null) {
+            // Cannot do anything
+            taskMonitor.setStatusMessage("Cannot find a desktop container for showing pathway diagram!");
+            taskMonitor.setProgress(1.0d);
+            return; // Nowhere to show pathway!
+        }
         desktop.add(pathwayFrame);
-        try {
-            pathwayFrame.setSelected(true);
-            pathwayFrame.toFront();
-        }
-        catch(PropertyVetoException e) {
-            e.printStackTrace(); // Should not throw an exception
-        }
+        PathwayDiagramRegistry.getRegistry().showPathwayDiagramFrame(pathwayFrame);
         taskMonitor.setProgress(1.0d);
     }
     
@@ -80,6 +83,8 @@ public class PathwayDiagramLoadTask extends AbstractTask {
         pathwayFrame.setTitle(pathway.getDisplayName());
         InternalFrameListener frameLister = createFrameListener();
         pathwayFrame.addInternalFrameListener(frameLister);
+        PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
+        hiliter.highlightPathway(pathwayFrame, pathwayName);
         pathwayFrame.setSize(600, 450);
         pathwayFrame.setVisible(true);
         return pathwayFrame;

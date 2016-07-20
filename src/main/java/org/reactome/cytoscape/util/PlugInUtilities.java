@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.swing.JDesktopPane;
-import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
@@ -119,6 +117,15 @@ public class PlugInUtilities {
         }
         context.ungetService(sf);
         return networkView;
+    }
+    
+    public static void unselectNetwork() {
+        // Show detailed information for the selected network
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference sf = context.getServiceReference(CyApplicationManager.class.getName());
+        CyApplicationManager appManager = (CyApplicationManager) context.getService(sf);
+        appManager.setCurrentNetwork(null);
+        context.ungetService(sf);
     }
     
     /**
@@ -777,37 +784,6 @@ public class PlugInUtilities {
         }
         return null;
     }
-
-    /**
-     * Get the JDesktop used by the Swing-based Cytoscape Application.
-     * @return
-     */
-    public static JDesktopPane getCytoscapeDesktop() {
-        CySwingApplication application = PlugInObjectManager.getManager().getCySwingApplication();
-        JFrame frame = application.getJFrame();
-        // Use this loop to find JDesktopPane
-        Set<Component> children = new HashSet<Component>();
-        for (Component comp : frame.getComponents())
-            children.add(comp);
-        Set<Component> next = new HashSet<Component>();
-        while (children.size() > 0) {
-            for (Component comp : children) {
-                if (comp instanceof JDesktopPane)
-                    return (JDesktopPane) comp;
-                if (comp instanceof Container) {
-                    Container container = (Container) comp;
-                    if (container.getComponentCount() > 0) {
-                        for (Component comp1 : container.getComponents())
-                            next.add(comp1);
-                    }
-                }
-            }
-            children.clear();
-            children.addAll(next);
-            next.clear();
-        }
-        return null;
-    }  
     
     public static String formatProbability(double value) {
         if (Double.isNaN(value))

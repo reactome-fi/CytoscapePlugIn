@@ -4,27 +4,35 @@
  */
 package org.reactome.cytoscape.util;
 
+import java.awt.CardLayout;
 import java.awt.Component;
+import java.awt.Container;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
 import org.cytoscape.app.CyAppAdapter;
+import org.cytoscape.application.CyVersion;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.SelectionMediator;
 import org.osgi.framework.BundleContext;
@@ -56,6 +64,8 @@ public class PlugInObjectManager {
     private CyAppAdapter appAdapter;
     // Cache the CySwingApplication to be used multiple times
     private CySwingApplication cyApplication;
+    // Cache to fetch the version of Cytoscape
+    private CyVersion cyVersion;
     // Cache TaskManager since it will be used multiple times
     @SuppressWarnings("rawtypes")
     private TaskManager taskManager;
@@ -72,6 +82,10 @@ public class PlugInObjectManager {
     private SelectionMediator dbIdSelectionMediator;
     // To syncrhonize observation variable selection
     private SelectionMediator observationSelectionMediator;
+    // Cached JDesktop for doing something for pathway view
+    private JDesktopPane pathwayDesktop;
+    // Used as a label for card layout for pathwaydesktop in Cytoscape 3.4.0 or above
+    private final String PATHWAY_DIAGRAM_CARD_LABEL = "PathwayDiagramDesktop";
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
@@ -144,6 +158,117 @@ public class PlugInObjectManager {
 
     public void setMinMaxColorValues(double[] minMaxColorValues) {
         this.minMaxColorValues = minMaxColorValues;
+    }
+    
+    /**
+     * For Cytoscape 3.4.0 or above, a customized JDesktopPane is used for showing
+     * pathway diagrams. This JDesktopPane is held in a Cardlayout's panel (aka container
+     * in NetworkViewMainPanel). Using this method to force this desktop to be displayed.
+     */
+    public void showPathwayDesktop() {
+        if (pathwayDesktop == null)
+            return; // Don't do anything
+        CyVersion version = getCyVersion();
+        if (version.getMajorVersion() >= 3 && version.getMinorVersion() >= 4) {
+            Container container = pathwayDesktop.getParent();
+            if (container.getLayout() instanceof CardLayout) {
+                PlugInUtilities.unselectNetwork();
+                CardLayout layout = (CardLayout) container.getLayout();
+                layout.show(container, PATHWAY_DIAGRAM_CARD_LABEL);
+            }
+        }
+    }
+    
+    /**
+     * Get a JDesktopPane for holding pathway diagrams.
+     * @return
+     */
+    public JDesktopPane getPathwayDesktop() {
+        if (pathwayDesktop != null)
+            return pathwayDesktop;
+        CyVersion version = getCyVersion();
+        if (version.getMajorVersion() >= 3 && version.getMinorVersion() >= 4) {
+            pathwayDesktop = createPathwayDesktop();
+        }
+        else {
+            pathwayDesktop = searchDesktopPane();
+        }
+        return pathwayDesktop;
+    }
+    
+    /**
+     * Use a JFrame to hold a JDesktopPane.
+     * @return
+     */
+    private JDesktopPane createPathwayDesktop() {
+        // Since Cytoscape version 3.4.0, JDesktopPane is not used anymore.
+        // We want to find a JPanel with CardLayout, which is used to display
+        // networks and grids of networks. JDesktopPane will be added as a card
+        JPanel container = searchPanelWithCardLayout();
+        if (container == null)
+            return null;
+        JDesktopPane desktop = new JDesktopPane();
+        container.add(desktop, PATHWAY_DIAGRAM_CARD_LABEL);
+        CardLayout layout = (CardLayout) container.getLayout();
+        layout.show(container, PATHWAY_DIAGRAM_CARD_LABEL);
+        return desktop;
+    }
+    
+    private JPanel searchPanelWithCardLayout() {
+        JFrame frame = getCytoscapeDesktop();
+        // Use this loop to find JDesktopPane
+        Set<Component> children = new HashSet<Component>();
+        for (Component comp : frame.getComponents())
+            children.add(comp);
+        Set<Component> next = new HashSet<Component>();
+        while (children.size() > 0) {
+            for (Component comp : children) {
+                if (comp instanceof JPanel) {
+                    JPanel pane = (JPanel) comp;
+                    if (pane.getLayout() instanceof CardLayout) {
+                        return pane;
+                    }
+                }
+                if (comp instanceof Container) {
+                    Container container = (Container) comp;
+                    if (container.getComponentCount() > 0) {
+                        for (Component comp1 : container.getComponents())
+                            next.add(comp1);
+                    }
+                }
+            }
+            children.clear();
+            children.addAll(next);
+            next.clear();
+        }
+        return null;
+    }
+    
+    private JDesktopPane searchDesktopPane() {
+        JFrame frame = getCytoscapeDesktop();
+        // Use this loop to find JDesktopPane
+        Set<Component> children = new HashSet<Component>();
+        for (Component comp : frame.getComponents())
+            children.add(comp);
+        Set<Component> next = new HashSet<Component>();
+        while (children.size() > 0) {
+            for (Component comp : children) {
+                if (comp instanceof JDesktopPane) {
+                    return (JDesktopPane) comp;
+                }
+                if (comp instanceof Container) {
+                    Container container = (Container) comp;
+                    if (container.getComponentCount() > 0) {
+                        for (Component comp1 : container.getComponents())
+                            next.add(comp1);
+                    }
+                }
+            }
+            children.clear();
+            children.addAll(next);
+            next.clear();
+        }
+        return null;
     }
 
     /**
@@ -255,6 +380,18 @@ public class PlugInObjectManager {
                 serviceReferences.add(reference);
         }
         return appAdapter;
+    }
+    
+    public CyVersion getCyVersion() {
+        if (cyVersion == null) {
+            ServiceReference reference = context.getServiceReference(CyVersion.class.getName());
+            if (reference == null)
+                return null;
+            cyVersion = (CyVersion) context.getService(reference);
+            if (cyVersion != null)
+                serviceReferences.add(reference);
+        }
+        return cyVersion;
     }
     
     /**

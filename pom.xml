@@ -10,7 +10,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome</groupId>
 	<artifactId>reactomeFI-app</artifactId>
-	<version>5.0.0-beta</version>
+	<version>5.1.0-beta</version>
 	<name>${bundle.symbolicName}</name>
 	<packaging>bundle</packaging>
 	
@@ -247,6 +247,8 @@
                 <artifactId>app-api</artifactId>
                 <!-- Use the 3.0.1 version since the released version is 3.0.2. Otherwise, RELEASE should be
                 used for all Cytoscape jar files. -->
+                <!-- Try to use the older version for backward compatibility. Otherwise, the built app will not work for
+                older Cytoscape 3.0 -->
                 <version>3.2.1</version>
         </dependency>
 		

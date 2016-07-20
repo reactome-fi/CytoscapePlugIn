@@ -234,7 +234,7 @@ public class FINetworkGenerator implements NetworkGenerator {
             context.ungetService(servRef);
         }
         catch (Exception e) {
-            JOptionPane.showMessageDialog(PlugInUtilities.getCytoscapeDesktop(),
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "The visual style could not be applied.",
                                           "Visual Style Error", 
                                           JOptionPane.ERROR_MESSAGE);
