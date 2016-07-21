@@ -98,7 +98,6 @@ public class PathwayEnrichmentHighlighter {
     }
     
     public void highlightPathway(CyZoomablePathwayEditor pathwayEditor) {
-        //
         List<String> geneList = new ArrayList<String>(getHitGenes());
         highlightPathway(pathwayEditor, geneList);
     }

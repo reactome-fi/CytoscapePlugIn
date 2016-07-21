@@ -40,7 +40,6 @@ import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Variable;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;

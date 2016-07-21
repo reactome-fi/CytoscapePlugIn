@@ -61,7 +61,7 @@ public class PathwayInternalFrame extends JInternalFrame implements Selectable {
     public PathwayInternalFrame() {
         init();
     }
-    
+
     private void init() {
         pathwayEditor = new CyZoomablePathwayEditor();
         getContentPane().add(pathwayEditor, BorderLayout.CENTER);

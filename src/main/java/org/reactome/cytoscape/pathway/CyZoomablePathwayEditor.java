@@ -998,19 +998,25 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         // Add an extra space before delimit , and |
         StringBuilder builder = new StringBuilder();
         String gene = "";
-        builder.append("<center><a href=\"");
+        builder.append("<center>");
         for (char c : genes.toCharArray()) {
             if (c == '|' || c == ',') {
-                builder.append(gene).append("\">").append(gene).append("</a>").append(c).append(" <a ");
+                builder.append("<a ");
                 if (hitGenes.contains(gene))
                     builder.append("style=\"background-color:purple;color:white;\" ");
-                builder.append(" href=\""); 
+                builder.append("href=\"").append(gene).append("\">");
+                builder.append(gene).append("</a>").append(c);
                 gene = "";
             }
             else
                 gene += c;
         }
-        builder.append(gene).append("\">").append(gene).append("</a></center>");
+        // The last gene
+        builder.append("<a ");
+        if (hitGenes.contains(gene))
+            builder.append("style=\"background-color:purple;color:white;\" ");
+        builder.append("href=\"").append(gene).append("\">");
+        builder.append(gene).append("</a></center>");
         return builder.toString();
     }
     

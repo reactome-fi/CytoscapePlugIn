@@ -26,18 +26,12 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 public class PathwayDiagramLoadTask extends AbstractTask {
     // DB_ID to be used for opening pathway diagram
     private Long pathwayId;
-    // Pathway name for highlight
-    private String pathwayName;
     
     public PathwayDiagramLoadTask() {
     }
     
     public void setPathwayId(Long dbId) {
         this.pathwayId = dbId;
-    }
-    
-    public void setPathwayName(String name) {
-        this.pathwayName = name;
     }
     
     @Override
@@ -84,7 +78,7 @@ public class PathwayDiagramLoadTask extends AbstractTask {
         InternalFrameListener frameLister = createFrameListener();
         pathwayFrame.addInternalFrameListener(frameLister);
         PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-        hiliter.highlightPathway(pathwayFrame, pathwayName);
+        hiliter.highlightPathway(pathwayFrame.getZoomablePathwayEditor());
         pathwayFrame.setSize(600, 450);
         pathwayFrame.setVisible(true);
         return pathwayFrame;

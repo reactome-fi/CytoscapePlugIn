@@ -416,6 +416,15 @@ public class PathwayDiagramRegistry {
     }
     
     /**
+     * Show the diagram for the pathway specified by the passed pathwayId. If no diagram has been displayed,
+     * the database will be queried.
+     * @param pathwayId
+     */
+    public void showPathwayDiagram(Long pathwayId) {
+        showPathwayDiagram(pathwayId, false, null);
+    }
+    
+    /**
      * Show a diagram for a pathway. If it is not loaded, this method will load it using
      * a task.
      * @param pathwayId
@@ -432,8 +441,8 @@ public class PathwayDiagramRegistry {
      * @param pathwayName
      */
     private void showPathwayDiagram(Long pathwayId,
-                                    boolean needCheckNetworkView,
-                                    String pathwayName) {
+                                   boolean needCheckNetworkView,
+                                   String pathwayName) {
         PathwayInternalFrame frame = getPathwayFrame(pathwayId);
         if (frame != null) {
             showPathwayDiagramFrame(frame);
@@ -450,7 +459,6 @@ public class PathwayDiagramRegistry {
         TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
         PathwayDiagramLoadTask task = new PathwayDiagramLoadTask();
         task.setPathwayId(pathwayId);
-        task.setPathwayName(pathwayName);
         taskManager.execute(new TaskIterator(task));
     }
 
@@ -469,16 +477,6 @@ public class PathwayDiagramRegistry {
         catch(PropertyVetoException e) {
             e.printStackTrace();
         }
-    }
-    
-    /**
-     * Show a pathway diagram specified by its DB_ID. This method will not check if a network view is
-     * available for the pathway. In other words, using this method, a pathway can be displayed as both
-     * views: pathway diagram and FI view.
-     * @param pathwayId
-     */
-    public void showPathwayDiagram(Long pathwayId) {
-        showPathwayDiagram(pathwayId, false, null);
     }
     
     /**
