@@ -32,7 +32,6 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
-import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.SelectionMediator;
 import org.osgi.framework.BundleContext;

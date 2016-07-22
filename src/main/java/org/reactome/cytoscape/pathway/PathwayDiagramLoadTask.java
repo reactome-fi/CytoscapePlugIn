@@ -16,6 +16,8 @@ import org.cytoscape.work.TaskMonitor;
 import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
+import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
@@ -77,11 +79,16 @@ public class PathwayDiagramLoadTask extends AbstractTask {
         pathwayFrame.setTitle(pathway.getDisplayName());
         InternalFrameListener frameLister = createFrameListener();
         pathwayFrame.addInternalFrameListener(frameLister);
-        PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-        hiliter.highlightPathway(pathwayFrame.getZoomablePathwayEditor());
+        highlightPathway(pathwayFrame);
         pathwayFrame.setSize(600, 450);
         pathwayFrame.setVisible(true);
         return pathwayFrame;
+    }
+    
+    private void highlightPathway(PathwayInternalFrame frame) {
+        // If there is PGM inference result available, we want to highlight diagram based on these results
+        RenderablePathway diagram = (RenderablePathway) frame.getDisplayedPathway();
+        FactorGraphInferenceResults results = FactorGraphRegistry.getRegistry().getInferenceResults(diagram);
     }
     
     /**

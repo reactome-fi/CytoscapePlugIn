@@ -1,6 +1,5 @@
 package org.reactome.cytoscape3;
 
-import java.awt.event.ActionEvent;
 import java.io.File;
 
 import javax.swing.JOptionPane;
@@ -22,12 +21,8 @@ public class MicroarrayAnalysisAction extends FICytoscapeAction
     }
 
     @Override
-    public void actionPerformed(ActionEvent e)
+    protected void doAction()
     {
-        if (!createNewSession())
-        {
-            return;
-        }
         MicroArrayAnalysisDialog gui = new MicroArrayAnalysisDialog();
         gui.setLocationRelativeTo(desktopApp.getJFrame());
         gui.setModal(true);

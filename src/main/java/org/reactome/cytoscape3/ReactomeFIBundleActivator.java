@@ -11,20 +11,13 @@ package org.reactome.cytoscape3;
 import java.util.Properties;
 
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.model.CyNetworkFactory;
-import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNetworkTableManager;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
 import org.cytoscape.service.util.AbstractCyActivator;
-import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
-import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
-import org.cytoscape.view.model.CyNetworkViewFactory;
-import org.cytoscape.view.model.CyNetworkViewManager;
-import org.cytoscape.work.TaskManager;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.fipgm.PGMImpactAnalysisAction;
 import org.reactome.cytoscape.fipgm.PGMImpactAnalysisResultLoadAction;
@@ -50,23 +43,20 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         /* Grab essential Cytoscape Service References */
         CySwingApplication desktopApp = getService(context,
                 CySwingApplication.class);
-        @SuppressWarnings("rawtypes")
-        TaskManager taskManager = getService(context, TaskManager.class);
-        CyNetworkManager networkManager = getService(context,
-                CyNetworkManager.class);
-        CySessionManager sessionManager = getService(context,
-                CySessionManager.class);
-        CyNetworkFactory networkFactory = getService(context,
-                CyNetworkFactory.class);
-        CyNetworkTableManager networkTableManager = getService(context, CyNetworkTableManager.class);
-        CyNetworkViewFactory viewFactory = getService(context,
-                CyNetworkViewFactory.class);
-        CyNetworkViewManager viewManager = getService(context,
-                CyNetworkViewManager.class);
-        CyTableFactory tableFactory = getService(context, CyTableFactory.class);
-        CyTableManager tableManager = getService(context, CyTableManager.class);
-        SaveSessionAsTaskFactory saveSessionAsTaskFactory = getService(context,
-                SaveSessionAsTaskFactory.class);
+//        TaskManager taskManager = getService(context, TaskManager.class);
+//        CyNetworkManager networkManager = getService(context,
+//                CyNetworkManager.class);
+//        CySessionManager sessionManager = getService(context,
+//                CySessionManager.class);
+//        CyNetworkFactory networkFactory = getService(context,
+//                CyNetworkFactory.class);
+        
+//        CyNetworkViewFactory viewFactory = getService(context,
+//                CyNetworkViewFactory.class);
+//        CyNetworkViewManager viewManager = getService(context,
+//                CyNetworkViewManager.class);
+//        SaveSessionAsTaskFactory saveSessionAsTaskFactory = getService(context,
+//                SaveSessionAsTaskFactory.class);
         FileUtil fileUtil = getService(context, FileUtil.class);
         CyLayoutAlgorithmManager layoutManager = getService(context,
                 CyLayoutAlgorithmManager.class);
@@ -83,6 +73,9 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         //so that it is accessible across the app.
         MapTableToNetworkTablesTaskFactory mapNetworkAttrTFServiceRef = getService(context,
                                                                                    MapTableToNetworkTablesTaskFactory.class);
+        CyTableFactory tableFactory = getService(context, CyTableFactory.class);
+        CyTableManager tableManager = getService(context, CyTableManager.class);
+        CyNetworkTableManager networkTableManager = getService(context, CyNetworkTableManager.class);
         TableFormatterImpl tableFormatter = new TableFormatterImpl(tableFactory, 
                                                                    tableManager,
                                                                    networkTableManager,

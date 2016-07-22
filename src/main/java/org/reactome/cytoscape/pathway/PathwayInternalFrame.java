@@ -91,6 +91,8 @@ public class PathwayInternalFrame extends JInternalFrame implements Selectable {
                 PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(pathwayEditor,
                                                                                                             selectionEvent);
                 // If pathway inference results existing, we will show them
+                // This feature should be used when multiple PathwayInternalFrames are displayed showing inference results
+                // and the user wants to choose one.
                 RenderablePathway diagram = (RenderablePathway) pathwayEditor.getPathwayEditor().getRenderable();
                 FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(diagram);
                 if (fgResults != null) {

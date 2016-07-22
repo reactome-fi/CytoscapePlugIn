@@ -1,6 +1,5 @@
 package org.reactome.cytoscape3;
 
-import java.awt.event.ActionEvent;
 import java.io.File;
 
 import javax.swing.JOptionPane;
@@ -22,12 +21,7 @@ public class HotNetAnalysisAction extends FICytoscapeAction {
     }
 
     @Override
-    public void actionPerformed(ActionEvent e)
-    {
-        if (!createNewSession())
-        {
-            return;
-        }
+    protected void doAction() {
         HotNetAnalysisDialog gui = new HotNetAnalysisDialog();
         gui.setLocationRelativeTo(desktopApp.getJFrame());
         gui.setModal(true);

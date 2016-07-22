@@ -51,26 +51,19 @@ import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkFactory;
-import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableUtil;
-import org.cytoscape.session.CySession;
-import org.cytoscape.session.CySessionManager;
 import org.cytoscape.task.NetworkTaskFactory;
-import org.cytoscape.task.write.SaveSessionAsTaskFactory;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.util.swing.OpenBrowser;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
-import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.ServiceProperties;
-import org.cytoscape.work.Task;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
-import org.cytoscape.work.TaskMonitor;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.Renderable;
 import org.jdom.Document;
@@ -572,105 +565,6 @@ public class PlugInUtilities {
         catch(InvalidSyntaxException e) {
             e.printStackTrace();
         }
-    }
-    
-    /**
-     * Create a new session.
-     * @return
-     */
-    public static boolean createNewSession() {
-        //Checks if a session currently exists and if so check if the user would
-        //like to save that session. A new session is then created.
-        final BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        final ServiceReference netManagerRef = context.getServiceReference(CyNetworkManager.class.getName());
-        final ServiceReference taskManagerRef = context.getServiceReference(TaskManager.class.getName());
-        // For some reason, SaveSessionTaskFactor cannot work. Null is returned!
-        // So we have to use saveAsFactoryRef.
-        final ServiceReference saveAsFactoryRef = context.getServiceReference(SaveSessionAsTaskFactory.class.getName());
-        final ServiceReference sessionManagerRef = context.getServiceReference(CySessionManager.class.getName());
-        // If any of above essential services is missing, we cannot do anything
-        if (netManagerRef == null ||
-            taskManagerRef == null || 
-            saveAsFactoryRef == null ||
-            sessionManagerRef == null)
-            return false; // Just in case. This should never occur!
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        CyNetworkManager networkManager = (CyNetworkManager) context.getService(netManagerRef);
-        final CySessionManager sessionManager = (CySessionManager) context.getService(sessionManagerRef);
-        // The following code is not used to avoid saving an empty session
-//        if (sessionManager.getCurrentSession() == null)
-//            return true; // Nothing to be saved
-        int networkCount = networkManager.getNetworkSet().size();
-        if (networkCount == 0 &&
-            !PlugInObjectManager.getManager().isPathwaysLoaded()) // Though pathways cannot be saved into session,
-                                                                  // we want a new session for analysis.
-            return true;
-        String msg = "A new session is needed for using Reactome FI plugin.\n"
-                   + "Do you want to save your session?";
-        if (PlugInObjectManager.getManager().isPathwaysLoaded())
-            msg += "\nNote: Loaded pathways cannot be saved.";
-        int reply = JOptionPane.showConfirmDialog(desktopApp.getJFrame(),
-                                                  msg, 
-                                                  "Save Session?", 
-                                                  JOptionPane.YES_NO_CANCEL_OPTION);
-        if (reply == JOptionPane.CANCEL_OPTION) {
-            ungetServices(context,
-                          netManagerRef,
-                          saveAsFactoryRef,
-                          sessionManagerRef,
-                          taskManagerRef);
-            return false;
-        }
-        else if (reply == JOptionPane.NO_OPTION) {
-            CySession.Builder builder = new CySession.Builder();
-            sessionManager.setCurrentSession(builder.build(),
-                                             null);
-            ungetServices(context,
-                          netManagerRef,
-                          saveAsFactoryRef,
-                          sessionManagerRef,
-                          taskManagerRef);
-            return true;
-        }
-        else {
-            //TODO: There is a problem with the following code. If the user clicks "Cancel" in SessionSaveTask
-            // FI plug-in method will be executed without stop. This is not good. It will add FI network into
-            // the current session since the second newSessionTask will be bypassed. Furthermore, there is a thread
-            // issue with plug-in method if tasks have not been finished completely.
-            // A fix can be done with Cytoscape 3.1 API with TaskObserver. Will do this fix after 3.1 is formally 
-            // released.
-            @SuppressWarnings("rawtypes")
-            final TaskManager tm = (TaskManager) context.getService(taskManagerRef);
-            final SaveSessionAsTaskFactory saveAsFactory = (SaveSessionAsTaskFactory) context.getService(saveAsFactoryRef);
-            Task newSessionTask = new AbstractTask() {
-                @Override
-                public void run(TaskMonitor taskMonitor) throws Exception {
-                    if (sessionManager.getCurrentSession() == null) 
-                        return;
-                    CySession.Builder builder = new CySession.Builder();
-                    sessionManager.setCurrentSession(builder.build(), null);
-                    ungetServices(context,
-                                  netManagerRef,
-                                  saveAsFactoryRef,
-                                  sessionManagerRef,
-                                  taskManagerRef);
-                }
-            };
-            TaskIterator tasks = saveAsFactory.createTaskIterator();
-            tasks.append(newSessionTask);
-            tm.execute(tasks);
-            return true;
-        }
-    }
-    
-    /**
-     * A helper to unget an array of services.
-     * @param references
-     */
-    private static void ungetServices(BundleContext context,
-                               ServiceReference... references) {
-        for (ServiceReference reference : references)
-            context.ungetService(reference);
     }
     
     /**

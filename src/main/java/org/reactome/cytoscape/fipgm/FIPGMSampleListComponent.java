@@ -26,7 +26,6 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
 import org.osgi.framework.BundleContext;
-import org.reactome.cytoscape.pgm.GeneLevelSelectionHandler;
 import org.reactome.cytoscape.pgm.SampleListComponent;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableHelper;

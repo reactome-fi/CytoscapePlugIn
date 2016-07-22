@@ -5,7 +5,10 @@
 package org.reactome.cytoscape.pathway;
 
 import java.beans.PropertyChangeEvent;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,20 +33,20 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
-import org.reactome.cytoscape.pgm.GeneLevelResultDialog;
 import org.reactome.cytoscape.pgm.PGMFIVisualStyle;
-import org.reactome.cytoscape.pgm.TTestTablePlotPane;
+import org.reactome.cytoscape.pgm.VariableInferenceResults;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
-import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Variable;
 import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 import org.reactome.funcInt.ReactomeSource;
+import org.reactome.r3.util.MathUtilities;
 
 /**
  * This class is used to switch between two views: pathway diagram view and FI network view.
@@ -85,31 +88,6 @@ public class DiagramAndNetworkSwitcher {
         });
     }
 
-    private void highlightPathway(PathwayInternalFrame frame) {
-        // If there is PGM inference result available, we want to highlight diagram based on these results
-        RenderablePathway diagram = (RenderablePathway) frame.getDisplayedPathway();
-        FactorGraphInferenceResults results = FactorGraphRegistry.getRegistry().getInferenceResults(diagram);
-        if (results != null) {
-            // Highlight based on PGM results
-            CyZoomablePathwayEditor editor = frame.getZoomablePathwayEditor();
-            try {
-                editor.showInferenceResults(results);
-            }
-            catch(Exception e) {
-                e.printStackTrace(System.err);
-                JOptionPane.showMessageDialog(editor,
-                                              "Error in showing graphical model analysis results: " + e,
-                                              "Error in Result Display",
-                                              JOptionPane.ERROR_MESSAGE);
-            }
-        }
-        else {
-            // Otherwise, highlight based on hit genes
-            PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-            hiliter.highlightPathway(frame.getZoomablePathwayEditor());
-        }
-    }
-    
     public void convertToFINetwork(final Long pathwayId,
                                    final RenderablePathway pathway,
                                    final Set<String> hitGenes,
@@ -273,22 +251,39 @@ public class DiagramAndNetworkSwitcher {
     private void assignIPAsToGenes(RenderablePathway diagram,
                                    CyNetwork network,
                                    TableHelper tableHelper) {
-        // A GeneLevelResultDialog is used to get the value. Usually this should be avoided
-        // because of the heavy work. Probably perform a refactor in the future?
-        GeneLevelResultDialog helper = new GeneLevelResultDialog();
-        boolean rtn = helper.showResultsForDiagram(diagram);
-        if (!rtn)
+        FactorGraphInferenceResults fgResults = FactorGraphRegistry.getRegistry().getInferenceResults(diagram);
+        if (fgResults == null) {
+            // Do nothing if we cannot find anything
             return;
-        TTestTablePlotPane<Variable> plotPane = helper.getSummaryPane().getTablePlotPane();
-        TTestTableModel model = (TTestTableModel) plotPane.getTable().getModel();
-        Map<String, Double> geneToValue = new HashMap<String, Double>();
-        for (int i = 0; i < model.getRowCount(); i++) {
-            String gene = (String) model.getValueAt(i, 0);
-            int index = gene.indexOf("_");
-            if (index > 0)
-                gene = gene.substring(0, index);
-            Double value = new Double((String) model.getValueAt(i, 3));
-            geneToValue.put(gene, value);
+        }
+        Map<Variable, VariableInferenceResults> varToResult = fgResults.getVarToResults();
+        if (varToResult == null || varToResult.size() == 0)
+            return;
+        Map<String, String> sampleToType = fgResults.getSampleToType();
+        List<String> sortedTypes = null;
+        Map<String, Set<String>> typeToSamples = null;
+        if (sampleToType != null) {
+            // Do a sort
+            Set<String> types = new HashSet<String>(sampleToType.values());
+            sortedTypes = new ArrayList<String>(types);
+            Collections.sort(sortedTypes);
+            typeToSamples = PlugInUtilities.getTypeToSamples(sampleToType);
+        }
+        Map<String, Double> geneToValue = new HashMap<>();
+        for (Variable var : varToResult.keySet()) {
+            if (var.getName().endsWith("_mRNA")) {
+                int index = var.getName().indexOf("_"); // Should not use lastIndex since mRNA_Exp
+                String gene = var.getName().substring(0, index);
+                VariableInferenceResults result = varToResult.get(var);
+                List<List<Double>> ipasList = result.calculateIPAs(sortedTypes, typeToSamples);
+                if (ipasList.size() != 2) {
+                    continue;
+                }
+                double mean1 = MathUtilities.calculateMean(ipasList.get(0));
+                double mean2 = MathUtilities.calculateMean(ipasList.get(1));
+                double diff = mean1 - mean2;
+                geneToValue.put(gene, diff);
+            }
         }
         tableHelper.storeNodeAttributesByName(network,
                                               FIVisualStyle.GENE_VALUE_ATT,

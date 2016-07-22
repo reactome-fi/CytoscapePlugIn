@@ -18,6 +18,7 @@ import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.JOptionPane;
+import javax.swing.JRadioButton;
 import javax.swing.event.ListSelectionEvent;
 
 import org.apache.commons.math.MathException;
@@ -115,6 +116,13 @@ public class GeneLevelResultDialog extends GeneLevelDialog {
             @Override
             protected void doTableSelection(ListSelectionEvent e) {
                 // Do nothing to avoid selecting in the pathway diagram.
+            }
+
+            @Override
+            protected void createHighlightViewBtn() {
+                // Create a dump RadioButton to avoid null exception. We will hide the controls 
+                // in this view.
+                highlightViewBtn = new JRadioButton("Dummy");
             }
 
             @Override

@@ -213,6 +213,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
         inferenceTable.setRowSorter(inferenceSorter);
         inferencePane.add(new JScrollPane(inferenceTable), BorderLayout.CENTER);
         highlightViewBtn = new JRadioButton("Highlight pathway for sample");
+        highlightViewBtn.setSelected(false); // Default as false
         registerRadioButton();
         highlightViewBtn.addItemListener(new ItemListener() {
             

@@ -124,6 +124,36 @@ public class VariableInferenceResults {
         return rtn;
     }
     
+    /**
+     * Calculate IPAs for the passed samples. If the passed samples is null,
+     * real and random IPAs will be returned in the order. Otherwise, the returned
+     * IPAs will be in the order as the passed samples.
+     * @param samples
+     * @return
+     */
+    public List<List<Double>> calculateIPAs(List<String> types,
+                                            Map<String, Set<String>> typeToSamples) {
+        List<List<Double>> ipasList = new ArrayList<>();
+        if (types == null) {
+            // Real and random samples
+            List<Double> realIPAs = PlugInUtilities.calculateIPAs(getPriorValues(), 
+                                                                  getPosteriorValues());
+            List<Double> randomIPAs = PlugInUtilities.calculateIPAs(getPriorValues(), 
+                                                                    getRandomPosteriorValues());
+            ipasList.add(realIPAs);
+            ipasList.add(randomIPAs);
+        }
+        else {
+            for (String type : types) {
+                Set<String> samples = typeToSamples.get(type);
+                Map<String, List<Double>> sampleToProbs = getResultsForSamples(samples);
+                List<Double> ipas = PlugInUtilities.calculateIPAs(getPriorValues(), sampleToProbs);
+                ipasList.add(ipas);
+            }
+        }
+        return ipasList;
+    }
+    
     @XmlAccessorType(XmlAccessType.FIELD)
     static class SampleToValues {
         private String sample;

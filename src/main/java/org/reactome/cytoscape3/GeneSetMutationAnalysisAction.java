@@ -30,15 +30,10 @@ public class GeneSetMutationAnalysisAction extends FICytoscapeAction
         setPreferredMenu("Apps.Reactome FI");
         setMenuGravity(1.0f);
     }
-
+    
     @Override
-    public void actionPerformed(ActionEvent e)
-    {
-        if (!createNewSession())
-        {
-            return;
-        }
-        // Create the GUI. The first argument is the GUI context (the type
+    protected void doAction() {
+     // Create the GUI. The first argument is the GUI context (the type
         // of analysis being performed.
         GeneSetMutationAnalysisDialog gui = new GeneSetMutationAnalysisDialog();
         gui.setLocationRelativeTo(desktopApp.getJFrame());
