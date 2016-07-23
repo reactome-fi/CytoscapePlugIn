@@ -27,6 +27,7 @@ import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.service.FIAnalysisTask;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FINetworkService;
+import org.reactome.cytoscape.service.FINetworkServiceFactory;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
@@ -535,7 +536,8 @@ public class PGMImpactAnalysisTask extends FIAnalysisTask {
     }
     
     protected void fetchFIs() throws Exception {
-        FINetworkService networkService = FIPlugInHelper.getHelper().getNetworkService();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        FINetworkService networkService = new FINetworkServiceFactory().getFINetworkService();
         Set<String> fis = networkService.queryAllFIs();
         FIPGMConfiguration config = PlugInObjectManager.getManager().getFIPGMConfig();
         config.setFIs(fis);

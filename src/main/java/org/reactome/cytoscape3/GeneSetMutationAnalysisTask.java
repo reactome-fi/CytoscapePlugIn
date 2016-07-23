@@ -25,6 +25,7 @@ import org.reactome.cancer.MATFileLoader;
 import org.reactome.cytoscape.service.FIAnalysisTask;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FINetworkService;
+import org.reactome.cytoscape.service.FINetworkServiceFactory;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.TableFormatter;
 import org.reactome.cytoscape.service.TableFormatterImpl;
@@ -107,7 +108,8 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             // given the number of selected genes when userLinker = true
             if (useLinkers) {
                 progPane.setText("Checking FI Network size...");
-                FINetworkService fiService = FIPlugInHelper.getHelper().getNetworkService();
+                FIPlugInHelper r = FIPlugInHelper.getHelper();
+                FINetworkService fiService = new FINetworkServiceFactory().getFINetworkService();
                 Integer cutoff = fiService.getNetworkBuildSizeCutoff();
                 if (cutoff != null && selectedGenes.size() >= cutoff) {
                     JOptionPane.showMessageDialog(frame,
@@ -277,7 +279,8 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
     
     private CyNetwork constructFINetwork(Set<String> selectedGenes) throws Exception {
         // Check if a local service should be used
-        FINetworkService fiService = FIPlugInHelper.getHelper().getNetworkService();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        FINetworkService fiService = new FINetworkServiceFactory().getFINetworkService();
         Set<String> fis = fiService.buildFINetwork(selectedGenes, useLinkers);
         CyNetwork network = null;
         if (fis != null && fis.size() > 0) {

@@ -8,14 +8,11 @@ import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
-import org.reactome.cytoscape.service.FINetworkService;
-import org.reactome.cytoscape.util.PlugInObjectManager;
 /**
  * A singleton to manage other singleton objects, and some utility methods.
  * 
@@ -65,19 +62,9 @@ public class FIPlugInHelper {
         return cgiFrame;
     }
 
-    public FINetworkService getNetworkService() throws Exception
-    {
-        Properties prop = PlugInObjectManager.getManager().getProperties();
-        String clsName = prop.getProperty("networkService",
-                "org.reactome.cytoscape.service.LocalService");
-        FINetworkService networkService = (FINetworkService) Class.forName(clsName).newInstance();
-        return networkService;
-    }
-
     public void storeMCLModuleToSampleToValue(Map<Integer, Map<String, Double>> moduleToSampleToValue)
     {
         this.moduleToSampleToValue = moduleToSampleToValue;
-
     }
     
     public Map<Integer, Map<String, Double>> getMCLModuleToSampleToValue()

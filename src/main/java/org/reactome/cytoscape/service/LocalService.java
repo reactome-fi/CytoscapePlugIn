@@ -58,4 +58,35 @@ public class LocalService implements FINetworkService {
         return fis;
     }
     
+//    public NetworkClusterResult cluster(String queryFIs) {
+//        // Re-load Fis
+//        Set<String> fis = new HashSet<String>();
+//        String[] lines = queryFIs.split("\n");
+//        for (String line : lines) {
+//            String[] tokens = line.split("\t");
+//            // Note: the first token is edge id
+//            String node1 = tokens[1];
+//            String node2 = tokens[2]; 
+//            fis.add(node1 + "\t" + node2);
+//        }
+//        SpectralPartitionNetworkCluster clusterEngine = new SpectralPartitionNetworkCluster();
+//        List<Set<String>> clusters = clusterEngine.cluster(fis);
+//        List<GeneClusterPair> geneClusterPairs = new ArrayList<GeneClusterPair>();
+//        for (int i = 0; i < clusters.size(); i++) {
+//            for (String gene : clusters.get(i)) {
+//                GeneClusterPair pair = new GeneClusterPair();
+//                pair.setGeneId(gene);
+//                pair.setCluster(i);
+//                geneClusterPairs.add(pair);
+//            }
+//        }
+//        double modularity = clusterEngine.calculateModualarity(clusters,
+//                                                               fis);
+//        NetworkClusterResult rtn = new NetworkClusterResult();
+//        rtn.setClsName(clusterEngine.getClass().getName());
+//        rtn.setModularity(modularity);
+//        rtn.setGeneClusterPairs(geneClusterPairs);
+//        return rtn;
+//    }
+    
 }

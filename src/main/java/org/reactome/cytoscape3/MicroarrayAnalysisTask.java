@@ -37,6 +37,7 @@ import org.reactome.cancer.CancerGeneExpressionCommon;
 import org.reactome.cytoscape.service.FIAnalysisTask;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FINetworkService;
+import org.reactome.cytoscape.service.FINetworkServiceFactory;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableFormatterImpl;
@@ -68,8 +69,9 @@ public class MicroarrayAnalysisTask extends FIAnalysisTask {
             String fileName = gui.getSelectedFile().getPath().trim();
             Map<String, Map<String, Double>> geneToSampleToValue = arrayHelper
                     .loadGeneExp(fileName);
-            FINetworkService networkService = FIPlugInHelper
-                    .getHelper().getNetworkService();
+            FIPlugInHelper r = FIPlugInHelper
+                    .getHelper();
+            FINetworkService networkService = new FINetworkServiceFactory().getFINetworkService();
             Set<String> fis = networkService.queryAllFIs();
             Set<String> fisWithCorrs = arrayHelper.calculateGeneExpCorrForFIs(geneToSampleToValue,
                                                                               fis,

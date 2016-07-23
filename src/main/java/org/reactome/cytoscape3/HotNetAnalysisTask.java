@@ -41,6 +41,7 @@ import org.reactome.cancer.MATFileLoader;
 import org.reactome.cytoscape.service.FIAnalysisTask;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FINetworkService;
+import org.reactome.cytoscape.service.FINetworkServiceFactory;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableFormatter;
@@ -167,8 +168,9 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
                                      Map<String, Set<String>> sampleToGenes) throws Exception {
         Set<String> allGenes = new HashSet<String>();
         for (HotNetModule module : modules)
-            allGenes.addAll(module.genes); 
-        FINetworkService fiService = FIPlugInHelper.getHelper().getNetworkService();
+            allGenes.addAll(module.genes);
+        FIPlugInHelper r = FIPlugInHelper.getHelper(); 
+        FINetworkService fiService = new FINetworkServiceFactory().getFINetworkService();
         Set<String> fis = fiService.buildFINetwork(allGenes, false);
         FINetworkGenerator generator = new FINetworkGenerator();
         CyNetwork network = generator.constructFINetwork(fis);

@@ -16,6 +16,7 @@ import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.junit.Test;
 import org.reactome.cytoscape.service.FINetworkService;
+import org.reactome.cytoscape.service.FINetworkServiceFactory;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape3.FIPlugInHelper;
 import org.reactome.factorgraph.Observation;
@@ -37,7 +38,8 @@ public class FIPGMTests {
     
     @Test
     public void testMCLClusters() throws Exception {
-        FINetworkService networkService = FIPlugInHelper.getHelper().getNetworkService();
+        FIPlugInHelper r = FIPlugInHelper.getHelper();
+        FINetworkService networkService = new FINetworkServiceFactory().getFINetworkService();
         Set<String> fis = networkService.queryAllFIs();
         System.out.println("Total FIs: " + fis.size());
         

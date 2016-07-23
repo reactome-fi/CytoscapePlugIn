@@ -12,8 +12,7 @@ import java.util.Set;
  * @author gwu
  *
  */
-public interface FINetworkService
-{
+public interface FINetworkService {
 
     public Integer getNetworkBuildSizeCutoff() throws Exception;
 
