@@ -122,6 +122,37 @@ public class PlugInUtilities {
     }
     
     /**
+     * Convert a list of CyEdges into a list of FIs encoded in Strings.
+     * @param edges
+     * @param view
+     * @return
+     */
+    public static Set<String> convertEdgesToFIs(List<CyEdge> edges,
+                                                 CyNetworkView view) {
+        // Have to make sure the start id is less than end id based on
+        // conventions we used in the server side
+        CyTable nodeTable = view.getModel().getDefaultNodeTable();
+        Set<String> fis = new HashSet<>();
+        int compare = 0;
+        for (CyEdge edge : edges) {
+            CyNode start = edge.getSource();
+            CyNode end = edge.getTarget();
+            String startId = nodeTable.getRow(start.getSUID()).get("name",
+                    String.class); 
+            String endId = nodeTable.getRow(end.getSUID()).get("name",
+                    String.class);
+            compare = startId.compareTo(endId);
+            if (compare < 0) {
+                fis.add(startId + "\t" + endId);
+            }
+            else {
+                fis.add(endId + "\t" + startId);
+            }
+        }
+        return fis;
+    }
+    
+    /**
      * Get a file for analysis.
      * @param title
      * @param readOrWrite FileUtil.SAVE or LOAD.

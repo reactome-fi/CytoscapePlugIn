@@ -35,6 +35,8 @@ import org.osgi.framework.ServiceRegistration;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.service.AbstractPopupMenuHandler;
+import org.reactome.cytoscape.service.FINetworkService;
+import org.reactome.cytoscape.service.FINetworkServiceFactory;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableFormatter;
@@ -674,8 +676,11 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         tableFormatter.makeModuleAnalysisTables(view.getModel());
         List<CyEdge> edgeList = view.getModel().getEdgeList();
         
-        RESTFulFIService service = new RESTFulFIService(view);
         try {
+            // As of July 23, 2016, this Spectral partition based network clustering
+            // has been moved to the client side because of the long process in the server-side
+            // for large networks submitted by users.
+            FINetworkService service = new FINetworkServiceFactory().getFINetworkService();
             NetworkClusterResult clusterResult = service.cluster(edgeList, view);
             Map<String, Integer> nodeToCluster = new HashMap<String, Integer>();
             List<GeneClusterPair> geneClusterPairs = clusterResult.getGeneClusterPairs();

@@ -5,9 +5,17 @@
 package org.reactome.cytoscape.service;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
+import org.cytoscape.model.CyEdge;
+import org.cytoscape.view.model.CyNetworkView;
+import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.r3.graph.GeneClusterPair;
 import org.reactome.r3.graph.NetworkBuilderForGeneSet;
+import org.reactome.r3.graph.NetworkClusterResult;
+import org.reactome.r3.graph.SpectralPartitionNetworkCluster;
 
 /**
  * This FINetworkService was designed to perform a local version of constructing
@@ -58,35 +66,32 @@ public class LocalService implements FINetworkService {
         return fis;
     }
     
-//    public NetworkClusterResult cluster(String queryFIs) {
-//        // Re-load Fis
-//        Set<String> fis = new HashSet<String>();
-//        String[] lines = queryFIs.split("\n");
-//        for (String line : lines) {
-//            String[] tokens = line.split("\t");
-//            // Note: the first token is edge id
-//            String node1 = tokens[1];
-//            String node2 = tokens[2]; 
-//            fis.add(node1 + "\t" + node2);
-//        }
-//        SpectralPartitionNetworkCluster clusterEngine = new SpectralPartitionNetworkCluster();
-//        List<Set<String>> clusters = clusterEngine.cluster(fis);
-//        List<GeneClusterPair> geneClusterPairs = new ArrayList<GeneClusterPair>();
-//        for (int i = 0; i < clusters.size(); i++) {
-//            for (String gene : clusters.get(i)) {
-//                GeneClusterPair pair = new GeneClusterPair();
-//                pair.setGeneId(gene);
-//                pair.setCluster(i);
-//                geneClusterPairs.add(pair);
-//            }
-//        }
-//        double modularity = clusterEngine.calculateModualarity(clusters,
-//                                                               fis);
-//        NetworkClusterResult rtn = new NetworkClusterResult();
-//        rtn.setClsName(clusterEngine.getClass().getName());
-//        rtn.setModularity(modularity);
-//        rtn.setGeneClusterPairs(geneClusterPairs);
-//        return rtn;
-//    }
+    /**
+     * This method is copied from the server-side code for clients.
+     * @param queryFIs
+     * @return
+     */
+    public NetworkClusterResult cluster(List<CyEdge> edges,
+                                        CyNetworkView view) throws Exception {
+        Set<String> fis = PlugInUtilities.convertEdgesToFIs(edges, view);
+        SpectralPartitionNetworkCluster clusterEngine = new SpectralPartitionNetworkCluster();
+        List<Set<String>> clusters = clusterEngine.cluster(fis);
+        List<GeneClusterPair> geneClusterPairs = new ArrayList<GeneClusterPair>();
+        for (int i = 0; i < clusters.size(); i++) {
+            for (String gene : clusters.get(i)) {
+                GeneClusterPair pair = new GeneClusterPair();
+                pair.setGeneId(gene);
+                pair.setCluster(i);
+                geneClusterPairs.add(pair);
+            }
+        }
+        double modularity = clusterEngine.calculateModualarity(clusters,
+                                                               fis);
+        NetworkClusterResult rtn = new NetworkClusterResult();
+        rtn.setClsName(clusterEngine.getClass().getName());
+        rtn.setModularity(modularity);
+        rtn.setGeneClusterPairs(geneClusterPairs);
+        return rtn;
+    }
     
 }

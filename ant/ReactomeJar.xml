@@ -8,12 +8,17 @@
      guanming                                                                
      ====================================================================== -->
 <project name="ReactomeJar" default="jar" basedir="..">
-	<property name="destDir" value="lib/reactome/" />
-	<property name="sourceClsDir" value="../gkdev/classes" />
-	<property name="srcDir" value="../gkdev/src" />
+	<!-- temp folder to hold the generated jar file to be installed into the local repository -->
+	<property name="destDir" value="lib" />
+	<property name="sourceClsDir" value="../CuratorTool/classes" />
+	<property name="srcDir" value="../CuratorTool/src" />
+	<!-- properites to be used for installing -->
+	<property name="ReactomeJar" value="${destDir}}/reactome.jar" />
+	<property name="ReactomeId" value = "reactome-minimal" />
+	<property name="ReactomeVersion" value = "1.5" />
 		
 	<target name="jar">
-        <jar destfile="${destDir}/reactome.jar">
+        <jar destfile="${ReactomeJar}">
             <fileset dir="${sourceClsDir}">
             		<include name="org/gk/model/*.class" />
             	    <include name="org/gk/schema/*.class" />
@@ -37,7 +42,7 @@
             		<include name="org/gk/qualityCheck/*.class" />
             	    <!-- include name="org/gk/pathwaylayout/*.class" / -->
             </fileset>
-        	<zipgroupfileset dir="../gkdev/lib" includes="osxAdapter.jar"/>
+        	<zipgroupfileset dir="../CuratorTool/lib" includes="osxAdapter.jar"/>
         	<!-- fileset dir="${srcDir}">
             	    <include name="org/gk/model/*.java" />
             	    <include name="org/gk/schema/*.java" />
@@ -56,6 +61,16 @@
             		<include name="org/gk/pathwaylayout/*.java" />
         	</fileset -->
         </jar>
+		<exec executable="${destDir}/installJar.sh">
+			<!-- file anem -->
+			<arg value="${ReactomeJar}"/>
+			<!-- groupId -->
+			<arg value="org.reactome" />
+			<!-- artifactId -->
+			<arg value="${ReactomeId}" />
+			<!-- version -->
+			<arg value="${ReactomeVersion}" />
+		</exec>
     </target>
 	
 </project>
