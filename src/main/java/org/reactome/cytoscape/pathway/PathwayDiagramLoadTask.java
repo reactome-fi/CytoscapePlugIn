@@ -28,10 +28,16 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 public class PathwayDiagramLoadTask extends AbstractTask {
     // DB_ID to be used for opening pathway diagram
     private Long pathwayId;
+    // Name
+    private String pathwayName;
     
     public PathwayDiagramLoadTask() {
     }
     
+    public void setPathwayName(String pathwayName) {
+        this.pathwayName = pathwayName;
+    }
+
     public void setPathwayId(Long dbId) {
         this.pathwayId = dbId;
     }
@@ -86,6 +92,12 @@ public class PathwayDiagramLoadTask extends AbstractTask {
     }
     
     private void highlightPathway(PathwayInternalFrame frame) {
+        // Try to highlight pathway based on enrichment results first
+        PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
+        if (!hiliter.isEmpty()) {
+            hiliter.highlightPathway(frame, pathwayName);
+            return;
+        }
         // If there is PGM inference result available, we want to highlight diagram based on these results
         RenderablePathway diagram = (RenderablePathway) frame.getDisplayedPathway();
         FactorGraphInferenceResults results = FactorGraphRegistry.getRegistry().getInferenceResults(diagram);

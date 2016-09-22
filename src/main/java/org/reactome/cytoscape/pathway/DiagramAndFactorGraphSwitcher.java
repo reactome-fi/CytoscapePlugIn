@@ -46,7 +46,6 @@ import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Factor;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;

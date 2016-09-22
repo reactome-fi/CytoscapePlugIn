@@ -60,6 +60,16 @@ public class PathwayEnrichmentHighlighter {
     }
     
     /**
+     * Check if there is any need to highlight a new displayed pathway diagram.
+     * @return
+     */
+    public boolean isEmpty() {
+        if (pathwayToAnnotation == null || pathwayToAnnotation.size() == 0)
+            return true;
+        return false;
+    }
+    
+    /**
      * Get all hit genes in a single set.
      * @return
      */

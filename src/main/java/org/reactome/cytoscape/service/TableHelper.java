@@ -18,6 +18,7 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 public class TableHelper {
     // Some constants used as keys
     private final String REACTOME_NETWORK_TYPE = "ReactomeNetworkType";
+    private final String REACTOME_REACTION_NETWORK_TYPE = "ReactomeReactionNetworkType";
     
     private static final String MCL_ARRAY_CLUSTERING = TableFormatterImpl
             .getMCLArrayClustering();
@@ -100,6 +101,21 @@ public class TableHelper {
         if (dataSetType.equals(MCL_ARRAY_CLUSTERING) || dataSetType.equals(SAMPLE_MUTATION_DATA))
             return true;
         return false;
+    }
+    
+    /**
+     * Check if the passed network is a Reactome reaction network.
+     * @param network
+     * @return
+     */
+    public boolean isReactomeReactionNetwork(CyNetwork network) {
+        CyTable netTable = network.getDefaultNetworkTable();
+        Long netSUID = network.getSUID();
+        Boolean networkType = netTable.getRow(netSUID).get(REACTOME_REACTION_NETWORK_TYPE,
+                                                          Boolean.class);
+        if (networkType == null)
+            return false;
+        return networkType;
     }
     
     /**

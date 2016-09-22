@@ -788,7 +788,12 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
                 frame.getGlassPane().setVisible(true);
                 try {
                     RESTFulFIService fiService = new RESTFulFIService(view);
-                    List<ModuleGeneSetAnnotation> annotations = fiService.annotateGeneSet(genes, type);
+                    List<ModuleGeneSetAnnotation> annotations = null;
+                    boolean isReactomeReactionNetwork = new TableHelper().isReactomeReactionNetwork(view.getModel());
+                    if (isReactomeReactionNetwork)
+                        annotations = fiService.annotateReactions(genes);
+                    else
+                        annotations = fiService.annotateGeneSet(genes, type);
                     // Check if selection is used
                     List<CyNode> nodeList = CyTableUtil.getNodesInState(view.getModel(), CyNetwork.SELECTED, true);
                     if (nodeList != null && nodeList.size() > 0)

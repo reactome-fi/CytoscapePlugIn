@@ -487,15 +487,24 @@ public class RESTFulFIService implements FINetworkService
         return PlugInUtilities.callHttpInText(url, type, query);
     }
 
-    public List<ModuleGeneSetAnnotation> annotateGeneSet(Set<String> genes,
-            String type) throws Exception
-    {
+    public List<ModuleGeneSetAnnotation> annotateGeneSet(Set<String> genes, 
+                                                         String type) throws Exception {
         // Recover network modules information
         String url = restfulURL + "network/annotateGeneSet/" + type;
         // Create a query
         StringBuilder builder = new StringBuilder();
-        for (String node : genes)
-        {
+        for (String node : genes) {
+            builder.append(node).append("\n");
+        }
+        return annotateGeneSets(url, builder.toString());
+    }
+    
+    public List<ModuleGeneSetAnnotation> annotateReactions(Set<String> reactionIds) throws Exception {
+        // Recover network modules information
+        String url = restfulURL + "network/annotateReactions";
+        // Create a query
+        StringBuilder builder = new StringBuilder();
+        for (String node : reactionIds) {
             builder.append(node).append("\n");
         }
         return annotateGeneSets(url, builder.toString());
@@ -548,50 +557,39 @@ public class RESTFulFIService implements FINetworkService
         return annotations;
     }
 
-    private List<ModuleGeneSetAnnotation> annotateGeneSets(String url,
-            String query) throws Exception
-    {
+    private List<ModuleGeneSetAnnotation> annotateGeneSets(String url, String query) throws Exception {
         Element root = callInXML(url, query);
-//        checkXMLElement(root);
+        // checkXMLElement(root);
         List<?> children = root.getChildren();
         // Need to create ModuleGeneSetAnnotation from XML
         List<ModuleGeneSetAnnotation> rtn = new ArrayList<ModuleGeneSetAnnotation>();
-        for (Object name2 : children)
-        {
+        for (Object name2 : children) {
             Element elm = (Element) name2;
             ModuleGeneSetAnnotation moduleAnnotation = new ModuleGeneSetAnnotation();
             List<GeneSetAnnotation> annotations = new ArrayList<GeneSetAnnotation>();
             moduleAnnotation.setAnnotations(annotations);
             Set<String> ids = new HashSet<String>();
             moduleAnnotation.setIds(ids);
-            for (Iterator<?> it1 = elm.getChildren().iterator(); it1.hasNext();)
-            {
+            for (Iterator<?> it1 = elm.getChildren().iterator(); it1.hasNext();) {
                 Element childElm = (Element) it1.next();
                 String name = childElm.getName();
-                if (name.equals("annotations"))
-                {
-                    GeneSetAnnotation annotation = generateSimpleObjectFromElement(childElm, 
-                                                                                   GeneSetAnnotation.class);
+                if (name.equals("annotations")) {
+                    GeneSetAnnotation annotation = generateSimpleObjectFromElement(childElm, GeneSetAnnotation.class);
                     annotations.add(annotation);
                 }
-                else if (name.equals("ids"))
-                {
+                else if (name.equals("ids")) {
                     ids.add(childElm.getText());
                 }
-                else if (name.equals("module"))
-                {
+                else if (name.equals("module")) {
                     moduleAnnotation.setModule(new Integer(childElm.getText()));
                 }
             }
             rtn.add(moduleAnnotation);
         }
         // Sorting based on modules
-        Collections.sort(rtn, new Comparator<ModuleGeneSetAnnotation>()
-        {
+        Collections.sort(rtn, new Comparator<ModuleGeneSetAnnotation>() {
             @Override
-            public int compare(ModuleGeneSetAnnotation annot1,
-                    ModuleGeneSetAnnotation annot2)
-            {
+            public int compare(ModuleGeneSetAnnotation annot1, ModuleGeneSetAnnotation annot2) {
                 return annot1.getModule() - annot2.getModule();
             }
         });

@@ -459,6 +459,7 @@ public class PathwayDiagramRegistry {
         TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
         PathwayDiagramLoadTask task = new PathwayDiagramLoadTask();
         task.setPathwayId(pathwayId);
+        task.setPathwayName(pathwayName);
         taskManager.execute(new TaskIterator(task));
     }
 
