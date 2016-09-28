@@ -291,7 +291,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         }
     }
     
-    private class NetworkPathwayEnrichmentMenu implements CyNetworkViewContextMenuFactory {
+    protected class NetworkPathwayEnrichmentMenu implements CyNetworkViewContextMenuFactory {
         
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView view) {

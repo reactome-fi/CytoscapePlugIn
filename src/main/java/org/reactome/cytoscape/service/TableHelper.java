@@ -12,13 +12,11 @@ import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
-import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 public class TableHelper {
     // Some constants used as keys
     private final String REACTOME_NETWORK_TYPE = "ReactomeNetworkType";
-    private final String REACTOME_REACTION_NETWORK_TYPE = "ReactomeReactionNetworkType";
     
     private static final String MCL_ARRAY_CLUSTERING = TableFormatterImpl
             .getMCLArrayClustering();
@@ -111,11 +109,11 @@ public class TableHelper {
     public boolean isReactomeReactionNetwork(CyNetwork network) {
         CyTable netTable = network.getDefaultNetworkTable();
         Long netSUID = network.getSUID();
-        Boolean networkType = netTable.getRow(netSUID).get(REACTOME_REACTION_NETWORK_TYPE,
-                                                          Boolean.class);
-        if (networkType == null)
-            return false;
-        return networkType;
+        String networkType = netTable.getRow(netSUID).get(REACTOME_NETWORK_TYPE,
+                                                          String.class);
+        if (networkType != null && networkType.equals(ReactomeNetworkType.ReactionNetwork.toString())) 
+            return true;
+        return false;
     }
     
     /**

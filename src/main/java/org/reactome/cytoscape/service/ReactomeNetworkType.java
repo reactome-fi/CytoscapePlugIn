@@ -13,6 +13,7 @@ public enum ReactomeNetworkType {
     FINetwork, // Just normal FI network
     PathwayFINetwork, // A FI converted from a pathway diagram
     FactorGraph, // A network showing a factor graph
-    PGMFINetwork // FI generated based on FI PGM
+    PGMFINetwork, // FI generated based on FI PGM
+    ReactionNetwork // Networks generated based on preceding/following relationships or shared inputs among reactions
     
 }

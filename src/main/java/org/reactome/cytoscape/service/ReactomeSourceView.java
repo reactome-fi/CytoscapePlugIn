@@ -51,7 +51,13 @@ public class ReactomeSourceView {
     
     public void viewReactomeSource(Long dbId,
                                    Component component) {
-        // Need to quick the restfulAPI
+        viewReactomeSource(dbId, component, true);
+    }
+    
+    public void viewReactomeSource(Long dbId,
+                                   Component component,
+                                   boolean modal) {
+     // Need to quick the restfulAPI
         RESTFulFIService fiService = new RESTFulFIService();
         try {
             Element element = fiService.queryReactomeInstance(dbId);
@@ -67,7 +73,7 @@ public class ReactomeSourceView {
             }
             else
                 instanceDialog.setLocationRelativeTo(component);
-            instanceDialog.setModal(true);
+            instanceDialog.setModal(modal);
             instanceDialog.setVisible(true);
         }
         catch(Exception e) {
@@ -128,9 +134,14 @@ public class ReactomeSourceView {
             int index = desc.indexOf(":");
             String type = desc.substring(0, index);
             String dbId = desc.substring(index + 1);
-            if (type.equals("Instance"))
+            if (type.equals("Instance")) {
+                // Based on this code in Dialog.java
+                // modal ? DEFAULT_MODALITY_TYPE : ModalityType.MODELESS
+                ModalityType modalType = InstanceDialog.this.getModalityType();
                 viewReactomeSource(new Long(dbId),
-                                   InstanceDialog.this);
+                                   InstanceDialog.this,
+                                   modalType != ModalityType.MODELESS);
+            }
             else if (type.equals("pubmedid")) {
                 String url = "http://www.ncbi.nlm.nih.gov/pubmed/" + dbId;
                 PlugInUtilities.openURL(url);
