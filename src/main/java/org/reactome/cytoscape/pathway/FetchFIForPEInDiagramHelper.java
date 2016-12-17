@@ -589,7 +589,7 @@ public class FetchFIForPEInDiagramHelper {
         private String[] tableHeaders = new String[]{"Gene in Selected Object",
                                                      "FI Partner",
                                                      "FI Direction",
-                                                     "Objects Containing FI Patner"};
+                                                     "Objects Containing FI Partner"};
         private String[][] content;
         
         public FITableModel() {
