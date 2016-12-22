@@ -2,9 +2,10 @@
  * Created on Feb 18, 2014
  *
  */
-package org.reactome.cytoscape.pathway;
+package org.reactome.cytoscape.service;
 
 import org.gk.render.RenderableInteraction;
+import org.gk.render.RendererFactory;
 
 /**
  * A customized RenderableInteraction for FI in order to indicate
@@ -15,7 +16,9 @@ import org.gk.render.RenderableInteraction;
 public class FIRenderableInteraction extends RenderableInteraction {
     // A static block so the following statement will be called once only
     static {
-        FIRenderableInteractionRenderer.initialize();
+        FIRenderableInteractionRenderer renderer = new FIRenderableInteractionRenderer();
+        RendererFactory.getFactory().registerRenderer(FIRenderableInteraction.class,
+                                                      renderer);
     }
     
     // Direction in the input side

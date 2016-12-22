@@ -36,8 +36,10 @@ import org.gk.util.GKApplicationUtilities;
 import org.gk.util.ProgressPane;
 import org.gk.util.StringUtils;
 import org.jdom.Element;
+import org.reactome.cytoscape.service.FIRenderableInteraction;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.JiggleLayout;
+import org.reactome.cytoscape.service.PathwayDiagramOverlayHelper;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
@@ -52,6 +54,7 @@ public class FetchFIForPEInDiagramHelper {
     private CyZoomablePathwayEditor pathwayEditor;
     // Keep this map in order to map from DB_ID to _displayNames
     private Map<Long, String> dbIdToName;
+    private PathwayDiagramOverlayHelper overlayHelper;
     
     /**
      * The sole constructor needs two parameters.
@@ -73,6 +76,7 @@ public class FetchFIForPEInDiagramHelper {
                                r.getDisplayName());
             }
         }
+        overlayHelper = new PathwayDiagramOverlayHelper(this.pathwayEditor.getPathwayEditor());
     }
     
     /**
@@ -135,33 +139,27 @@ public class FetchFIForPEInDiagramHelper {
         }
     }
     
-    @SuppressWarnings("unchecked")
     private void addFIsToPathwayDiagram(List<SimpleFI> fis) {
         // Get the selected PE as the anchor for adding FIs
-        PathwayEditor editor = pathwayEditor.getPathwayEditor();
-        List<Renderable> selection = editor.getSelection();
-        if (selection == null || selection.size() != 1)
+        Node node = overlayHelper.getSelectedNode();
+        if (node == null)
             return;
-        Renderable r = selection.get(0);
-        if (!(r instanceof Node))
-            return;
-        Node node = (Node) r;
         // Two or more FIs can link two PEs, including newly added genes and 
         // existing pathway PEs. Use this map to merge them together into one 
         // single FI since multiple FIs cannot be displayed properly in the 
         // pathway diagram.
         // Some FIs may have been added previously. Newly added FIs should be
         // merged into them if possible.
-        Map<String, RenderableInteraction> nodesToInteraction = new HashMap<String, RenderableInteraction>();
-        getPreAddedFIs(node, nodesToInteraction);
+        Map<String, FIRenderableInteraction> nodesToInteraction = new HashMap<String, FIRenderableInteraction>();
+        overlayHelper.getPreAddedFIs(node, nodesToInteraction);
         filterPreAddedFIs(fis, nodesToInteraction);
-        List<Renderable> newNodes = new ArrayList<Renderable>();
+        List<Node> newNodes = new ArrayList<Node>();
+        PathwayEditor editor = pathwayEditor.getPathwayEditor();
         for (SimpleFI fi : fis) {
             Node partner = null;
             // Check if a FI should be added to the existing objects
             if (fi.existedPEs.length() == 0) {
-                partner = getRenderableForGene(fi.partner2,
-                                               newNodes);
+                partner = (RenderableProtein) overlayHelper.getRenderable(fi.partner2, RenderableProtein.class, newNodes);
                 createInteraction(node, 
                                   partner, 
                                   fi, 
@@ -172,7 +170,7 @@ public class FetchFIForPEInDiagramHelper {
                 // Need to split the text first
                 String[] names = fi.existedPEs.split(", ");
                 for (String name : names) {
-                    partner = getNodeForName(name);
+                    partner = overlayHelper.getNodeForName(name);
                     if (partner == null)
                         continue;
                     createInteraction(node, 
@@ -184,12 +182,11 @@ public class FetchFIForPEInDiagramHelper {
             }
         }
         // Do a layout
-        layout(node, newNodes);
-        editor.repaint(editor.getVisibleRect());
+        overlayHelper.layout(node, newNodes);
     }
     
     private void filterPreAddedFIs(List<SimpleFI> fis,
-                                   Map<String, RenderableInteraction> nodesToFI) {
+                                   Map<String, FIRenderableInteraction> nodesToFI) {
         List<SimpleFI> preFIs = new ArrayList<SimpleFI>();
         for (SimpleFI fi : fis) {
             String name = generateFIName(fi);
@@ -232,57 +229,12 @@ public class FetchFIForPEInDiagramHelper {
                                       JOptionPane.INFORMATION_MESSAGE);
     }
     
-    private void getPreAddedFIs(Node node,
-                                Map<String, RenderableInteraction> nodesToFI) {
-        List<HyperEdge> edges = node.getConnectedReactions();
-        for (HyperEdge edge : edges) {
-            if (edge instanceof FIRenderableInteraction) {
-                Node input = edge.getInputNode(0);
-                Node output = edge.getOutputNode(0);
-                String key = generateKeyForFINodes(input, output);
-                nodesToFI.put(key, (RenderableInteraction)edge);
-            }
-        }
-    }
-    
-    /**
-     * Do a giggle layout around the center nodes for newly added FI partners.
-     * @param node
-     * @param newNodes
-     */
-    private void layout(Node node,
-                        List<Renderable> newNodes) {
-        if (newNodes.size() == 0)
-            return;
-        List<String> newNames = new ArrayList<String>();
-        for (Renderable r : newNodes)
-            newNames.add(r.getDisplayName());
-        Map<String, double[]> nameToCoords = new JiggleLayout().jiggleLayout(node.getDisplayName(),
-                                                                             newNames);
-        double dx = node.getPosition().getX() - nameToCoords.get(node.getDisplayName())[0];
-        double dy = node.getPosition().getY() - nameToCoords.get(node.getDisplayName())[1];
-        for (Renderable r : newNodes) {
-            double[] coords = nameToCoords.get(r.getDisplayName());
-            int x = (int) (coords[0] + dx);
-            int y = (int) (coords[1] + dy);
-            // Should not be allowed outside the bounds
-            if (x < 50) // These numbers 50 and 25 are rather arbitrary
-                x = 50;
-            if (y < 25)
-                y = 25;
-            r.setPosition(x, y);
-            List<HyperEdge> interactions = ((Node)r).getConnectedReactions();
-            for (HyperEdge edge : interactions)
-                edge.layout();
-        }
-    }
-
     private void createInteraction(Node node, 
                                    Node partner, 
                                    SimpleFI fi,
                                    PathwayEditor editor,
-                                   Map<String, RenderableInteraction> nodesToInteraction) {
-        String key = generateKeyForFINodes(node, partner);
+                                   Map<String, FIRenderableInteraction> nodesToInteraction) {
+        String key = overlayHelper.generateKeyForNodes(node, partner);
         FIRenderableInteraction interaction = (FIRenderableInteraction) nodesToInteraction.get(key);
         if (interaction != null) {
             // Add a new name
@@ -293,15 +245,11 @@ public class FetchFIForPEInDiagramHelper {
             interaction.addDirections(fi.direction);
             return;
         }
-        // Create an interaction
-        interaction = new FIRenderableInteraction();
-        interaction.addInput(node);
-        interaction.addOutput(partner);
-        interaction.setDirections(fi.direction);
-        // Add a display name
-        interaction.setDisplayName(generateFIName(fi));
-        interaction.layout();
-        editor.insertEdge(interaction, false);
+        interaction = overlayHelper.createInteraction(node, 
+                                                      partner,
+                                                      fi.direction, 
+                                                      generateFIName(fi), 
+                                                      editor);
         nodesToInteraction.put(key, interaction);
     }
     
@@ -314,55 +262,6 @@ public class FetchFIForPEInDiagramHelper {
             return partner2 + " - " + partner1;
     }
 
-    private String generateKeyForFINodes(Node node, Node partner) {
-        // Generate a key
-        String name1 = node.getDisplayName();
-        String name2 = partner.getDisplayName();
-        String key = null;
-        if (name1.compareTo(name2) < 0)
-            key = name1 + " - " + name2;
-        else
-            key = name2 + " - " + name1;
-        return key;
-    }
-    
-    /**
-     * Get a RenderableProtein for a gene specified by its name. If this gene has been
-     * added in the diagram, the previously added RenderableProtein should be returned.
-     * Otherwise, a new RenderableProtein should be created. For the time being, only
-     * RenderableProtein will be created assuming that FIs involve proteins only.
-     * @param gene
-     * @return
-     */
-    private RenderableProtein getRenderableForGene(String gene,
-                                                   List<Renderable> newNodes) {
-        for (Object obj : pathwayEditor.getPathwayEditor().getDisplayedObjects()) {
-            Renderable r = (Renderable) obj;
-            if (r instanceof HyperEdge || r.getReactomeId() != null)
-                continue;
-            if (r instanceof RenderableProtein && r.getDisplayName().equals(gene))
-                return (RenderableProtein) r;
-        }
-        // Need to add a new RenderableProtein
-        RenderableProtein protein = new RenderableProtein();
-        protein.setDisplayName(gene);
-        pathwayEditor.getPathwayEditor().insertNode(protein);
-        newNodes.add(protein);
-        return protein;
-    }
-    
-    private Node getNodeForName(String name) {
-        for (Object obj : pathwayEditor.getPathwayEditor().getDisplayedObjects()) {
-            Renderable r = (Renderable) obj;
-            if (!(r instanceof Node) || r.getReactomeId() == null)
-                continue;
-            Node node = (Node) r;
-            if (node.getDisplayName().equals(name))
-                return node;
-        }
-        return null;
-    }
-    
     private void showResults(List<Element> elements) {
         JFrame desktop = PlugInObjectManager.getManager().getCytoscapeDesktop();
         JDialog dialog = GKApplicationUtilities.createDialog(desktop,

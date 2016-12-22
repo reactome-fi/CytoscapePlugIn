@@ -2,7 +2,7 @@
  * Created on Feb 18, 2014
  *
  */
-package org.reactome.cytoscape.pathway;
+package org.reactome.cytoscape.service;
 
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -12,10 +12,9 @@ import java.util.List;
 import org.gk.render.DefaultFlowLineRenderer;
 import org.gk.render.InteractionType;
 import org.gk.render.Node;
-import org.gk.render.RenderableGene;
 import org.gk.render.RendererFactory;
 import org.gk.util.DrawUtilities;
-import org.reactome.cytoscape.pathway.FIRenderableInteraction.FIDirectionType;
+import org.reactome.cytoscape.service.FIRenderableInteraction.FIDirectionType;
 
 /**
  * A customized Renderer to render FIRenderableDirection.
@@ -23,27 +22,13 @@ import org.reactome.cytoscape.pathway.FIRenderableInteraction.FIDirectionType;
  *
  */
 public class FIRenderableInteractionRenderer extends DefaultFlowLineRenderer {
-    private static FIRenderableInteractionRenderer renderer;
-    
-    /**
-     * A static method to initialize a single object only.
-     */
-    public static void initialize() {
-        if (renderer != null)
-            return;
-        renderer = new FIRenderableInteractionRenderer();
-        RendererFactory.getFactory().registerRenderer(FIRenderableInteraction.class,
-                                                      renderer);
-    }
-    
     
     /**
      * Default Constructor. Use a private constructor to make sure
      * only one Renderer is initialized.
      */
-    private FIRenderableInteractionRenderer() {
+    public FIRenderableInteractionRenderer() {
     }
-
 
     @Override
     protected void drawInteractionType(Point outputHub, 

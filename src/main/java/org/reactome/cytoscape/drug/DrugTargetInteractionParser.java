@@ -2,7 +2,7 @@
  * Created on Dec 16, 2016
  *
  */
-package org.reactome.cytoscape.service;
+package org.reactome.cytoscape.drug;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

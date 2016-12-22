@@ -640,6 +640,15 @@ public class RESTFulFIService implements FINetworkService
         return elm;
     }
     
+    public Element queryDrugTargetInteractionsInDiagram(Long pdId,
+                                                        Long peId) throws Exception {
+        String url = restfulURL + "cancerDruggability/queryInteractionsForPEInDiagram/" + pdId + "/" + peId;
+        Element elm = PlugInUtilities.callHttpInXML(url,
+                                                    HTTP_GET,
+                                                    null);
+        return elm;
+    }
+    
     public Element queryReactomeInstance(Long dbId) throws Exception {
         String url = restfulURL + "network/queryReactomeInstance/" + dbId;
         Element elm = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
