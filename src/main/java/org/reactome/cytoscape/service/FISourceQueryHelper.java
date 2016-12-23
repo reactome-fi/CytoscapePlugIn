@@ -40,6 +40,13 @@ public class FISourceQueryHelper {
     public FISourceQueryHelper() {
     }
     
+    public void queryFISource(String partner1,
+                              String partner2) {
+        queryFISource(partner1,
+                      partner2, 
+                      PlugInObjectManager.getManager().getCytoscapeDesktop());
+    }
+    
     /**
      * An overloaded method to query the source for a FI specified by its
      * two participating partners.

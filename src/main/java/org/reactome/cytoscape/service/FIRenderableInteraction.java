@@ -4,6 +4,17 @@
  */
 package org.reactome.cytoscape.service;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+
 import org.gk.render.RenderableInteraction;
 import org.gk.render.RendererFactory;
 
@@ -90,6 +101,57 @@ public class FIRenderableInteraction extends RenderableInteraction {
         FIDirectionType[] parsedDirections = parseDirections(directions);
         addInputDirection(parsedDirections[0]);
         addOutputDirection(parsedDirections[1]);
+    }
+    
+    public JMenuItem createMenuItem() {
+        JMenuItem rtn = null;
+        String name = getDisplayName();
+        // Check how many FIs have been merged in the specified interaction
+        String[] tokens = name.split(", ");
+        if (tokens.length > 1) {
+            // Need to use submenus
+            rtn = new JMenu("Query FI Source");
+            // Do a sorting
+            List<String> list = Arrays.asList(tokens);
+            Collections.sort(list);
+            for (String fi : list) {
+                JMenuItem item = new JMenuItem(fi);
+                final String tmpFi = fi;
+                item.addActionListener(new ActionListener() {
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        queryFISource(tmpFi);
+                    }
+                });
+                rtn.add(item);
+            }
+        }
+        else {
+            rtn = new JMenuItem("Query FI Source");
+            final String fi = tokens[0];
+            rtn.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    queryFISource(fi);
+                }
+            });
+        }
+        return rtn;
+    }
+    
+    private void queryFISource(String fi) {
+        // Do a match
+        Pattern pattern = Pattern.compile("(.+) - (.+)");
+        Matcher matcher = pattern.matcher(fi);
+        if (matcher.matches()) {
+            String partner1 = matcher.group(1);
+            String partner2 = matcher.group(2);
+            FISourceQueryHelper queryHelper = new FISourceQueryHelper();
+            queryHelper.queryFISource(partner1,
+                                      partner2);
+        }
     }
 
     static enum FIDirectionType {

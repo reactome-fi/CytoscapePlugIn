@@ -133,14 +133,14 @@ public class DiagramDrugTargetInteractionHandler {
         return "-|";
     }
     
-    public DrugTargetRenderableInteraction createInteraction(Node node, 
-                                                             Node partner, 
+    public DrugTargetRenderableInteraction createInteraction(Node targetNode, 
+                                                             Node drugNode, 
                                                              String direction,
                                                              String name) {
         // Create an interaction
         DrugTargetRenderableInteraction interaction = new DrugTargetRenderableInteraction();
-        interaction.addInput(node);
-        interaction.addOutput(partner);
+        interaction.addInput(drugNode);
+        interaction.addOutput(targetNode);
         interaction.setDirections(direction);
         // Add a display name
         interaction.setDisplayName(name);

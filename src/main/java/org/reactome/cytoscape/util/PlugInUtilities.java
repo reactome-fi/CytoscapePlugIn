@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -150,6 +151,24 @@ public class PlugInUtilities {
             }
         }
         return fis;
+    }
+    
+    public static void fillTableRow(String header,
+                              String value,
+                              StringBuilder buffer) {
+        buffer.append("<tr>");
+        fillTableRowHeader(header, buffer, 1);
+        fillTableRowValue(value, buffer);
+        buffer.append("</tr>");
+    }
+    
+    
+    public static void fillTableRowHeader(String header, StringBuilder buffer, int rowSpan) {
+        buffer.append("<th align=\"left\" bgcolor=\"#C0C0C0\" rowspan=\"" + rowSpan + "\">" + header + "</th>");
+    }
+    
+    public static void fillTableRowValue(String value, StringBuilder buffer) {
+        buffer.append("<td>" + value + "</td>");
     }
     
     /**
@@ -747,14 +766,24 @@ public class PlugInUtilities {
         String url = "http://cancer.sanger.ac.uk/cosmic/gene/overview?ln=" + gene;
         openURL(url);
     }
+    
+    public static void queryGoogle(String query) {
+        try {
+            String encodedQuery = URLEncoder.encode(query, "UTF-8");
+            String url = "https://www.google.com/#q=" + encodedQuery;
+            openURL(url);
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Open an OS web browser to display the passed URL.
      * 
      * @param url
      */
-    public static void openURL(String url)
-    {
+    public static void openURL(String url) {
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference serviceReference = context.getServiceReference(OpenBrowser.class.getName());
         boolean isOpened = false;

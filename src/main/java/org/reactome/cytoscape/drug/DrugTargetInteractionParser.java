@@ -67,7 +67,7 @@ public class DrugTargetInteractionParser {
                 parseExpEvidence(elm);
             else if (elmName.equals("literature"))
                 parseLiterature(elm);
-            else if (elmName.equals("Source"))
+            else if (elmName.equals("source"))
                 parseSource(elm);
             else if (elmName.equals("database"))
                 parseDatabase(elm);
@@ -289,7 +289,7 @@ public class DrugTargetInteractionParser {
             String text = childElm.getTextNormalize();
             if (name.equals("sourceID"))
                 source.setSourceID(new Integer(text));
-            else if (name.equals("literature")) {
+            else if (name.equals("sourceLiterature")) {
                 String litId = getId(childElm);
                 LitEvidence litEvidence = getObject(litId, idToLitEvidence, LitEvidence.class);
                 source.setSourceLiterature(litEvidence);

@@ -158,9 +158,9 @@ public class ReactomeSourceView {
             builder.append("<html><body>");
             builder.append("<table width=\"100%\" border=\"1\">");
             // three most important information
-            fillTableRow("classType", schemaClass, builder);
-            fillTableRow("dbId", dbId, builder);
-            fillTableRow("displayName", displayName, builder);
+            PlugInUtilities.fillTableRow("classType", schemaClass, builder);
+            PlugInUtilities.fillTableRow("dbId", dbId, builder);
+            PlugInUtilities.fillTableRow("displayName", displayName, builder);
             
             List<Element> attributes = element.getChildren("attributes");
             for (Element attribute : attributes) {
@@ -170,23 +170,6 @@ public class ReactomeSourceView {
             builder.append("</body></html>");
             htmlPane.setText(builder.toString());
             htmlPane.setCaretPosition(0); // Want to start from the first line.
-        }
-        
-        private void fillTableRow(String header,
-                                  String value,
-                                  StringBuilder buffer) {
-            buffer.append("<tr>");
-            fillTableRowHeader(header, buffer, 1);
-            fillTableRowValue(value, buffer);
-            buffer.append("</tr>");
-        }
-        
-        private void fillTableRowHeader(String header, StringBuilder buffer, int rowSpan) {
-            buffer.append("<th align=\"left\" bgcolor=\"#C0C0C0\" rowspan=\"" + rowSpan + "\">" + header + "</th>");
-        }
-        
-        private void fillTableRowValue(String value, StringBuilder buffer) {
-            buffer.append("<td>" + value + "</td>");
         }
         
         private void generateHTMLForAttribute(Element attribute,
@@ -236,9 +219,7 @@ public class ReactomeSourceView {
                                          String rowTitle) {
             int index = 0;
             buffer.append("<tr>");
-            fillTableRowHeader(rowTitle,
-                               buffer,
-                               instances.size());
+            PlugInUtilities.fillTableRowHeader(rowTitle, buffer, instances.size());
             for (String[] instance : instances) {
                 if (index > 0)
                     buffer.append("<tr>");
@@ -247,7 +228,7 @@ public class ReactomeSourceView {
                 if (stoi != null && stoi.intValue() > 1)
                     value += stoi + " x ";
                 value += "<a href=\"Instance:" + instance[0] + "\">" + instance[1] + "</a>";
-                fillTableRowValue(value, buffer);
+                PlugInUtilities.fillTableRowValue(value, buffer);
                 buffer.append("</tr>");
                 index++;
             }
@@ -272,7 +253,7 @@ public class ReactomeSourceView {
                                                String title) {
               if (values != null && values.size() > 0) {
                   buffer.append("<tr>");
-                  fillTableRowHeader(title, buffer, values.size());
+                  PlugInUtilities.fillTableRowHeader(title, buffer, values.size());
                   for (int i = 0; i < values.size(); i++) {
                       if (i > 0)
                           buffer.append("<tr>");
@@ -280,8 +261,7 @@ public class ReactomeSourceView {
                       // Add a link for pubmedid
                       if (title.equals(ReactomeJavaConstants.pubMedIdentifier))
                           value = "<a href=\"pubmedid:" + value + "\">" + value + "</a>";;
-                      fillTableRowValue(value,
-                                        buffer);
+                      PlugInUtilities.fillTableRowValue(value, buffer);
                       buffer.append("</tr>");
                   }
               }
