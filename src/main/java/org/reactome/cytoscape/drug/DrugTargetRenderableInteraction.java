@@ -4,6 +4,7 @@
  */
 package org.reactome.cytoscape.drug;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class DrugTargetRenderableInteraction extends FIRenderableInteraction {
     private Set<Interaction> interactions;
     
     public DrugTargetRenderableInteraction() {
+        setLineColor(Color.RED); // Default red for drug/target interactions
     }
 
     public Set<Interaction> getInteractions() {

@@ -10,6 +10,7 @@ import java.awt.Rectangle;
 import java.util.List;
 
 import org.gk.render.DefaultFlowLineRenderer;
+import org.gk.render.FlowLine;
 import org.gk.render.InteractionType;
 import org.gk.render.Node;
 import org.gk.render.RendererFactory;
@@ -81,5 +82,20 @@ public class FIRenderableInteractionRenderer extends DefaultFlowLineRenderer {
                         position.x, y2);
         }
     } 
+    
+    /**
+     * Override to fix a bug in the original implementation.
+     */
+    @Override
+    protected void setLineColor(FlowLine flowLine, Graphics2D g2) {
+        if (flowLine.isHighlighted())
+            g2.setPaint(HIGHLIGHTED_COLOR);
+        else if (flowLine.isSelected())
+            g2.setPaint(SELECTION_WIDGET_COLOR);
+        else if (flowLine.getLineColor() == null)
+            g2.setPaint(DEFAULT_FOREGROUND);
+        else
+            g2.setPaint(flowLine.getLineColor());
+    }
     
 }

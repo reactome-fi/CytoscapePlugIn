@@ -19,18 +19,25 @@ import edu.ohsu.bcb.druggability.Interaction;
 public class DrugTargetInteractionManager {
     private static DrugTargetInteractionManager manager;
     private Map<String, Interaction> idToInteraction;
+    // Cached filter
+    private InteractionFilter interactionFilter;
     
     /**
      * Default constructor.
      */
     private DrugTargetInteractionManager() {
         this.idToInteraction = new HashMap<>();
+        this.interactionFilter = new InteractionFilter();
     }
     
     public static DrugTargetInteractionManager getManager() {
         if (manager == null)
             manager = new DrugTargetInteractionManager();
         return manager;
+    }
+    
+    public InteractionFilter getInteractionFilter() {
+        return this.interactionFilter;
     }
     
     public void addInteractions(Collection<Interaction> interactions) {
