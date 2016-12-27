@@ -39,7 +39,8 @@ import org.gk.util.SwingImageCreator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
-import org.reactome.cytoscape.drug.DiagramDrugTargetInteractionHandler;
+import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
+import org.reactome.cytoscape.drug.InteractionFilter;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResultsIO;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
@@ -735,14 +736,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     }
     
     private void filterCancerDrugs() {
-        System.out.println("Filtering cancer drugs...");
+        DrugTargetInteractionManager manager = DrugTargetInteractionManager.getManager();
+        manager.filterCancerDrugs((CyPathwayEditor)getPathwayEditor());
     }
 
     private void fetchCancerDrugs(final Long dbId) {
         Thread t = new Thread() {
             public void run() {
-                DiagramDrugTargetInteractionHandler handler = new DiagramDrugTargetInteractionHandler(getPathwayEditor());
-                handler.fetchCancerDrugs(dbId);
+                DrugTargetInteractionManager manager = DrugTargetInteractionManager.getManager();
+                manager.fetchCancerDrugsForDisplay(dbId,
+                                                   getPathwayEditor());
             }
         };
         t.start();

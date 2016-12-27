@@ -18,11 +18,14 @@ import java.util.Set;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 
+import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
 import org.gk.render.Renderable;
 import org.gk.render.RenderableInteraction;
+import org.gk.render.RenderablePathway;
+import org.gk.render.RenderableReaction;
 
 /**
  * A customized PathwayEditor in order to do something special for PathwayDiagram displayed in
@@ -32,9 +35,23 @@ import org.gk.render.RenderableInteraction;
 public class CyPathwayEditor extends PathwayEditor {
     // Record newly added RenderableInteraction for new drawing
     private List<FIRenderableInteraction> overlaidFIs;
+    // A flag to block repaint during overlaying
+    private boolean duringOverlay;
     
     public CyPathwayEditor() {
         setEditable(false); // Only used as a pathway diagram view and not for editing
+    }
+
+    public boolean isDuringOverlay() {
+        return duringOverlay;
+    }
+
+    public void setDuringOverlay(boolean duringOverlay) {
+        this.duringOverlay = duringOverlay;
+    }
+    
+    public List<FIRenderableInteraction> getOverlaidFIs() {
+        return this.overlaidFIs;
     }
 
     @Override
@@ -84,24 +101,32 @@ public class CyPathwayEditor extends PathwayEditor {
         repaint(getVisibleRect());
     }
     
+    public void removeFIs(List<FIRenderableInteraction> fis) {
+        if (overlaidFIs == null || overlaidFIs.size() == 0)
+            return;
+        List<RenderableInteraction> toBeRemoved = new ArrayList<RenderableInteraction>();
+        for (RenderableInteraction fi : fis) {
+            Node input = fi.getInputNode(0);
+            Node output = fi.getOutputNode(0);
+            delete(fi);
+            // Check if a connected node should be deleted too
+            if (input.getReactomeId() == null && input.getConnectedReactions().size() == 0)
+                delete(input);
+            if (output.getReactomeId() == null && output.getConnectedReactions().size() == 0)
+                delete(output);
+            toBeRemoved.add(fi);
+        }
+        overlaidFIs.removeAll(toBeRemoved);
+        repaint(getVisibleRect());
+    }
+    
     /**
      * Remove all overlaid FIs.
      */
     public void removeFIs() {
         if (overlaidFIs == null || overlaidFIs.size() == 0)
             return;
-       for (RenderableInteraction fi : overlaidFIs) {
-           Node input = fi.getInputNode(0);
-           Node output = fi.getOutputNode(0);
-           delete(fi);
-           // Check if a connected node should be deleted too
-           if (input.getReactomeId() == null && input.getConnectedReactions().size() == 0)
-               delete(input);
-           if (output.getReactomeId() == null && output.getConnectedReactions().size() == 0)
-               delete(output);
-       }
-       overlaidFIs.clear();
-       repaint(getVisibleRect());
+        removeFIs(overlaidFIs);
     }
     
     /**
@@ -129,9 +154,27 @@ public class CyPathwayEditor extends PathwayEditor {
         return true;
     }
     
+    /**
+     * Override this method to avoid any threading issues during a batch modification.
+     */
     @Override
     public void insertEdge(HyperEdge edge, boolean useDefaultInsertPos) {
-        super.insertEdge(edge, useDefaultInsertPos);
+        if (useDefaultInsertPos) {
+            Point position = new Point(defaultInsertPos);
+            edge.initPosition(position);
+            updateDefaultInsertPos();
+        }
+        ((RenderablePathway)displayedObject).addComponent(edge);
+        if (edge.getContainer() != displayedObject)
+            edge.setContainer(displayedObject);
+        // Need to figure out the exact bounds for draw
+        Rectangle bounds = edge.getBounds();
+        Rectangle tmp = new Rectangle(bounds);
+        // Make it a little big
+        tmp.x -= 10;
+        tmp.y -= 10;
+        tmp.width += 20;
+        tmp.height += 20;
         if (edge instanceof FIRenderableInteraction) {
             if (overlaidFIs == null)
                 overlaidFIs = new ArrayList<FIRenderableInteraction>();
@@ -139,8 +182,44 @@ public class CyPathwayEditor extends PathwayEditor {
         }
     }
     
+    /**
+     * Override this method to avoid any threading issues during a batch modification.
+     */
+    @Override
+    public void insertNode(Node node) {
+        // Check if the position is set
+        if (node.getPosition() == null) {
+            Point p = new Point(defaultInsertPos);
+            node.setPosition(p);
+            updateDefaultInsertPos();
+        }
+        ((RenderablePathway)displayedObject).addComponent(node);
+        if (node.getContainer() != displayedObject)
+            node.setContainer(displayedObject);
+    }
+
+    @Override
+    public void fireGraphEditorActionEvent(GraphEditorActionEvent e) {
+        if (duringOverlay)
+            return; // Don't do anything during overlaying
+        super.fireGraphEditorActionEvent(e);
+    }
+
     @Override
     public void paint(Graphics g) {
+        if (duringOverlay)
+            return; // Don't do anything during overlaying FIs.
+        // We need to create bounds for those nodes
+        Set<Node> nodes = new HashSet<Node>();
+        if (overlaidFIs != null && overlaidFIs.size() > 0) {
+            for (RenderableInteraction fi : overlaidFIs) {
+                nodes.addAll(fi.getInputNodes());
+                nodes.addAll(fi.getOutputNodes());
+            }
+            for (Node node : nodes) {
+                node.validateBounds(g);
+            }
+        }
         super.paint(g);
         if (overlaidFIs == null || overlaidFIs.size() == 0)
             return;
@@ -151,22 +230,15 @@ public class CyPathwayEditor extends PathwayEditor {
         // Draw a transparent background: light grey
         Color color = new Color(204, 204, 204, 175);
         g2.setPaint(color);
-        Dimension size = getPreferredSize();
+        Dimension size = getSize();
         // Preferred size has been scaled. Need to scale it back
         g2.fillRect(0, 
                     0, 
                     (int)(size.width / scaleX + 1.0d), 
                     (int)(size.height / scaleY + 1.0d));
-        // Draw overlaid FIs and their associated Objects
-        Set<Node> nodes = new HashSet<Node>();
-        for (RenderableInteraction fi : overlaidFIs) {
-            nodes.addAll(fi.getInputNodes());
-            nodes.addAll(fi.getOutputNodes());
-        }
         Rectangle clip = g.getClipBounds();
         for (Node node : nodes) {
-            node.validateBounds(g);
-            if (clip.intersects(node.getBounds()))
+            if (node.getBounds() != null && clip.intersects(node.getBounds()))
                 node.render(g);
         }
         for (RenderableInteraction fi : overlaidFIs) {

@@ -114,7 +114,7 @@ public class InteractionView extends JDialog {
         text.append(evidence.getAssayType());
         text.append(evidence.getAssayRelation());
         if (evidence.getAssayValueMedian() != null)
-            text.append(getExpEvidenceValue(evidence)); // Want to use double to avoid weird many zero
+            text.append(DrugTargetInteractionManager.getManager().getExpEvidenceValue(evidence)); // Want to use double to avoid weird many zero
         else // We should get low and high value
             text.append(" [").append(evidence.getAssayValueLow()).append(", ").append(evidence.getAssayValueHigh()).append("]");
         return text.toString();
@@ -136,8 +136,8 @@ public class InteractionView extends JDialog {
                 int rtn = exp1.getAssayType().toUpperCase().compareTo(exp2.getAssayType().toUpperCase());
                 if (rtn != 0)
                     return rtn;
-                Number value1 = getExpEvidenceValue(exp1);
-                Number value2 = getExpEvidenceValue(exp2);
+                Number value1 = DrugTargetInteractionManager.getManager().getExpEvidenceValue(exp1);
+                Number value2 = DrugTargetInteractionManager.getManager().getExpEvidenceValue(exp2);
                 return new Double(value1.doubleValue()).compareTo(new Double(value2.doubleValue()));
             }
         });
@@ -180,27 +180,6 @@ public class InteractionView extends JDialog {
         return repToSources;
     }
     
-    private Number getExpEvidenceValue(ExpEvidence exp) {
-        Number rtn = Double.MAX_VALUE;
-        if (exp.getAssayValueMedian() != null) {
-            try {
-                // Try to use Integer first
-                if (!exp.getAssayValueMedian().contains("."))
-                    rtn = Integer.parseInt(exp.getAssayValueMedian());
-                else
-                    rtn = Double.parseDouble(exp.getAssayValueMedian());
-            }
-            catch(NumberFormatException e) {}
-        }
-        else if (exp.getAssayValueLow() != null) {
-            try {
-                rtn = Double.parseDouble(exp.getAssayValueLow());
-            }
-            catch(NumberFormatException e) {}
-        }
-        return rtn;
-    }
-
     private void displayInteractionSources(Interaction interaction, StringBuilder builder) {
         Set<Source> sources = interaction.getInteractionSourceSet();
         if (sources == null || sources.size() == 0)

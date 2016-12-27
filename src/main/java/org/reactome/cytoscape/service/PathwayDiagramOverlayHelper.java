@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
 import org.gk.render.Renderable;
@@ -72,7 +73,10 @@ public class PathwayDiagramOverlayHelper {
             for (HyperEdge edge : interactions)
                 edge.layout();
         }
+        pathwayEditor.revalidate();
         pathwayEditor.repaint(pathwayEditor.getVisibleRect());
+        // Force other views to update
+        pathwayEditor.fireGraphEditorActionEvent(ActionType.INSERT);
     }
 
     public FIRenderableInteraction createInteraction(Node node, 
