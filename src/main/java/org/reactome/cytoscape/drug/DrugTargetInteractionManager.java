@@ -6,6 +6,7 @@ package org.reactome.cytoscape.drug;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -87,7 +88,7 @@ public class DrugTargetInteractionManager {
     @SuppressWarnings("unchecked")
     public void applyFilter(CyPathwayEditor pathwayEditor) {
         List<Renderable> selected = pathwayEditor.getSelection();
-        if (selected != null && selected.size() > 0) { // For one single selected entity
+        if (selected != null && selected.size() == 1) { // For one single selected entity
             _applyFilterToSelected(pathwayEditor, selected);
         }
         else { // Apply for all 
@@ -189,40 +190,42 @@ public class DrugTargetInteractionManager {
     
     private void fetchCancerDrugs(PathwayEditor pathwayEditor) {
         // For this method, the server will be called regardless
-        Map<Long, List<Interaction>> dbIdToInteractions = fetchCancerDrugs(null,
+        Map<Long, List<Interaction>> newIdToInteractions = fetchCancerDrugs(null,
                                                                            (RenderablePathway)pathwayEditor.getRenderable());
         // Cache fetched interactions
-        boolean hasInteractions = false;
+        Map<Long, List<Interaction>> pdIdToInteractions = new HashMap<>();
         for (Object obj : pathwayEditor.getDisplayedObjects()) {
             if ((obj instanceof Node) && (((Node)obj).getReactomeId() != null)) {
                 Node node = (Node) obj;
                 Long reactomeId = node.getReactomeId();
-                List<Interaction> interactions = dbIdToInteractions.get(reactomeId);
-                if (interactions == null)
-                    peID2Interactions.put(reactomeId, new ArrayList<Interaction>()); // Mark it
-                else {
+                // Check pre-existing one first
+                List<Interaction> interactions = peID2Interactions.get(reactomeId);
+                if (interactions == null) {
+                    interactions = newIdToInteractions.get(reactomeId);
+                    if (interactions == null)
+                        interactions = new ArrayList<>(); // Want to mark it
                     peID2Interactions.put(reactomeId, interactions);
-                    if (interactions.size() > 0)
-                        hasInteractions = true;
                 }
+                if (interactions.size() > 0)
+                    pdIdToInteractions.put(reactomeId, interactions);
             }
         }
-        if (!hasInteractions) {
+        if (pdIdToInteractions.size() == 0) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cannot find any cancer drug for the pathway.",
                                           "No Cancer Drug",
                                           JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        hasInteractions = false;
+        boolean hasInteractions = false;
         // Need to apply the filter
-        Map<Long, List<Interaction>> dbIdToFiltered = new HashMap<>();
-        for (Long dbId : dbIdToInteractions.keySet()) {
-            List<Interaction> list = dbIdToInteractions.get(dbId);
+        Map<Long, List<Interaction>> pdIdToFiltered = new HashMap<>();
+        for (Long dbId : pdIdToInteractions.keySet()) {
+            List<Interaction> list = pdIdToInteractions.get(dbId);
             if (list != null && list.size() > 0) {
                 List<Interaction> filtered = applyFilter(list);
                 if (filtered.size() > 0) {
-                    dbIdToFiltered.put(dbId, filtered);
+                    pdIdToFiltered.put(dbId, filtered);
                     hasInteractions = true;
                 }
             }
@@ -235,7 +238,7 @@ public class DrugTargetInteractionManager {
             return;
         }
         DiagramDrugTargetInteractionHandler handler = new DiagramDrugTargetInteractionHandler(pathwayEditor);
-        handler.displayInteractions(dbIdToFiltered);
+        handler.displayInteractions(pdIdToFiltered);
     }
     
     private List<Interaction> applyFilter(List<Interaction> interactions) {
@@ -250,8 +253,39 @@ public class DrugTargetInteractionManager {
         return rtn;
     }
     
+    private Element queryRESTfulAPI(RESTFulFIService service,
+                                    RenderablePathway pathway,
+                                    Long peId) throws Exception {
+        if (peId != null)
+            return service.queryDrugTargetInteractionsInDiagram(pathway.getReactomeDiagramId(),
+                                                                peId);
+        else if (peID2Interactions.size() == 0)
+            return service.queryDrugTargetInteractionsInDiagram(pathway.getReactomeDiagramId(),
+                                                                null); // Query for the whole pathway diagram
+        else {
+            // query whatever is needed
+            Set<Long> toBeQueried = new HashSet<>();
+            if (pathway.getComponents() != null) {
+                for (Object obj : pathway.getComponents()) {
+                    if (obj instanceof Node) {
+                        Node node = (Node) obj;
+                        if (node.getReactomeId() == null)
+                            continue;
+                        Long reactomeId = node.getReactomeId();
+                        if (peID2Interactions.containsKey(reactomeId))
+                            continue;
+                        toBeQueried.add(reactomeId);
+                    }
+                }
+            }
+            if (toBeQueried.size() == 0)
+                return null;
+            return service.queryDrugTargetIneractions(toBeQueried);
+        }
+    }
+    
     private Map<Long, List<Interaction>> fetchCancerDrugs(Long peId,
-                                                         RenderablePathway pathway) {
+                                                          RenderablePathway pathway) {
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         try {
             RESTFulFIService service = new RESTFulFIService();
@@ -264,8 +298,11 @@ public class DrugTargetInteractionManager {
             progressPane.setVisible(true);
             progressPane.setText("Querying the server...");
             RESTFulFIService restfulService = new RESTFulFIService();
-            Element rootElm = restfulService.queryDrugTargetInteractionsInDiagram(pathway.getReactomeDiagramId(), 
-                                                                                  peId);
+            Element rootElm = queryRESTfulAPI(restfulService, pathway, peId);
+            if (rootElm == null) {
+                frame.getGlassPane().setVisible(false);
+                return new HashMap<>();
+            }
             DrugTargetInteractionParser parser = new DrugTargetInteractionParser();
             parser.parse(rootElm);
             
