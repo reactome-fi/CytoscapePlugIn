@@ -139,6 +139,8 @@ public class InteractionFilter {
             // Since there are multiple values for the same assay type, we should not return
             // when the type is found. All values should be checked.
             for (ExpEvidence evidence : interaction.getExpEvidenceSet()) {
+                if (evidence.getAssayType() == null)
+                    continue; // This happens
                 String assayType = evidence.getAssayType().toUpperCase();
                 if (!assayType.equals(filter.getAssayType().toString().toUpperCase()))
                     continue;
@@ -351,9 +353,9 @@ public class InteractionFilter {
             for (DataSource source : sourceToBox.keySet()) {
                 JCheckBox box = sourceToBox.get(source);
                 if (box.isSelected())
-                    filter.removeDataSource(source);
-                else
                     filter.addDataSource(source);
+                else
+                    filter.removeDataSource(source);
             }
             // Update affinity relationships
             for (AssayType type : typeToBox.keySet()) {

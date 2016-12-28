@@ -40,7 +40,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
-import org.reactome.cytoscape.drug.InteractionFilter;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResultsIO;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
@@ -371,10 +370,30 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         }
         popup.addSeparator();
         
+        // Fetch cancer drugs for the whole pathway diagram
+        JMenuItem fetchDrugs = new JMenuItem("Fetch Cancer Drugs");
+        fetchDrugs.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                fetchCancerDrugs(null);
+            }
+        });
+        popup.add(fetchDrugs);
+        JMenuItem filterDrugs = new JMenuItem("Filter Cancer Drugs");
+        filterDrugs.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                filterCancerDrugs();
+            }
+        });
+        popup.add(filterDrugs);
+                
         final CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
         if (pathwayEditor.hasFIsOverlaid()) {
             // Give a chance to remove overlaid FIs
-            JMenuItem item = new JMenuItem("Remove FIs");
+            JMenuItem item = new JMenuItem("Remove Overlaid Interactions");
             item.addActionListener(new ActionListener() {
                 
                 @Override
@@ -392,6 +411,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 searchDiagrams();
             }
         });
+        popup.addSeparator();
         popup.add(searchDiagram);
         
         addExportDiagramMenu(popup);
@@ -683,7 +703,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                     fetchFIs(dbId);
                 }
             });
-            popup.addSeparator();
             popup.add(fetchFIs);
             // Check if a remove FIs action should be added
             CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();

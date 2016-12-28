@@ -75,8 +75,6 @@ public class PathwayDiagramOverlayHelper {
         }
         pathwayEditor.revalidate();
         pathwayEditor.repaint(pathwayEditor.getVisibleRect());
-        // Force other views to update
-        pathwayEditor.fireGraphEditorActionEvent(ActionType.INSERT);
     }
 
     public FIRenderableInteraction createInteraction(Node node, 

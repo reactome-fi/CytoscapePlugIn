@@ -42,7 +42,7 @@ public class DrugTargetInteractionParser {
     private Map<String, LitEvidence> idToLitEvidence;
     // Parsing results
     private List<Interaction> interactions;
-    private Map<Long, Set<Interaction>> dbIdToInteractions;
+    private Map<Long, List<Interaction>> dbIdToInteractions;
     // A helper object for parsing
     private SetHandler sourceSetHandler;
     
@@ -80,7 +80,7 @@ public class DrugTargetInteractionParser {
         if (dbIdToInteractions == null)
             dbIdToInteractions = new HashMap<>();
         String dbId = null;
-        Set<Interaction> interactions = new HashSet<>();
+        List<Interaction> interactions = new ArrayList<>();
         List<Element> childElms = elm.getChildren();
         for (Element childElm : childElms) {
             String elmName = childElm.getName();
@@ -105,7 +105,7 @@ public class DrugTargetInteractionParser {
         return this.interactions;
     }
     
-    public Map<Long, Set<Interaction>> getDbIdToInteractions() {
+    public Map<Long, List<Interaction>> getDbIdToInteractions() {
         return this.dbIdToInteractions;
     }
     

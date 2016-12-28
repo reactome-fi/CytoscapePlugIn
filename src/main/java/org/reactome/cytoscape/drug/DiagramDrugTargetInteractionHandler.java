@@ -5,12 +5,16 @@
 package org.reactome.cytoscape.drug;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JOptionPane;
 
-import org.apache.commons.math.stat.descriptive.moment.SemiVariance.Direction;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
 import org.gk.render.RenderableChemical;
@@ -62,6 +66,16 @@ public class DiagramDrugTargetInteractionHandler {
             return; // Nothing to be done
         List<Node> newNodes = new ArrayList<>();
         pathwayEditor.setDuringOverlay(true);
+        displayInteractions(interactions, node, newNodes);
+        overlayHelper.layout(node, newNodes);
+        pathwayEditor.setDuringOverlay(false);
+        pathwayEditor.repaint(pathwayEditor.getVisibleRect());
+        pathwayEditor.fireGraphEditorActionEvent(ActionType.INSERT);
+    }
+
+    private void displayInteractions(List<Interaction> interactions, 
+                                     Node node, 
+                                     List<Node> newNodes) {
         for (Interaction interaction : interactions) {
             Drug drug = interaction.getIntDrug();
             Node drugNode = overlayHelper.getRenderable(drug.getDrugName(),
@@ -73,8 +87,49 @@ public class DiagramDrugTargetInteractionHandler {
                                                                   drugNode.getDisplayName());
             rInt.addInteraction(interaction);
         }
+    }
+    
+    public void displayInteractions(final Map<Long, List<Interaction>> dbIdToInteractions) {
+        // For easy search
+        Map<Long, Node> dbIdToNode = new HashMap<>();
+        for (Object obj : pathwayEditor.getDisplayedObjects()) {
+            if (obj instanceof Node) {
+                Node node = (Node) obj;
+                if (node.getReactomeId() != null)
+                    dbIdToNode.put(node.getReactomeId(), node);
+            }
+        }
+        // Display interactions     
+        pathwayEditor.setDuringOverlay(true);
+        Map<Node, List<Node>> nodeToNewNodes = new HashMap<>();
+        // Sort this so that we can get a better layout
+        List<Long> dbIdList = new ArrayList<>(dbIdToInteractions.keySet());
+        Collections.sort(dbIdList, new Comparator<Long>() {
+            public int compare(Long id1, Long id2) { 
+                List<Interaction> list1 = dbIdToInteractions.get(id1);
+                List<Interaction> list2 = dbIdToInteractions.get(id2);
+                return list2.size() - list1.size();
+            }
+        });
+        for (Long dbId : dbIdList) {
+            List<Interaction> interactions = dbIdToInteractions.get(dbId);
+            if (interactions.size() == 0)
+                continue;
+            Node node = dbIdToNode.get(dbId);
+            if (node == null)
+                continue;
+            List<Node> newNodes = new ArrayList<>();
+            nodeToNewNodes.put(node, newNodes);
+            displayInteractions(interactions, node, newNodes);
+        }
+        // Try to perform a nice layout by anchoring to PE nodes having most new nodes
+        for (Node node : nodeToNewNodes.keySet()) {
+            List<Node> newNodes = nodeToNewNodes.get(node);
+            overlayHelper.layout(node, newNodes);
+        }
         pathwayEditor.setDuringOverlay(false);
-        overlayHelper.layout(node, newNodes);
+        pathwayEditor.repaint(pathwayEditor.getVisibleRect());
+        pathwayEditor.fireGraphEditorActionEvent(ActionType.INSERT);
     }
     
     private String getDirection(Interaction interaction) {
