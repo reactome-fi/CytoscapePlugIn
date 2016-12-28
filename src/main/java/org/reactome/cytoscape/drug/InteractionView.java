@@ -20,11 +20,11 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -64,11 +64,10 @@ public class InteractionView extends JDialog {
         getContentPane().add(new JScrollPane(htmlPane), 
                              BorderLayout.CENTER);
         
-        DialogControlPane controlPane = new DialogControlPane();
-        controlPane.getCancelBtn().setVisible(false);
-        JButton okBtn = controlPane.getOKBtn();
-        okBtn.setText("Close");
-        okBtn.addActionListener(new ActionListener() {
+        JPanel controlPane = new JPanel();
+        JButton closeBtn = new JButton("Close");
+        controlPane.add(closeBtn);
+        closeBtn.addActionListener(new ActionListener() {
             
             @Override
             public void actionPerformed(ActionEvent e) {
