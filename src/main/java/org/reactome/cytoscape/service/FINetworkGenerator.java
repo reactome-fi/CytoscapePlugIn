@@ -190,6 +190,8 @@ public class FINetworkGenerator implements NetworkGenerator {
     
     private void addFIPartners(CyNode targetNode, 
                                Set<String> partners,
+                               String partnerNodeType,
+                               boolean isLinker,
                                CyNetworkView view) {
         CyNetwork network = view.getModel();
         Map<CyNode, Set<CyNode>> oldToNew = new HashMap<CyNode, Set<CyNode>>();
@@ -199,11 +201,11 @@ public class FINetworkGenerator implements NetworkGenerator {
         for (String partner : partners) {
             CyNode partnerNode = getNodeByName(partner, network);
             if (partnerNode == null) {
-                partnerNode = createNode(network, partner, "Gene", partner);
+                partnerNode = createNode(network, partner, partnerNodeType, partner);
                 tableHelper.storeNodeAttribute(network,
                                                partnerNode,
                                                "isLinker",
-                                               Boolean.TRUE);
+                                               isLinker);
                 partnerNodes.add(partnerNode);
                 tableHelper.setNodeSelected(network, 
                                             partnerNode,
@@ -218,9 +220,13 @@ public class FINetworkGenerator implements NetworkGenerator {
     
     public void addFIPartners(String target,
                               Set<String> partners,
+                              String partnerNodeType,
+                              boolean isLinker,
                               CyNetworkView view) {
         addFIPartners(getNodeByName(target, view.getModel()),
                       partners, 
+                      partnerNodeType,
+                      isLinker,
                       view);
         view.updateView();
         // For some reason, we need to re-apply the visual style to make display correct.
@@ -239,6 +245,16 @@ public class FINetworkGenerator implements NetworkGenerator {
                                           "Visual Style Error", 
                                           JOptionPane.ERROR_MESSAGE);
         }
+    }
+    
+    public void addFIPartners(String target,
+                              Set<String> partners,
+                              CyNetworkView view) {
+        addFIPartners(target,
+                      partners,
+                      "Gene",
+                      true, 
+                      view);
     }
 
     public void jiggleLayout(CyNode anchor, Set<CyNode> partners, CyNetworkView view) {

@@ -4,12 +4,12 @@
  */
 package org.reactome.cytoscape.service;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
 import org.gk.render.Renderable;
@@ -123,7 +123,8 @@ public class PathwayDiagramOverlayHelper {
      */
     public <T extends Node> Node getRenderable(String name,
                                                Class<T> type,
-                                               List<Node> newNodes) {
+                                               List<Node> newNodes,
+                                               Color bgColor) {
         for (Object obj : pathwayEditor.getDisplayedObjects()) {
             Renderable r = (Renderable) obj;
             if (r instanceof HyperEdge || r.getReactomeId() != null)
@@ -133,6 +134,8 @@ public class PathwayDiagramOverlayHelper {
         }
         try {
             Node r = type.newInstance();
+            if (bgColor != null)
+                r.setBackgroundColor(bgColor);
             r.setDisplayName(name);
             pathwayEditor.insertNode(r);
             newNodes.add(r);

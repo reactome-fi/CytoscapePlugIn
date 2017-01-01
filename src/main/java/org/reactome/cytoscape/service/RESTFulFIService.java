@@ -653,6 +653,18 @@ public class RESTFulFIService implements FINetworkService
         return elm;
     }
     
+    public Element queryDrugTargetInteractionsForGenes(Set<String> genes) throws Exception {
+        StringBuilder query = new StringBuilder();
+        for (String gene : genes)
+            query.append(gene).append("\n");
+        query.deleteCharAt(query.length() - 1);
+        String url = restfulURL + "cancerDruggability/queryDrugTargetInteractions";
+        Element element = PlugInUtilities.callHttpInXML(url,
+                                                        HTTP_POST,
+                                                        query.toString());
+        return element;
+    }
+    
     public Element queryDrugTargetIneractions(Set<Long> peIds) throws Exception {
         if (peIds == null || peIds.size() == 0)
             throw new IllegalArgumentException("Empty DB_IDs in the parameter set!");

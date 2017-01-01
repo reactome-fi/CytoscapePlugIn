@@ -96,6 +96,7 @@ public class PlugInUtilities {
     public final static String HTTP_GET = "Get";
     public final static String HTTP_POST = "Post";
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
+    public final static Color DRUG_COLOR = new Color(255, 153, 153);
 
     public PlugInUtilities() {
     }

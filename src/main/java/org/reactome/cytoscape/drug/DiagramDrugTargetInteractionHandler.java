@@ -4,6 +4,7 @@
  */
 package org.reactome.cytoscape.drug;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -21,6 +22,7 @@ import org.gk.render.RenderableChemical;
 import org.reactome.cytoscape.service.CyPathwayEditor;
 import org.reactome.cytoscape.service.PathwayDiagramOverlayHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 import edu.ohsu.bcb.druggability.Drug;
 import edu.ohsu.bcb.druggability.Interaction;
@@ -80,7 +82,8 @@ public class DiagramDrugTargetInteractionHandler {
             Drug drug = interaction.getIntDrug();
             Node drugNode = overlayHelper.getRenderable(drug.getDrugName(),
                                                         RenderableChemical.class,
-                                                        newNodes);
+                                                        newNodes,
+                                                        PlugInUtilities.DRUG_COLOR);
             DrugTargetRenderableInteraction rInt = getInteraction(node,
                                                                   drugNode,
                                                                   getDirection(interaction),

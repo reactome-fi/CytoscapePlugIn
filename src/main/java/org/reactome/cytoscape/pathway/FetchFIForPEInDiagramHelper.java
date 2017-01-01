@@ -159,7 +159,10 @@ public class FetchFIForPEInDiagramHelper {
             Node partner = null;
             // Check if a FI should be added to the existing objects
             if (fi.existedPEs.length() == 0) {
-                partner = (RenderableProtein) overlayHelper.getRenderable(fi.partner2, RenderableProtein.class, newNodes);
+                partner = (RenderableProtein) overlayHelper.getRenderable(fi.partner2,
+                                                                          RenderableProtein.class, 
+                                                                          newNodes,
+                                                                          null);
                 createInteraction(node, 
                                   partner, 
                                   fi, 

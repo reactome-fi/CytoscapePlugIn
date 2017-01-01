@@ -45,7 +45,7 @@ public class DrugTargetInteractionManager {
     /**
      * Default constructor.
      */
-    private DrugTargetInteractionManager() {
+    protected DrugTargetInteractionManager() {
         this.interactionFilter = new InteractionFilter();
         peID2Interactions = new HashMap<>();
     }

@@ -134,6 +134,8 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         handleNodeHighlight(fiVisualStyle, 
                          visMapFuncFactoryD,
                          visMapFuncFactoryC);
+        displayNodeType(fiVisualStyle,
+                        visMapFuncFactoryD);
         // Handle edge styles
         setDefaultEdgeStyle(fiVisualStyle);
         setEdgeStyleOnAnnotations(fiVisualStyle, 
@@ -144,6 +146,25 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         context.ungetService(referenceP);
         return fiVisualStyle;
     }
+    
+    private void displayNodeType(VisualStyle style,
+                                 VisualMappingFunctionFactory visMapFuncFactoryD) {
+        // Set the node color based on module
+        DiscreteMapping colorToModuleFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
+                "module", Integer.class, BasicVisualLexicon.NODE_FILL_COLOR);
+        String moduleColors = PlugInObjectManager.getManager().getProperties().getProperty(
+                "moduleColors");
+        String[] tokens = moduleColors.split(";");
+        for (int i = 0; i < tokens.length; i++)
+        {
+            String[] text = tokens[i].split(",");
+            Color moduleColor = new Color(Integer.parseInt(text[0]),
+                    Integer.parseInt(text[1]), Integer.parseInt(text[2]));
+            colorToModuleFunction.putMapValue(i, moduleColor);
+        }
+//        fiVisualStyle.addVisualMappingFunction(colorToModuleFunction);
+    }
+                                 
 
     protected void setNodeSizes(CyNetworkView view, VisualStyle fiVisualStyle,
                               VisualMappingFunctionFactory visMapFuncFactoryC) {
