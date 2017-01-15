@@ -130,7 +130,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         setNodeSizes(view,
                      fiVisualStyle, 
                      visMapFuncFactoryC);
-        setLinkerNodeShape(fiVisualStyle, visMapFuncFactoryD);
+        setLinkerNodeStyle(fiVisualStyle, visMapFuncFactoryD);
         handleNodeHighlight(fiVisualStyle, 
                          visMapFuncFactoryD,
                          visMapFuncFactoryC);
@@ -162,7 +162,18 @@ public class FIVisualStyleImpl implements FIVisualStyle {
                     Integer.parseInt(text[1]), Integer.parseInt(text[2]));
             colorToModuleFunction.putMapValue(i, moduleColor);
         }
-//        fiVisualStyle.addVisualMappingFunction(colorToModuleFunction);
+        style.addVisualMappingFunction(colorToModuleFunction);
+        
+        // Set the node shape based on type
+        // Currently two types are supported: Gene and Drug
+        DiscreteMapping nodeTypeShape = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("nodeType", 
+                                                                                                         String.class,
+                                                                                                         BasicVisualLexicon.NODE_SHAPE);
+        nodeTypeShape.putMapValue("Gene", 
+                                  NodeShapeVisualProperty.ELLIPSE);
+        nodeTypeShape.putMapValue("Drug",
+                                  NodeShapeVisualProperty.DIAMOND);
+        style.addVisualMappingFunction(nodeTypeShape);
     }
                                  
 
@@ -233,15 +244,21 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_WIDTH, 1.5d);
     }
 
-    private void setLinkerNodeShape(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryD) {
+    private void setLinkerNodeStyle(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryD) {
         // Change the node shape from the default (ellipse)
         // to diamond if the gene is a linker.
-        DiscreteMapping linkerGeneShapeFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isLinker", 
+        // As of January 14, 2017, gene linkers are displayed with 50% transaprancey and RED font to use shapes for node types.
+        DiscreteMapping linkerGeneTransparency = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isLinker", 
                                                                                                                    Boolean.class,
-                                                                                                                   BasicVisualLexicon.NODE_SHAPE);
-        linkerGeneShapeFunction.putMapValue(true,
-                                            NodeShapeVisualProperty.DIAMOND);
-        fiVisualStyle.addVisualMappingFunction(linkerGeneShapeFunction);
+                                                                                                                   BasicVisualLexicon.NODE_TRANSPARENCY);
+        linkerGeneTransparency.putMapValue(true, 50.0f);
+        fiVisualStyle.addVisualMappingFunction(linkerGeneTransparency);
+        
+        DiscreteMapping linkerGeneFontColor = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isLinker", 
+                                                                                                               Boolean.class,
+                                                                                                               BasicVisualLexicon.NODE_LABEL_COLOR);
+        linkerGeneFontColor.putMapValue(true, Color.RED);
+        fiVisualStyle.addVisualMappingFunction(linkerGeneFontColor);
     }
 
     private void setNodeColors(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryD) {
