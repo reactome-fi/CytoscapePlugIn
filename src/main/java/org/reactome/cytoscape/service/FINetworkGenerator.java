@@ -227,16 +227,18 @@ public class FINetworkGenerator implements NetworkGenerator {
                      view);
     }
     
-    public void addFIPartners(String target,
-                              Set<String> partners,
+    public void addFIPartners(Map<String, Set<String>> targetToPartners,
                               String partnerNodeType,
                               boolean isLinker,
                               CyNetworkView view) {
-        addFIPartners(getNodeByName(target, view.getModel()),
-                      partners, 
-                      partnerNodeType,
-                      isLinker,
-                      view);
+        for (String target : targetToPartners.keySet()) {
+            Set<String> partners = targetToPartners.get(target);
+            addFIPartners(getNodeByName(target, view.getModel()),
+                          partners, 
+                          partnerNodeType,
+                          isLinker,
+                          view);
+        }
         view.updateView();
         // For some reason, we need to re-apply the visual style to make display correct.
         // This is a little weird!
@@ -254,6 +256,16 @@ public class FINetworkGenerator implements NetworkGenerator {
                                           "Visual Style Error", 
                                           JOptionPane.ERROR_MESSAGE);
         }
+    }
+    
+    public void addFIPartners(String target,
+                              Set<String> partners,
+                              String partnerNodeType,
+                              boolean isLinker,
+                              CyNetworkView view) {
+        Map<String, Set<String>> targetToPartners = new HashMap<>();
+        targetToPartners.put(target, partners);
+        addFIPartners(targetToPartners, partnerNodeType, isLinker, view);
     }
     
     public void addFIPartners(String target,

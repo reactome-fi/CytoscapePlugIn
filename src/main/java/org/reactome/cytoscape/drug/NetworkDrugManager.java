@@ -137,9 +137,7 @@ public class NetworkDrugManager extends DrugTargetInteractionManager {
     
     private void displayInteractions(Set<String> genes,
                                      CyNetworkView view) {
-        FINetworkGenerator helper = new FINetworkGenerator();
-        helper.setEdgeType("Drug/Target");
-        boolean hasInteraction = false;
+        Map<String, Set<String>> geneToDrugs = new HashMap<>();
         for (String gene : genes) {
             List<Interaction> interactions = geneToInteractions.get(gene);
             if (interactions.size() == 0)
@@ -149,22 +147,22 @@ public class NetworkDrugManager extends DrugTargetInteractionManager {
             for (Interaction interaction : interactions) {
                 if (interactionFilter.filter(interaction)) {
                     drugs.add(interaction.getIntDrug().getDrugName());
-                    hasInteraction = true;
                 }
             }
             if (drugs.size() > 0) {
-                helper.addFIPartners(gene,
-                                     drugs,
-                                     "Drug",
-                                     false,
-                                     view);
+                geneToDrugs.put(gene, drugs);
             }
         }
-        if (!hasInteraction) {
+        if (geneToDrugs.size() == 0) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "No drugs can be displayed. Adjust the filter to show interactions.",
                                           "No Drugs to Display",
                                           JOptionPane.INFORMATION_MESSAGE);
+        }
+        else {
+            FINetworkGenerator helper = new FINetworkGenerator();
+            helper.setEdgeType("Drug/Target");
+            helper.addFIPartners(geneToDrugs, "Drug", false, view);
         }
     }   
     
@@ -244,14 +242,7 @@ public class NetworkDrugManager extends DrugTargetInteractionManager {
         if (geneToNewDrugs.size() > 0) {
             FINetworkGenerator helper = new FINetworkGenerator();
             helper.setEdgeType("Drug/Target");
-            for (String gene : geneToNewDrugs.keySet()) {
-                Set<String> drugs = geneToNewDrugs.get(gene);
-                helper.addFIPartners(gene,
-                                     drugs,
-                                     "Drug",
-                                     false,
-                                     networkView);
-            }
+            helper.addFIPartners(geneToNewDrugs, "Drug", false, networkView);
         }
         // Remove drugs that don't have any links
         Set<CyNode> drugToBeRemoved = new HashSet<>();
