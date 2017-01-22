@@ -433,6 +433,11 @@ public class TableHelper {
             return null;
         return row.get(att, type);
     }
+    
+    public String getNodeType(CyNetwork network,
+                              CyNode node) {
+        return getStoredNodeAttribute(network, node, "nodeType", String.class);
+    }
 
     public <T> void storeEdgeAttributesByName(CyNetwork network, 
                                           String attr, 

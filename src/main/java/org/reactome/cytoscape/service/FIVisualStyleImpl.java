@@ -140,6 +140,8 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         setDefaultEdgeStyle(fiVisualStyle);
         setEdgeStyleOnAnnotations(fiVisualStyle, 
                                   visMapFuncFactoryD);
+        setEdgeStyleOnEdgeType(fiVisualStyle, 
+                               visMapFuncFactoryD);
 
         context.ungetService(referenceC);
         context.ungetService(referenceD);
@@ -198,7 +200,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
             fiVisualStyle.addVisualMappingFunction(sampleNumberToSizeFunction);
         }
     }
-
+    
     private void setEdgeStyleOnAnnotations(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryD) {
         // Set the edge target arrow shape based on FI Direction
         DiscreteMapping arrowMapping = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
@@ -235,6 +237,19 @@ public class FIVisualStyleImpl implements FIVisualStyle {
                 LineTypeVisualProperty.LONG_DASH);
 
         fiVisualStyle.addVisualMappingFunction(edgeLineMapping);
+    }
+
+    private void setEdgeStyleOnEdgeType(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryD) {
+        // Use dashed lines for predicted interactions.
+        DiscreteMapping edgeStrokeColor = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
+                "EDGE_TYPE", String.class,
+                BasicVisualLexicon.EDGE_STROKE_UNSELECTED_PAINT);
+        edgeStrokeColor.putMapValue("FI",
+                Color.BLACK);
+        edgeStrokeColor.putMapValue("Drug/Target",
+                                    Color.BLUE);
+
+        fiVisualStyle.addVisualMappingFunction(edgeStrokeColor);
     }
 
     protected void setDefaultEdgeStyle(VisualStyle fiVisualStyle) {

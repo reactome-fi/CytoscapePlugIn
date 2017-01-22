@@ -82,7 +82,8 @@ public class DrugTargetInteractionManager {
                                           JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        interactionFilter.showDialog(pathwayEditor);
+        interactionFilter.setPathwayEditor(pathwayEditor);
+        interactionFilter.showDialog();
     }
     
     @SuppressWarnings("unchecked")

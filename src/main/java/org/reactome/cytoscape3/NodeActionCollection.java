@@ -20,6 +20,7 @@ import javax.swing.event.ListSelectionListener;
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
@@ -28,21 +29,48 @@ import org.reactome.cancerindex.model.CancerIndexSentenceDisplayFrame;
 import org.reactome.cancerindex.model.Sentence;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.RESTFulFIService;
+import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
-public class NodeActionCollection
-{
+public class NodeActionCollection {
+    
+    public static boolean isGeneNode(CyNetwork network,
+                                     CyNode node) {
+        TableHelper helper = new TableHelper();
+        String nodeType = helper.getNodeType(network,
+                                             node);
+        if (nodeType != null && nodeType.equals("Gene"))
+            return true;
+        return false;
+    }
+    
+    public static boolean isDrugNode(CyNetwork network,
+                                      CyNode node) {
+        TableHelper helper = new TableHelper();
+        String nodeType = helper.getNodeType(network, 
+                                             node);
+        if (nodeType != null && nodeType.equals("Drug"))
+            return true;
+        return false;
+    }
 
-    class GeneCardMenu implements CyNodeViewContextMenuFactory
-    {
+    private static String getNodeName(CyNetworkView netView, View<CyNode> nodeView) {
+        CyTable nodeTable = netView.getModel().getDefaultNodeTable();
+        Long nodeSUID = nodeView.getModel().getSUID();
+        String nodeName = nodeTable.getRow(nodeSUID).get("name", String.class);
+        return nodeName;
+    }
+
+    static class GeneCardMenu implements CyNodeViewContextMenuFactory {
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView,
-                final View<CyNode> nodeView)
-        {
+                                         final View<CyNode> nodeView) {
+            if (!isGeneNode(netView.getModel(),
+                            nodeView.getModel()))
+                return null;
             JMenuItem geneCardMenuItem = new JMenuItem("Query Gene Card");
-            geneCardMenuItem.addActionListener(new ActionListener()
-            {
+            geneCardMenuItem.addActionListener(new ActionListener() {
 
                 @Override
                 public void actionPerformed(ActionEvent e)
@@ -58,15 +86,33 @@ public class NodeActionCollection
         }
     }
     
-    class CosmicMenu implements CyNodeViewContextMenuFactory
-    {
+    static class GoogleMenu implements CyNodeViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView netview,
+                                         final View<CyNode> nodeView) {
+            if (!isDrugNode(netview.getModel(), nodeView.getModel()))
+                return null;
+            JMenuItem googleMenuItem = new JMenuItem("Google");
+            googleMenuItem.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String nodeName = getNodeName(netview, nodeView);
+                    PlugInUtilities.queryGoogle(nodeName);
+                }
+            });
+            return new CyMenuItem(googleMenuItem, 10.0f);
+        }
+    }
+    
+    static class CosmicMenu implements CyNodeViewContextMenuFactory {
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView,
-                final View<CyNode> nodeView)
-        {
+                                         final View<CyNode> nodeView) {
+            if (!isGeneNode(netView.getModel(), nodeView.getModel()))
+                return null;
             JMenuItem cosmicMenuItem = new JMenuItem("Query Cosmic");
-            cosmicMenuItem.addActionListener(new ActionListener()
-            {
+            cosmicMenuItem.addActionListener(new ActionListener() {
 
                 @Override
                 public void actionPerformed(ActionEvent e)
@@ -82,68 +128,64 @@ public class NodeActionCollection
         }
     }
 
-    class FetchFIsMenu implements CyNodeViewContextMenuFactory
-    {
-
+    static class FetchFIsMenu implements CyNodeViewContextMenuFactory {
+        
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView,
-                final View<CyNode> nodeView)
-        {
+                                         final View<CyNode> nodeView) {
+            if (!isGeneNode(netView.getModel(), nodeView.getModel()))
+                return null;
             JMenuItem fetchFIsItem = new JMenuItem("Fetch FIs");
             fetchFIsItem.addActionListener(new ActionListener()
             {
-
+                
                 @Override
                 public void actionPerformed(ActionEvent e)
                 {
                     fetchFIsForNode(netView, nodeView);
                 }
-
+                
             });
-
+            
             return new CyMenuItem(fetchFIsItem, 1.0f);
         }
-
-    }
-
-    private void fetchFIsForNode(CyNetworkView netView, View<CyNode> nodeView)
-    {
-        CyTable nodeTable = netView.getModel().getDefaultNodeTable();
-        Long nodeSUID = nodeView.getModel().getSUID();
-        String nodeName = nodeTable.getRow(nodeSUID).get("name", String.class);
-        try
-        {
-            RESTFulFIService fiService = new RESTFulFIService(netView);
-            Set<String> fiPartners = fiService.queryFIsForNode(nodeName);
-            if (fiPartners.isEmpty())
+        
+        private void fetchFIsForNode(CyNetworkView netView, View<CyNode> nodeView) {
+            String nodeName = getNodeName(netView, nodeView);
+            try
             {
-                PlugInUtilities
-                        .showErrorMessage("Error in Fetching FIs",
-                                "Interactions for " + nodeName
-                                        + " could not be found.");
-                return;
+                RESTFulFIService fiService = new RESTFulFIService(netView);
+                Set<String> fiPartners = fiService.queryFIsForNode(nodeName);
+                if (fiPartners.isEmpty())
+                {
+                    PlugInUtilities
+                    .showErrorMessage("Error in Fetching FIs",
+                                      "Interactions for " + nodeName
+                                      + " could not be found.");
+                    return;
+                }
+                displayNodeFIs(nodeName, fiPartners, netView);
             }
-            displayNodeFIs(nodeName, fiPartners, netView);
+            catch (Exception e)
+            {
+                PlugInUtilities.showErrorMessage("Error in Fetching FIs",
+                        "Please see the error log for details.");
+            }
         }
-        catch (Exception e)
-        {
-            PlugInUtilities.showErrorMessage("Error in Fetching FIs",
-                    "Please see the error log for details.");
+        
+        private void displayNodeFIs(final String name, Set<String> partners,
+                                    final CyNetworkView view)  {
+            FIPartnersDialog dialog = new FIPartnersDialog(name, partners, view);
+            CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+            dialog.setSize(400, 300);
+            dialog.setLocationRelativeTo(desktopApp.getJFrame());
+            dialog.setModal(true);
+            dialog.setVisible(true);
         }
+        
     }
 
-    private void displayNodeFIs(final String name, Set<String> partners,
-            final CyNetworkView view)
-    {
-        FIPartnersDialog dialog = new FIPartnersDialog(name, partners, view);
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        dialog.setSize(400, 300);
-        dialog.setLocationRelativeTo(desktopApp.getJFrame());
-        dialog.setModal(true);
-        dialog.setVisible(true);
-    }
-
-    private class FIPartnersDialog extends JDialog
+    private static class FIPartnersDialog extends JDialog
     {
         private JLabel inLabel;
         private JLabel outLabel;
@@ -368,12 +410,12 @@ public class NodeActionCollection
         }
     }
 
-    class CancerGeneIndexMenu implements CyNodeViewContextMenuFactory
-    {
+    static class CancerGeneIndexMenu implements CyNodeViewContextMenuFactory {
 
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView netView, final View<CyNode> nodeView)
-        {
+        public CyMenuItem createMenuItem(final CyNetworkView netView, final View<CyNode> nodeView) {
+            if (!isGeneNode(netView.getModel(), nodeView.getModel()))
+                return null;
             JMenuItem getCancerGeneIndexItem = new JMenuItem(
                     "Fetch Cancer Gene Index");
             getCancerGeneIndexItem.addActionListener(new ActionListener()
@@ -387,40 +429,44 @@ public class NodeActionCollection
             });
             return new CyMenuItem(getCancerGeneIndexItem, 2.0f);
         }
+        
+        private void loadCancerGeneIndex(final CyNetworkView netView, final View<CyNode> nodeView)
+        {
+            Thread t = new Thread()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        RESTFulFIService fiService = new RESTFulFIService(netView);
+                        String geneName = netView.getModel().getDefaultNodeTable().getRow(nodeView.getModel().getSUID()).get("name", String.class);
+                        List<Sentence> sentences = fiService.queryCGIAnnotations(geneName);
+                        displayCGISentences(geneName, sentences);
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                        PlugInUtilities.showErrorMessage("Error in Fetching CGI", "The cancer gene indices could not be fetched.");
+                    }
+                }
+            };
+            t.start();
+        }
+        
+        private synchronized void displayCGISentences(String gene, List<Sentence> sentences)
+        {
+            if (sentences == null || sentences.isEmpty())
+            {
+                CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+                JOptionPane.showMessageDialog(desktopApp.getJFrame(), "No cancer gene index annotations were found for \"" + gene + "\".", "No Annotations for Gene", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+            CancerIndexSentenceDisplayFrame cgiFrame = FIPlugInHelper.getHelper().getCancerIndexFrame(desktopApp.getJFrame());
+            cgiFrame.display(sentences, gene);
+        }
 
     }
-    private void loadCancerGeneIndex(final CyNetworkView netView, final View<CyNode> nodeView)
-    {
-        Thread t = new Thread()
-        {
-            public void run()
-            {
-                try
-                {
-                    RESTFulFIService fiService = new RESTFulFIService(netView);
-                    String geneName = netView.getModel().getDefaultNodeTable().getRow(nodeView.getModel().getSUID()).get("name", String.class);
-                    List<Sentence> sentences = fiService.queryCGIAnnotations(geneName);
-                    displayCGISentences(geneName, sentences);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                    PlugInUtilities.showErrorMessage("Error in Fetching CGI", "The cancer gene indices could not be fetched.");
-                }
-            }
-        };
-        t.start();
-    }
-    private synchronized void displayCGISentences(String gene, List<Sentence> sentences)
-    {
-        if (sentences == null || sentences.isEmpty())
-        {
-            CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-            JOptionPane.showMessageDialog(desktopApp.getJFrame(), "No cancer gene index annotations were found for \"" + gene + "\".", "No Annotations for Gene", JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        CancerIndexSentenceDisplayFrame cgiFrame = FIPlugInHelper.getHelper().getCancerIndexFrame(desktopApp.getJFrame());
-        cgiFrame.display(sentences, gene);
-    }
+
+
 }

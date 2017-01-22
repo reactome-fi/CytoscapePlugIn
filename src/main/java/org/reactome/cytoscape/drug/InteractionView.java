@@ -41,7 +41,7 @@ public class InteractionView extends JDialog {
     private JEditorPane htmlPane;
     
     /**
-     * Degault constructor.
+     * Default constructor.
      */
     public InteractionView() {
         super(PlugInObjectManager.getManager().getCytoscapeDesktop());

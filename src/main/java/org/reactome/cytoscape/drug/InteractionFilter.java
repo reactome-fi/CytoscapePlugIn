@@ -208,9 +208,12 @@ public class InteractionFilter {
         }
         return existed;
     }
-
-    public void showDialog(CyPathwayEditor pathwayEditor) {
+    
+    public void setPathwayEditor(CyPathwayEditor pathwayEditor) {
         this.pathwayEditor = pathwayEditor;
+    }
+
+    public void showDialog() {
         if (this.dialog != null) {
             this.dialog.setVisible(true);
             this.dialog.toFront();

@@ -31,10 +31,19 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.funcInt.Interaction;
 
 public class FINetworkGenerator implements NetworkGenerator {
+    private String edgeType = "FI"; // Default
     
     public FINetworkGenerator() {
     }
     
+    public String getEdgeType() {
+        return edgeType;
+    }
+
+    public void setEdgeType(String edgeType) {
+        this.edgeType = edgeType;
+    }
+
     /**
      * Create a CyNetwork object based on the passed interaction set, fis. If nodes is provided
      * and some nodes are not used in the fis set, they will be displayed as un-linked nodes in
@@ -211,7 +220,7 @@ public class FINetworkGenerator implements NetworkGenerator {
                                             partnerNode,
                                             true);
             }
-            createEdge(network, targetNode, partnerNode, "FI");
+            createEdge(network, targetNode, partnerNode, edgeType);
         }
         jiggleLayout(targetNode, 
                      partnerNodes,

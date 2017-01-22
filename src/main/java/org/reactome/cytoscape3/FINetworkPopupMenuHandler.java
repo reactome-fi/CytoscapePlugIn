@@ -45,11 +45,13 @@ import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape3.EdgeActionCollection.DrugTargetDetailsMenuItem;
 import org.reactome.cytoscape3.EdgeActionCollection.EdgeQueryFIMenuItem;
 import org.reactome.cytoscape3.NodeActionCollection.CancerGeneIndexMenu;
 import org.reactome.cytoscape3.NodeActionCollection.CosmicMenu;
 import org.reactome.cytoscape3.NodeActionCollection.FetchFIsMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
+import org.reactome.cytoscape3.NodeActionCollection.GoogleMenu;
 import org.reactome.r3.graph.GeneClusterPair;
 import org.reactome.r3.graph.NetworkClusterResult;
 import org.reactome.r3.util.InteractionUtilities;
@@ -199,26 +201,31 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         addPopupMenu(context, removeCancerDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
         
         // Instantiate and register the context menus for the node views
-        NodeActionCollection nodeActionCollection = new NodeActionCollection();
-        GeneCardMenu geneCardMenu = nodeActionCollection.new GeneCardMenu();
+        GeneCardMenu geneCardMenu = new NodeActionCollection.GeneCardMenu();
         Properties geneCardProps = new Properties();
         geneCardProps.setProperty(ServiceProperties.TITLE, "Gene Card");
         geneCardProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, geneCardMenu, CyNodeViewContextMenuFactory.class, geneCardProps);
         
-        CosmicMenu cosmicMenu = nodeActionCollection.new CosmicMenu();
+        GoogleMenu googleMenu = new GoogleMenu();
+        Properties googleMenuProps = new Properties();
+        googleMenuProps.setProperty(ServiceProperties.TITLE, "Google");
+        googleMenuProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
+        addPopupMenu(context, googleMenu, CyNodeViewContextMenuFactory.class, googleMenuProps);
+        
+        CosmicMenu cosmicMenu = new NodeActionCollection.CosmicMenu();
         Properties cosmicProps = new Properties();
         cosmicProps.setProperty(ServiceProperties.TITLE, "Cosmic");
         cosmicProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, cosmicMenu, CyNodeViewContextMenuFactory.class, geneCardProps);
         
-        CancerGeneIndexMenu cgiMenu = nodeActionCollection.new CancerGeneIndexMenu();
+        CancerGeneIndexMenu cgiMenu = new NodeActionCollection.CancerGeneIndexMenu();
         Properties cgiMenuProps = new Properties();
         cgiMenuProps.setProperty(ServiceProperties.TITLE, "Fetch Cancer Gene Index");
         cgiMenuProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, cgiMenu, CyNodeViewContextMenuFactory.class, cgiMenuProps);
         
-        FetchFIsMenu fetchFIs = nodeActionCollection.new FetchFIsMenu();
+        FetchFIsMenu fetchFIs = new NodeActionCollection.FetchFIsMenu();
         Properties fetchFIsProps = new Properties();
         fetchFIsProps.setProperty(ServiceProperties.TITLE, "Fetch FIs");
         fetchFIsProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
@@ -251,12 +258,17 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         }
         
         // Instantiate and register the context menus for edge views
-        EdgeActionCollection edgeAC = new EdgeActionCollection();
-        EdgeQueryFIMenuItem edgeQueryMenu = edgeAC.new EdgeQueryFIMenuItem();
+        EdgeQueryFIMenuItem edgeQueryMenu = new EdgeActionCollection.EdgeQueryFIMenuItem();
         Properties edgeMenuProps = new Properties();
         edgeMenuProps.setProperty(ServiceProperties.TITLE, "Query FI Source");
         edgeMenuProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, edgeQueryMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
+        
+        DrugTargetDetailsMenuItem drugTargetDetailsMenu = new EdgeActionCollection.DrugTargetDetailsMenuItem();
+        edgeMenuProps = new Properties();
+        edgeMenuProps.setProperty(ServiceProperties.TITLE, "Show Details");
+        edgeMenuProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
+        addPopupMenu(context, drugTargetDetailsMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
     }
     
     protected void installOtherNetworkMenu(CyNetworkViewContextMenuFactory menu, String title) {
@@ -300,6 +312,9 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
     private class NodesPathwayEnrichmentMenu implements CyNodeViewContextMenuFactory {
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView, View<CyNode> nodeView) {
+            if (!NodeActionCollection.isGeneNode(netView.getModel(),
+                                                 nodeView.getModel()))
+                return null;
             JMenuItem netPathMenuItem = new JMenuItem("Pathway Enrichment");
             netPathMenuItem.addActionListener(new ActionListener() {
                 
@@ -333,6 +348,9 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
 
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView, View<CyNode> nodeView) {
+            if (!NodeActionCollection.isGeneNode(netView.getModel(),
+                                                 nodeView.getModel()))
+                return null;
             JMenuItem netGOCellComponentMenuItem = new JMenuItem("GO Cell Component");
             netGOCellComponentMenuItem.addActionListener(new ActionListener() {
                 
@@ -368,6 +386,9 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
 
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView, View<CyNode> nodeView) {
+            if (!NodeActionCollection.isGeneNode(netView.getModel(),
+                                                 nodeView.getModel()))
+                return null;
             JMenuItem netGOBioMenuItem = new JMenuItem("GO Biological Process");
             netGOBioMenuItem.addActionListener(new ActionListener() {
                 
@@ -404,6 +425,9 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
 
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView, View<CyNode> nodeView) {
+            if (!NodeActionCollection.isGeneNode(netView.getModel(),
+                                                 nodeView.getModel()))
+                return null;
             JMenuItem netGOMolFuncMenuItem = new JMenuItem("GO Molecular Function");
             netGOMolFuncMenuItem.addActionListener(new ActionListener() {
                 

@@ -556,7 +556,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             // Check if there is any interaction added
             CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
             if (pathwayEditor.hasFIsOverlaid(r)) {
-                JMenuItem google = new JMenuItem("Search Google");
+                JMenuItem google = new JMenuItem("Google");
                 google.addActionListener(new ActionListener() {
                     
                     @Override

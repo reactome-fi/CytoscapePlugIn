@@ -19,12 +19,16 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.drug.InteractionView;
+import org.reactome.cytoscape.drug.NetworkDrugManager;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.funcInt.FIAnnotation;
+
+import edu.ohsu.bcb.druggability.Interaction;
 /**
  * A class which contains functions performed on edges
  * in the FI network.
@@ -127,12 +131,60 @@ public class EdgeActionCollection {
         tableHelper = null;
     }
     
-    class EdgeQueryFIMenuItem implements CyEdgeViewContextMenuFactory
-    {
+    static class DrugTargetDetailsMenuItem implements CyEdgeViewContextMenuFactory {
         
         @Override
-        public CyMenuItem createMenuItem(final CyNetworkView view, final View<CyEdge> edgeView)
-        {
+        public CyMenuItem createMenuItem(final CyNetworkView networkView,
+                                         final View<CyEdge> edgeView) {
+            String edgeType = getEdgeType(networkView, edgeView);
+            if (edgeType == null || !edgeType.equals("Drug/Target"))
+                return null;
+            JMenuItem menuItem = new JMenuItem("Show Drug/Target Interaction Details");
+            menuItem.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    showDetails(networkView,
+                                edgeView);
+                }
+            });
+            return new CyMenuItem(menuItem, 10.0f);
+        }
+        
+        private void showDetails(CyNetworkView networkView,
+                                 View<CyEdge> edgeView) {
+            Interaction interaction = NetworkDrugManager.getManager().getInteraction(networkView.getModel(),
+                                                                                     edgeView.getModel());
+            if (interaction == null) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "Cannot find an interaction for displayed drug/target edge!",
+                                              "Error in Drug/Target Interaction",
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            InteractionView view = new InteractionView();
+            view.setInteraction(interaction);
+            view.setModal(false);
+            view.setVisible(true);
+        }
+    }
+    
+    private static String getEdgeType(CyNetworkView networkView,
+                                      View<CyEdge> edgeView) {
+        // Check the edge type first
+        CyTable edgeTable = networkView.getModel().getDefaultEdgeTable();
+        String edgeType = (String) edgeTable.getRow(edgeView.getModel().getSUID()).get("EDGE_TYPE", String.class);
+        return edgeType;
+    }
+    
+    static class EdgeQueryFIMenuItem implements CyEdgeViewContextMenuFactory {
+        
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view, final View<CyEdge> edgeView) {
+            // Check the edge type first
+            String edgeType = getEdgeType(view, edgeView);
+            if (edgeType == null || !edgeType.equals("FI"))
+                return null;
             JMenuItem edgeQueryFIItem = new JMenuItem("Query FI Source");
             edgeQueryFIItem.addActionListener(new ActionListener(){
                 
@@ -146,19 +198,21 @@ public class EdgeActionCollection {
             return new CyMenuItem(edgeQueryFIItem, 1.0f);
         }
         
+        private void queryFISource(CyNetworkView view,
+                                   View<CyEdge> edgeView) {
+            CyTable nodeTable = view.getModel().getDefaultNodeTable();
+            Long sourceSUID =  edgeView.getModel().getSource().getSUID();
+            String source = nodeTable.getRow(sourceSUID).get("name", String.class);
+            
+            Long targetSUID = edgeView.getModel().getTarget().getSUID();
+            String target = nodeTable.getRow(targetSUID).get("name", String.class);
+            
+            FISourceQueryHelper helper = new FISourceQueryHelper();
+            helper.queryFISource(source, target, view);
+        }
+        
     }
     
-    private void queryFISource(CyNetworkView view,
-                               View<CyEdge> edgeView) {
-        CyTable nodeTable = view.getModel().getDefaultNodeTable();
-        Long sourceSUID =  edgeView.getModel().getSource().getSUID();
-        String source = nodeTable.getRow(sourceSUID).get("name", String.class);
-        
-        Long targetSUID = edgeView.getModel().getTarget().getSUID();
-        String target = nodeTable.getRow(targetSUID).get("name", String.class);
-        
-        FISourceQueryHelper helper = new FISourceQueryHelper();
-        helper.queryFISource(source, target, view);
-    }
+
     
 }
