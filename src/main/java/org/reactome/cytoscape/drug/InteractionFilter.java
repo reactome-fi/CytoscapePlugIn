@@ -8,6 +8,7 @@ import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -36,7 +37,7 @@ import edu.ohsu.bcb.druggability.Source;
  *
  */
 public class InteractionFilter {
-    private final Double DEFAULT_MAX_VALUE = 100d; // 100 nm 
+    private final Double DEFAULT_MAX_VALUE = 100d; // 100 nM
     
     private List<DataSource> dataSources; // Databases and pubmed
     private List<AffinityFilter> affinityFilters;
@@ -228,14 +229,22 @@ public class InteractionFilter {
     public void setPathwayEditor(CyPathwayEditor pathwayEditor) {
         this.pathwayEditor = pathwayEditor;
     }
-
+    
     public void showDialog() {
+        showDialog(null);
+    }
+
+    public void showDialog(Window owner) {
         if (this.dialog != null) {
             this.dialog.setVisible(true);
             this.dialog.toFront();
             return;
         }
-        InteractionFilterDialog dialog = new InteractionFilterDialog();
+        InteractionFilterDialog dialog = null;
+        if (owner == null)
+            dialog = new InteractionFilterDialog();
+        else
+            dialog = new InteractionFilterDialog(owner);
         dialog.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -277,6 +286,11 @@ public class InteractionFilter {
         
         public InteractionFilterDialog() {
             super(PlugInObjectManager.getManager().getCytoscapeDesktop());
+            init();
+        }
+        
+        public InteractionFilterDialog(Window owner) {
+            super(owner);
             init();
         }
         

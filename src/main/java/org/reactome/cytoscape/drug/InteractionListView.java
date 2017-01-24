@@ -20,6 +20,7 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.RowFilter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -40,6 +41,7 @@ public class InteractionListView extends JDialog {
     private JTable interactionTable;
     private JButton viewDetailsBtn;
     private JButton overlayBtn;
+    private TableListInteractionFilter interactionFilter;
     
     /**
      * Default constructor.
@@ -58,7 +60,12 @@ public class InteractionListView extends JDialog {
         interactionTable = new JTable();
         InteractionListTableModel model = new InteractionListTableModel();
         interactionTable.setModel(model);
-        interactionTable.setRowSorter(new TableRowSorter<TableModel>(model));
+        TableRowSorter<TableModel> rowSorter = new TableRowSorter<TableModel>(model);
+        interactionTable.setRowSorter(rowSorter);
+        interactionFilter = new TableListInteractionFilter();
+        interactionFilter.setTable(interactionTable);
+        RowFilter<TableModel, Object> rowFilter = model.createFilter(interactionFilter);
+        rowSorter.setRowFilter(rowFilter);
         getContentPane().add(new JScrollPane(interactionTable), BorderLayout.CENTER);
         
         JPanel controlPane = createControlPane();
@@ -75,7 +82,7 @@ public class InteractionListView extends JDialog {
             }
         });
         
-        setSize(580, 225);
+        setSize(625, 250);
         setLocationRelativeTo(getOwner());
     }
     
@@ -93,6 +100,16 @@ public class InteractionListView extends JDialog {
         });
         controlPane.add(viewDetailsBtn);
         viewDetailsBtn.setEnabled(false);
+        
+        JButton filterBtn = new JButton("Filter Targets");
+        filterBtn.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                filterInteractions();
+            }
+        });
+        controlPane.add(filterBtn);
         
         overlayBtn = new JButton("Overlay Targets to Pathways");
         overlayBtn.addActionListener(new ActionListener() {
@@ -116,6 +133,12 @@ public class InteractionListView extends JDialog {
         controlPane.add(closeBtn);
         
         return controlPane;
+    }
+    
+    private void filterInteractions() {
+        TableListInteractionFilter filter = new TableListInteractionFilter();
+        filter.setTable(interactionTable);
+        filter.showDialog(this);
     }
     
     private void overlayToPathways() {
@@ -145,6 +168,43 @@ public class InteractionListView extends JDialog {
         view.setVisible(true);
     }
     
+    private class TableListInteractionFilter extends InteractionFilter {
+        private JTable table;
+        
+        public TableListInteractionFilter() {
+        }
+        
+//        @Override
+//        protected void init() {
+//            // Choose all
+//            dataSources = new ArrayList<>();
+//            for (DataSource source : DataSource.values())
+//                dataSources.add(source);
+//            affinityFilters = new ArrayList<>();
+//            for (AssayType type : AssayType.values()) {
+//                AffinityFilter filter = new AffinityFilter();
+//                filter.setAssayType(type);
+//                filter.setRelation(AffinityRelation.NOGREATER);
+//                affinityFilters.add(filter);
+//            }
+//        }
+        
+        public void setTable(JTable table) {
+            this.table = table;
+        }
+
+        @Override
+        public void applyFilter() {
+            if (table == null)
+                return;
+            InteractionListTableModel model = (InteractionListTableModel) table.getModel();
+            RowFilter<TableModel, Object> rowFilter = model.createFilter(this);
+            TableRowSorter<InteractionListTableModel> rowSorter = (TableRowSorter<InteractionListTableModel>) table.getRowSorter();
+            rowSorter.setRowFilter(rowFilter);
+        }
+        
+    }
+    
     private class InteractionListTableModel extends AbstractTableModel {
         private String[] colNames = new String[] {
                 "ID",
@@ -155,23 +215,33 @@ public class InteractionListView extends JDialog {
                 "Ki (nM)",
                 "EC50 (nM)"
         };
-        private List<Interaction> interactions; // Back-end data
+        private Map<String, Interaction> idToInteraction;
         private List<Object[]> data;
         
+        public RowFilter<TableModel, Object> createFilter(final InteractionFilter filter) {
+            RowFilter<TableModel, Object> rowFilter = new RowFilter<TableModel, Object>() {
+                public boolean include(Entry<? extends TableModel, ? extends Object> entry) {
+                    // Entry should be a row
+                    String id = entry.getStringValue(0);
+                    Interaction interaction = idToInteraction.get(id);
+                    return filter.filter(interaction);
+                }
+            };
+            return rowFilter;
+        }
+        
         public void setInteractions(List<Interaction> interactions) {
-            this.interactions = interactions;
-            initData();
+            idToInteraction = new HashMap<>();
+            for (Interaction interaction : interactions)
+                idToInteraction.put(interaction.getId(), interaction);
+            initData(interactions);
         }
         
         public Interaction getInteraction(String id) {
-            for (Interaction interaction : interactions) {
-                if (interaction.getId().equals(id))
-                    return interaction;
-            }
-            return null;
+            return idToInteraction.get(id);
         }
         
-        private void initData() {
+        private void initData(List<Interaction> interactions) {
             if (data == null)
                 data = new ArrayList<>();
             else
