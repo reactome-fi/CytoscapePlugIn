@@ -49,6 +49,7 @@ import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.GeneSetAnnotation;
+import org.reactome.cytoscape.drug.DrugListManager;
 import org.reactome.cytoscape.pgm.PathwayResultSummary;
 import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -483,6 +484,16 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             }
         });
         popup.add(openPGMResults);
+        // For cancer drugs
+        JMenuItem viewCancerDrugs = new JMenuItem("View Cancer Drugs");
+        viewCancerDrugs.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                viewCancerDrugs();
+            }
+        });
+        popup.add(viewCancerDrugs);
         // Add two new items for expanding/closing nodes
         popup.addSeparator();
         JMenuItem expandNode = new JMenuItem("Expand Pathway");
@@ -582,6 +593,18 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         FactorGraphBatchAnalyzer analyzer = new FactorGraphBatchAnalyzer();
         analyzer.setEventPane(this);
         analyzer.startAnalysis();
+    }
+    
+    private void viewCancerDrugs() {
+        Thread t = new Thread() {
+            public void run() {
+                PathwayEnrichmentAnalysisTask enrichmentTask = new PathwayEnrichmentAnalysisTask();
+                enrichmentTask.setEventPane(EventTreePane.this);
+                DrugListManager.getManager().setEnrichmentTask(enrichmentTask);
+                DrugListManager.getManager().listDrugs();
+            }
+        };
+        t.start();
     }
     
     /**

@@ -105,6 +105,10 @@ public class DrugTargetInteractionParser {
         return this.interactions;
     }
     
+    public Map<String, Drug> getIdToDrug() {
+        return idToDrug;
+    }
+    
     public Map<Long, List<Interaction>> getDbIdToInteractions() {
         return this.dbIdToInteractions;
     }

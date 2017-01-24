@@ -118,9 +118,25 @@ public class InteractionFilter {
         // Get relation ship. We use "OR" relationship here
         boolean rtn = true;
         if (getAffinityFilters() != null && getAffinityFilters().size() > 0) {
-            rtn = false;
+            rtn = checkAffinityFilters(interaction);
+        }
+        return rtn;
+    }
+
+    private boolean checkAffinityFilters(Interaction interaction) {
+        boolean rtn;
+        rtn = false;
+        for (AffinityFilter filter : getAffinityFilters()) {
+            rtn |= checkAffinityFilter(filter, interaction);
+        }
+        // A special case when there is no affinity data available
+        if (!rtn && interaction.getExpEvidenceSet() == null) {
+            rtn = true; // In this case, default will be true
             for (AffinityFilter filter : getAffinityFilters()) {
-                rtn |= checkAffinityFilter(filter, interaction);
+                if (filter.getValue() != null) {
+                    rtn = false;
+                    break;
+                }
             }
         }
         return rtn;

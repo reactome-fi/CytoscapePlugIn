@@ -665,7 +665,7 @@ public class RESTFulFIService implements FINetworkService
         return element;
     }
     
-    public Element queryDrugTargetIneractions(Set<Long> peIds) throws Exception {
+    public Element queryDrugTargetInteractions(Set<Long> peIds) throws Exception {
         if (peIds == null || peIds.size() == 0)
             throw new IllegalArgumentException("Empty DB_IDs in the parameter set!");
         StringBuilder query = new StringBuilder();
@@ -674,6 +674,19 @@ public class RESTFulFIService implements FINetworkService
         query.deleteCharAt(query.length() - 1);
         String url = restfulURL + "cancerDruggability/queryInteractionsForPEs";
         Element elm = PlugInUtilities.callHttpInXML(url, HTTP_POST, query.toString());
+        return elm;
+    }
+    
+    public Element listDrugs() throws Exception {
+        String url = restfulURL + "cancerDruggability/listDrugs";
+        Element elm = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
+        return elm;
+    }
+    
+    public Element queryInteractionsForDrugs(List<String> drugNames) throws Exception {
+        String url = restfulURL + "cancerDruggability/queryInteractionsForDrugs";
+        String query = StringUtils.join("\n", drugNames);
+        Element elm = PlugInUtilities.callHttpInXML(url, HTTP_POST, query);
         return elm;
     }
     

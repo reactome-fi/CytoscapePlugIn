@@ -281,7 +281,7 @@ public class DrugTargetInteractionManager {
             }
             if (toBeQueried.size() == 0)
                 return null;
-            return service.queryDrugTargetIneractions(toBeQueried);
+            return service.queryDrugTargetInteractions(toBeQueried);
         }
     }
     
@@ -289,7 +289,6 @@ public class DrugTargetInteractionManager {
                                                           RenderablePathway pathway) {
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         try {
-            RESTFulFIService service = new RESTFulFIService();
             ProgressPane progressPane = new ProgressPane();
             frame.setGlassPane(progressPane);
             progressPane.setMinimum(0);

@@ -8,12 +8,13 @@ import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskMonitor;
 import org.gk.util.ProgressPane;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
+import org.reactome.cytoscape.service.AbstractPathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.slf4j.Logger;
@@ -23,7 +24,7 @@ import org.slf4j.LoggerFactory;
  * @author gwu
  *
  */
-public class PathwayEnrichmentAnalysisTask extends AbstractTask {
+public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnalysisTask {
     private static Logger logger = LoggerFactory.getLogger(PathwayEnrichmentAnalysisTask.class);
     private String geneList;
     private EventTreePane eventPane;
@@ -38,8 +39,11 @@ public class PathwayEnrichmentAnalysisTask extends AbstractTask {
         this.geneList = geneList;
     }
     
-    public void setEventPane(EventTreePane treePane) {
-        this.eventPane = treePane;
+    public void setEventPane(JPanel treePane) {
+        if (!(treePane instanceof EventTreePane)) {
+            throw new IllegalArgumentException("The passed argument must be a EventTreePane.");
+        }
+        this.eventPane = (EventTreePane) treePane;
     }
     
     /**
