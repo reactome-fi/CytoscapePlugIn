@@ -86,6 +86,13 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         
         //Instantiate Reactome FI App services
         GeneSetMutationAnalysisAction gsma = new GeneSetMutationAnalysisAction(desktopApp);
+        
+        // Use for debug
+        String pgmDebug = PlugInObjectManager.getManager().getProperties().getProperty("PGMDebug"); 
+        if (pgmDebug != null && pgmDebug.equals("true")) {
+            FactorGraphImportAction fgImport = new FactorGraphImportAction();
+            registerAllServices(context, fgImport, new Properties());
+        }
 
         MicroarrayAnalysisAction maa = new MicroarrayAnalysisAction(desktopApp);
         UserGuideAction uga = new UserGuideAction();

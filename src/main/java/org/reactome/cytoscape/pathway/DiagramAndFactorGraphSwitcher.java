@@ -198,6 +198,30 @@ public class DiagramAndFactorGraphSwitcher {
         pathwayFrame.dispose();
         
         taskMonitor.setProgress(0.50d);
+        CyNetwork network = convertFactorGraphToNetwork(fg, 
+                                                        pathway.getDisplayName(), 
+                                                        pathwayId);
+
+        // Cache the fetched pathway diagram to avoid another slow query
+        PathwayDiagramRegistry.getRegistry().registerNetworkToDiagram(network,
+                                                                      pathway);
+        
+        // A new set of Popup menus are needed
+        PopupMenuManager.getManager().installPopupMenu(ReactomeNetworkType.FactorGraph);
+        
+        taskMonitor.setProgress(1.0d);
+        PropertyChangeEvent event = new PropertyChangeEvent(this, 
+                                                            "ConvertPathwayToFactorGraph",
+                                                            pathway,
+                                                            null);
+        PathwayDiagramRegistry.getRegistry().firePropertyChange(event);
+        
+        FactorGraphRegistry.getRegistry().registerNetworkToFactorGraph(network, fg);
+    }
+
+    public CyNetwork convertFactorGraphToNetwork(FactorGraph fg, 
+                                                 String pathwayName, 
+                                                 Long pathwayId) {
         // Need to create a new CyNetwork
         FINetworkGenerator generator = new FINetworkGenerator();
         Set<String> interactions = createInteractionsFromFactorGraph(fg);
@@ -205,15 +229,16 @@ public class DiagramAndFactorGraphSwitcher {
         // Add some meta information
         CyRow row = network.getDefaultNetworkTable().getRow(network.getSUID());
         row.set("name",
-                "Factor Graph for " + pathway.getDisplayName());
+                "Factor Graph for " + pathwayName);
         TableHelper tableHelper = new TableHelper();
         //TODO: Treat it as a FI network for the time being. This will be changed in the future.
         tableHelper.markAsReactomeNetwork(network, ReactomeNetworkType.FactorGraph);
         tableHelper.storeDataSetType(network, 
                                     "PathwayDiagram");
-        tableHelper.storeNetworkAttribute(network,
-                                          "PathwayId", 
-                                          pathwayId);
+        if (pathwayId != null)
+            tableHelper.storeNetworkAttribute(network,
+                                              "PathwayId", 
+                                              pathwayId);
         
         Map<String, String> nodeTypeInfo = generateNodeTypeInfo(fg);
         tableHelper.storeNodeAttributesByName(network, 
@@ -231,10 +256,6 @@ public class DiagramAndFactorGraphSwitcher {
         tableHelper.storeNodeAttributesByName(network, 
                                               "SourceIds",
                                               sourceIdInfo);
-
-        // Cache the fetched pathway diagram to avoid another slow query
-        PathwayDiagramRegistry.getRegistry().registerNetworkToDiagram(network,
-                                                                      pathway);
         
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         
@@ -262,17 +283,7 @@ public class DiagramAndFactorGraphSwitcher {
         visStyler.setVisualStyle(view);
         visStyler.doLayout();
         
-        // A new set of Popup menus are needed
-        PopupMenuManager.getManager().installPopupMenu(ReactomeNetworkType.FactorGraph);
-        
-        taskMonitor.setProgress(1.0d);
-        PropertyChangeEvent event = new PropertyChangeEvent(this, 
-                                                            "ConvertPathwayToFactorGraph",
-                                                            pathway,
-                                                            null);
-        PathwayDiagramRegistry.getRegistry().firePropertyChange(event);
-        
-        FactorGraphRegistry.getRegistry().registerNetworkToFactorGraph(network, fg);
+        return network;
     }
 
     private FactorGraph convertPathwayToFactorGraph(Long pathwayId,
