@@ -258,7 +258,12 @@ public class InteractionFilter {
         });
         dialog.setFilter(this);
         dialog.okBtn.setEnabled(false); // Reset it as false
-        dialog.setModal(false); // So that we can see the action of filtering
+        // It seems that there is a bug in the latest version of Java (Java 1.8.0_121) regarding
+        // the relationships among JDialogs: dialog here cannot be displayed correctly after
+        // a detailed interaction dialog is shown when dialog has modal = false. Therefore,
+        // do the following:
+        dialog.setModal(dialog.getOwner() instanceof JDialog); 
+//        dialog.setModal(false); // So that we can see the action of filtering
         dialog.setVisible(true);
         this.dialog = dialog;
     }

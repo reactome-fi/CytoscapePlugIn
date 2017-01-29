@@ -5,6 +5,7 @@
 package org.reactome.cytoscape.drug;
 
 import java.awt.BorderLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -45,6 +46,11 @@ public class InteractionView extends JDialog {
      */
     public InteractionView() {
         super(PlugInObjectManager.getManager().getCytoscapeDesktop());
+        init();
+    }
+    
+    public InteractionView(Window owner) {
+        super(owner);
         init();
     }
     

@@ -57,6 +57,8 @@ public class InteractionListView extends JDialog {
     }
     
     private void init() {
+        setTitle("Drug Targets View");
+        
         interactionTable = new JTable();
         InteractionListTableModel model = new InteractionListTableModel();
         interactionTable.setModel(model);
@@ -136,9 +138,11 @@ public class InteractionListView extends JDialog {
     }
     
     private void filterInteractions() {
-        TableListInteractionFilter filter = new TableListInteractionFilter();
-        filter.setTable(interactionTable);
-        filter.showDialog(this);
+        if (interactionFilter == null) {
+            interactionFilter = new TableListInteractionFilter();
+            interactionFilter.setTable(interactionTable);
+        }
+        interactionFilter.showDialog(this);
     }
     
     private void overlayToPathways() {
@@ -162,10 +166,11 @@ public class InteractionListView extends JDialog {
         Interaction interaction = model.getInteraction(id);
         if (interaction == null)
             return;
-        InteractionView view = new InteractionView();
+        InteractionView view = new InteractionView(this);
         view.setInteraction(interaction);
         view.setModal(true);
         view.setVisible(true);
+        view.toFront(); // Needed in Java 1.8.0_121 for some reason when the owner is a dialog.
     }
     
     private class TableListInteractionFilter extends InteractionFilter {
