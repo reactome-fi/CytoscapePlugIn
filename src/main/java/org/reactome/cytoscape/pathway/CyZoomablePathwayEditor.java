@@ -53,6 +53,7 @@ import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape.util.SearchDialog;
+import org.reactome.r3.util.FileUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -343,6 +344,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         // be developed along the normal use.
         String pgmDebug = PlugInObjectManager.getManager().getProperties().getProperty("PGMDebug");
         if (pgmDebug != null && pgmDebug.equalsIgnoreCase("true")) {
+            // Overlay some results for entity display
+            JMenuItem overlayEntityValues = new JMenuItem("Overlay Perturbation Results");
+            overlayEntityValues.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    overlayPerturbationResults();
+                }
+            });
+            popup.add(overlayEntityValues);
             // Convert as a factor graph
             JMenuItem convertAsFactorGraph = new JMenuItem("Convert to Graphical Model");
             convertAsFactorGraph.addActionListener(new ActionListener() {
@@ -906,6 +917,41 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             JOptionPane.showMessageDialog(this,
                                           "Error in listing genes in a selected object: " + e,
                                           "Error in Listing Geens",
+                                          JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+    
+    private void overlayPerturbationResults() {
+        File file = PlugInUtilities.getAnalysisFile("Choose Perturbation File",
+                                                    FileUtil.LOAD);
+        if (file == null)
+            return;
+        try {
+            FileUtility fu = new FileUtility();
+            fu.setInput(file.getAbsolutePath());
+            String line = fu.readLine();
+            Map<String, Double> dbIdToValue = new HashMap<>();
+            while ((line = fu.readLine()) != null) {
+                String[] tokens = line.split("\t");
+                int index = tokens[0].lastIndexOf("_");
+                String dbId = tokens[0].substring(index + 1);
+                if (dbId.endsWith("\""))
+                    dbId = dbId.substring(0, dbId.length() - 1);
+                Double value = new Double(tokens[1]);
+                dbIdToValue.put(dbId, value);
+            }
+            fu.close();
+            hiliteControlPane.setIdToValue(dbIdToValue);
+            double[] minMaxValues = hiliteControlPane.calculateMinMaxValues(dbIdToValue.values());
+            hiliteControlPane.resetMinMaxValues(minMaxValues);
+            hiliteControlPane.highlight();
+            hiliteControlPane.setVisible(true);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(this,
+                                          "Cannot overlay the perturbation results: " + e,
+                                          "Error in Overlaying",
                                           JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
         }

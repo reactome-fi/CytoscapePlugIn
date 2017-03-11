@@ -86,7 +86,9 @@ public class PathwayDiagramHighlighter {
             Renderable r = (Renderable) obj;
             if (!(r instanceof Node))
                 continue; // Want to work on nodes only
-            r.setForegroundColor(Color.LIGHT_GRAY);
+//            r.setForegroundColor(Color.LIGHT_GRAY);
+            // Better to use black, which is the default.
+//            r.setForegroundColor(Color.BLACK);
             Long dbId = r.getReactomeId();
             if (dbId == null || !idToValue.containsKey(dbId.toString())) {
                 r.setBackgroundColor(Color.WHITE);

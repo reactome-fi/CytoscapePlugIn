@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Generate a jar file for classes needed from the caBIGR3 project -->
+<!-- Generate a jar file from the caBigR3 project in the local maven repository -->
 <project name="package" default="jarCaBigR3" basedir="..">
 	<property name="targetDir" value="lib" />
 	<property name="eclipseHome" value="/Users/gwu/Documents/EclipseWorkspace" />
@@ -35,6 +35,9 @@
 				<include name="org/reactome/r3/graph/BreadthFirstSearch*.class" />
 				<include name="org/reactome/r3/graph/GeneClusterPair.class" />
 				<include name="org/reactome/r3/graph/NetworkClusterResult.class" />
+				<include name="org/reactome/r3/graph/SpectralPartitionNetworkCluster*.class" />
+				<include name="org/reactome/r3/graph/JGraphTUtilities*.class" />
+				<include name="org/reactome/r3/graph/NetworkModularityCalculator*.class" />
 				<include name="org/reactome/annotate/*.class" />
 				<include name="org/reactome/cancer/CancerAnalysisUtilitites*.class" />
 				<include name="org/reactome/cancer/CancerGeneExpressionCommon*.class" />
