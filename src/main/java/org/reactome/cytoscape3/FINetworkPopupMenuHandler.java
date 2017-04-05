@@ -181,24 +181,26 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         addPopupMenu(context, fetchCGINetwork, CyNetworkViewContextMenuFactory.class, fetchCGINetprops);
         
         // Cancer drugs overlay feature
-        FetchCancerDrugMenu fetchCancerDrugMenu = new FetchCancerDrugMenu();
-        Properties cancerProperties = new Properties();
-        preferredMenuText = PREFERRED_MENU + ".Overlay Cancer Drugs[50]";
-        cancerProperties.setProperty(ServiceProperties.TITLE, "Overlay Cancer Drugs");
-        cancerProperties.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
-        addPopupMenu(context, fetchCancerDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
-        
-        FilterCancerDrugMenu filterCancerDrugMenu = new FilterCancerDrugMenu();
-        cancerProperties = new Properties();
-        cancerProperties.setProperty(ServiceProperties.TITLE, "Filter Cancer Drugs");
-        cancerProperties.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
-        addPopupMenu(context, filterCancerDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
-        
-        RemoveCancerDrugMenu removeCancerDrugMenu = new RemoveCancerDrugMenu();
-        cancerProperties = new Properties();
-        cancerProperties.setProperty(ServiceProperties.TITLE, "Remove Cancer Drugs");
-        cancerProperties.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
-        addPopupMenu(context, removeCancerDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
+        if (PlugInObjectManager.getManager().isCancerTargetEnabled()) {
+            FetchCancerDrugMenu fetchCancerDrugMenu = new FetchCancerDrugMenu();
+            Properties cancerProperties = new Properties();
+            preferredMenuText = PREFERRED_MENU + ".Overlay Cancer Drugs[50]";
+            cancerProperties.setProperty(ServiceProperties.TITLE, "Overlay Cancer Drugs");
+            cancerProperties.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
+            addPopupMenu(context, fetchCancerDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
+            
+            FilterCancerDrugMenu filterCancerDrugMenu = new FilterCancerDrugMenu();
+            cancerProperties = new Properties();
+            cancerProperties.setProperty(ServiceProperties.TITLE, "Filter Cancer Drugs");
+            cancerProperties.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
+            addPopupMenu(context, filterCancerDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
+            
+            RemoveCancerDrugMenu removeCancerDrugMenu = new RemoveCancerDrugMenu();
+            cancerProperties = new Properties();
+            cancerProperties.setProperty(ServiceProperties.TITLE, "Remove Cancer Drugs");
+            cancerProperties.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
+            addPopupMenu(context, removeCancerDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
+        }
         
         // Instantiate and register the context menus for the node views
         GeneCardMenu geneCardMenu = new NodeActionCollection.GeneCardMenu();

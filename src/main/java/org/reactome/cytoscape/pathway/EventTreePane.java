@@ -484,16 +484,20 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             }
         });
         popup.add(openPGMResults);
+        
         // For cancer drugs
-        JMenuItem viewCancerDrugs = new JMenuItem("View Cancer Drugs");
-        viewCancerDrugs.addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                viewCancerDrugs();
-            }
-        });
-        popup.add(viewCancerDrugs);
+        if (PlugInObjectManager.getManager().isCancerTargetEnabled()) {
+            JMenuItem viewCancerDrugs = new JMenuItem("View Cancer Drugs");
+            viewCancerDrugs.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    viewCancerDrugs();
+                }
+            });
+            popup.add(viewCancerDrugs);
+        }
+        
         // Add two new items for expanding/closing nodes
         popup.addSeparator();
         JMenuItem expandNode = new JMenuItem("Expand Pathway");

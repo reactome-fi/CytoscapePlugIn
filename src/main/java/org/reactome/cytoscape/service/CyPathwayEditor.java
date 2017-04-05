@@ -25,7 +25,6 @@ import org.gk.render.Node;
 import org.gk.render.Renderable;
 import org.gk.render.RenderableInteraction;
 import org.gk.render.RenderablePathway;
-import org.gk.render.RenderableReaction;
 
 /**
  * A customized PathwayEditor in order to do something special for PathwayDiagram displayed in

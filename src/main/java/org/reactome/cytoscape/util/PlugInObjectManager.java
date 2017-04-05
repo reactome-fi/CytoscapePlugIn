@@ -288,6 +288,15 @@ public class PlugInObjectManager {
         return false;
     }
     
+    /**
+     * Check if cancer targetome features are enabeld.
+     * @return
+     */
+    public boolean isCancerTargetEnabled() {
+        String enableCancerTargetome = PlugInObjectManager.getManager().getProperties().getProperty("enableCancerTargetome", "false");
+        return enableCancerTargetome.equals("true");
+    }
+    
     public String getFiNetworkVersion()
     {
         if (this.fiNetworkVersion != null)

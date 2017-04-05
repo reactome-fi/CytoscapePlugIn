@@ -25,6 +25,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
+import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
@@ -36,9 +37,9 @@ import org.gk.util.GKApplicationUtilities;
 import org.gk.util.ProgressPane;
 import org.gk.util.StringUtils;
 import org.jdom.Element;
+import org.reactome.cytoscape.service.CyPathwayEditor;
 import org.reactome.cytoscape.service.FIRenderableInteraction;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
-import org.reactome.cytoscape.service.JiggleLayout;
 import org.reactome.cytoscape.service.PathwayDiagramOverlayHelper;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -154,7 +155,8 @@ public class FetchFIForPEInDiagramHelper {
         overlayHelper.getPreAddedFIs(node, nodesToInteraction);
         filterPreAddedFIs(fis, nodesToInteraction);
         List<Node> newNodes = new ArrayList<Node>();
-        PathwayEditor editor = pathwayEditor.getPathwayEditor();
+        CyPathwayEditor editor = (CyPathwayEditor) pathwayEditor.getPathwayEditor();
+        editor.setDuringOverlay(true);
         for (SimpleFI fi : fis) {
             Node partner = null;
             // Check if a FI should be added to the existing objects
@@ -186,6 +188,9 @@ public class FetchFIForPEInDiagramHelper {
         }
         // Do a layout
         overlayHelper.layout(node, newNodes);
+        editor.setDuringOverlay(false);
+        editor.repaint(pathwayEditor.getVisibleRect());
+        editor.fireGraphEditorActionEvent(ActionType.INSERT);
     }
     
     private void filterPreAddedFIs(List<SimpleFI> fis,

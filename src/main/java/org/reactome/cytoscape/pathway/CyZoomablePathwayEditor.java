@@ -379,27 +379,29 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             });
             popup.add(convertAsFactorGraph);
         }
-        popup.addSeparator();
         
-        // Fetch cancer drugs for the whole pathway diagram
-        JMenuItem fetchDrugs = new JMenuItem("Fetch Cancer Drugs");
-        fetchDrugs.addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                fetchCancerDrugs(null);
-            }
-        });
-        popup.add(fetchDrugs);
-        JMenuItem filterDrugs = new JMenuItem("Filter Cancer Drugs");
-        filterDrugs.addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                filterCancerDrugs();
-            }
-        });
-        popup.add(filterDrugs);
+        if (PlugInObjectManager.getManager().isCancerTargetEnabled()) {
+            popup.addSeparator();
+            // Fetch cancer drugs for the whole pathway diagram
+            JMenuItem fetchDrugs = new JMenuItem("Fetch Cancer Drugs");
+            fetchDrugs.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    fetchCancerDrugs(null);
+                }
+            });
+            popup.add(fetchDrugs);
+            JMenuItem filterDrugs = new JMenuItem("Filter Cancer Drugs");
+            filterDrugs.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    filterCancerDrugs();
+                }
+            });
+            popup.add(filterDrugs);
+        }
                 
         final CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
         if (pathwayEditor.hasFIsOverlaid()) {
@@ -412,6 +414,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                     pathwayEditor.removeFIs();
                 }
             });
+            popup.addSeparator();
             popup.add(item);
         }
         JMenuItem searchDiagram = new JMenuItem("Search Diagram");
@@ -683,27 +686,29 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 }
             });
             popup.add(showObservations);
-            
-            // For cancer drug/target interctions
-            JMenuItem fetchCancerDrugs = new JMenuItem("Fetch Cancer Drugs");
-            fetchCancerDrugs.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    fetchCancerDrugs(dbId);
-                }
-            });
             popup.addSeparator();
-            popup.add(fetchCancerDrugs);
-            JMenuItem filterCancerDrugs = new JMenuItem("Filter Cancer Drugs");
-            filterCancerDrugs.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    filterCancerDrugs();
-                }
-            });
-            popup.add(filterCancerDrugs);
+            
+            // For cancer drug/target interactions
+            if (PlugInObjectManager.getManager().isCancerTargetEnabled()) {
+                JMenuItem fetchCancerDrugs = new JMenuItem("Fetch Cancer Drugs");
+                fetchCancerDrugs.addActionListener(new ActionListener() {
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        fetchCancerDrugs(dbId);
+                    }
+                });
+                popup.add(fetchCancerDrugs);
+                JMenuItem filterCancerDrugs = new JMenuItem("Filter Cancer Drugs");
+                filterCancerDrugs.addActionListener(new ActionListener() {
+                    
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        filterCancerDrugs();
+                    }
+                });
+                popup.add(filterCancerDrugs);
+            }
             
             // Fetch FIs
             JMenuItem fetchFIs = new JMenuItem("Fetch FIs");
@@ -727,6 +732,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                         removeFIs(node);
                     }
                 });
+                popup.addSeparator();
                 popup.add(removeFIs);
             }
         }

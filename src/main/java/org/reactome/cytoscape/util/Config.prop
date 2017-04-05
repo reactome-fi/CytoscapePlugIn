@@ -6,13 +6,14 @@ networkService=org.reactome.cytoscape.service.LocalService
 moduleColors=0,0,153;51,153,0;153,0,153;102,102,0;0,102,102;204,153,0;204,0,102;204,204,255;0,102,51;0,204,204;102,0,51;0,51,51;0,102,153;255,102,255;255,255,102
 userGuideURL=http://wiki.reactome.org/index.php/Reactome_FI_Cytoscape_Plugin
 # A list of FI network versions available for selection
-FINetworkVersions=2015,2014,2013
+FINetworkVersions=2016,2015,2014
 # For local test
 #2009_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 #2012_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
-2013_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+#2013_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 2014_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 2015_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
+2016_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 # For Production site
 #2009_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp/FIService/
 #2012_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2012/FIService/
@@ -24,15 +25,17 @@ FINetworkVersions=2015,2014,2013
 ReactomeRESTfulAPI=http://localhost:8080/caBigR3WebApp/FIService/ReactomeRestful/
 # Source data bases
 #2009_sourceDb=test_reactome_28_plus_i_myisam
-2012_sourceDb=test_reactome_41_plus_i
-2013_sourceDb=test_reactome_47_plus_i
-2013_sourceDb=test_reactome_51_plus_i
+#2012_sourceDb=test_reactome_41_plus_i
+#2013_sourceDb=test_reactome_47_plus_i
+#2013_sourceDb=test_reactome_51_plus_i
 # A list of evidences and their labels
 evidenceProperties=humanInteraction,scePPI,dmePPI,celPPI,mousePPI,genewaysPPI,pavlidisGeneExp,carlosGeneExp,pfamDomainInt,goBPSharing,probability
 evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interaction,Mouse Interaction,Geneways Interaction,Pavlidis Gene Exp,Carlos Gene Exp,PfamDomain Interaction,GO BP Sharing,Score
 ReactomeURL=http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&ID=
 # Use to control the debug model for PGM analysis
-PGMDebug=true
+PGMDebug=false
 # The file has pre-generated factor graph objects in a zipped XML file
 factorGraphFiles=PathwayDiagramsFactorGraphs.xml.zip
 fgEscapeNames=ATP, ADP, Pi, H2O, GTP, GDP, CO2, H+
+# A flag to control if cancer targetome should be enabled. This flag will be removed so that enabling is the default after the manuscript is accepted
+enableCancerTargetome=false
