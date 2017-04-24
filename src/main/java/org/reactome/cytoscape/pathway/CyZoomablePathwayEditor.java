@@ -39,6 +39,7 @@ import org.gk.util.SwingImageCreator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.bn.BooleanNetworkAnalyzer;
 import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResultsIO;
@@ -279,6 +280,17 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             }
         });
         popup.add(convertToFINetwork);
+        
+        JMenuItem runBNAnalysis = new JMenuItem("Run Boolean Network Analysis");
+        runBNAnalysis.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                runBooleanNetworkAnalysis();
+            }
+        });
+        popup.addSeparator();
+        popup.add(runBNAnalysis);
         
         JMenuItem runPGMAnalysis = new JMenuItem("Run Graphical Model Analysis");
         runPGMAnalysis.addActionListener(new ActionListener() {
@@ -1057,6 +1069,13 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     private void runFactorGraphAnalysis() {
         FactorGraphAnalyzer analyzer = getFactorGraphAnalyzer();
         analyzer.startAnalysis();
+    }
+    
+    private void runBooleanNetworkAnalysis() {
+        BooleanNetworkAnalyzer analyzer = new BooleanNetworkAnalyzer();
+        analyzer.setPathwayEditor(pathwayEditor);
+        analyzer.setHiliteControlPane(hiliteControlPane);
+        analyzer.startSimulation();
     }
     
     private String formatGenesText(String genes) {

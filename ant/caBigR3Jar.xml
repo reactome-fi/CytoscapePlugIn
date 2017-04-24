@@ -20,13 +20,14 @@
 	
 	<!-- Package some needed classes from the caBigR3 project -->
 	<target name="jarCaBigR3">
-		<delete file="${targetDir}/caBigR3.jar" />
+		<delete file="${caBigR3Jar}" />
 		<jar destfile="${caBigR3Jar}">
 			<fileset dir="${caBigR3Dir}/classes">
 				<include name="org/reactome/r3/util/FileUtility.class" />
 				<include name="org/reactome/r3/util/InteractionUtilities.class" />
 				<include name="org/reactome/r3/util/MathUtilities*.class" />
 				<include name="org/reactome/r3/util/JAXBBindableList.class" />
+				<include name="org/reactome/r3/util/ReactomeDataUtilities.class" />
 				<!-- include name="org/reactome/r3/graph/*.class" /-->
 				<include name="org/reactome/r3/cluster/HierarchicalClusterNode.class" />
 				<include name="org/reactome/r3/cluster/HierarchicalCluster*.class" />
@@ -44,8 +45,13 @@
 				<include name="org/reactome/cancer/MATFileLoader*.class" />
 				<!-- The following classes for the Java implementation of FactorGraph -->
 				<include name="org/reactome/factorgraph/*.class" />
+				<exclude name="org/reactome/factorgraph/TestUtilities.class" />
 				<include name="org/reactome/factorgraph/common/*.class" />
 				<include name="org/reactome/pathway/factorgraph/*.class" />
+				<!-- For Boolean Network -->
+				<include name="org/reactome/booleannetwork/*.class" />
+				<include name="org/reactome/pathway/booleannetwork/*.class" />
+				
 				<exclude name="org/reactome/pathway/factorgraph/DRMAAJobScheduler*.class" />
 				<exclude name="org/reactome/pathway/factorgraph/AlgorithmTester*.class" />
 				<include name="org/reactome/fi/pgm/*.class" />

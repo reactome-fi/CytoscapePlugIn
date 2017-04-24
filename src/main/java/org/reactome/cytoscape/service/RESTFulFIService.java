@@ -39,6 +39,7 @@ import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
+import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.cancerindex.model.Sentence;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -163,6 +164,18 @@ public class RESTFulFIService implements FINetworkService
         Unmarshaller unmarshaller = jc.createUnmarshaller();
         FactorGraph fg = (FactorGraph) unmarshaller.unmarshal(docRoot);
         return fg;
+    }
+    
+    public BooleanNetwork convertPathwayToBooleanNetwork(Long pathwayId) throws Exception {
+        String url = restfulURL + "network/convertPathwayToBooleanNetwork/" + pathwayId;
+        Element root = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
+        // Convert it into org.w3.dom.Document to be used in JAXB
+        org.w3c.dom.Document document = new DOMOutputter().output(root.getDocument());
+        org.w3c.dom.Node docRoot = document.getDocumentElement();
+        JAXBContext jc = JAXBContext.newInstance(BooleanNetwork.class);
+        Unmarshaller unmarshaller = jc.createUnmarshaller();
+        BooleanNetwork bn = (BooleanNetwork) unmarshaller.unmarshal(docRoot);
+        return bn;
     }
     
     /**

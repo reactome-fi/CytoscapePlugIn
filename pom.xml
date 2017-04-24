@@ -5,12 +5,15 @@
 	<properties>
 		<bundle.symbolicName>ReactomeFIPlugIn</bundle.symbolicName>
 		<bundle.namespace>org.reactome</bundle.namespace>
+        <!-- Prevent Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
+        See: https://maven.apache.org/general.html -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome</groupId>
 	<artifactId>reactomeFI-app</artifactId>
-	<version>5.2.0-beta</version>
+	<version>5.2.1-beta</version>
 	<name>${bundle.symbolicName}</name>
 	<packaging>bundle</packaging>
 	

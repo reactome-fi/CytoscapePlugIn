@@ -170,7 +170,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
         
         observationTableHandler = new GeneToPathwayEntityHandler();
         observationTableHandler.setObservationTable(observationTable);
-        PlugInObjectManager.getManager().getDBIdSelectionMediator().addSelectable(observationTableHandler);
+        mediator.addSelectable(observationTableHandler);
     }
 
     protected SampleTableModel createObservationTableModel() {
