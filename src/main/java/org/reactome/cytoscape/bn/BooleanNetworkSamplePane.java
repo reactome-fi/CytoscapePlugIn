@@ -16,6 +16,7 @@ import java.util.Set;
 
 import javax.swing.DefaultCellEditor;
 import javax.swing.JComboBox;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -32,6 +33,7 @@ import org.gk.graphEditor.PathwayEditor;
 import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.Node;
+import org.reactome.booleannetwork.Attractor;
 import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.BooleanNetworkUtilities;
 import org.reactome.booleannetwork.BooleanVariable;
@@ -46,18 +48,27 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  *
  */
 public class BooleanNetworkSamplePane extends JPanel {
-    private boolean DEBUG = true;
     private BooleanNetwork network;
     private PathwayEditor pathwayEditor;
     private JTable sampleTable;
     // To synchronize selection
     private VariableSelectionHandler selectionHandler;
+    // For simulation
+    private Double defaultValue = 1.0d; // Default is on
     
     /**
      * Default constructor.
      */
     public BooleanNetworkSamplePane() {
         init();
+    }
+
+    public Double getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(Double defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     private void init() {
@@ -104,7 +115,15 @@ public class BooleanNetworkSamplePane extends JPanel {
         typeColoumn.setCellRenderer(new DefaultTableCellRenderer());
         
         TableColumn initCol = table.getColumnModel().getColumn(2);
-        initCol.setCellEditor(new DefaultCellEditor(new JTextField()));
+        initCol.setCellEditor(new DefaultCellEditor(new JTextField()) {
+
+            @Override
+            public Object getCellEditorValue() {
+                String text = super.getCellEditorValue().toString();
+                return new Double(text);
+            }
+            
+        });
         initCol.setCellRenderer(new DefaultTableCellRenderer());
         
         return table;
@@ -124,6 +143,22 @@ public class BooleanNetworkSamplePane extends JPanel {
         mediator.addSelectable(selectionHandler);
     }
     
+    public void delete() {
+        // Need a confirmation
+        int reply = JOptionPane.showConfirmDialog(this,
+                                                  "Are you sure you want to delete the selected simulation?",
+                                                  "Delete?",
+                                                  JOptionPane.OK_CANCEL_OPTION,
+                                                  JOptionPane.WARNING_MESSAGE);
+        if (reply != JOptionPane.OK_OPTION)
+            return;
+        SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
+        if (mediator.getSelectables() != null)
+            mediator.getSelectables().remove(selectionHandler);
+        
+        getParent().remove(this);
+    }
+    
     private void handleTableSelection() {
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         mediator.fireSelectionEvent(selectionHandler);
@@ -141,7 +176,8 @@ public class BooleanNetworkSamplePane extends JPanel {
         this.network = network;
         SampleTableModel model = (SampleTableModel) sampleTable.getModel();
         model.setBooleanNetwork(network,
-                                getDisplayedIds());
+                                getDisplayedIds(),
+                                defaultValue);
     }
     
     private Set<String> getDisplayedIds() {
@@ -158,19 +194,42 @@ public class BooleanNetworkSamplePane extends JPanel {
         return ids;
     }
     
+    public boolean isSimulationPerformed() {
+        SampleTableModel model = (SampleTableModel) sampleTable.getModel();
+        return model.isSimulationPerformed();
+    }
+    
     public void simulate() {
         SampleTableModel model = (SampleTableModel) sampleTable.getModel();
+        if (model.isSimulationPerformed()) {
+            JOptionPane.showMessageDialog(this,
+                                          "Simulation has been performed for this sample.\n" + 
+                                           "Create another sample for new simulation.",
+                                           "New Simulation",
+                                           JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
         model.commitValues();
         // There are other variables that need values
         for (BooleanVariable var : network.getVariables()) {
             if (var.getValue() == null)
-                var.setValue(1.0d); // Default
+                var.setValue(defaultValue); // Default
         }
         Map<String, Number> stimulation = model.getStimulation();
         
         FuzzyLogicSimulator simulator = new FuzzyLogicSimulator();
         simulator.setAndGateMode(ANDGateMode.PROD);
         simulator.simulate(network, stimulation);
+        
+        if (!simulator.isAttractorReached()) {
+            JOptionPane.showMessageDialog(this,
+                                          "Attractor cannot be reached!",
+                                          "No Attractor",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        Attractor attractor = simulator.getAttractor();
+        model.addAttractor(attractor);
     }
     
     private class VariableSelectionHandler implements Selectable {
@@ -232,6 +291,33 @@ public class BooleanNetworkSamplePane extends JPanel {
             values = new ArrayList<>();
         }
         
+        public void addAttractor(Attractor attractor) {
+            Map<BooleanVariable, List<Number>> varToValues = attractor.getVarToValues();
+            List<Number> attractorValues = varToValues.values().iterator().next();
+            int cycleSize = attractorValues.size();
+            // Need to add table headers
+            if (cycleSize == 1) 
+                tableHeaders.add("Attractor");
+            else {
+                for (int i = 0; i < cycleSize; i++)
+                    tableHeaders.add("Attractor(" + i + ")");
+            }
+            for (List<Object> row : values) {
+                BooleanVariable var = (BooleanVariable) row.get(0);
+                List<Number> varValues = varToValues.get(var);
+                if (varValues == null)
+                    continue;
+                row.addAll(varValues);
+            }
+            // Need to fire table structure change since the number of column has been changed.
+            // The side effect of this call is to disable editing, which is needed here.
+            fireTableStructureChanged();
+        }
+        
+        public boolean isSimulationPerformed() {
+            return tableHeaders.size() > 3; // Show have attractor results displayed
+        }
+        
         public Map<String, Number> getStimulation() {
             Map<String, Number> stimulation = new HashMap<>();
             for (List<Object> rowValues : values) {
@@ -271,7 +357,8 @@ public class BooleanNetworkSamplePane extends JPanel {
         }
         
         public void setBooleanNetwork(BooleanNetwork network,
-                                      Set<String> displayedIds) {
+                                      Set<String> displayedIds,
+                                      Double defaultValue) {
             List<BooleanVariable> variables = BooleanNetworkUtilities.getSortedVariables(network);
             values.clear();
             for (BooleanVariable var : variables) {
@@ -283,7 +370,7 @@ public class BooleanNetworkSamplePane extends JPanel {
                 rowValues.add(var);
                 rowValues.add(EntityType.Respondent);
                 // Use default 1.0
-                rowValues.add(1.0d);
+                rowValues.add(defaultValue);
             }
             // Have to call fire data changed, not structure changed. Otherwise,
             // Editing cannot work!!!
@@ -316,6 +403,9 @@ public class BooleanNetworkSamplePane extends JPanel {
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
+            // If a simulation has been displayed, don't edit 
+            if (tableHeaders.size() > 3)
+                return false;
             // Only type and initial values can be edited
             if (columnIndex == 1 || columnIndex == 2)
                 return true;

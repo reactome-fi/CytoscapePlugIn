@@ -40,6 +40,7 @@ import org.jfree.data.category.CategoryDataset;
 import org.jfree.data.general.DatasetChangeEvent;
 import org.jfree.data.statistics.DefaultBoxAndWhiskerCategoryDataset;
 import org.reactome.cytoscape.service.TTestTableModel;
+import org.reactome.cytoscape.service.TableAndPlotActionSynchronizer;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**

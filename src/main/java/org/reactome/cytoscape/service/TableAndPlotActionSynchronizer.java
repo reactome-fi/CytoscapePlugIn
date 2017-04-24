@@ -2,7 +2,7 @@
  * Created on Apr 1, 2014
  *
  */
-package org.reactome.cytoscape.pgm;
+package org.reactome.cytoscape.service;
 
 import java.awt.Rectangle;
 

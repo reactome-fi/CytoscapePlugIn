@@ -25,6 +25,7 @@ import javax.swing.SwingConstants;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
+import org.reactome.cytoscape.service.PlotTablePanel;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**

@@ -83,7 +83,7 @@ public class BooleanNetworkAnalyzer {
             // Make sure the following order is correct
             mainPane.setPathwayEditor(pathwayEditor);
             mainPane.setBooleanNetwork(network);
-            mainPane.addSample();
+            mainPane.createNewSimulation();
         }
         catch(Exception e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),

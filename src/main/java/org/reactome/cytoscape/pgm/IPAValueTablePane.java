@@ -52,6 +52,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
+import org.reactome.cytoscape.service.PlotTablePanel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
