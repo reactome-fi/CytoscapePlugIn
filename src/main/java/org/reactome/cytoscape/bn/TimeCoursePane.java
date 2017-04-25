@@ -6,9 +6,18 @@ package org.reactome.cytoscape.bn;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
@@ -23,7 +32,10 @@ import org.gk.graphEditor.SelectionMediator;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.data.general.DatasetChangeEvent;
 import org.reactome.booleannetwork.BooleanVariable;
+import org.reactome.cytoscape.service.AnimationPlayer;
+import org.reactome.cytoscape.service.AnimationPlayerControl;
 import org.reactome.cytoscape.service.NetworkModulePanel;
+import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.PlotTablePanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -35,6 +47,10 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 public class TimeCoursePane extends NetworkModulePanel {
     private PlotTablePanel contentPane;
     private VariableSelectionHandler selectionHandler;
+    private PathwayHighlightControlPanel hiliteControlPane;
+    // For animation
+    private JComboBox<String> timeBox;
+    private boolean duringTimeBoxUpdate;
     
     /**
      * Default constructor.
@@ -46,6 +62,14 @@ public class TimeCoursePane extends NetworkModulePanel {
         enableSelectionSync();
     }
     
+    public PathwayHighlightControlPanel getHiliteControlPane() {
+        return hiliteControlPane;
+    }
+
+    public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
+        this.hiliteControlPane = hiliteControlPane;
+    }
+
     private void enableSelectionSync() {
         selectionHandler = new VariableSelectionHandler();
         selectionHandler.setVariableTable(contentPane.getTable());
@@ -71,9 +95,49 @@ public class TimeCoursePane extends NetworkModulePanel {
         for (int i = 0; i < controlToolBar.getComponentCount(); i++) {
             controlToolBar.remove(i);
         }
+        addControls();
         controlToolBar.add(closeGlue);
         controlToolBar.add(closeBtn);
         addTablePlotPane();
+    }
+    
+    private void addControls() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        // Show a list of samples
+        JLabel timeLabel = new JLabel("Choose time to highlight pathway:");
+        timeBox = new JComboBox<>();
+        timeBox.setEditable(false);
+        DefaultComboBoxModel<String> sampleModel = new DefaultComboBoxModel<>();
+        timeBox.setModel(sampleModel);
+        panel.add(timeLabel);
+        panel.add(timeBox);
+        // For performing animation
+        AnimationPlayerControl animiationControl = new AnimationPlayerControl();
+        TimeListAnimationPlayer player = new TimeListAnimationPlayer();
+        animiationControl.setPlayer(player);
+        animiationControl.setInterval(500); // 0.5 second per sample
+        panel.add(animiationControl);
+
+        // Link these two boxes together
+        timeBox.addItemListener(new ItemListener() {
+            
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED)
+                    handleTimeBoxSelection();
+            }
+        });
+        controlToolBar.add(panel);
+    }
+    
+    private void handleTimeBoxSelection() {
+        if (duringTimeBoxUpdate)
+            return;
+        TimeCourseTableModel model = (TimeCourseTableModel) contentPane.getTable().getModel();
+        String time = (String) timeBox.getSelectedItem();
+        int col = model.getColumn(time);
+        hilitePathway(col);
     }
 
     protected void addTablePlotPane() {
@@ -104,6 +168,49 @@ public class TimeCoursePane extends NetworkModulePanel {
     public void setSimulationResults(List<BooleanVariable> variables) {
         TimeCourseTableModel model = (TimeCourseTableModel) contentTable.getModel();
         model.setTimeCourse(variables);
+        
+        duringTimeBoxUpdate = true;
+        DefaultComboBoxModel<String> timeModel = (DefaultComboBoxModel<String>) timeBox.getModel();
+        timeModel.removeAllElements();
+        for (int i = 1; i < model.getColumnCount(); i++)
+            timeModel.addElement(model.getColumnName(i));
+        duringTimeBoxUpdate = false;
+        timeBox.setSelectedIndex(timeModel.getSize() - 1); // Select the last time point
+    }
+    
+    private void hilitePathway(int column) {
+        if (hiliteControlPane == null || column < 1) // The first column is entity
+            return;
+        hiliteControlPane.setVisible(true);
+        TimeCourseTableModel model = (TimeCourseTableModel) contentPane.getTable().getModel();
+        Map<String, Double> idToValue = model.getIdToValue(column);
+        hiliteControlPane.setIdToValue(idToValue);
+        // Use 0 and 1 as default
+        double[] minMaxValues = hiliteControlPane.calculateMinMaxValues(0.0d, 1.0d);
+        hiliteControlPane.resetMinMaxValues(minMaxValues);
+    }
+    
+    private class TimeListAnimationPlayer implements AnimationPlayer {
+        
+        public TimeListAnimationPlayer() {
+        }
+
+        @Override
+        public void forward() {
+            int selectedIndex = timeBox.getSelectedIndex();
+            if (selectedIndex == timeBox.getItemCount() - 1)
+                selectedIndex = -1;
+            timeBox.setSelectedIndex(selectedIndex + 1);
+        }
+
+        @Override
+        public void backward() {
+            int selectedIndex = timeBox.getSelectedIndex();
+            if (selectedIndex == 0)
+                selectedIndex = timeBox.getItemCount();
+            timeBox.setSelectedIndex(selectedIndex - 1);
+        }
+        
     }
     
     private class TimeCourseTableModel extends NetworkModuleTableModel implements VariableTableModelInterface {
@@ -119,6 +226,14 @@ public class TimeCoursePane extends NetworkModulePanel {
                 return BooleanVariable.class;
             else
                 return Number.class;
+        }
+        
+        public int getColumn(String colName) {
+            for (int i = 0; i < columnHeaders.length; i++) {
+                if (columnHeaders[i].equals(colName))
+                    return i;
+            }
+            return -1;
         }
 
         public void setTimeCourse(List<BooleanVariable> variables) {
@@ -138,6 +253,21 @@ public class TimeCoursePane extends NetworkModulePanel {
                 tableData.add(row);
             }
             fireTableStructureChanged();
+        }
+        
+        public Map<String, Double> getIdToValue(int column) {
+            Map<String, Double> idToValue = new HashMap<>();
+            // Use the last column
+            for (int i = 0; i < tableData.size(); i++) {
+                Object[] row = tableData.get(i);
+                BooleanVariable var = (BooleanVariable) row[0];
+                String id = var.getProperty("reactomeId");
+                if (id == null)
+                    continue;
+                Number value = (Number) row[column];
+                idToValue.put(id, value.doubleValue());
+            }
+            return idToValue;
         }
 
         @Override

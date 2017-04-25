@@ -27,6 +27,7 @@ import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.osgi.framework.BundleContext;
 import org.reactome.booleannetwork.BooleanNetwork;
+import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -39,6 +40,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
     public static final String TITLE = "Boolean Network Modelling";
     private BooleanNetwork network;
     private PathwayEditor pathwayEditor;
+    // To higlight pathway
+    private PathwayHighlightControlPanel hiliteControlPane;
     // To hold samples
     private JTabbedPane tabbedPane;
     // Control buttons
@@ -46,6 +49,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
     private JButton newBtn;
     private JButton deleteBtn;
     private JButton compareBtn;
+    // To avoid index error
+    private boolean duringDeletion;
     
     /**
      * Default constructor.
@@ -66,7 +71,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             
             @Override
             public void stateChanged(ChangeEvent e) {
-                validateButtons();
+                if (!duringDeletion)
+                    validateButtons();
             }
         });
         add(tabbedPane, BorderLayout.CENTER);
@@ -120,6 +126,14 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         return controlPane;
     }
     
+    public PathwayHighlightControlPanel getHiliteControlPane() {
+        return hiliteControlPane;
+    }
+
+    public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
+        this.hiliteControlPane = hiliteControlPane;
+    }
+
     private void compareSimulation() {
         CompareSimulationDialog dialog = new CompareSimulationDialog();
         dialog.setModal(true);
@@ -134,7 +148,9 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         BooleanNetworkSamplePane samplePane = (BooleanNetworkSamplePane) tabbedPane.getSelectedComponent();
         if (samplePane == null)
             return;
+        duringDeletion = true;
         samplePane.delete();
+        duringDeletion = false;
         validateButtons();
     }
     
@@ -150,9 +166,11 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         BooleanNetworkSamplePane samplePane = new BooleanNetworkSamplePane();
         // The following order is important to display selected set of variables
         samplePane.setPathwayEditor(pathwayEditor);
-        samplePane.setBooleanNetwork(this.network);
+        samplePane.setHiliteControlPane(hiliteControlPane);
+        // Make sure default value set is called before setBooleanNetwork.
         samplePane.setDefaultValue(dialog.getDefaultValue());
         samplePane.setSampleName(dialog.getSimulationName());
+        samplePane.setBooleanNetwork(this.network);
         tabbedPane.add(dialog.getSimulationName(), samplePane);
         tabbedPane.setSelectedComponent(samplePane); // Select the newly created one
         validateButtons();

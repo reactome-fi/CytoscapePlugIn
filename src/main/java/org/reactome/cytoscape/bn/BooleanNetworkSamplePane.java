@@ -28,7 +28,6 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.swing.CytoPanel;
-import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.Node;
@@ -38,8 +37,8 @@ import org.reactome.booleannetwork.BooleanNetworkUtilities;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.FuzzyLogicSimulator;
 import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
+import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * This customized JPanel is used to set up initial values and then list simulation results.
@@ -50,6 +49,7 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 public class BooleanNetworkSamplePane extends JPanel {
     private BooleanNetwork network;
     private PathwayEditor pathwayEditor;
+    private PathwayHighlightControlPanel hiliteControlPane;
     private JTable sampleTable;
     // To synchronize selection
     private VariableSelectionHandler selectionHandler;
@@ -57,7 +57,7 @@ public class BooleanNetworkSamplePane extends JPanel {
     private Double defaultValue = 1.0d; // Default is on
     // Simulation name
     private String sampleName;
-    
+   
     /**
      * Default constructor.
      */
@@ -179,6 +179,14 @@ public class BooleanNetworkSamplePane extends JPanel {
         return pathwayEditor;
     }
 
+    public PathwayHighlightControlPanel getHiliteControlPane() {
+        return hiliteControlPane;
+    }
+
+    public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
+        this.hiliteControlPane = hiliteControlPane;
+    }
+
     public void setPathwayEditor(PathwayEditor pathwayEditor) {
         this.pathwayEditor = pathwayEditor;
     }
@@ -251,6 +259,8 @@ public class BooleanNetworkSamplePane extends JPanel {
         int index = cytoPanel.indexOfComponent(timeCoursePane);
         if (index > -1)
             cytoPanel.setSelectedIndex(index);
+        // The following order is important to highlight pathway diagram..
+        timeCoursePane.setHiliteControlPane(hiliteControlPane);
         timeCoursePane.setSimulationResults(variables);
     }
     
@@ -352,7 +362,6 @@ public class BooleanNetworkSamplePane extends JPanel {
                 values.add(rowValues);
                 rowValues.add(var);
                 rowValues.add(EntityType.Respondent);
-                // Use default 1.0
                 rowValues.add(defaultValue);
             }
             // Have to call fire data changed, not structure changed. Otherwise,

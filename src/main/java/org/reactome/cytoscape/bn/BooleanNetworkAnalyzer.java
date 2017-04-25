@@ -82,6 +82,7 @@ public class BooleanNetworkAnalyzer {
                                                                                                              BooleanNetworkMainPane.TITLE);
             // Make sure the following order is correct
             mainPane.setPathwayEditor(pathwayEditor);
+            mainPane.setHiliteControlPane(hiliteControlPane);
             mainPane.setBooleanNetwork(network);
             mainPane.createNewSimulation();
         }
