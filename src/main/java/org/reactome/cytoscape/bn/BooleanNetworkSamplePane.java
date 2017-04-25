@@ -5,7 +5,6 @@
 package org.reactome.cytoscape.bn;
 
 import java.awt.BorderLayout;
-import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -21,7 +20,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -29,8 +27,9 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
+import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.Node;
 import org.reactome.booleannetwork.Attractor;
@@ -40,6 +39,7 @@ import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.FuzzyLogicSimulator;
 import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * This customized JPanel is used to set up initial values and then list simulation results.
@@ -55,12 +55,22 @@ public class BooleanNetworkSamplePane extends JPanel {
     private VariableSelectionHandler selectionHandler;
     // For simulation
     private Double defaultValue = 1.0d; // Default is on
+    // Simulation name
+    private String sampleName;
     
     /**
      * Default constructor.
      */
     public BooleanNetworkSamplePane() {
         init();
+    }
+
+    public String getSampleName() {
+        return sampleName;
+    }
+
+    public void setSampleName(String sampleName) {
+        this.sampleName = sampleName;
     }
 
     public Double getDefaultValue() {
@@ -139,6 +149,7 @@ public class BooleanNetworkSamplePane extends JPanel {
         });
         
         selectionHandler = new VariableSelectionHandler();
+        selectionHandler.setVariableTable(sampleTable);
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         mediator.addSelectable(selectionHandler);
     }
@@ -230,55 +241,20 @@ public class BooleanNetworkSamplePane extends JPanel {
         }
         Attractor attractor = simulator.getAttractor();
         model.addAttractor(attractor);
-    }
-    
-    private class VariableSelectionHandler implements Selectable {
-        private List<Long> selectedIds; // Use a single List object to save some GC
         
-        public VariableSelectionHandler() {
-            selectedIds = new ArrayList<>();
-        }
-
-        @Override
-        public void setSelection(List selection) {
-            ListSelectionModel selectionModel = sampleTable.getSelectionModel();
-            selectionModel.clearSelection();
-            selectionModel.setValueIsAdjusting(true);
-            int index = 0;
-            SampleTableModel inferenceModel = (SampleTableModel) sampleTable.getModel();
-            List<Integer> rows = inferenceModel.getRowsForSelectedIds(selection);
-            for (Integer modelRow : rows) {
-                int viewRow = sampleTable.convertRowIndexToView(modelRow);
-                selectionModel.addSelectionInterval(viewRow, viewRow);
-            }
-            selectionModel.setValueIsAdjusting(false);
-            // Need to scroll
-            int selected = sampleTable.getSelectedRow();
-            if (selected > -1) {
-                Rectangle rect = sampleTable.getCellRect(selected, 0, false);
-                sampleTable.scrollRectToVisible(rect);
-            }
-        }
-
-        @Override
-        public List getSelection() {
-            selectedIds.clear();
-            SampleTableModel model = (SampleTableModel) sampleTable.getModel();
-            int[] selectedRows = sampleTable.getSelectedRows();
-            if (selectedRows != null) {
-                for (int selectedRow : selectedRows) {
-                    int modelRow = sampleTable.convertRowIndexToModel(selectedRow);
-                    BooleanVariable var = (BooleanVariable) model.getValueAt(modelRow, 0);
-                    String reactomeId = var.getProperty("reactomeId");
-                    if (reactomeId != null)
-                        selectedIds.add(new Long(reactomeId));
-                }
-            }
-            return selectedIds;
-        }
+        displayTimeCourse(model.getVariables());
     }
     
-    private class SampleTableModel extends AbstractTableModel {
+    private void displayTimeCourse(List<BooleanVariable> variables) {
+        TimeCoursePane timeCoursePane = new TimeCoursePane("BN: " + sampleName);
+        CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(timeCoursePane.getCytoPanelName());
+        int index = cytoPanel.indexOfComponent(timeCoursePane);
+        if (index > -1)
+            cytoPanel.setSelectedIndex(index);
+        timeCoursePane.setSimulationResults(variables);
+    }
+    
+    private class SampleTableModel extends AbstractTableModel implements VariableTableModelInterface {
         private List<String> tableHeaders;
         private List<List<Object>> values;
         
@@ -354,6 +330,13 @@ public class BooleanNetworkSamplePane extends JPanel {
                     rtn.add(i);
             }
             return rtn;
+        }
+        
+        public List<BooleanVariable> getVariables() {
+            List<BooleanVariable> variables = new ArrayList<>();
+            for (List<Object> row : values)
+                variables.add((BooleanVariable) row.get(0));
+            return variables;
         }
         
         public void setBooleanNetwork(BooleanNetwork network,

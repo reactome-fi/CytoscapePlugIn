@@ -39,31 +39,40 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  *
  */
 public class PlotTablePanel extends JPanel {
-    private final String EMPTY_DATA_MESSAGE = "Select one or more variables having no \"INFINITY\" value to plot.";
-    private final String TOO_MANY_LINES_MESSAGE = "Too many columns in the table to draw lines!";
-    private final int MAXIMUM_COLUMNS_FOR_PLOT = 13;
+    protected final String EMPTY_DATA_MESSAGE = "Select one or more variables having no \"INFINITY\" value to plot.";
+    protected final String TOO_MANY_LINES_MESSAGE = "Too many columns in the table to draw lines!";
+    protected final int MAXIMUM_COLUMNS_FOR_PLOT = 13;
     public static final String FDR_COL_NAME_AFFIX = "(FDR)";
     public static final String P_VALUE_COL_NAME_AFFIX = "(pValue)";
     // Used to draw
-    private DefaultCategoryDataset dataset;
+    protected DefaultCategoryDataset dataset;
     // For p-values
     private DefaultCategoryDataset fdrDataset;
-    private CategoryPlot plot;
+    protected CategoryPlot plot;
     private ChartPanel chartPane;
     // Table content
-    private JTable contentTable;
-    private JScrollPane tableJsp;
+    protected JTable contentTable;
+    protected JScrollPane tableJsp;
     
     /**
      * Default constructor.
      */
     public PlotTablePanel(String axisName,
                           boolean needFDRAxis) {
-        init(axisName, 
+        init("Sample",
+             axisName, 
              needFDRAxis);
     }
+    
+    public PlotTablePanel(String categoryAxisName,
+                         String numberAxisName) {
+        init(categoryAxisName,
+             numberAxisName,
+             false);
+    }
 
-    private void init(String axisName,
+    private void init(String categoryAxisName,
+                      String axisName,
                       boolean needPValuePlot) {
         setLayout(new BorderLayout());
         
@@ -72,7 +81,7 @@ public class PlotTablePanel extends JPanel {
         jsp.setDividerLocation(150); // Give the plot 150 px initially
         add(jsp, BorderLayout.CENTER);
         
-        JPanel graphPane = createGraphPane(axisName, needPValuePlot);
+        JPanel graphPane = createGraphPane(categoryAxisName, axisName, needPValuePlot);
         jsp.setLeftComponent(graphPane);
         // Should be replaced by an actual table
         contentTable = new JTable();
@@ -148,13 +157,14 @@ public class PlotTablePanel extends JPanel {
         valueAxis.setLabel(label);
     }
     
-    private JPanel createGraphPane(String axisName,
+    private JPanel createGraphPane(String categoryAxisName,
+                                   String axisName,
                                    boolean needPValuePlot) {
         dataset = new DefaultCategoryDataset();
         // Want to control data update by this object self to avoid
         // conflict exception.
         dataset.setNotify(false);
-        CategoryAxis axisX = new CategoryAxis("Sample");
+        CategoryAxis axisX = new CategoryAxis(categoryAxisName);
         // Draw lines but not shapes. However, this is user configurable
         // in the fly. So the choice is not so critical.
         LineAndShapeRenderer renderer = new LineAndShapeRenderer(true, 
@@ -187,7 +197,7 @@ public class PlotTablePanel extends JPanel {
         return chartPane;
     }
     
-    private void resetPlotDataset() {
+    protected void resetPlotDataset() {
         dataset.clear();
         if (fdrDataset != null)
             fdrDataset.clear();
@@ -197,40 +207,42 @@ public class PlotTablePanel extends JPanel {
         }
         else {
             plot.setNoDataMessage(EMPTY_DATA_MESSAGE);
-            // In the following, use the model, instead of the table,
-            // to get values. For some reason, the table's data is not correct!
-            // Most likely, this is because the use of a RowSorter.
-            for (int col = 1; col < model.getColumnCount(); col++) {
-                String colName = model.getColumnName(col);
-                if (colName.equals("Type"))
-                    continue; // Escape sample type
-                List<Double> values = readValues(model, col);
-                if (values == null)
-                    continue;
-                for (int row = 0; row < model.getRowCount(); row++) {
-                    int index = contentTable.convertRowIndexToModel(row);
-                    String sample = (String) model.getValueAt(index, 0);
-                    if (colName.endsWith(P_VALUE_COL_NAME_AFFIX) ||
-                        colName.endsWith(FDR_COL_NAME_AFFIX))
-                        fdrDataset.addValue(values.get(index),
-                                            colName,
-                                            sample);
-                    else
-                        dataset.addValue(values.get(index),
-                                         colName,
-                                         sample);
+            if (model.getRowCount() > 0) { // If we have data
+                // In the following, use the model, instead of the table,
+                // to get values. For some reason, the table's data is not correct!
+                // Most likely, this is because the use of a RowSorter.
+                for (int col = 1; col < model.getColumnCount(); col++) {
+                    String colName = model.getColumnName(col);
+                    if (colName.equals("Type"))
+                        continue; // Escape sample type
+                    List<Double> values = readValues(model, col);
+                    if (values == null)
+                        continue;
+                    for (int row = 0; row < model.getRowCount(); row++) {
+                        int index = contentTable.convertRowIndexToModel(row);
+                        String sample = (String) model.getValueAt(index, 0);
+                        if (colName.endsWith(P_VALUE_COL_NAME_AFFIX) ||
+                                colName.endsWith(FDR_COL_NAME_AFFIX))
+                            fdrDataset.addValue(values.get(index),
+                                                colName,
+                                                sample);
+                        else
+                            dataset.addValue(values.get(index),
+                                             colName,
+                                             sample);
+                    }
                 }
-            }
-            // The following code is used to control performance:
-            // 16 is arbitrary
-            CategoryAxis axis = plot.getDomainAxis();
-            if (model.getRowCount() > PlugInUtilities.PLOT_CATEGORY_AXIX_LABEL_CUT_OFF) {
-                axis.setTickLabelsVisible(false);
-                axis.setTickMarksVisible(false);
-            }
-            else {
-                axis.setTickLabelsVisible(true);
-                axis.setTickMarksVisible(true);
+                // The following code is used to control performance:
+                // 16 is arbitrary
+                CategoryAxis axis = plot.getDomainAxis();
+                if (model.getRowCount() > PlugInUtilities.PLOT_CATEGORY_AXIX_LABEL_CUT_OFF) {
+                    axis.setTickLabelsVisible(false);
+                    axis.setTickMarksVisible(false);
+                }
+                else {
+                    axis.setTickLabelsVisible(true);
+                    axis.setTickMarksVisible(true);
+                }
             }
         }
         DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);

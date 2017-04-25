@@ -152,6 +152,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         samplePane.setPathwayEditor(pathwayEditor);
         samplePane.setBooleanNetwork(this.network);
         samplePane.setDefaultValue(dialog.getDefaultValue());
+        samplePane.setSampleName(dialog.getSimulationName());
         tabbedPane.add(dialog.getSimulationName(), samplePane);
         tabbedPane.setSelectedComponent(samplePane); // Select the newly created one
         validateButtons();
