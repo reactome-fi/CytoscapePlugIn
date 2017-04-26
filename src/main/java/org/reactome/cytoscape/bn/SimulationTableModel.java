@@ -17,6 +17,7 @@ import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.BooleanNetworkUtilities;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.cytoscape.bn.BooleanNetworkSamplePane.EntityType;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 public class SimulationTableModel extends AbstractTableModel implements VariableTableModelInterface {
     private List<String> tableHeaders;
@@ -125,11 +126,7 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
             values.add(rowValues);
             rowValues.add(var);
             rowValues.add(EntityType.Respondent);
-            // Only need default values for variables don't have inputs
-            if (var.getInRelations() == null || var.getInRelations().size() == 0)
-                rowValues.add(defaultValue);
-            else
-                rowValues.add(0.0d); // There is no need to activate them initially
+            rowValues.add(PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
         }
         // Have to call fire data changed, not structure changed. Otherwise,
         // Editing cannot work!!!

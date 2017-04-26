@@ -35,6 +35,7 @@ import org.reactome.booleannetwork.FuzzyLogicSimulator;
 import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * This customized JPanel is used to set up initial values and then list simulation results.
@@ -244,7 +245,7 @@ public class BooleanNetworkSamplePane extends JPanel {
         // There are other variables that need values
         for (BooleanVariable var : network.getVariables()) {
             if (var.getValue() == null)
-                var.setValue(defaultValue); // Default
+                var.setValue(PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
         }
         Map<String, Number> stimulation = model.getStimulation();
         
