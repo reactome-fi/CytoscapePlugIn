@@ -9,10 +9,7 @@ import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
@@ -25,29 +22,22 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableModel;
 
-import org.gk.graphEditor.SelectionMediator;
 import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.data.general.DatasetChangeEvent;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.cytoscape.service.AnimationPlayer;
 import org.reactome.cytoscape.service.AnimationPlayerControl;
-import org.reactome.cytoscape.service.NetworkModulePanel;
-import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.PlotTablePanel;
-import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * @author gwu
  *
  */
-public class TimeCoursePane extends NetworkModulePanel {
+public class TimeCoursePane extends VariableCytoPaneComponent {
     private PlotTablePanel contentPane;
-    private VariableSelectionHandler selectionHandler;
-    private PathwayHighlightControlPanel hiliteControlPane;
     // For animation
     private JComboBox<String> timeBox;
     private boolean duringTimeBoxUpdate;
@@ -59,44 +49,19 @@ public class TimeCoursePane extends NetworkModulePanel {
         super(title);
         hideOtherNodesBox.setVisible(false);
         modifyContentPane();
-        enableSelectionSync();
     }
     
-    public PathwayHighlightControlPanel getHiliteControlPane() {
-        return hiliteControlPane;
-    }
-
-    public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
-        this.hiliteControlPane = hiliteControlPane;
-    }
-
-    private void enableSelectionSync() {
-        selectionHandler = new VariableSelectionHandler();
-        selectionHandler.setVariableTable(contentPane.getTable());
-        SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
-        mediator.addSelectable(selectionHandler);
-        
-        contentPane.getTable().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                handleTableSelection();
-            }
-        });
-    }
-    
-    private void handleTableSelection() {
-        SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
-        mediator.fireSelectionEvent(selectionHandler);
-    }
-    
+    @Override
     protected void modifyContentPane() {
+        super.modifyContentPane();
         // Re-create control tool bars
         for (int i = 0; i < controlToolBar.getComponentCount(); i++) {
             controlToolBar.remove(i);
         }
         addControls();
         controlToolBar.add(closeGlue);
+        createHighlightViewBtn();
+        controlToolBar.add(hiliteDiagramBtn);
         controlToolBar.add(closeBtn);
         addTablePlotPane();
     }
@@ -134,6 +99,11 @@ public class TimeCoursePane extends NetworkModulePanel {
     private void handleTimeBoxSelection() {
         if (duringTimeBoxUpdate)
             return;
+        reHilitePathway();
+    }
+    
+    @Override
+    protected void reHilitePathway() {
         TimeCourseTableModel model = (TimeCourseTableModel) contentPane.getTable().getModel();
         String time = (String) timeBox.getSelectedItem();
         int col = model.getColumn(time);
@@ -160,7 +130,7 @@ public class TimeCoursePane extends NetworkModulePanel {
     protected NetworkModuleTableModel createTableModel() {
         return new TimeCourseTableModel();
     }
-    
+
     /**
      * Set the actual data to be displayed.
      * @param variables
@@ -177,19 +147,7 @@ public class TimeCoursePane extends NetworkModulePanel {
         duringTimeBoxUpdate = false;
         timeBox.setSelectedIndex(timeModel.getSize() - 1); // Select the last time point
     }
-    
-    private void hilitePathway(int column) {
-        if (hiliteControlPane == null || column < 1) // The first column is entity
-            return;
-        hiliteControlPane.setVisible(true);
-        TimeCourseTableModel model = (TimeCourseTableModel) contentPane.getTable().getModel();
-        Map<String, Double> idToValue = model.getIdToValue(column);
-        hiliteControlPane.setIdToValue(idToValue);
-        // Use 0 and 1 as default
-        double[] minMaxValues = hiliteControlPane.calculateMinMaxValues(0.0d, 1.0d);
-        hiliteControlPane.resetMinMaxValues(minMaxValues);
-    }
-    
+
     private class TimeListAnimationPlayer implements AnimationPlayer {
         
         public TimeListAnimationPlayer() {
@@ -210,14 +168,11 @@ public class TimeCoursePane extends NetworkModulePanel {
                 selectedIndex = timeBox.getItemCount();
             timeBox.setSelectedIndex(selectedIndex - 1);
         }
-        
     }
     
-    private class TimeCourseTableModel extends NetworkModuleTableModel implements VariableTableModelInterface {
+    private class TimeCourseTableModel extends VariableTableModel {
         
         public TimeCourseTableModel() {
-            columnHeaders = new String[1];
-            columnHeaders[0] = "Entity";
         }
         
         @Override
@@ -241,8 +196,8 @@ public class TimeCoursePane extends NetworkModulePanel {
             int steps = variables.get(0).getTrack().length;
             columnHeaders = new String[steps + 1];
             columnHeaders[0] = "Entity";
-            for (int i = 1; i <= steps; i++)
-                columnHeaders[i] = "Step " + i;
+            for (int i = 0; i < steps; i++)
+                columnHeaders[i + 1] = "Step " + i;
             tableData.clear();
             for (BooleanVariable var : variables) {
                 Object[] row = new Object[var.getTrack().length + 1];
@@ -254,37 +209,6 @@ public class TimeCoursePane extends NetworkModulePanel {
             }
             fireTableStructureChanged();
         }
-        
-        public Map<String, Double> getIdToValue(int column) {
-            Map<String, Double> idToValue = new HashMap<>();
-            // Use the last column
-            for (int i = 0; i < tableData.size(); i++) {
-                Object[] row = tableData.get(i);
-                BooleanVariable var = (BooleanVariable) row[0];
-                String id = var.getProperty("reactomeId");
-                if (id == null)
-                    continue;
-                Number value = (Number) row[column];
-                idToValue.put(id, value.doubleValue());
-            }
-            return idToValue;
-        }
-
-        @Override
-        public List<Integer> getRowsForSelectedIds(List<Long> ids) {
-            List<Integer> rtn = new ArrayList<>();
-            for (int i = 0; i < tableData.size(); i++) {
-                Object[] row = tableData.get(i);
-                BooleanVariable var = (BooleanVariable) row[0];
-                String reactomeId = var.getProperty("reactomeId");
-                if (reactomeId == null)
-                    continue;
-                if (ids.contains(new Long(reactomeId)))
-                    rtn.add(i);
-            }
-            return rtn;
-        }
-        
     }
     
     private class TimeCoursePlotPane extends PlotTablePanel {
@@ -296,16 +220,6 @@ public class TimeCoursePane extends NetworkModulePanel {
         @Override
         public void setTable(JTable table) {
             this.contentTable = table;
-            // For showing BooleanVariable
-            table.setDefaultRenderer(BooleanVariable.class, new DefaultTableCellRenderer() {
-
-                @Override
-                protected void setValue(Object value) {
-                    BooleanVariable var = (BooleanVariable) value;
-                    setText(var == null ? "" : var.getName());
-                }
-                
-            });
             // Replace the original default table with this one.
             tableJsp.setViewportView(table);
             

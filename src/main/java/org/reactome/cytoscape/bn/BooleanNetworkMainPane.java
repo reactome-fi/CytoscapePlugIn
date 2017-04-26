@@ -6,6 +6,7 @@ package org.reactome.cytoscape.bn;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -18,6 +19,7 @@ import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.session.events.SessionLoadedEvent;
@@ -27,6 +29,7 @@ import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.osgi.framework.BundleContext;
 import org.reactome.booleannetwork.BooleanNetwork;
+import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -141,7 +144,26 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         if (!dialog.isOKClicked)
             return;
         String[] simuationNames = dialog.getSelectedSimulations();
-        System.out.println(simuationNames[0] + " vs. " + simuationNames[1]);
+        // Get simulations based on name
+        int index = tabbedPane.indexOfTab(simuationNames[0]);
+        BooleanNetworkSamplePane pane1 = (BooleanNetworkSamplePane) tabbedPane.getComponentAt(index);
+        SimulationTableModel sim1 = pane1.getSimulation();
+        index = tabbedPane.indexOfTab(simuationNames[1]);
+        BooleanNetworkSamplePane pane2 = (BooleanNetworkSamplePane) tabbedPane.getComponentAt(index);
+        SimulationTableModel sim2 = pane2.getSimulation();
+        
+        displayComparison(sim1, sim2);
+    }
+    
+    private void displayComparison(SimulationTableModel sim1,
+                                   SimulationTableModel sim2) {
+        SimulationComparisonPane comparisonPane = new SimulationComparisonPane(sim1.getSimulationName() + " vs. " + sim2.getSimulationName());
+        CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(comparisonPane.getCytoPanelName());
+        int index = cytoPanel.indexOfComponent(comparisonPane);
+        if (index > -1)
+            cytoPanel.setSelectedIndex(index);
+        comparisonPane.setHiliteControlPane(hiliteControlPane);
+        comparisonPane.setSimulations(sim1, sim2);
     }
     
     private void deleteSimulation() {
@@ -170,6 +192,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         // Make sure default value set is called before setBooleanNetwork.
         samplePane.setDefaultValue(dialog.getDefaultValue());
         samplePane.setSampleName(dialog.getSimulationName());
+        samplePane.setAndGateMode(dialog.getAndGateMode());
         samplePane.setBooleanNetwork(this.network);
         tabbedPane.add(dialog.getSimulationName(), samplePane);
         tabbedPane.setSelectedComponent(samplePane); // Select the newly created one
@@ -281,6 +304,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                 
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    if (!checkSelections())
+                        return;
                     isOKClicked = true;
                     dispose();
                 }
@@ -335,12 +360,14 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             simulationIBox = createSimulationBox();
             constraints.gridx = 0;
             constraints.gridy = 2;
+            simulationIBox.setSelectedIndex(0);
             contentPane.add(simulationIBox, constraints);
             label = new JLabel("vs.");
             constraints.gridx = 1;
             contentPane.add(label, constraints);
             simulationIIBox = createSimulationBox();
             constraints.gridx = 2;
+            simulationIIBox.setSelectedIndex(1);
             contentPane.add(simulationIIBox, constraints);
             
             return contentPane;
@@ -371,6 +398,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         private boolean isOkClicked;
         private JTextField nameTF;
         private JTextField defaultValueTF;
+        private JComboBox<ANDGateMode> andGateBox;
         
         public NewSimulationDialog() {
             super(PlugInObjectManager.getManager().getCytoscapeDesktop());
@@ -382,19 +410,32 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             
             JPanel contentPane = new JPanel();
             contentPane.setBorder(BorderFactory.createEtchedBorder());
-            contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.Y_AXIS));
+            contentPane.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(1, 1, 1, 1);
+            constraints.anchor = GridBagConstraints.WEST;
             
             JLabel label = GKApplicationUtilities.createTitleLabel("Enter a name for the simulation:");
-            contentPane.add(label);
+            constraints.gridx = 0;
+            constraints.gridy = 0;
+            contentPane.add(label, constraints);
             nameTF = new JTextField();
-            nameTF.setColumns(12);
-            contentPane.add(nameTF);
-            label = GKApplicationUtilities.createTitleLabel("Enter default initial value between 0 and 1:");
-            contentPane.add(label);
+            nameTF.setColumns(20);
+            constraints.gridy = 1;
+            contentPane.add(nameTF, constraints);
+            label = GKApplicationUtilities.createTitleLabel("Enter default input value between 0 and 1:");
+            constraints.gridy = 2;
+            contentPane.add(label, constraints);
             defaultValueTF = new JTextField();
             defaultValueTF.setText(1.0 + ""); // Use 1.0 as the default.
-            contentPane.add(defaultValueTF);
-            defaultValueTF.setColumns(12);
+            constraints.gridy = 3;
+            contentPane.add(defaultValueTF, constraints);
+            defaultValueTF.setColumns(20);
+            
+            JPanel pane = createAndGatePane();
+            constraints.gridy = 4;
+            contentPane.add(pane, constraints);
+            
             getContentPane().add(contentPane, BorderLayout.CENTER);
         
             DialogControlPane controlPane = new DialogControlPane();
@@ -419,8 +460,20 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             });
             getContentPane().add(controlPane, BorderLayout.SOUTH);
             
-            setSize(345, 200);
+            setSize(370, 250);
             setLocationRelativeTo(this.getOwner());
+        }
+        
+        private JPanel createAndGatePane() {
+            JPanel panel = new JPanel();
+            panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+            JLabel label = new JLabel("Choose AND gate mode: ");
+            andGateBox = new JComboBox<>(ANDGateMode.values());
+            panel.add(label);
+            panel.add(andGateBox);
+            // Use PROD as the default
+            andGateBox.setSelectedIndex(1);
+            return panel;
         }
         
         private boolean checkValues() {
@@ -463,6 +516,10 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         
         public boolean isOKClicked() {
             return this.isOkClicked;
+        }
+        
+        public ANDGateMode getAndGateMode() {
+            return (ANDGateMode) andGateBox.getSelectedItem();
         }
         
         public String getSimulationName() {

@@ -137,6 +137,16 @@ public class PlugInObjectManager {
         group.add(button);
     }
     
+    public void unregisterRadioButton(String groupName,
+                                      JRadioButton button) {
+        if (btnNameToGroup == null)
+            return;
+        ButtonGroup group = btnNameToGroup.get(groupName);
+        if (group == null)
+            return;
+        group.remove(button);
+    }
+    
     public FIPGMConfiguration getFIPGMConfig() {
         if (fiPGMConfig == null) {
             fiPGMConfig = FIPGMConfiguration.getConfig();
