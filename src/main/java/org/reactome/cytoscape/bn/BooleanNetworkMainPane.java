@@ -13,6 +13,8 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
 
 import javax.swing.*;
@@ -181,6 +183,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
      */
     public void createNewSimulation() {
         NewSimulationDialog dialog = new NewSimulationDialog();
+        Set<String> usedNames = getUsedNames();
+        dialog.usedNames = usedNames;
         dialog.setModal(true);
         dialog.setVisible(true);
         if (!dialog.isOkClicked)
@@ -197,6 +201,14 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         tabbedPane.add(dialog.getSimulationName(), samplePane);
         tabbedPane.setSelectedComponent(samplePane); // Select the newly created one
         validateButtons();
+    }
+
+    private Set<String> getUsedNames() {
+        Set<String> usedNames = new HashSet<>();
+        for (int i = 0; i < tabbedPane.getComponentCount(); i++) {
+            usedNames.add(tabbedPane.getTitleAt(i));
+        }
+        return usedNames;
     }
     
     private void validateButtons() {
@@ -399,6 +411,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         private JTextField nameTF;
         private JTextField defaultValueTF;
         private JComboBox<ANDGateMode> andGateBox;
+        private Set<String> usedNames;
         
         public NewSimulationDialog() {
             super(PlugInObjectManager.getManager().getCytoscapeDesktop());
@@ -485,6 +498,15 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                                               JOptionPane.ERROR_MESSAGE);
                 return false;
             }
+            // Check if the name has been used
+            if (usedNames != null && usedNames.contains(name)) {
+                JOptionPane.showMessageDialog(this,
+                                              "The entered name has been used. Try a new name.",
+                                              "Duplicated Name",
+                                              JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            
             String value = defaultValueTF.getText().trim();
             if (value.length() == 0) {
                 JOptionPane.showMessageDialog(this,
@@ -512,10 +534,6 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                 return false;
             }
             return true;
-        }
-        
-        public boolean isOKClicked() {
-            return this.isOkClicked;
         }
         
         public ANDGateMode getAndGateMode() {
