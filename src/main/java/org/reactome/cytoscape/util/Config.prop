@@ -20,8 +20,9 @@ FINetworkVersions=2016,2015,2014
 #2013_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2013/FIService/
 #2014_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2014/FIService/
 #2015_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2015/FIService/
+#2016_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2016/FIService/
 # In order to query Reactome pathway diagrams: most likely this should be delegated via the FI service WS?
-#ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2015/FIService/ReactomeRestful/
+#ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2016/FIService/ReactomeRestful/
 ReactomeRESTfulAPI=http://localhost:8080/caBigR3WebApp/FIService/ReactomeRestful/
 # Source data bases
 #2009_sourceDb=test_reactome_28_plus_i_myisam
@@ -31,11 +32,13 @@ ReactomeRESTfulAPI=http://localhost:8080/caBigR3WebApp/FIService/ReactomeRestful
 # A list of evidences and their labels
 evidenceProperties=humanInteraction,scePPI,dmePPI,celPPI,mousePPI,genewaysPPI,pavlidisGeneExp,carlosGeneExp,pfamDomainInt,goBPSharing,probability
 evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interaction,Mouse Interaction,Geneways Interaction,Pavlidis Gene Exp,Carlos Gene Exp,PfamDomain Interaction,GO BP Sharing,Score
-ReactomeURL=http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&ID=
+#ReactomeURL=http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&ID=
+# As of April 25, 2017, use this new content RESTful API based URL
+ReactomeURL=http://www.reactome.org/content/detail/
 # Use to control the debug model for PGM analysis
 PGMDebug=false
 # The file has pre-generated factor graph objects in a zipped XML file
 factorGraphFiles=PathwayDiagramsFactorGraphs.xml.zip
 fgEscapeNames=ATP, ADP, Pi, H2O, GTP, GDP, CO2, H+
 # A flag to control if cancer targetome should be enabled. This flag will be removed so that enabling is the default after the manuscript is accepted
-enableCancerTargetome=false
+enableCancerTargetome=true

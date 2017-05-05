@@ -3,10 +3,12 @@
 <project name="package" default="install" basedir="..">
 	<property name="targetDir" value="lib" />
     <property name="jarDir" value="/Users/gwu/Documents/EclipseWorkspace/caBigR3WebApp/WebContent/WEB-INF/lib/" />
-    <property name="jarName" value="${jarDir}/druggability.jar"></property>
+	<!-- The following properties should be changed for different jar files -->
+	<property name="jarName" value="${jarDir}/druggability.jar"></property>
     <property name="groupId" value="edu.ohsu.bcb" />
     <property name="artifactId" value="druggability" />
     <property name="version" value="1.0" />
+	
     <target name="install">
         <exec executable="${targetDir}/installJar.sh">
             <!-- file argument -->
