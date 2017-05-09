@@ -16,7 +16,7 @@ import org.reactome.booleannetwork.Attractor;
 import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.BooleanNetworkUtilities;
 import org.reactome.booleannetwork.BooleanVariable;
-import org.reactome.cytoscape.bn.BooleanNetworkSamplePane.EntityType;
+import org.reactome.booleannetwork.SimulationConfiguration;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 public class SimulationTableModel extends AbstractTableModel implements VariableTableModelInterface {
@@ -30,6 +30,8 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
         tableHeaders.add("Entity");
         tableHeaders.add("Type");
         tableHeaders.add("Initial");
+        tableHeaders.add("Modification");
+        tableHeaders.add("Strength");
         values = new ArrayList<>();
     }
     
@@ -65,31 +67,46 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
     }
     
     public boolean isSimulationPerformed() {
-        return tableHeaders.size() > 3; // Show have attractor results displayed
+        return tableHeaders.size() > 5; // Show have attractor results displayed
     }
     
-    public Map<String, Number> getStimulation() {
-        Map<String, Number> stimulation = new HashMap<>();
+    public SimulationConfiguration getConfiguration() {
+        SimulationConfiguration configuration = new SimulationConfiguration();
+        Map<BooleanVariable, Number> stimulation = getVarToValue(EntityType.Stimulation);
+        configuration.setStimulation(stimulation);
+        Map<BooleanVariable, Number> initial = getVarToValue(EntityType.Respondent);
+        configuration.setInitial(initial);
+        Map<BooleanVariable, Double> inhibition = getVarToModification(ModificationType.Inhibition);
+        configuration.setInhibition(inhibition);
+        Map<BooleanVariable, Double> activation = getVarToModification(ModificationType.Activation);
+        configuration.setActivation(activation);
+        return configuration;
+    }
+    
+    private Map<BooleanVariable, Double> getVarToModification(ModificationType requiredType) {
+        Map<BooleanVariable, Double> varToValue = new HashMap<>();
+        for (List<Object> rowValues : values) {
+            BooleanVariable var = (BooleanVariable) rowValues.get(0);
+            ModificationType type = (ModificationType) rowValues.get(3);
+            if (type != requiredType)
+                continue;
+            Double value = (Double) rowValues.get(4);
+            varToValue.put(var, value);
+        }
+        return varToValue;
+    }
+    
+    private Map<BooleanVariable, Number> getVarToValue(EntityType requiredType) {
+        Map<BooleanVariable, Number> varToValue = new HashMap<>();
         for (List<Object> rowValues : values) {
             BooleanVariable var = (BooleanVariable) rowValues.get(0);
             EntityType type = (EntityType) rowValues.get(1);
-            if (type == EntityType.Respondent)
+            if (type != requiredType)
                 continue;
-            Number init = (Number) rowValues.get(2);
-            stimulation.put(var.getName(), init);
+            Number value = (Number) rowValues.get(2);
+            varToValue.put(var, value);
         }
-        return stimulation;
-    }
-    
-    /**
-     * Commit values to displayed BooleanVariables.
-     */
-    public void commitValues() {
-        for (List<Object> rowValues : values) {
-            BooleanVariable var = (BooleanVariable) rowValues.get(0);
-            Number init = (Number) rowValues.get(2);
-            var.setValue(init);
-        }
+        return varToValue;
     }
     
     public List<Integer> getRowsForSelectedIds(List<Long> ids) {
@@ -127,6 +144,8 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
             rowValues.add(var);
             rowValues.add(EntityType.Respondent);
             rowValues.add(PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
+            rowValues.add(ModificationType.None);
+            rowValues.add(0.0d);
         }
         // Have to call fire data changed, not structure changed. Otherwise,
         // Editing cannot work!!!
@@ -150,20 +169,23 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
 
     @Override
     public Class<?> getColumnClass(int columnIndex) {
-        if (columnIndex == 0)
-            return BooleanVariable.class;
-        if (columnIndex == 1)
-            return EntityType.class;
-        return Number.class;
+        switch (columnIndex) { 
+            case 0 : return BooleanVariable.class;
+            case 1 : return EntityType.class;
+            case 2 : return Number.class;
+            case 3 : return ModificationType.class;
+            case 4 : return Double.class;
+            default : return Number.class;
+        }
     }
 
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         // If a simulation has been displayed, don't edit 
-        if (tableHeaders.size() > 3)
+        if (tableHeaders.size() > 5)
             return false;
         // Only type and initial values can be edited
-        if (columnIndex == 1 || columnIndex == 2)
+        if (columnIndex > 0 && columnIndex < 5)
             return true;
         else
             return false;
@@ -182,5 +204,16 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
         if (columnIndex < rowValues.size())
             return rowValues.get(columnIndex);
         return null;
+    }
+    
+    enum EntityType {
+        Stimulation,
+        Respondent
+    }
+    
+    enum ModificationType {
+        Inhibition,
+        Activation,
+        None
     }
 }

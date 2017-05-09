@@ -33,6 +33,9 @@ import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.FuzzyLogicSimulator;
 import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
+import org.reactome.booleannetwork.SimulationConfiguration;
+import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
+import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -130,24 +133,37 @@ public class BooleanNetworkSamplePane extends JPanel {
         });
         table.setRowSorter(sorter);
         
+        DefaultTableCellRenderer defaultCellRenderer = new DefaultTableCellRenderer();
+        
         TableColumn typeColoumn = table.getColumnModel().getColumn(1);
         JComboBox<EntityType> typeEditor = new JComboBox<>();
         for (EntityType type : EntityType.values())
             typeEditor.addItem(type);
         typeColoumn.setCellEditor(new DefaultCellEditor(typeEditor));
-        typeColoumn.setCellRenderer(new DefaultTableCellRenderer());
+        typeColoumn.setCellRenderer(defaultCellRenderer);
         
-        TableColumn initCol = table.getColumnModel().getColumn(2);
-        initCol.setCellEditor(new DefaultCellEditor(new JTextField()) {
-
+        TableColumn modificationCol = table.getColumnModel().getColumn(3);
+        JComboBox<ModificationType> modificationEditor = new JComboBox<>();
+        for (ModificationType type : ModificationType.values())
+            modificationEditor.addItem(type);
+        modificationCol.setCellEditor(new DefaultCellEditor(modificationEditor));
+        modificationCol.setCellRenderer(defaultCellRenderer);
+        
+        DefaultCellEditor numberEditor = new DefaultCellEditor(new JTextField()) {
             @Override
             public Object getCellEditorValue() {
                 String text = super.getCellEditorValue().toString();
                 return new Double(text);
             }
-            
-        });
-        initCol.setCellRenderer(new DefaultTableCellRenderer());
+        };
+        
+        TableColumn initCol = table.getColumnModel().getColumn(2);
+        initCol.setCellEditor(numberEditor);
+        initCol.setCellRenderer(defaultCellRenderer);
+        
+        TableColumn modificationValueCol = table.getColumnModel().getColumn(4);
+        modificationValueCol.setCellEditor(numberEditor);
+        modificationValueCol.setCellRenderer(defaultCellRenderer);
         
         return table;
     }
@@ -241,17 +257,18 @@ public class BooleanNetworkSamplePane extends JPanel {
                                            JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        model.commitValues();
+        SimulationConfiguration configuration = model.getConfiguration();
         // There are other variables that need values
+        // Make sure all variables have values
+        Map<BooleanVariable, Number> varToValue = configuration.getInitial();
         for (BooleanVariable var : network.getVariables()) {
-            if (var.getValue() == null)
-                var.setValue(PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
+            if (!varToValue.containsKey(var))
+                varToValue.put(var, PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
         }
-        Map<String, Number> stimulation = model.getStimulation();
         
         FuzzyLogicSimulator simulator = new FuzzyLogicSimulator();
         simulator.setAndGateMode(this.andGateMode);
-        simulator.simulate(network, stimulation);
+        simulator.simulate(network, configuration);
         
         if (!simulator.isAttractorReached()) {
             JOptionPane.showMessageDialog(this,
@@ -276,11 +293,4 @@ public class BooleanNetworkSamplePane extends JPanel {
         timeCoursePane.setHiliteControlPane(hiliteControlPane);
         timeCoursePane.setSimulationResults(variables);
     }
-    
-    enum EntityType {
-        Stimulation,
-        Inhibition,
-        Respondent
-    }
-    
 }

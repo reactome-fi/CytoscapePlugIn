@@ -5,7 +5,8 @@
 package org.reactome.cytoscape.bn;
 
 import org.reactome.booleannetwork.BooleanVariable;
-import org.reactome.cytoscape.bn.BooleanNetworkSamplePane.EntityType;
+import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
+import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
 
 /**
  * This customized JPanel is used to show comparison results between two simulation.
@@ -88,11 +89,19 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
                 // Initial values
                 row[3] = sim1.getValueAt(i, 2);
                 row[4] = sim2.getValueAt(i, 2);
-                startIndex = 5;
-                for (int j = 3; j < sim1.getColumnCount(); j++) {
+                
+                // Type
+                row[5] = sim1.getValueAt(i, 3);
+                row[6] = sim2.getValueAt(i, 3);
+                // Initial values
+                row[7] = sim1.getValueAt(i, 4);
+                row[8] = sim2.getValueAt(i, 4);
+                
+                startIndex = 9;
+                for (int j = 5; j < sim1.getColumnCount(); j++) {
                     row[startIndex ++] = sim1.getValueAt(i, j);
                 }
-                for (int j = 3; j < sim2.getColumnCount(); j++) {
+                for (int j = 5; j < sim2.getColumnCount(); j++) {
                     row[startIndex ++] = sim2.getValueAt(i, j);
                 }
                 Number value1 = (Number) sim1.getValueAt(i, sim1.getColumnCount() - 1);
@@ -108,12 +117,15 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
                 return BooleanVariable.class;
             else if (columnIndex < 3)
                 return EntityType.class;
+            else if (columnIndex < 5)
+                return ModificationType.class;
             else 
                 return Number.class;
         }
 
         private void setUpColumnNames(SimulationTableModel sim1, 
                                       SimulationTableModel sim2) {
+            // Don't show two modification columns for the time being
             int cols = sim1.getColumnCount() + sim2.getColumnCount(); // Shared entity column
             columnHeaders = new String[cols];
             int index = 0;
@@ -122,10 +134,14 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
             columnHeaders[index ++] = sim2.getSimulationName() + ":Type";
             columnHeaders[index ++] = sim1.getSimulationName() + ":Initial";
             columnHeaders[index ++] = sim2.getSimulationName() + ":Initial";
-            for (int i = 3; i < sim1.getColumnCount(); i++) {
+            columnHeaders[index ++] = sim1.getSimulationName() + ":Modification";
+            columnHeaders[index ++] = sim2.getSimulationName() + ":Modification";
+            columnHeaders[index ++] = sim1.getSimulationName() + ":Strength";
+            columnHeaders[index ++] = sim2.getSimulationName() + ":Strength";
+            for (int i = 5; i < sim1.getColumnCount(); i++) {
                 columnHeaders[index ++] = sim1.getSimulationName() + ":" + sim1.getColumnName(i);
             }
-            for (int i = 3; i < sim2.getColumnCount(); i++) {
+            for (int i = 5; i < sim2.getColumnCount(); i++) {
                 columnHeaders[index ++] = sim2.getSimulationName() + ":" + sim2.getColumnName(i);
             }
             // Last column is on ratio

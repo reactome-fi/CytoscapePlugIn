@@ -18,7 +18,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 
 import org.gk.graphEditor.SelectionMediator;
 import org.reactome.booleannetwork.BooleanVariable;
-import org.reactome.cytoscape.bn.BooleanNetworkSamplePane.EntityType;
+import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
 import org.reactome.cytoscape.service.NetworkModulePanel;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
