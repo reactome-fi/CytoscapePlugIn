@@ -5,13 +5,11 @@
 package org.reactome.cytoscape.drug;
 
 import java.awt.BorderLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
@@ -23,13 +21,11 @@ import javax.swing.JTable;
 import javax.swing.RowFilter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
-import edu.ohsu.bcb.druggability.ExpEvidence;
 import edu.ohsu.bcb.druggability.Interaction;
 
 /**
@@ -38,7 +34,7 @@ import edu.ohsu.bcb.druggability.Interaction;
  *
  */
 public class InteractionListView extends JDialog {
-    private JTable interactionTable;
+    protected JTable interactionTable;
     private JButton viewDetailsBtn;
     private JButton overlayBtn;
     private TableListInteractionFilter interactionFilter;
@@ -47,7 +43,11 @@ public class InteractionListView extends JDialog {
      * Default constructor.
      */
     public InteractionListView() {
-        super(PlugInObjectManager.getManager().getCytoscapeDesktop());
+        this(PlugInObjectManager.getManager().getCytoscapeDesktop());
+    }
+    
+    public InteractionListView(Window owner) {
+        super(owner);
         init();
     }
     
@@ -56,11 +56,15 @@ public class InteractionListView extends JDialog {
         model.setInteractions(interactions);
     }
     
-    private void init() {
+    protected InteractionListTableModel createTableModel() {
+        return new InteractionListTableModel();
+    }
+    
+    protected void init() {
         setTitle("Drug Targets View");
         
         interactionTable = new JTable();
-        InteractionListTableModel model = new InteractionListTableModel();
+        InteractionListTableModel model = createTableModel();
         interactionTable.setModel(model);
         TableRowSorter<TableModel> rowSorter = new TableRowSorter<TableModel>(model);
         interactionTable.setRowSorter(rowSorter);
@@ -78,14 +82,18 @@ public class InteractionListView extends JDialog {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (e.getValueIsAdjusting()) {
-                    viewDetailsBtn.setEnabled(interactionTable.getSelectedRowCount() == 1);
-                    overlayBtn.setEnabled(interactionTable.getSelectedRowCount() > 0);
+                    handleTableSelection();
                 }
             }
         });
         
         setSize(625, 250);
         setLocationRelativeTo(getOwner());
+    }
+    
+    protected void handleTableSelection() {
+        viewDetailsBtn.setEnabled(interactionTable.getSelectedRowCount() == 1);
+        overlayBtn.setEnabled(interactionTable.getSelectedRowCount() > 0);
     }
     
     private JPanel createControlPane() {
@@ -113,14 +121,7 @@ public class InteractionListView extends JDialog {
         });
         controlPane.add(filterBtn);
         
-        overlayBtn = new JButton("Overlay Targets to Pathways");
-        overlayBtn.addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                overlayToPathways();
-            }
-        });
+        overlayBtn = createActionButton();
         overlayBtn.setEnabled(false);
         controlPane.add(overlayBtn);
         
@@ -135,6 +136,18 @@ public class InteractionListView extends JDialog {
         controlPane.add(closeBtn);
         
         return controlPane;
+    }
+    
+    protected JButton createActionButton() {
+        JButton actionButton = new JButton("Overlay Targets to Pathways");
+        actionButton.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                overlayToPathways();
+            }
+        });
+        return actionButton;
     }
     
     private void filterInteractions() {
@@ -206,113 +219,6 @@ public class InteractionListView extends JDialog {
             RowFilter<TableModel, Object> rowFilter = model.createFilter(this);
             TableRowSorter<InteractionListTableModel> rowSorter = (TableRowSorter<InteractionListTableModel>) table.getRowSorter();
             rowSorter.setRowFilter(rowFilter);
-        }
-        
-    }
-    
-    private class InteractionListTableModel extends AbstractTableModel {
-        private String[] colNames = new String[] {
-                "ID",
-                "Drug",
-                "Target",
-                "KD (nM)",
-                "IC50 (nM)",
-                "Ki (nM)",
-                "EC50 (nM)"
-        };
-        private Map<String, Interaction> idToInteraction;
-        private List<Object[]> data;
-        
-        public RowFilter<TableModel, Object> createFilter(final InteractionFilter filter) {
-            RowFilter<TableModel, Object> rowFilter = new RowFilter<TableModel, Object>() {
-                public boolean include(Entry<? extends TableModel, ? extends Object> entry) {
-                    // Entry should be a row
-                    String id = entry.getStringValue(0);
-                    Interaction interaction = idToInteraction.get(id);
-                    return filter.filter(interaction);
-                }
-            };
-            return rowFilter;
-        }
-        
-        public void setInteractions(List<Interaction> interactions) {
-            idToInteraction = new HashMap<>();
-            for (Interaction interaction : interactions)
-                idToInteraction.put(interaction.getId(), interaction);
-            initData(interactions);
-        }
-        
-        public Interaction getInteraction(String id) {
-            return idToInteraction.get(id);
-        }
-        
-        private void initData(List<Interaction> interactions) {
-            if (data == null)
-                data = new ArrayList<>();
-            else
-                data.clear();
-            for (Interaction interaction : interactions) {
-                Object[] row = new Object[colNames.length];
-                row[0] = interaction.getId();
-                row[1] = interaction.getIntDrug().getDrugName();
-                row[2] = interaction.getIntTarget().getTargetName();
-                Map<String, Double> typeToValue = getMinValues(interaction);
-                row[3] = typeToValue.get("KD");
-                row[4] = typeToValue.get("IC50");
-                row[5] = typeToValue.get("Ki");
-                row[6] = typeToValue.get("EC50");
-                data.add(row);
-            }
-            fireTableDataChanged();
-        }
-        
-        private Map<String, Double> getMinValues(Interaction interaction) {
-            Map<String, Double> typeToValue = new HashMap<>();
-            if (interaction.getExpEvidenceSet() != null) {
-                for (ExpEvidence evidence : interaction.getExpEvidenceSet()) {
-                    String type = evidence.getAssayType();
-                    if (type == null)
-                        continue;
-                    if (type.equals("KI"))
-                        type = "Ki";
-                    double value = DrugTargetInteractionManager.getManager().getExpEvidenceValue(evidence).doubleValue();
-                    if (!typeToValue.containsKey(type) || value < typeToValue.get(type))
-                        typeToValue.put(type, value);
-                }
-            }
-            return typeToValue;
-        }
-
-        @Override
-        public int getRowCount() {
-            if (data == null)
-                return 0;
-            return data.size();
-        }
-
-        @Override
-        public int getColumnCount() {
-            return colNames.length;
-        }
-
-        @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            if (data == null || rowIndex >= data.size())
-                return null;
-            return data.get(rowIndex)[columnIndex];
-        }
-
-        @Override
-        public String getColumnName(int column) {
-            return colNames[column];
-        }
-
-        @Override
-        public Class<?> getColumnClass(int columnIndex) {
-            if (columnIndex < 3)
-                return String.class;
-            else
-                return Double.class;
         }
         
     }

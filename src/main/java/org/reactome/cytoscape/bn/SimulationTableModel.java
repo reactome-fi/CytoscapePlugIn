@@ -132,7 +132,9 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
     
     public void setBooleanNetwork(BooleanNetwork network,
                                   Set<String> displayedIds,
-                                  Double defaultValue) {
+                                  Double defaultValue,
+                                  Map<String, Double> proteinInhibition,
+                                  Map<String, Double> proteinActivation) {
         List<BooleanVariable> variables = BooleanNetworkUtilities.getSortedVariables(network);
         values.clear();
         for (BooleanVariable var : variables) {
@@ -144,8 +146,21 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
             rowValues.add(var);
             rowValues.add(EntityType.Respondent);
             rowValues.add(PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
-            rowValues.add(ModificationType.None);
-            rowValues.add(0.0d);
+            ModificationType mType = ModificationType.None;
+            Double mValue = 0.0d;
+            String gene = var.getProperty("gene");
+            if (gene != null) {
+                if (proteinInhibition != null && proteinInhibition.containsKey(gene)) {
+                    mType = ModificationType.Inhibition;
+                    mValue = proteinInhibition.get(gene);
+                }
+                else if (proteinActivation != null && proteinActivation.containsKey(gene)) {
+                    mType = ModificationType.Activation;
+                    mValue = proteinActivation.get(gene);
+                }
+            }
+            rowValues.add(mType);
+            rowValues.add(mValue);
         }
         // Have to call fire data changed, not structure changed. Otherwise,
         // Editing cannot work!!!

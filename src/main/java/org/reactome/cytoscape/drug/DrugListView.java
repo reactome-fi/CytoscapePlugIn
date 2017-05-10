@@ -24,6 +24,8 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
@@ -41,6 +43,8 @@ import edu.ohsu.bcb.druggability.Drug;
  */
 public class DrugListView extends JDialog {
     private JTable drugTable;
+    private JButton viewTargets;
+    private JButton googleBtn;
     
     /**
      * Default constructor.
@@ -53,6 +57,17 @@ public class DrugListView extends JDialog {
     private void init() {
         setTitle("Cancer Drugs");
         drugTable = new JTable();
+        drugTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting()) {
+                    googleBtn.setEnabled(drugTable.getSelectedRowCount() > 0);
+                    viewTargets.setEnabled(drugTable.getSelectedRowCount() > 0);
+                }
+            }
+        });
+        
         DrugListTableModel tableModel = new DrugListTableModel();
         drugTable.setModel(tableModel);
         drugTable.setRowSorter(new TableRowSorter<>(tableModel));
@@ -96,10 +111,7 @@ public class DrugListView extends JDialog {
             
             @Override
             public void actionPerformed(ActionEvent e) {
-                int viewRow = drugTable.rowAtPoint(point);
-                int modelRow = drugTable.convertRowIndexToModel(viewRow);
-                PlugInUtilities.queryGoogle((String)drugTable.getModel().getValueAt(viewRow,
-                                                                                    0));
+                google();
             }
         });
         popup.add(google);
@@ -115,6 +127,14 @@ public class DrugListView extends JDialog {
         popup.show(drugTable, point.x, point.y);
     }
     
+    private void google() {
+        List<String> drugs = getSelectedDrugs();
+        if (drugs == null || drugs.size() == 0)
+            return;
+        for (String drug : drugs)
+            PlugInUtilities.queryGoogle(drug);
+    }
+    
     private void viewTargets() {
         if (drugTable.getSelectedRowCount() == 0) {
             JOptionPane.showMessageDialog(this,
@@ -123,6 +143,13 @@ public class DrugListView extends JDialog {
                                           JOptionPane.INFORMATION_MESSAGE);
             return;
         }
+        List<String> drugs = getSelectedDrugs();
+        // Close the dialog first
+        dispose();
+        DrugListManager.getManager().showDrugTargetInteractions(drugs);
+    }
+
+    private List<String> getSelectedDrugs() {
         // Get the names of selected drugs
         DrugListTableModel model = (DrugListTableModel) drugTable.getModel();
         List<String> drugs = new ArrayList<>();
@@ -131,16 +158,25 @@ public class DrugListView extends JDialog {
             String drugName = (String) model.getValueAt(modelRow, 0);
             drugs.add(drugName);
         }
-        // Close the dialog first
-        dispose();
-        DrugListManager.getManager().showDrugTargetInteractions(drugs);
+        return drugs;
     }
     
     private JPanel createControlPane() {
         JPanel controlPane = new JPanel();
         controlPane.setBorder(BorderFactory.createEtchedBorder());
         
-        JButton viewTargets = new JButton("View Targets");
+        googleBtn = new JButton("Google");
+        googleBtn.setEnabled(false);
+        googleBtn.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                google();
+            }
+        });
+        
+        viewTargets = new JButton("View Targets");
+        viewTargets.setEnabled(false);
         viewTargets.addActionListener(new ActionListener() {
             
             @Override
@@ -148,6 +184,8 @@ public class DrugListView extends JDialog {
                 viewTargets();
             }
         });
+        
+        controlPane.add(googleBtn);
         controlPane.add(viewTargets);
         JButton closeBtn = new JButton("Close");
         closeBtn.addActionListener(new ActionListener() {

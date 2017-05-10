@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.DefaultCellEditor;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -59,12 +60,25 @@ public class BooleanNetworkSamplePane extends JPanel {
     private String sampleName;
     // For simulation
     private ANDGateMode andGateMode = ANDGateMode.PROD;
+    // A checkbox for selecting if a larger value should be used for stimulation nodes
+    private JCheckBox useLargerValueBox;
+    // Extra information
+    private Map<String, Double> proteinInhibtion;
+    private Map<String, Double> proteinActivation;
    
     /**
      * Default constructor.
      */
     public BooleanNetworkSamplePane() {
         init();
+    }
+
+    public void setProteinInhibtion(Map<String, Double> preInhibtion) {
+        this.proteinInhibtion = preInhibtion;
+    }
+
+    public void setProteinActivation(Map<String, Double> preActivation) {
+        this.proteinActivation = preActivation;
     }
 
     public ANDGateMode getAndGateMode() {
@@ -103,6 +117,10 @@ public class BooleanNetworkSamplePane extends JPanel {
         sampleTable = createSampleTable();
         
         add(new JScrollPane(sampleTable), BorderLayout.CENTER);
+        
+        useLargerValueBox = new JCheckBox("Use larger values for stimulation variables");
+        useLargerValueBox.setSelected(true); // Default is true
+        add(useLargerValueBox, BorderLayout.SOUTH);
         
         enableSelectionSync();
     }
@@ -225,7 +243,9 @@ public class BooleanNetworkSamplePane extends JPanel {
         SimulationTableModel model = (SimulationTableModel) sampleTable.getModel();
         model.setBooleanNetwork(network,
                                 getDisplayedIds(),
-                                defaultValue);
+                                defaultValue,
+                                proteinInhibtion,
+                                proteinActivation);
     }
     
     private Set<String> getDisplayedIds() {
@@ -258,13 +278,8 @@ public class BooleanNetworkSamplePane extends JPanel {
             return;
         }
         SimulationConfiguration configuration = model.getConfiguration();
-        // There are other variables that need values
-        // Make sure all variables have values
-        Map<BooleanVariable, Number> varToValue = configuration.getInitial();
-        for (BooleanVariable var : network.getVariables()) {
-            if (!varToValue.containsKey(var))
-                varToValue.put(var, PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
-        }
+        
+        mergeWithOtherConfig(configuration);
         
         FuzzyLogicSimulator simulator = new FuzzyLogicSimulator();
         simulator.setAndGateMode(this.andGateMode);
@@ -281,6 +296,43 @@ public class BooleanNetworkSamplePane extends JPanel {
         model.addAttractor(attractor);
         
         displayTimeCourse(model.getVariables());
+    }
+
+    protected void mergeWithOtherConfig(SimulationConfiguration configuration) {
+        // Don't forget this choice
+        configuration.setUseLargerValueForStimulation(useLargerValueBox.isSelected());
+        // There are other variables that need values
+        // Make sure all variables have values
+        Map<BooleanVariable, Number> varToValue = configuration.getInitial();
+        for (BooleanVariable var : network.getVariables()) {
+            if (!varToValue.containsKey(var))
+                varToValue.put(var, PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
+        }
+        if (proteinInhibtion != null) {
+            Map<BooleanVariable, Double> inhibition = configuration.getInhibition();
+            mergeProteinModification(inhibition, proteinInhibtion);
+        }
+        if (proteinActivation != null) {
+            Map<BooleanVariable, Double> activation = configuration.getActivation();
+            mergeProteinModification(activation, proteinActivation);
+        }
+    }
+
+    protected void mergeProteinModification(Map<BooleanVariable, Double> inhibition,
+                                            Map<String, Double> proteinInhibtion) {
+        for (BooleanVariable var : network.getVariables()) {
+            if (inhibition.containsKey(var))
+                continue; // Always use the current setting
+            // Only merge into variables without inputs
+            if (var.getInRelations() != null && var.getInRelations().size() > 0)
+                continue;
+            String gene = (String) var.getProperty("gene");
+            if (gene == null)
+                continue;
+            Double preInhibit = proteinInhibtion.get(gene);
+            if (preInhibit != null)
+                inhibition.put(var, preInhibit);
+        }
     }
     
     private void displayTimeCourse(List<BooleanVariable> variables) {

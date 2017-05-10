@@ -6,20 +6,29 @@ package org.reactome.cytoscape.bn;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
 import javax.swing.*;
+import javax.swing.RowSorter.SortKey;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableModel;
 
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
@@ -29,12 +38,19 @@ import org.cytoscape.session.events.SessionLoadedListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
+import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
+import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
+import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
+import org.reactome.cytoscape.drug.InteractionListTableModel;
+import org.reactome.cytoscape.drug.InteractionListView;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+
+import edu.ohsu.bcb.druggability.Interaction;
 
 /**
  * Impelmented as a CytoPanelComponent to be listed in the "Results Panel".
@@ -197,6 +213,10 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         samplePane.setDefaultValue(dialog.getDefaultValue());
         samplePane.setSampleName(dialog.getSimulationName());
         samplePane.setAndGateMode(dialog.getAndGateMode());
+        if (dialog.isDrugSelected()) {
+            samplePane.setProteinActivation(dialog.getActivation());
+            samplePane.setProteinInhibtion(dialog.getInhibition());
+        }
         samplePane.setBooleanNetwork(this.network);
         tabbedPane.add(dialog.getSimulationName(), samplePane);
         tabbedPane.setSelectedComponent(samplePane); // Select the newly created one
@@ -412,10 +432,29 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         private JTextField defaultValueTF;
         private JComboBox<ANDGateMode> andGateBox;
         private Set<String> usedNames;
+        private JTextField drugBox;
+        // Cache drug selection dialog for easy handling
+        private DrugSelectionDialog drugList;
+        // Cache values from the drug list: We should not get these values
+        // from drugList dialog since new selections may be discarded
+        private Map<String, Double> inhibition;
+        private Map<String, Double> activation;
         
         public NewSimulationDialog() {
             super(PlugInObjectManager.getManager().getCytoscapeDesktop());
             init();
+        }
+        
+        public boolean isDrugSelected() {
+            return drugBox.getText().length() > 0;
+        }
+        
+        public Map<String, Double> getInhibition() {
+            return inhibition;
+        }
+        
+        public Map<String, Double> getActivation() {
+            return activation;
         }
         
         private void init() {
@@ -449,6 +488,30 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             constraints.gridy = 4;
             contentPane.add(pane, constraints);
             
+            // For drug
+            JLabel drugLabel = GKApplicationUtilities.createTitleLabel("Apply cancer drugs:");
+            constraints.gridy = 5;
+            contentPane.add(drugLabel, constraints);
+            JPanel drugPane = new JPanel();
+            drugPane.setLayout(new FlowLayout(FlowLayout.LEFT));
+            drugBox = new JTextField();
+            drugBox.setColumns(20);
+            drugBox.setEditable(false);
+            JButton drugBtn = new JButton("...");
+            drugBtn.setPreferredSize(new Dimension(20, 20));
+            drugBtn.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    showDrugsForPathway();
+                }
+            });
+            drugPane.add(drugBox);
+            drugPane.add(drugBtn);
+            constraints.gridy = 6;
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            contentPane.add(drugPane, constraints);
+            
             getContentPane().add(contentPane, BorderLayout.CENTER);
         
             DialogControlPane controlPane = new DialogControlPane();
@@ -473,8 +536,45 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             });
             getContentPane().add(controlPane, BorderLayout.SOUTH);
             
-            setSize(370, 250);
+            setSize(425, 290);
             setLocationRelativeTo(this.getOwner());
+        }
+        
+        private void showDrugsForPathway() {
+            if (drugList != null) {
+                drugList.isOKClicked = false;
+                drugList.setModal(true);
+                drugList.setVisible(true);
+                drugList.toFront();
+                if (!drugList.isOKClicked)
+                    return;
+                extractDrugSelectionInfo(drugList);
+                return;
+            }
+            Thread t = new Thread() {
+                public void run() {
+                    DrugTargetInteractionManager manager = DrugTargetInteractionManager.getManager();
+                    Set<Interaction> interactions = manager.fetchCancerDrugsInteractions(pathwayEditor);
+                    if (interactions.size() == 0)
+                        return;
+                    DrugSelectionDialog drugList = new DrugSelectionDialog(NewSimulationDialog.this);
+                    drugList.setInteractions(new ArrayList<>(interactions));
+                    drugList.setModal(true);
+                    drugList.setVisible(true);
+                    if (!drugList.isOKClicked)
+                        return;
+                    extractDrugSelectionInfo(drugList);
+                    NewSimulationDialog.this.drugList = drugList;
+                }
+            };
+            t.start();
+        }
+        
+        private void extractDrugSelectionInfo(DrugSelectionDialog drugList) {
+            List<String> drugs = drugList.getSelectedDrugs();
+            drugBox.setText(StringUtils.join(", ", drugs));
+            inhibition = drugList.getInhibition();
+            activation = drugList.getActivation();
         }
         
         private JPanel createAndGatePane() {
@@ -548,4 +648,228 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             return new Double(defaultValueTF.getText().trim());
         }
     }
+    
+    private class DrugSelectionTableModel extends InteractionListTableModel {
+        
+        public DrugSelectionTableModel() {
+            super();
+            colNames = new String[] {
+                    "ID",
+                    "Drug",
+                    "Target",
+                    "KD (nM)",
+                    "IC50 (nM)",
+                    "Ki (nM)",
+                    "EC50 (nM)",
+                    "Modification",
+                    "Strength"
+            };
+        }
+
+        @Override
+        protected void initRow(Interaction interaction, Object[] row) {
+            super.initRow(interaction, row);
+            row[7] = ModificationType.Inhibition;
+            Double minValue = getMinValue(row);
+            if (minValue == null)
+                row[8] = null;
+            else {
+                row[8] = getModificationStrenth(minValue);
+            }
+        }
+        
+        @Override
+        public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+            Object[] rowValues = data.get(rowIndex);
+            rowValues[columnIndex] = aValue;
+            fireTableCellUpdated(rowIndex, columnIndex);
+        }
+        
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            if (columnIndex == 7 || columnIndex == 8)
+                return true;
+            return false;
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            if (columnIndex == 7)
+                return ModificationType.class;
+            else if (columnIndex == 8)
+                return Double.class;
+            else
+                return super.getColumnClass(columnIndex);
+        }
+
+        /**
+         * The following map is hard-coded and should be improved in the future.
+         * @param value
+         * @return
+         */
+        private double getModificationStrenth(double value) {
+            if (value < 1) // Less than 1 nm
+                return 0.99d;
+            if (value < 10)
+                return 0.90d;
+            if (value < 100)
+                return 0.70;
+            if (value < 1000)
+                return 0.50;
+            if (value < 10000)
+                return 0.30;
+            if (value < 100000)
+                return 0.10;
+            return 0.0d;
+        }
+        
+        private Double getMinValue(Object[] row) {
+            Double rtn = null;
+            for (int i = 3; i < 7; i++) {
+                Double value = (Double) row[i];
+                if (value == null)
+                    continue;
+                if (rtn == null)
+                    rtn = value;
+                else if (rtn > value)
+                    rtn = value;
+            }
+            return rtn;
+        }
+    }
+    
+    private class DrugSelectionDialog extends InteractionListView {
+        private boolean isOKClicked;
+        private JLabel titleLabel;
+        
+        public DrugSelectionDialog(JDialog owner) {
+            super(owner);
+        }
+        
+        @Override
+        protected void init() {
+            super.init();
+            setTitle("Cancer Drug Selection");
+            titleLabel = GKApplicationUtilities.createTitleLabel("Choose drugs by selecting:");
+            titleLabel.setToolTipText("Note: Selecting one row will select all rows for the selected drug.");
+            getContentPane().add(titleLabel, BorderLayout.NORTH);
+            
+            modifyTable();
+        }
+        
+        public Map<String, Double> getInhibition() {
+            return getModification(ModificationType.Inhibition);
+        }
+        
+        public Map<String, Double> getActivation() {
+            return getModification(ModificationType.Activation);
+        }
+        
+        private Map<String, Double> getModification(ModificationType type) {
+            List<String> drugs = getSelectedDrugs();
+            if (drugs.size() == 0)
+                return new HashMap<>();
+            Map<String, Double> targetToValue = new HashMap<>();
+            DrugSelectionTableModel model = (DrugSelectionTableModel) interactionTable.getModel();
+            for (int i = 0; i < model.getRowCount(); i++) {
+                String drug = (String) model.getValueAt(i, 1);
+                if (!drugs.contains(drug))
+                    continue;
+                ModificationType type1 = (ModificationType) model.getValueAt(i, 7);
+                if (type1 != type)
+                    continue;
+                Double value = (Double) model.getValueAt(i, 8);
+                if (value == null)
+                    continue; // Don't want to have null
+                String target = (String) model.getValueAt(i, 2);
+                targetToValue.put(target, value);
+            }
+            return targetToValue;
+        }
+        
+        public List<String> getSelectedDrugs() {
+            List<String> rtn = new ArrayList<>();
+            String title = titleLabel.getText().trim();
+            int index = title.indexOf(":");
+            String text = title.substring(index + 1).trim();
+            if (text.length() == 0)
+                return rtn;
+            String[] tokens = text.split(", ");
+            for (String token : tokens)
+                rtn.add(token);
+            return rtn;
+        }
+
+        private void modifyTable() {
+            // Handle table editing
+            DefaultTableCellRenderer defaultCellRenderer = new DefaultTableCellRenderer();
+            
+           TableColumn modificationCol = interactionTable.getColumnModel().getColumn(7);
+            JComboBox<ModificationType> modificationEditor = new JComboBox<>();
+            for (ModificationType type : ModificationType.values())
+                modificationEditor.addItem(type);
+            modificationCol.setCellEditor(new DefaultCellEditor(modificationEditor));
+            modificationCol.setCellRenderer(defaultCellRenderer);
+            
+            DefaultCellEditor numberEditor = new DefaultCellEditor(new JTextField()) {
+                @Override
+                public Object getCellEditorValue() {
+                    String text = super.getCellEditorValue().toString();
+                    return new Double(text);
+                }
+            };
+            
+            TableColumn initCol = interactionTable.getColumnModel().getColumn(8);
+            initCol.setCellEditor(numberEditor);
+            initCol.setCellRenderer(defaultCellRenderer);
+            
+            // Sort based on the drug name
+            List<SortKey> sortedKeys = new ArrayList<>();
+            sortedKeys.add(new RowSorter.SortKey(1, SortOrder.ASCENDING));
+            interactionTable.getRowSorter().setSortKeys(sortedKeys);
+        }
+        
+        @Override
+        protected InteractionListTableModel createTableModel() {
+            return new DrugSelectionTableModel();
+        }
+        
+        @Override
+        protected void handleTableSelection() {
+            super.handleTableSelection();
+            // Get selected drugs
+            TableModel model = interactionTable.getModel();
+            Set<String> drugs = new HashSet<>();
+            if (interactionTable.getSelectedRowCount() > 0) {
+                for (int viewRow : interactionTable.getSelectedRows()) {
+                    int modelRow = interactionTable.convertRowIndexToModel(viewRow);
+                    String drug = (String) model.getValueAt(modelRow, 1);
+                    drugs.add(drug);
+                }
+            }
+            List<String> drugList = new ArrayList<>(drugs);
+            Collections.sort(drugList);
+            String text = StringUtils.join(", ", drugList);
+            String title = titleLabel.getText();
+            int index = title.indexOf(":");
+            title = title.substring(0, index + 1) + " " + text;
+            titleLabel.setText(title);
+        }
+        
+        @Override
+        protected JButton createActionButton() {
+            JButton okButton = new JButton("OK");
+            okButton.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    isOKClicked = true;
+                    dispose();
+                }
+            });
+            return okButton;
+        }
+        
+    }
+    
 }

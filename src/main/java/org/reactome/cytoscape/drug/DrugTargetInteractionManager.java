@@ -169,6 +169,22 @@ public class DrugTargetInteractionManager {
         return filtered;
     }
     
+    /**
+     * Return a set of interactions 
+     * @param pathwayEditor
+     * @return
+     */
+    public Set<Interaction> fetchCancerDrugsInteractions(PathwayEditor pathwayEditor) {
+        Map<Long, List<Interaction>> pdIdToFiltered = _fetchCancerDrugsForPathway(pathwayEditor,
+                                                                                  false);
+        if (pdIdToFiltered.size() == 0)
+            return new HashSet<>(); 
+        Set<Interaction> rtn = new HashSet<>();
+        for (List<Interaction> interactions : pdIdToFiltered.values())
+            rtn.addAll(interactions);
+        return rtn;
+    }
+    
     public void fetchCancerDrugsForDisplay(Long peId,
                                            PathwayEditor pathwayEditor) {
         if (peId == null) {
@@ -190,14 +206,64 @@ public class DrugTargetInteractionManager {
     }
     
     private void fetchCancerDrugs(PathwayEditor pathwayEditor) {
+        Map<Long, List<Interaction>> pdIdToFiltered = _fetchCancerDrugsForPathway(pathwayEditor, true);
+        if (pdIdToFiltered.size() == 0)
+            return; // Do nothing
+        DiagramDrugTargetInteractionHandler handler = new DiagramDrugTargetInteractionHandler(pathwayEditor);
+        handler.displayInteractions(pdIdToFiltered);
+    }
+
+    private Map<Long, List<Interaction>> _fetchCancerDrugsForPathway(PathwayEditor pathwayEditor,
+                                                                     boolean needFilter) {
         // For this method, the server will be called regardless
         Map<Long, List<Interaction>> newIdToInteractions = fetchCancerDrugs(null,
                                                                            (RenderablePathway)pathwayEditor.getRenderable());
+        Map<Long, List<Interaction>> pdIdToInteractions = cacheInteractions(pathwayEditor,
+                                                                            newIdToInteractions);
+        if (pdIdToInteractions.size() == 0) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Cannot find any cancer drug for the pathway.",
+                                          "No Cancer Drug",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return pdIdToInteractions;
+        }
+        if (!needFilter)
+            return pdIdToInteractions;
+        Map<Long, List<Interaction>> pdIdToFiltered = filterInteractions(pdIdToInteractions);
+        if (pdIdToFiltered.size() == 0) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "No drugs can be displayed. Adjust the filter to show interactions.",
+                                          "No Drugs to Display",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return pdIdToFiltered;
+        }
+        return pdIdToFiltered;
+    }
+
+    private Map<Long, List<Interaction>> filterInteractions(Map<Long, List<Interaction>> pdIdToInteractions) {
+        // Need to apply the filter
+        Map<Long, List<Interaction>> pdIdToFiltered = new HashMap<>();
+        for (Long dbId : pdIdToInteractions.keySet()) {
+            List<Interaction> list = pdIdToInteractions.get(dbId);
+            if (list != null && list.size() > 0) {
+                List<Interaction> filtered = applyFilter(list);
+                if (filtered.size() > 0) {
+                    pdIdToFiltered.put(dbId, filtered);
+                }
+            }
+        }
+        return pdIdToFiltered;
+    }
+
+    private Map<Long, List<Interaction>> cacheInteractions(PathwayEditor pathwayEditor,
+                                                           Map<Long, List<Interaction>> newIdToInteractions) {
         // Cache fetched interactions
         Map<Long, List<Interaction>> pdIdToInteractions = new HashMap<>();
         for (Object obj : pathwayEditor.getDisplayedObjects()) {
             if ((obj instanceof Node) && (((Node)obj).getReactomeId() != null)) {
                 Node node = (Node) obj;
+                if (!node.isVisible()) // Don't show anything if it is invisible
+                    continue;
                 Long reactomeId = node.getReactomeId();
                 // Check pre-existing one first
                 List<Interaction> interactions = peID2Interactions.get(reactomeId);
@@ -211,35 +277,7 @@ public class DrugTargetInteractionManager {
                     pdIdToInteractions.put(reactomeId, interactions);
             }
         }
-        if (pdIdToInteractions.size() == 0) {
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Cannot find any cancer drug for the pathway.",
-                                          "No Cancer Drug",
-                                          JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        boolean hasInteractions = false;
-        // Need to apply the filter
-        Map<Long, List<Interaction>> pdIdToFiltered = new HashMap<>();
-        for (Long dbId : pdIdToInteractions.keySet()) {
-            List<Interaction> list = pdIdToInteractions.get(dbId);
-            if (list != null && list.size() > 0) {
-                List<Interaction> filtered = applyFilter(list);
-                if (filtered.size() > 0) {
-                    pdIdToFiltered.put(dbId, filtered);
-                    hasInteractions = true;
-                }
-            }
-        }
-        if (!hasInteractions) {
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "No drugs can be displayed. Adjust the filter to show interactions.",
-                                          "No Drugs to Display",
-                                          JOptionPane.INFORMATION_MESSAGE);
-            return;
-        }
-        DiagramDrugTargetInteractionHandler handler = new DiagramDrugTargetInteractionHandler(pathwayEditor);
-        handler.displayInteractions(pdIdToFiltered);
+        return pdIdToInteractions;
     }
     
     private List<Interaction> applyFilter(List<Interaction> interactions) {
@@ -323,6 +361,19 @@ public class DrugTargetInteractionManager {
             frame.getGlassPane().setVisible(false);
         }
         return new HashMap<>(); 
+    }
+    
+    /**
+     * Check if an ExpEvidence should not be used to get assay value.
+     * @param evidence
+     * @return
+     */
+    public boolean shouldFilterOut(ExpEvidence evidence) {
+        if (evidence.getAssayType() == null)
+            return true; // This happens
+        if (evidence.getAssayRelation() != null && evidence.getAssayRelation().equals(">"))
+            return true; // Don't want to use ">" values.
+        return false;
     }
     
     /**

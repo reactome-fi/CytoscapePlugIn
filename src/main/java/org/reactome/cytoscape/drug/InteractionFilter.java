@@ -11,6 +11,8 @@ import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -18,7 +20,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -42,6 +52,9 @@ public class InteractionFilter {
     private List<DataSource> dataSources; // Databases and pubmed
     private List<AffinityFilter> affinityFilters;
     
+    // Check name
+    private NameFilter nameFilter;
+    
     // The target of this filter applies to
     private CyPathwayEditor pathwayEditor;
     // Cache the dialog so that there is only one displayed
@@ -51,6 +64,14 @@ public class InteractionFilter {
         init();
     }
     
+    public NameFilter getNameFilter() {
+        return nameFilter;
+    }
+
+    public void setNameFilter(NameFilter nameFilter) {
+        this.nameFilter = nameFilter;
+    }
+
     private void init() {
         // Choose all
         dataSources = new ArrayList<>();
@@ -116,6 +137,12 @@ public class InteractionFilter {
             if (!hasPubMedSource(interaction))
                 return false;
         }
+        // Check name
+        if (nameFilter != null) {
+            String drugName = interaction.getIntDrug().getDrugName();
+            if (!nameFilter.filter(drugName))
+                return false;
+        }
         // Get relation ship. We use "OR" relationship here
         boolean rtn = true;
         if (getAffinityFilters() != null && getAffinityFilters().size() > 0) {
@@ -153,18 +180,19 @@ public class InteractionFilter {
                                         Interaction interaction) {
         boolean rtn = false;
         if (interaction.getExpEvidenceSet() != null) {
+            DrugTargetInteractionManager manager = DrugTargetInteractionManager.getManager();
             // Since there are multiple values for the same assay type, we should not return
             // when the type is found. All values should be checked.
             for (ExpEvidence evidence : interaction.getExpEvidenceSet()) {
-                if (evidence.getAssayType() == null)
-                    continue; // This happens
+                if (manager.shouldFilterOut(evidence))
+                    continue;
                 String assayType = evidence.getAssayType().toUpperCase();
                 if (!assayType.equals(filter.getAssayType().toString().toUpperCase()))
                     continue;
                 Double refValue = filter.getValue();
                 if (refValue == null)
                     return true; // Use all values
-                Number value = DrugTargetInteractionManager.getManager().getExpEvidenceValue(evidence);
+                Number value = manager.getExpEvidenceValue(evidence);
                 rtn = AffinityRelation.compare(value.doubleValue(),
                                                 refValue,
                                                 filter.getRelation());
@@ -286,8 +314,12 @@ public class InteractionFilter {
         private Map<AssayType, JCheckBox> typeToBox;
         private Map<AssayType, JComboBox<AffinityRelation>> typeToRelationBox;
         private Map<AssayType, JTextField> typeToValueBox;
+        // Drug name
+        private JTextField drugNameTF;
+        private JCheckBox wholeNameBox;
         // To enable okBtn
         private ActionListener okBtnEnabled;
+        private DocumentListener tfOkBtnEnabled;
         
         public InteractionFilterDialog() {
             super(PlugInObjectManager.getManager().getCytoscapeDesktop());
@@ -305,6 +337,7 @@ public class InteractionFilter {
             // Update source boxes
             updateSourceBoxes();
             updateAffinityGUIs();
+            updateNameGUIs();
         }
         
         private void updateSourceBoxes() {
@@ -340,7 +373,7 @@ public class InteractionFilter {
 
         private void init() {
             setTitle("Drug/Target Interaction Filter");
-            setSize(345, 370);
+            setSize(425, 390);
             setLocationRelativeTo(getOwner());
             
             okBtnEnabled = new ActionListener() {
@@ -352,14 +385,32 @@ public class InteractionFilter {
                 }
             };
             
+            tfOkBtnEnabled = new DocumentListener() {
+                
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    okBtn.setEnabled(true);
+                }
+                
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    okBtn.setEnabled(true);
+                }
+                
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                }
+            };
+            
             JPanel contentPane = new JPanel();
             contentPane.setBorder(BorderFactory.createEtchedBorder());
             contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.Y_AXIS));
             JPanel sourcePane = createSourcePanel();
             contentPane.add(sourcePane);
-            contentPane.add(Box.createVerticalStrut(5));
             JPanel affinityPane = createAffinityPanel();
             contentPane.add(affinityPane);
+            JPanel namePane = createNamePanel();
+            contentPane.add(namePane);
             
             getContentPane().add(contentPane, BorderLayout.CENTER);
             
@@ -395,6 +446,16 @@ public class InteractionFilter {
                 else
                     filter.removeDataSource(source);
             }
+            // Update name
+            if (drugNameTF.getText().trim().length() == 0) {
+                filter.setNameFilter(null);
+            }
+            else {
+                NameFilter nameFilter = new NameFilter();
+                nameFilter.setNamePattern(drugNameTF.getText().trim());
+                nameFilter.setMatchWholeNameOnly(wholeNameBox.isSelected());
+                filter.setNameFilter(nameFilter);
+            }
             // Update affinity relationships
             for (AssayType type : typeToBox.keySet()) {
                 JCheckBox box = typeToBox.get(type);
@@ -417,10 +478,7 @@ public class InteractionFilter {
             JPanel pane = new JPanel();
             pane.setBorder(BorderFactory.createEtchedBorder());
             pane.setLayout(new GridBagLayout());
-            GridBagConstraints constraints = new GridBagConstraints();
-            constraints.insets = new Insets(4, 4, 4, 4);
-            constraints.anchor = GridBagConstraints.WEST;
-            constraints.fill = GridBagConstraints.HORIZONTAL;
+            GridBagConstraints constraints = createConstraints();
             JLabel label = GKApplicationUtilities.createTitleLabel("Choose support source:");
             constraints.gridx = 0;
             constraints.gridy = 0;
@@ -438,14 +496,48 @@ public class InteractionFilter {
             return pane;
         }
         
+        private void updateNameGUIs() {
+            NameFilter nameFilter = filter.getNameFilter();
+            if (nameFilter == null)
+                return;
+            drugNameTF.setText(nameFilter.getNamePattern());
+            wholeNameBox.setSelected(nameFilter.isMatchWholeNameOnly());
+        }
+        
+        private JPanel createNamePanel() {
+            JPanel panel = new JPanel();
+            panel.setBorder(BorderFactory.createEtchedBorder());
+            panel.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = createConstraints();
+            
+            JLabel label = GKApplicationUtilities.createTitleLabel("Choose drugs:");
+            drugNameTF = new JTextField();
+            drugNameTF.getDocument().addDocumentListener(tfOkBtnEnabled);
+            drugNameTF.setColumns(20);
+            wholeNameBox = new JCheckBox("Match whole name only");
+            
+            panel.add(label, constraints);
+            constraints.gridy = 1;
+            panel.add(drugNameTF, constraints);
+            constraints.gridy = 2;
+            panel.add(wholeNameBox, constraints);
+            
+            return panel;
+        }
+
+        protected GridBagConstraints createConstraints() {
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(2, 2, 2, 2);
+            constraints.anchor = GridBagConstraints.WEST;
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            return constraints;
+        }
+        
         private JPanel createAffinityPanel() {
             JPanel pane = new JPanel();
             pane.setBorder(BorderFactory.createEtchedBorder());
             pane.setLayout(new GridBagLayout());
-            GridBagConstraints constraints = new GridBagConstraints();
-            constraints.insets = new Insets(4, 4, 4, 4);
-            constraints.anchor = GridBagConstraints.WEST;
-            constraints.fill = GridBagConstraints.HORIZONTAL;
+            GridBagConstraints constraints = createConstraints();
             JLabel label = GKApplicationUtilities.createTitleLabel("Choose affinities (Unit: nM. Empty means all):");
             constraints.gridwidth = 3;
             constraints.gridx = 0;
@@ -455,25 +547,9 @@ public class InteractionFilter {
             typeToBox = new HashMap<>();
             typeToRelationBox = new HashMap<>();
             typeToValueBox = new HashMap<>();
-            DocumentListener documentListener = new DocumentListener() {
-                
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    okBtn.setEnabled(true);
-                }
-                
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    okBtn.setEnabled(true);
-                }
-                
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                }
-            };
             for (AssayType type : AssayType.values()) {
                 constraints.gridy ++;
-                createAffinityRelationGUI(type, pane, constraints, documentListener);
+                createAffinityRelationGUI(type, pane, constraints, tfOkBtnEnabled);
             }
             
             return pane;
@@ -507,7 +583,43 @@ public class InteractionFilter {
         }
     }
     
-    static class AffinityFilter {
+    private static class NameFilter {
+        private boolean matchWholeNameOnly;
+        private String namePattern;
+        
+        public NameFilter() {
+        }
+
+        public boolean isMatchWholeNameOnly() {
+            return matchWholeNameOnly;
+        }
+
+        public void setMatchWholeNameOnly(boolean matchWholeNameOnly) {
+            this.matchWholeNameOnly = matchWholeNameOnly;
+        }
+
+        /**
+         * Return true if the name IS matched.
+         * @param name
+         * @return
+         */
+        public boolean filter(String name) {
+            if (matchWholeNameOnly)
+                return name.equals(namePattern);
+            else
+                return name.contains(namePattern);
+        }
+
+        public String getNamePattern() {
+            return namePattern;
+        }
+
+        public void setNamePattern(String namePattern) {
+            this.namePattern = namePattern;
+        }
+    }
+    
+    private static class AffinityFilter {
         private AssayType assayType;
         private AffinityRelation relation;
         private Double value;
