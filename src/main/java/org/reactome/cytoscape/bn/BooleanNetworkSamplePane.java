@@ -5,30 +5,35 @@
 package org.reactome.cytoscape.bn;
 
 import java.awt.BorderLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.DefaultCellEditor;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.swing.CytoPanel;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.Node;
+import org.gk.util.DialogControlPane;
+import org.gk.util.GKApplicationUtilities;
 import org.reactome.booleannetwork.Attractor;
 import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.BooleanVariable;
@@ -183,7 +188,63 @@ public class BooleanNetworkSamplePane extends JPanel {
         modificationValueCol.setCellEditor(numberEditor);
         modificationValueCol.setCellRenderer(defaultCellRenderer);
         
+        // Add a popup menu for batch editing 
+        table.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger())
+                    doTablePopup(e.getX(), e.getY());
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger())
+                    doTablePopup(e.getX(), e.getY());
+            }
+        
+        });
+        
         return table;
+    }
+    
+    private void doTablePopup(int x, int y) {
+        // At least two variables are selected
+        if (isSimulationPerformed() || sampleTable.getSelectedRowCount() < 2)
+            return; // Cannot make change
+        JPopupMenu popup = new JPopupMenu();
+        JMenuItem batchEdit = new JMenuItem("Edit in Batch");
+        popup.add(batchEdit);
+        batchEdit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                editTableInBatch();
+            }
+        });
+        popup.show(sampleTable,
+                   x,
+                   y);
+    }
+    
+    private void editTableInBatch() {
+        BatchEditDialog dialog = new BatchEditDialog();
+        dialog.setModal(true);
+        dialog.setVisible(true);
+        if (!dialog.isOkClicked)
+            return;
+        // Assign values
+        EntityType type = (EntityType) dialog.typeBox.getSelectedItem();
+        Double initial = new Double(dialog.initialBox.getText().trim());
+        ModificationType modification = (ModificationType) dialog.modificationBox.getSelectedItem();
+        Double strentgh = new Double(dialog.strengthBox.getText().trim());
+        TableModel model = sampleTable.getModel();
+        for (int rowIndex : sampleTable.getSelectedRows()) {
+            int modelIndex = sampleTable.convertRowIndexToModel(rowIndex);
+            model.setValueAt(type, modelIndex, 1);
+            model.setValueAt(initial, modelIndex, 2);
+            model.setValueAt(modification, modelIndex, 3);
+            model.setValueAt(strentgh, modelIndex, 4);
+        }
     }
     
     private void enableSelectionSync() {
@@ -344,5 +405,161 @@ public class BooleanNetworkSamplePane extends JPanel {
         // The following order is important to highlight pathway diagram..
         timeCoursePane.setHiliteControlPane(hiliteControlPane);
         timeCoursePane.setSimulationResults(variables);
+    }
+    
+    /**
+     * A customized JDialog for batch editing.
+     * @author gwu
+     *
+     */
+    private class BatchEditDialog extends JDialog {
+        private boolean isOkClicked = false;
+        private JButton okBtn;
+        private JComboBox<EntityType> typeBox;
+        private JTextField initialBox;
+        private JComboBox<ModificationType> modificationBox;
+        private JTextField strengthBox;
+        
+        public BatchEditDialog() {
+            super(PlugInObjectManager.getManager().getCytoscapeDesktop());
+            init();
+        }
+        
+        private void init() {
+            setTitle("Configuring Variables");
+            
+            JPanel panel = new JPanel();
+            panel.setBorder(BorderFactory.createEtchedBorder());
+            panel.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(2, 2, 2, 2);
+            
+            JLabel label = GKApplicationUtilities.createTitleLabel("Configure selected variables:");
+            constraints.gridwidth = 2;
+            constraints.gridx = 0;
+            constraints.gridy = 0;
+            panel.add(label, constraints);
+            constraints.gridwidth = 1;
+            
+            typeBox = new JComboBox<>(EntityType.values());
+            typeBox.setSelectedItem(EntityType.Respondent); // Default
+            addRow("Type", typeBox, panel, constraints);
+            initialBox = new JTextField();
+            // Default value
+            initialBox.setText("0.0");
+            initialBox.setColumns(6);
+            addRow("Initial", initialBox, panel, constraints);
+            modificationBox = new JComboBox<>(ModificationType.values());
+            modificationBox.setSelectedItem(ModificationType.None); // Default
+            addRow("Modification", modificationBox, panel, constraints);
+            strengthBox = new JTextField();
+            strengthBox.setColumns(6);
+            strengthBox.setText("0.0");
+            addRow("Strength", strengthBox, panel, constraints);
+            getContentPane().add(panel, BorderLayout.CENTER);
+            
+            DialogControlPane controlPane = new DialogControlPane();
+            controlPane.getOKBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (!validateValues())
+                        return;
+                    isOkClicked = true;
+                    dispose();
+                }
+            });
+            this.okBtn = controlPane.getOKBtn();
+            this.okBtn.setEnabled(false);
+            controlPane.getCancelBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    isOkClicked = false;
+                    dispose();
+                }
+            });
+            controlPane.setBorder(BorderFactory.createEtchedBorder());
+            getContentPane().add(controlPane, BorderLayout.SOUTH);
+            
+            setSize(400, 260);
+            setLocationRelativeTo(getOwner());
+            
+            // Need to hook up listeners at the end to avoid null exception
+            ActionListener cbListener = new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    okBtn.setEnabled(true);
+                }
+            };
+            
+            DocumentListener docListnerer = new DocumentListener() {
+                
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    okBtn.setEnabled(true);
+                }
+                
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    okBtn.setEnabled(true);
+                }
+                
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                }
+            };
+
+            initialBox.getDocument().addDocumentListener(docListnerer);
+            strengthBox.getDocument().addDocumentListener(docListnerer);
+            typeBox.addActionListener(cbListener);
+            modificationBox.addActionListener(cbListener);
+        }
+        
+        private boolean validateValues() {
+            String initial = initialBox.getText().trim();
+            try {
+                Double value = new Double(initial);
+                // This is a hack
+                if (value < 0.0 || value > 1.0)
+                    throw new NumberFormatException();
+            }
+            catch(NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                                              "Error in Initial",
+                                              "Initial should be a number between 0 and 1.0 (inclusive)!",
+                                              JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            String strenth = strengthBox.getText().trim();
+            try {
+                Double value = new Double(strenth);
+                // This is a hack
+                if (value < 0.0 || value > 1.0)
+                    throw new NumberFormatException();
+            }
+            catch(NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                                              "Error in Strength",
+                                              "Strength should be a number between 0 and 1.0 (inclusive)!",
+                                              JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            return true;
+        }
+        
+        private void addRow(String text, 
+                            JComponent comp, 
+                            JPanel panel,
+                            GridBagConstraints constraints) {
+            JLabel label = new JLabel(text + ": ");
+            constraints.gridy ++;
+            constraints.gridx = 0;
+            panel.add(label, constraints);
+            constraints.gridx = 1;
+            panel.add(comp, constraints);
+        }
+        
     }
 }

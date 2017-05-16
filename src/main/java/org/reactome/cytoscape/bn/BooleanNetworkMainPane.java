@@ -61,7 +61,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
     public static final String TITLE = "Boolean Network Modelling";
     private BooleanNetwork network;
     private PathwayEditor pathwayEditor;
-    // To higlight pathway
+    // To highlight pathway
     private PathwayHighlightControlPanel hiliteControlPane;
     // To hold samples
     private JTabbedPane tabbedPane;
