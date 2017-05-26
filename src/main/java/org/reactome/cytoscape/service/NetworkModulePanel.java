@@ -64,7 +64,10 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     // To control its position
     protected JButton closeBtn;
     protected Component closeGlue;
-
+    // To control node selection
+    private Thread nodeSelectionThread;
+    private RowsSetEvent rowsSelectionEvent;
+    
     protected NetworkModulePanel() {
         this(null);
     }
@@ -105,15 +108,32 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         if (isFromTable) { // Split these two checks for debugging purpose
             return;
         }
-        CyNetwork network = view.getModel();
-        List<CyNode> selectedNodes = CyTableUtil.getNodesInState(network,
-                                                                 CyNetwork.SELECTED,
-                                                                 true);
-        List<String> nodeIds = new ArrayList<String>();
-        for (CyNode node : selectedNodes) {
-            nodeIds.add(network.getRow(node).get(CyNetwork.NAME, String.class));
+        
+        this.rowsSelectionEvent = event;
+        if (nodeSelectionThread == null) {
+            _handleNodeSelection();
         }
-        selectTableRowsForNodes(nodeIds);
+    }
+    
+    private void _handleNodeSelection() {
+        nodeSelectionThread = new Thread() {
+            public void run() {
+                while (rowsSelectionEvent != null) {
+                    rowsSelectionEvent = null; // Consume this event
+                    CyNetwork network = view.getModel();
+                    List<CyNode> selectedNodes = CyTableUtil.getNodesInState(network,
+                                                                             CyNetwork.SELECTED,
+                                                                             true);
+                    List<String> nodeIds = new ArrayList<String>();
+                    for (CyNode node : selectedNodes) {
+                        nodeIds.add(network.getRow(node).get(CyNetwork.NAME, String.class));
+                    }
+                    selectTableRowsForNodes(nodeIds);
+                }
+                nodeSelectionThread = null; // Null the current thread
+            }
+        };
+        nodeSelectionThread.start();
     }
 
     private void init() {
