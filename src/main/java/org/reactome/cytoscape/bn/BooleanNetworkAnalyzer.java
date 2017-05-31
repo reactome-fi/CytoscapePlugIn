@@ -4,8 +4,13 @@
  */
 package org.reactome.cytoscape.bn;
 
+import java.awt.Component;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.swing.JOptionPane;
 
+import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.graphEditor.PathwayEditor;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
@@ -43,6 +48,41 @@ public class BooleanNetworkAnalyzer {
 
     public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
         this.hiliteControlPane = hiliteControlPane;
+    }
+    
+    /**
+     * Remove displayed analysis results.
+     */
+    public void removeResults() {
+        if (pathwayEditor == null || hiliteControlPane == null)
+            return;
+        // Remove highlight colors
+        hiliteControlPane.removeHighlight();
+        hiliteControlPane.setVisible(false);
+        // Remove tabs related to BNs
+        try {
+            BooleanNetworkMainPane mainPane = (BooleanNetworkMainPane) PlugInUtilities.getCytoPanelComponent(BooleanNetworkMainPane.class,
+                                                                                                             CytoPanelName.EAST,
+                                                                                                             BooleanNetworkMainPane.TITLE);
+            mainPane.close();
+            // Remove tabs for showing BN results
+            CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(CytoPanelName.SOUTH);
+            List<VariableCytoPaneComponent> toBeClosed = new ArrayList<>();
+            for (int i = 0; i < cytoPanel.getCytoPanelComponentCount(); i++) {
+                Component c = cytoPanel.getComponentAt(i);
+                if (c instanceof VariableCytoPaneComponent) {
+                    toBeClosed.add((VariableCytoPaneComponent)c);
+                }
+            }
+            toBeClosed.stream().forEach(p -> p.close());
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Cannot remove Boolean network analysis results:\n" + e.getMessage(),
+                                          "Error in Removing",
+                                          JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
     }
 
     public void startSimulation() {

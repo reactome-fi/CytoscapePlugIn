@@ -18,6 +18,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -30,6 +31,7 @@ import javax.swing.JTextField;
 
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -44,6 +46,8 @@ public class PathwayHighlightControlPanel extends JPanel {
     private JLabel maxValueLabel;
     private PathwayEditor pathwayEditor;
     private Map<String, Double> idToValue;
+    // Keep the original color so that we can reset them
+    private Map<Renderable, Color> oldColors;
     
     /**
      * Default constructor.
@@ -92,6 +96,20 @@ public class PathwayHighlightControlPanel extends JPanel {
 
     public void setPathwayEditor(PathwayEditor pathwayEditor) {
         this.pathwayEditor = pathwayEditor;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private void keepOldColors() {
+        if (pathwayEditor == null)
+            return;
+        if (oldColors == null)
+            oldColors = new HashMap<>();
+        else
+            oldColors.clear();
+        pathwayEditor.getRenderable().getComponents().forEach(o -> {
+            Renderable r = (Renderable) o;
+            oldColors.put(r, r.getBackgroundColor());
+        });
     }
 
     public Map<String, Double> getIdToValue() {
@@ -142,9 +160,21 @@ public class PathwayHighlightControlPanel extends JPanel {
         resetPathwayColors(minMaxValues);
     }
     
+    public void removeHighlight() {
+        if (pathwayEditor == null || oldColors == null || oldColors.size() == 0)
+            return;
+        oldColors.forEach((r, c) -> r.setBackgroundColor(c));
+        pathwayEditor.repaint(pathwayEditor.getVisibleRect());
+        // Since there is no HIGHLIGHT ActionType, using SELECTION instead
+        // to make repaint consistent.
+        pathwayEditor.fireGraphEditorActionEvent(ActionType.SELECTION);
+    }
+    
     private void resetPathwayColors(double[] minMaxValues) {
         if (pathwayEditor == null || idToValue == null)
             return;
+        if (oldColors == null || oldColors.size() == 0)
+            keepOldColors();
         PathwayDiagramHighlighter highlighter = new PathwayDiagramHighlighter();
         highlighter.highlightELV((RenderablePathway)pathwayEditor.getRenderable(),
                                  idToValue,

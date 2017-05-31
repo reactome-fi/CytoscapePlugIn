@@ -74,6 +74,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
     private JButton compareBtn;
     // To avoid index error
     private boolean duringDeletion;
+    // Cached BooleanNetwork to increase the performance
+    private Map<String, BooleanNetwork> keyToBN;
     
     /**
      * Default constructor.
@@ -99,7 +101,17 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             }
         });
         add(tabbedPane, BorderLayout.CENTER);
-        
+    }
+    
+    public void close() {
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            Component c = tabbedPane.getTabComponentAt(i);
+            if (c instanceof BooleanNetworkSamplePane) {
+                BooleanNetworkSamplePane bnPane = (BooleanNetworkSamplePane) c;
+                bnPane.remove();
+            }
+        }
+        getParent().remove(this);
     }
     
     private JPanel createControlPane() {
@@ -167,22 +179,35 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         // Get simulations based on name
         int index = tabbedPane.indexOfTab(simuationNames[0]);
         BooleanNetworkSamplePane pane1 = (BooleanNetworkSamplePane) tabbedPane.getComponentAt(index);
-        SimulationTableModel sim1 = pane1.getSimulation();
         index = tabbedPane.indexOfTab(simuationNames[1]);
         BooleanNetworkSamplePane pane2 = (BooleanNetworkSamplePane) tabbedPane.getComponentAt(index);
-        SimulationTableModel sim2 = pane2.getSimulation();
+        // Check to make sure two selected simulations generated from the same pathway diagram
+        if (!pane1.getPathwayDiagramID().equals(pane2.getPathwayDiagramID())) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Selected simulations for comparison were generated from\n"
+                                                  + "two different pathways. Choose two simulations from the\n"
+                                                  + "same pathway for comparison.",
+                                                  "Error in Comparison",
+                                                  JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         
-        displayComparison(sim1, sim2);
+        SimulationTableModel sim1 = pane1.getSimulation();
+        SimulationTableModel sim2 = pane2.getSimulation();
+        displayComparison(sim1, 
+                          sim2,
+                          pane1.getHiliteControlPane());
     }
     
     private void displayComparison(SimulationTableModel sim1,
-                                   SimulationTableModel sim2) {
+                                   SimulationTableModel sim2,
+                                   PathwayHighlightControlPanel hilitePane) {
         SimulationComparisonPane comparisonPane = new SimulationComparisonPane(sim1.getSimulationName() + " vs. " + sim2.getSimulationName());
         CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(comparisonPane.getCytoPanelName());
         int index = cytoPanel.indexOfComponent(comparisonPane);
         if (index > -1)
             cytoPanel.setSelectedIndex(index);
-        comparisonPane.setHiliteControlPane(hiliteControlPane);
+        comparisonPane.setHiliteControlPane(hilitePane);
         comparisonPane.setSimulations(sim1, sim2);
     }
     
@@ -231,11 +256,21 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
     
     private BooleanNetwork getBooleanNetwork(List<String> targets) {
         Long pathwayId = pathwayEditor.getRenderable().getReactomeId();
+        // Check if it has been loaded previously
+        String key = generateBNKey(pathwayId, targets);
+        BooleanNetwork network = keyToBN.get(key);
+        if (network != null)
+            return network;
+        
         RESTFulFIService fiService = new RESTFulFIService();
-        BooleanNetwork network = null;
         try {
             network = fiService.convertPathwayToBooleanNetwork(pathwayId,
                                                                targets);
+            if (targets != null && targets.size() > 0) {
+                String name = network.getName();
+                network.setName(name + " (focused on " + String.join(", ", targets) + ")");
+            }
+            keyToBN.put(key, network);
             return network;
         }
         catch(Exception e) {
@@ -248,6 +283,17 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         }
     }
 
+    private String generateBNKey(Long pathwayId, 
+                                 List<String> targets) {
+        // Check if it has been loaded previously
+        if (targets == null) {
+            targets = new ArrayList<>();
+        }
+        targets.sort(Comparator.naturalOrder());
+        String key = pathwayId + "|" + String.join(",", targets);
+        return key;
+    }
+    
     private Set<String> getUsedNames() {
         Set<String> usedNames = new HashSet<>();
         for (int i = 0; i < tabbedPane.getComponentCount(); i++) {
@@ -300,6 +346,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         context.registerService(SessionLoadedListener.class.getName(),
                                 sessionListener, 
                                 null);
+        
+        keyToBN = new HashMap<>();
     }
     
     public PathwayEditor getPathwayEditor() {
@@ -440,7 +488,6 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             rtn[1] = (String) simulationIIBox.getSelectedItem();
             return rtn;
         }
-        
     }
     
     private class NewSimulationDialog extends JDialog {

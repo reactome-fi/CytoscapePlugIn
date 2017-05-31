@@ -32,6 +32,7 @@ import org.cytoscape.application.swing.CytoPanel;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.Node;
+import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.reactome.booleannetwork.Attractor;
@@ -57,6 +58,7 @@ public class BooleanNetworkSamplePane extends JPanel {
     private PathwayEditor pathwayEditor;
     private PathwayHighlightControlPanel hiliteControlPane;
     private JTable sampleTable;
+    private JTextArea noteTF;
     // To synchronize selection
     private VariableSelectionHandler selectionHandler;
     // For simulation
@@ -121,15 +123,28 @@ public class BooleanNetworkSamplePane extends JPanel {
         
         sampleTable = createSampleTable();
         
-        add(new JScrollPane(sampleTable), BorderLayout.CENTER);
+        JPanel contentPane = new JPanel();
+        contentPane.setLayout(new BorderLayout());
+        contentPane.setBorder(BorderFactory.createEtchedBorder());
+        
+        contentPane.add(new JScrollPane(sampleTable), BorderLayout.CENTER);
         
         useLargerValueBox = new JCheckBox("Use larger values for stimulation variables");
         useLargerValueBox.setSelected(true); // Default is true
-        add(useLargerValueBox, BorderLayout.SOUTH);
+        contentPane.add(useLargerValueBox, BorderLayout.SOUTH);
+        
+        add(contentPane, BorderLayout.CENTER);
+        
+        noteTF = new JTextArea();
+        noteTF.setBackground(getBackground());
+        noteTF.setEditable(false);
+        noteTF.setLineWrap(true);
+        noteTF.setWrapStyleWord(true);
+        add(noteTF, BorderLayout.SOUTH);
         
         enableSelectionSync();
     }
-
+    
     private JTable createSampleTable() {
         JTable table = new JTable();
         table.setDefaultRenderer(BooleanVariable.class, new DefaultTableCellRenderer() {
@@ -271,6 +286,10 @@ public class BooleanNetworkSamplePane extends JPanel {
                                                   JOptionPane.WARNING_MESSAGE);
         if (reply != JOptionPane.OK_OPTION)
             return;
+        remove();
+    }
+
+    public void remove() {
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         if (mediator.getSelectables() != null)
             mediator.getSelectables().remove(selectionHandler);
@@ -281,6 +300,13 @@ public class BooleanNetworkSamplePane extends JPanel {
     private void handleTableSelection() {
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         mediator.fireSelectionEvent(selectionHandler);
+    }
+    
+    public Long getPathwayDiagramID() {
+        if (pathwayEditor == null || pathwayEditor.getRenderable() == null)
+            return null;
+        RenderablePathway pathway = (RenderablePathway) pathwayEditor.getRenderable();
+        return pathway.getReactomeDiagramId();
     }
     
     public PathwayEditor getPathwayEditor() {
@@ -307,6 +333,7 @@ public class BooleanNetworkSamplePane extends JPanel {
                                 defaultValue,
                                 proteinInhibtion,
                                 proteinActivation);
+        noteTF.setText("*: Simulation for " + network.getName());
     }
     
     private Set<String> getDisplayedIds() {

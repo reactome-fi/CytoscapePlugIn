@@ -289,8 +289,12 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 runBooleanNetworkAnalysis();
             }
         });
+        JMenuItem removeBNAnalysis = new JMenuItem("Remove Analysis Results");
+        removeBNAnalysis.addActionListener(actionEvent -> removeBNAnalysisResults());
+        
         popup.addSeparator();
         popup.add(runBNAnalysis);
+        popup.add(removeBNAnalysis);
         
         JMenuItem runPGMAnalysis = new JMenuItem("Run Graphical Model Analysis");
         runPGMAnalysis.addActionListener(new ActionListener() {
@@ -1076,6 +1080,13 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         analyzer.setPathwayEditor(pathwayEditor);
         analyzer.setHiliteControlPane(hiliteControlPane);
         analyzer.startSimulation();
+    }
+    
+    private void removeBNAnalysisResults() {
+        BooleanNetworkAnalyzer analyzer = new BooleanNetworkAnalyzer();
+        analyzer.setPathwayEditor(pathwayEditor);
+        analyzer.setHiliteControlPane(hiliteControlPane);
+        analyzer.removeResults();
     }
     
     private String formatGenesText(String genes) {
