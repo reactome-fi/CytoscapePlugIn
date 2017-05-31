@@ -68,7 +68,7 @@ public class InteractionListView extends JDialog {
         interactionTable.setModel(model);
         TableRowSorter<TableModel> rowSorter = new TableRowSorter<TableModel>(model);
         interactionTable.setRowSorter(rowSorter);
-        interactionFilter = new TableListInteractionFilter();
+        interactionFilter = createInteractionFilter();
         interactionFilter.setTable(interactionTable);
         RowFilter<TableModel, Object> rowFilter = model.createFilter(interactionFilter);
         rowSorter.setRowFilter(rowFilter);
@@ -89,6 +89,10 @@ public class InteractionListView extends JDialog {
         
         setSize(625, 250);
         setLocationRelativeTo(getOwner());
+    }
+
+    protected TableListInteractionFilter createInteractionFilter() {
+        return new TableListInteractionFilter();
     }
     
     protected void handleTableSelection() {
@@ -116,7 +120,7 @@ public class InteractionListView extends JDialog {
             
             @Override
             public void actionPerformed(ActionEvent e) {
-                filterInteractions();
+                interactionFilter.showDialog(InteractionListView.this);
             }
         });
         controlPane.add(filterBtn);
@@ -150,14 +154,6 @@ public class InteractionListView extends JDialog {
         return actionButton;
     }
     
-    private void filterInteractions() {
-        if (interactionFilter == null) {
-            interactionFilter = new TableListInteractionFilter();
-            interactionFilter.setTable(interactionTable);
-        }
-        interactionFilter.showDialog(this);
-    }
-    
     private void overlayToPathways() {
         // Get the list of targets
         Set<String> targets = new HashSet<>();
@@ -186,7 +182,7 @@ public class InteractionListView extends JDialog {
         view.toFront(); // Needed in Java 1.8.0_121 for some reason when the owner is a dialog.
     }
     
-    private class TableListInteractionFilter extends InteractionFilter {
+    protected class TableListInteractionFilter extends InteractionFilter {
         private JTable table;
         
         public TableListInteractionFilter() {

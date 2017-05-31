@@ -11,8 +11,6 @@ import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -123,6 +121,12 @@ public class InteractionFilter {
         AffinityFilter existed = getExistedAffinityFilter(type);
         if (existed != null)
             affinityFilters.remove(existed);
+    }
+    
+    public void resetAffinityFilterValues() {
+        if (affinityFilters == null)
+            return;
+        affinityFilters.stream().forEach(filter -> filter.setValue(""));
     }
     
     /**
@@ -643,11 +647,16 @@ public class InteractionFilter {
             this.value = value;
         }
         public void setValue(String value) {
-            try {
-                Double dValue = new Double(value);
-                setValue(dValue);
+            if (value == null || value.length() == 0)
+                this.value = null;
+            else {
+                try {
+                    Double dValue = new Double(value);
+                    setValue(dValue);
+                }
+                catch(NumberFormatException e) {
+                }
             }
-            catch(NumberFormatException e) {}
         }
     }
     

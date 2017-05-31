@@ -166,9 +166,15 @@ public class RESTFulFIService implements FINetworkService
         return fg;
     }
     
-    public BooleanNetwork convertPathwayToBooleanNetwork(Long pathwayId) throws Exception {
-        String url = restfulURL + "network/convertPathwayToBooleanNetwork/" + pathwayId;
-        Element root = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
+    public BooleanNetwork convertPathwayToBooleanNetwork(Long pathwayId,
+                                                         List<String> targets) throws Exception {
+        String url = restfulURL + "network/convertPathwayToBooleanNetworkViaPost";
+        // Generate query string
+        StringBuilder query = new StringBuilder();
+        query.append(pathwayId).append("\n");
+        if (targets != null)
+            query.append(String.join(",", targets));
+        Element root = PlugInUtilities.callHttpInXML(url, HTTP_POST, query.toString());
         // Convert it into org.w3.dom.Document to be used in JAXB
         org.w3c.dom.Document document = new DOMOutputter().output(root.getDocument());
         org.w3c.dom.Node docRoot = document.getDocumentElement();

@@ -15,12 +15,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 import javax.swing.*;
 import javax.swing.RowSorter.SortKey;
@@ -47,19 +49,19 @@ import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
 import org.reactome.cytoscape.drug.InteractionListTableModel;
 import org.reactome.cytoscape.drug.InteractionListView;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
 import edu.ohsu.bcb.druggability.Interaction;
 
 /**
- * Impelmented as a CytoPanelComponent to be listed in the "Results Panel".
+ * Implemented as a CytoPanelComponent to be listed in the "Results Panel".
  * @author gwu
  *
  */
 public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent {
     public static final String TITLE = "Boolean Network Modelling";
-    private BooleanNetwork network;
     private PathwayEditor pathwayEditor;
     // To highlight pathway
     private PathwayHighlightControlPanel hiliteControlPane;
@@ -213,14 +215,37 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         samplePane.setDefaultValue(dialog.getDefaultValue());
         samplePane.setSampleName(dialog.getSimulationName());
         samplePane.setAndGateMode(dialog.getAndGateMode());
+        List<String> targets = null;
         if (dialog.isDrugSelected()) {
             samplePane.setProteinActivation(dialog.getActivation());
             samplePane.setProteinInhibtion(dialog.getInhibition());
+            if (dialog.isFilterMemebrsToTargets())
+                targets = dialog.getSelectedTargets();
         }
-        samplePane.setBooleanNetwork(this.network);
+        BooleanNetwork network = getBooleanNetwork(targets);
+        samplePane.setBooleanNetwork(network);
         tabbedPane.add(dialog.getSimulationName(), samplePane);
         tabbedPane.setSelectedComponent(samplePane); // Select the newly created one
         validateButtons();
+    }
+    
+    private BooleanNetwork getBooleanNetwork(List<String> targets) {
+        Long pathwayId = pathwayEditor.getRenderable().getReactomeId();
+        RESTFulFIService fiService = new RESTFulFIService();
+        BooleanNetwork network = null;
+        try {
+            network = fiService.convertPathwayToBooleanNetwork(pathwayId,
+                                                               targets);
+            return network;
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Cannot convert the displayed pathway to a Boolean network:\n" + e.getMessage(),
+                                          "Error in Converting",
+                                          JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+            return null; // Cannot do anything basically
+        }
     }
 
     private Set<String> getUsedNames() {
@@ -285,14 +310,6 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         this.pathwayEditor = pathwayEditor;
     }
 
-    /**
-     * Set the target BooleanNetwork to be simulated.
-     * @param network
-     */
-    public void setBooleanNetwork(BooleanNetwork network) {
-        this.network = network;
-    }
-
     @Override
     public Component getComponent() {
         return this;
@@ -308,7 +325,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
 
     @Override
     public String getTitle() {
-        return this.TITLE;
+        return TITLE;
     }
 
     @Override
@@ -439,6 +456,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         // from drugList dialog since new selections may be discarded
         private Map<String, Double> inhibition;
         private Map<String, Double> activation;
+        private JCheckBox filterMembersToTargetsBox;
+        private JTextField targetBox;
         
         public NewSimulationDialog() {
             super(PlugInObjectManager.getManager().getCytoscapeDesktop());
@@ -447,6 +466,31 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         
         public boolean isDrugSelected() {
             return drugBox.getText().length() > 0;
+        }
+        
+        public boolean isFilterMemebrsToTargets() {
+            return filterMembersToTargetsBox.isSelected();
+        }
+        
+        private List<String> getTargets() {
+            Map<String, Double> inhibition = getInhibition();
+            Set<String> targets1 = inhibition.keySet().stream().collect(Collectors.toSet());
+            Map<String, Double> activation = getActivation();
+            Set<String> targets2 = activation.keySet().stream().collect(Collectors.toSet());
+            Set<String> targets = new HashSet<String>(targets1);
+            targets.addAll(targets2);
+            List<String> list = new ArrayList<>(targets);
+            list.sort(Comparator.naturalOrder());
+            return list;
+        }
+        
+        private List<String> getSelectedTargets() {
+            String text = targetBox.getText().trim();
+            String[] tokens = text.split(",");
+            List<String> rtn = new ArrayList<>();
+            for (String token : tokens)
+                rtn.add(token.trim());
+            return rtn;
         }
         
         public Map<String, Double> getInhibition() {
@@ -460,60 +504,15 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         private void init() {
             setTitle("New Simulation");
             
+            JPanel setupPane = createSetUpPanel();
+            JPanel drugPane = createDrugPane();
+            
             JPanel contentPane = new JPanel();
-            contentPane.setBorder(BorderFactory.createEtchedBorder());
-            contentPane.setLayout(new GridBagLayout());
-            GridBagConstraints constraints = new GridBagConstraints();
-            constraints.insets = new Insets(1, 1, 1, 1);
-            constraints.anchor = GridBagConstraints.WEST;
-            
-            JLabel label = GKApplicationUtilities.createTitleLabel("Enter a name for the simulation:");
-            constraints.gridx = 0;
-            constraints.gridy = 0;
-            contentPane.add(label, constraints);
-            nameTF = new JTextField();
-            nameTF.setColumns(20);
-            constraints.gridy = 1;
-            contentPane.add(nameTF, constraints);
-            label = GKApplicationUtilities.createTitleLabel("Enter default input value between 0 and 1:");
-            constraints.gridy = 2;
-            contentPane.add(label, constraints);
-            defaultValueTF = new JTextField();
-            defaultValueTF.setText(1.0 + ""); // Use 1.0 as the default.
-            constraints.gridy = 3;
-            contentPane.add(defaultValueTF, constraints);
-            defaultValueTF.setColumns(20);
-            
-            JPanel pane = createAndGatePane();
-            constraints.gridy = 4;
-            contentPane.add(pane, constraints);
-            
-            // For drug
-            JLabel drugLabel = GKApplicationUtilities.createTitleLabel("Apply cancer drugs:");
-            constraints.gridy = 5;
-            contentPane.add(drugLabel, constraints);
-            JPanel drugPane = new JPanel();
-            drugPane.setLayout(new FlowLayout(FlowLayout.LEFT));
-            drugBox = new JTextField();
-            drugBox.setColumns(20);
-            drugBox.setEditable(false);
-            JButton drugBtn = new JButton("...");
-            drugBtn.setPreferredSize(new Dimension(20, 20));
-            drugBtn.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    showDrugsForPathway();
-                }
-            });
-            drugPane.add(drugBox);
-            drugPane.add(drugBtn);
-            constraints.gridy = 6;
-            constraints.fill = GridBagConstraints.HORIZONTAL;
-            contentPane.add(drugPane, constraints);
-            
+            contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.Y_AXIS));
+            contentPane.add(setupPane);
+            contentPane.add(drugPane);
             getContentPane().add(contentPane, BorderLayout.CENTER);
-        
+            
             DialogControlPane controlPane = new DialogControlPane();
             controlPane.setBorder(BorderFactory.createEtchedBorder());
             controlPane.getOKBtn().addActionListener(new ActionListener() {
@@ -536,8 +535,81 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             });
             getContentPane().add(controlPane, BorderLayout.SOUTH);
             
-            setSize(425, 290);
+            setSize(465, 350);
             setLocationRelativeTo(this.getOwner());
+        }
+
+        protected JPanel createSetUpPanel() {
+            JPanel contentPane = new JPanel();
+            contentPane.setBorder(BorderFactory.createEtchedBorder());
+            contentPane.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.anchor = GridBagConstraints.WEST;
+            
+            JLabel label = GKApplicationUtilities.createTitleLabel("Enter a name for the simulation:");
+            constraints.gridx = 0;
+            constraints.gridy = 0;
+            contentPane.add(label, constraints);
+            nameTF = new JTextField();
+            nameTF.setColumns(20);
+            constraints.gridy = 1;
+            contentPane.add(nameTF, constraints);
+            label = GKApplicationUtilities.createTitleLabel("Enter default input value between 0 and 1:");
+            constraints.gridy = 2;
+            contentPane.add(label, constraints);
+            defaultValueTF = new JTextField();
+            defaultValueTF.setText(1.0 + ""); // Use 1.0 as the default.
+            constraints.gridy = 3;
+            contentPane.add(defaultValueTF, constraints);
+            defaultValueTF.setColumns(20);
+            
+            JPanel pane = createAndGatePane();
+            constraints.gridy = 4;
+            contentPane.add(pane, constraints);
+            return contentPane;
+        }
+
+        private JPanel createDrugPane() {
+            JPanel panel = new JPanel();
+            panel.setLayout(new GridBagLayout());
+            panel.setBorder(BorderFactory.createEtchedBorder());
+            
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.anchor = GridBagConstraints.WEST;
+            
+            JLabel label = GKApplicationUtilities.createTitleLabel("Apply cancer drugs:");
+            panel.add(label, constraints);
+            JPanel drugPane = new JPanel();
+            drugPane.setLayout(new FlowLayout(FlowLayout.LEFT));
+            drugBox = new JTextField();
+            drugBox.setColumns(20);
+            drugBox.setEditable(false);
+            JButton drugBtn = new JButton("...");
+            drugBtn.setPreferredSize(new Dimension(20, 20));
+            drugBtn.addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    showDrugsForPathway();
+                }
+            });
+            drugPane.add(drugBox);
+            drugPane.add(drugBtn);
+            constraints.gridy = 2;
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            panel.add(drugPane, constraints);
+            // Add another checkbox
+            filterMembersToTargetsBox = new JCheckBox("Filter members in sets to drug targets");
+            constraints.gridy = 3;
+            panel.add(filterMembersToTargetsBox, constraints);
+            
+            targetBox = new JTextField();
+            targetBox.setColumns(20);
+            targetBox.setToolTipText("You may edit targets in this box.");
+            constraints.gridy = 4;
+            panel.add(targetBox, constraints);
+            
+            return panel;
         }
         
         private void showDrugsForPathway() {
@@ -575,6 +647,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             drugBox.setText(StringUtils.join(", ", drugs));
             inhibition = drugList.getInhibition();
             activation = drugList.getActivation();
+            List<String> targets = getTargets();
+            targetBox.setText(String.join(", ", targets));
         }
         
         private JPanel createAndGatePane() {
@@ -746,6 +820,13 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             super(owner);
         }
         
+        @Override
+        protected TableListInteractionFilter createInteractionFilter() {
+            TableListInteractionFilter filter = super.createInteractionFilter();
+            filter.resetAffinityFilterValues();
+            return filter;
+        }
+
         @Override
         protected void init() {
             super.init();
