@@ -123,10 +123,11 @@ public class PlugInUtilities {
      */
     public static Double getBooleanDefaultValue(BooleanVariable var,
                                                 Double suggested) {
+        String role = var.getProperty("role");
         // Only need default values for variables don't have inputs
-        if (var.getInRelations() == null || var.getInRelations().size() == 0)
+        if (var.getInRelations() == null || var.getInRelations().size() == 0 || "CycleInput".equals(role))
             return suggested;
-        else
+        else 
             return 0.0d; // There is no need to activate them initially
     }
     

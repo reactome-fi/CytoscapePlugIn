@@ -248,7 +248,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                 targets = dialog.getSelectedTargets();
         }
         BooleanNetwork network = getBooleanNetwork(targets);
-        samplePane.setBooleanNetwork(network);
+        samplePane.setBooleanNetwork(network,
+                                     dialog.isDrugSelected() ? dialog.getSelectedDrugs() : null);
         tabbedPane.add(dialog.getSimulationName(), samplePane);
         tabbedPane.setSelectedComponent(samplePane); // Select the newly created one
         validateButtons();
@@ -513,6 +514,10 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         
         public boolean isDrugSelected() {
             return drugBox.getText().length() > 0;
+        }
+        
+        public String getSelectedDrugs() {
+            return drugBox.getText().trim();
         }
         
         public boolean isFilterMemebrsToTargets() {

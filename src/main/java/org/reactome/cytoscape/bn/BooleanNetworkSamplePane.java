@@ -325,7 +325,8 @@ public class BooleanNetworkSamplePane extends JPanel {
         this.pathwayEditor = pathwayEditor;
     }
 
-    public void setBooleanNetwork(BooleanNetwork network) {
+    public void setBooleanNetwork(BooleanNetwork network,
+                                  String drugs) {
         this.network = network;
         SimulationTableModel model = (SimulationTableModel) sampleTable.getModel();
         model.setBooleanNetwork(network,
@@ -333,7 +334,8 @@ public class BooleanNetworkSamplePane extends JPanel {
                                 defaultValue,
                                 proteinInhibtion,
                                 proteinActivation);
-        noteTF.setText("*: Simulation for " + network.getName());
+        noteTF.setText("*: Simulation for " + network.getName() + 
+                       (drugs == null ? "" : " (" + drugs + ")"));
     }
     
     private Set<String> getDisplayedIds() {
