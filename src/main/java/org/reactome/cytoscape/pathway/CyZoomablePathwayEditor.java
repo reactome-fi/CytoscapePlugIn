@@ -441,8 +441,13 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 searchDiagrams();
             }
         });
+        JMenuItem searchReaction = new JMenuItem("Search Reactions");
+        searchReaction.addActionListener(actionEvent -> {
+            searchReactions();
+        });
         popup.addSeparator();
         popup.add(searchDiagram);
+        popup.add(searchReaction);
         
         addExportDiagramMenu(popup);
         
@@ -513,10 +518,56 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             context.ungetService(reference);
     }
     
+    private void searchReactions() {
+        SearchDialog dialog = new SearchDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
+        dialog.setTitle("Search Reactions");
+        dialog.setLabel("Search reactions:");
+        dialog.setModal(true);
+        dialog.setVisible(true);
+        if (!dialog.isOKClicked())
+            return;
+        String key = dialog.getSearchKey();
+        String[] tokens = key.split(",");
+        Set<String> keys = new HashSet<>();
+        for (String token : tokens)
+            keys.add(token.trim().toLowerCase());
+        List<Renderable> selected = new ArrayList<Renderable>();
+        boolean isWholeNameNeeded = dialog.isWholeNameNeeded();
+        for (Object obj : getPathwayEditor().getDisplayedObjects()) {
+            Renderable r = (Renderable) obj;
+            if (!(r instanceof HyperEdge) || r.getDisplayName() == null) {
+                continue;
+            }
+            String name = r.getDisplayName();
+            Long dbId = r.getReactomeId();
+            name = name.toLowerCase();
+            if (isWholeNameNeeded) {
+                if (keys.contains(name) || keys.contains(dbId + ""))
+                    selected.add(r);
+            }
+            else {
+                for (String key1 : keys) {
+                    if (name.contains(key1) || key1.equals(dbId + "")) {
+                        selected.add(r);
+                        break;
+                    }
+                }
+            }
+        }
+        if (selected.size() == 0) {
+            JOptionPane.showMessageDialog(this, 
+                                          "Cannot find any reaction for \"" + key + "\"", 
+                                          "Search Result", 
+                                          JOptionPane.INFORMATION_MESSAGE);
+        }
+        else
+            getPathwayEditor().setSelection(selected);
+    }
+    
     private void searchDiagrams() {
-        JFrame frame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
-        SearchDialog dialog = new SearchDialog(frame);
-        dialog.setLabel("Search objects:");
+        SearchDialog dialog = new SearchDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
+        dialog.setTitle("Search Entities");
+        dialog.setLabel("Search entities:");
         dialog.setModal(true);
         dialog.setVisible(true);
         if (!dialog.isOKClicked())

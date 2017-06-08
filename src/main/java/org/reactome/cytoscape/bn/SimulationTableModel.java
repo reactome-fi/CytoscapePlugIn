@@ -17,12 +17,12 @@ import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.BooleanNetworkUtilities;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.SimulationConfiguration;
-import org.reactome.cytoscape.util.PlugInUtilities;
 
 public class SimulationTableModel extends AbstractTableModel implements VariableTableModelInterface {
     private List<String> tableHeaders;
     private List<List<Object>> values;
     private String simulationName;
+    private Double defaultValue;
     
     public SimulationTableModel() {
         tableHeaders = new ArrayList<>();
@@ -80,6 +80,7 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
         configuration.setInhibition(inhibition);
         Map<BooleanVariable, Double> activation = getVarToModification(ModificationType.Activation);
         configuration.setActivation(activation);
+        configuration.setDefaultValue(this.defaultValue);
         return configuration;
     }
     
@@ -135,6 +136,7 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
                                   Double defaultValue,
                                   Map<String, Double> proteinInhibition,
                                   Map<String, Double> proteinActivation) {
+        this.defaultValue = defaultValue;
         List<BooleanVariable> variables = BooleanNetworkUtilities.getSortedVariables(network);
         values.clear();
         for (BooleanVariable var : variables) {
@@ -145,7 +147,9 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
             values.add(rowValues);
             rowValues.add(var);
             rowValues.add(EntityType.Respondent);
-            rowValues.add(PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
+            // For the time being, use the user's choice. It is very difficult to figure our the best initial values
+            rowValues.add(defaultValue);
+//            rowValues.add(PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
             ModificationType mType = ModificationType.None;
             Double mValue = 0.0d;
             String gene = var.getProperty("gene");
