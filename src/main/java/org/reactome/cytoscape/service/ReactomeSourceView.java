@@ -61,8 +61,14 @@ public class ReactomeSourceView {
         RESTFulFIService fiService = new RESTFulFIService();
         try {
             Element element = fiService.queryReactomeInstance(dbId);
-            Window window = (Window) SwingUtilities.getAncestorOfClass(Window.class, component);
-            InstanceDialog instanceDialog = new InstanceDialog(window);
+            InstanceDialog instanceDialog = null;
+            if (component instanceof InstanceDialog)
+                instanceDialog = new InstanceDialog((InstanceDialog)component);
+            else {
+                // The following call will get CytoscapeDesktop
+                Window window = (Window) SwingUtilities.getAncestorOfClass(Window.class, component);
+                instanceDialog = new InstanceDialog(window);
+            }
             instanceDialog.setInstance(element);
             instanceDialog.setSize(500, 400);
             // This is a hack to avoid two instance dialog overlapping
