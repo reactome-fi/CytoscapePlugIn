@@ -13,7 +13,7 @@
 	<property name="sourceClsDir" value="../CuratorTool/classes" />
 	<property name="srcDir" value="../CuratorTool/src" />
 	<!-- properites to be used for installing -->
-	<property name="ReactomeJar" value="${destDir}}/reactome.jar" />
+	<property name="ReactomeJar" value="${destDir}/reactome.jar" />
 	<property name="ReactomeId" value = "reactome-minimal" />
 	<property name="ReactomeVersion" value = "1.5" />
 		
@@ -30,6 +30,7 @@
             	    <include name="org/gk/database/util/*.class" />
             		<exclude name="org/gk/database/util/ChEBIAttributeAutoFiller.class" />
             		<exclude name="org/gk/database/util/PsiModAttributeAutoFiller.class" />
+            	    <exclude name="org/gk/database/util/OLSUtil*.class" />
             		<include name="org/gk/graphEditor/*.class" />
             	    <include name="org/gk/property/*.class" />
             	    <include name="org/gk/gkCurator/*.class" />
