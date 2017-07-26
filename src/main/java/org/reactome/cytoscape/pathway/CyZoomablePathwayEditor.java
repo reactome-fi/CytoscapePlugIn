@@ -433,7 +433,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             popup.addSeparator();
             popup.add(item);
         }
-        JMenuItem searchDiagram = new JMenuItem("Search Diagram");
+        JMenuItem searchDiagram = new JMenuItem("Search Entities");
         searchDiagram.addActionListener(new ActionListener() {
             
             @Override
