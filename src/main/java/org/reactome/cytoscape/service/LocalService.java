@@ -6,6 +6,7 @@ package org.reactome.cytoscape.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -56,8 +57,7 @@ public class LocalService implements FINetworkService {
             Set<String> allFIs = queryAllFIs();
             NetworkBuilderForGeneSet networkBuilder = new NetworkBuilderForGeneSet();
             networkBuilder.setAllFIs(allFIs);
-            fis = networkBuilder.constructFINetworkForGeneSet(selectedGenes,
-                                                              null);
+            fis = networkBuilder.constructFINetworkForGeneSet(selectedGenes);
         }
         else {
             RESTFulFIService restfulSerive = new RESTFulFIService();

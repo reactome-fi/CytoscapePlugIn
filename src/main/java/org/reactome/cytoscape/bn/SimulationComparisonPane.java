@@ -4,7 +4,10 @@
  */
 package org.reactome.cytoscape.bn;
 
+import java.util.Map;
+
 import org.reactome.booleannetwork.BooleanVariable;
+import org.reactome.booleannetwork.SimulationComparator;
 import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
 import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
 
@@ -46,7 +49,7 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
     
     @Override
     protected void reHilitePathway() {
-        // Just highlite based on the last column
+        // Just highlight based on the last column
         hilitePathway(contentTable.getColumnCount() - 1);
     }
     
@@ -77,7 +80,12 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
             // Since both modules are sorted based on BooleanVariables, the following
             // should be safe
             tableData.clear();
-            int startIndex = 5;
+            SimulationComparator comparator = new SimulationComparator();
+            Map<BooleanVariable, Double> varToDiff = comparator.calculateDiff(sim1.getSimulationResults(), 
+                                                                              sim2.getSimulationResults(),
+                                                                              20, // These three parameters are arbitrary
+                                                                              0.01d,
+                                                                              1000);
             for (int i = 0; i < sim1.getRowCount(); i++) {
                 Object[] row = new Object[columnHeaders.length];
                 tableData.add(row);
@@ -97,17 +105,7 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
                 row[7] = sim1.getValueAt(i, 4);
                 row[8] = sim2.getValueAt(i, 4);
                 
-                startIndex = 9;
-                for (int j = 5; j < sim1.getColumnCount(); j++) {
-                    row[startIndex ++] = sim1.getValueAt(i, j);
-                }
-                for (int j = 5; j < sim2.getColumnCount(); j++) {
-                    row[startIndex ++] = sim2.getValueAt(i, j);
-                }
-                Number value1 = (Number) sim1.getValueAt(i, sim1.getColumnCount() - 1);
-                Number value2 = (Number) sim2.getValueAt(i, sim2.getColumnCount() - 1);
-                double ratio = value1.doubleValue() / value2.doubleValue();
-                row[startIndex] = ratio;
+                row[9] = varToDiff.get(row[0]);
             }
         }
         
@@ -126,7 +124,7 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
         private void setUpColumnNames(SimulationTableModel sim1, 
                                       SimulationTableModel sim2) {
             // Don't show two modification columns for the time being
-            int cols = sim1.getColumnCount() + sim2.getColumnCount(); // Shared entity column
+            int cols = 10; 
             columnHeaders = new String[cols];
             int index = 0;
             columnHeaders[index ++] = "Entity";
@@ -138,14 +136,8 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
             columnHeaders[index ++] = sim2.getSimulationName() + ":Modification";
             columnHeaders[index ++] = sim1.getSimulationName() + ":Strength";
             columnHeaders[index ++] = sim2.getSimulationName() + ":Strength";
-            for (int i = 5; i < sim1.getColumnCount(); i++) {
-                columnHeaders[index ++] = sim1.getSimulationName() + ":" + sim1.getColumnName(i);
-            }
-            for (int i = 5; i < sim2.getColumnCount(); i++) {
-                columnHeaders[index ++] = sim2.getSimulationName() + ":" + sim2.getColumnName(i);
-            }
-            // Last column is on ratio
-            columnHeaders[index] = "AttractorRatio";
+            // Last column is about relative difference
+            columnHeaders[index] = "RelativeDifference";
         }
     }
     

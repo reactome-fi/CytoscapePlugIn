@@ -17,12 +17,15 @@ import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.BooleanNetworkUtilities;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.SimulationConfiguration;
+import org.reactome.booleannetwork.SimulationResults;
 
 public class SimulationTableModel extends AbstractTableModel implements VariableTableModelInterface {
     private List<String> tableHeaders;
     private List<List<Object>> values;
     private String simulationName;
     private Double defaultValue;
+    // For comparison
+    private SimulationResults simulationResults;
     
     public SimulationTableModel() {
         tableHeaders = new ArrayList<>();
@@ -35,6 +38,14 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
         values = new ArrayList<>();
     }
     
+    public SimulationResults getSimulationResults() {
+        return simulationResults;
+    }
+
+    public void setSimulationResults(SimulationResults simulationResults) {
+        this.simulationResults = simulationResults;
+    }
+
     public String getSimulationName() {
         return simulationName;
     }
