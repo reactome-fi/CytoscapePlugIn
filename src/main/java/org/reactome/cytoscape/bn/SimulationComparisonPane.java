@@ -4,6 +4,8 @@
  */
 package org.reactome.cytoscape.bn;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.reactome.booleannetwork.BooleanVariable;
@@ -39,10 +41,10 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
         return new ComparisonTableModel();
     }
     
-    public void setSimulations(SimulationTableModel sim1,
-                               SimulationTableModel sim2) {
+    public void setSimulations(SimulationTableModel perturbed,
+                               SimulationTableModel reference) {
         ComparisonTableModel model = (ComparisonTableModel) contentTable.getModel();
-        model.setSimulations(sim1, sim2);
+        model.setSimulations(perturbed, reference);
         // Highlight pathway diagrams based on ratio
         hilitePathway(model.getColumnCount() - 1);
     }
@@ -58,12 +60,12 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
         public ComparisonTableModel() {
         }
         
-        public void setSimulations(SimulationTableModel sim1,
-                                   SimulationTableModel sim2) {
+        public void setSimulations(SimulationTableModel perturbed,
+                                   SimulationTableModel reference) {
             // Set up columns
-            setUpColumnNames(sim1, sim2);
+            setUpColumnNames(perturbed, reference);
             // add values
-            addValues(sim1, sim2);
+            addValues(perturbed, reference);
             fireTableStructureChanged();
         }
 
@@ -74,39 +76,59 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
                 return false;
             return super.validateValue(number);
         }
-
-        private void addValues(SimulationTableModel sim1,
-                               SimulationTableModel sim2) {
+        
+        private void addValues(SimulationTableModel perturbed,
+                               SimulationTableModel reference) {
             // Since both modules are sorted based on BooleanVariables, the following
             // should be safe
             tableData.clear();
             SimulationComparator comparator = new SimulationComparator();
-            Map<BooleanVariable, Double> varToDiff = comparator.calculateDiff(sim1.getSimulationResults(), 
-                                                                              sim2.getSimulationResults(),
+            String propKey = "reactomeId";
+            comparator.setVarPropertyKey(propKey);
+            // varToDiff is keyed based on reference variables
+            Map<BooleanVariable, Double> varToDiff = comparator.calculateDiff(perturbed.getSimulationResults(), 
+                                                                              reference.getSimulationResults(),
                                                                               20, // These three parameters are arbitrary
                                                                               0.01d,
                                                                               1000);
-            for (int i = 0; i < sim1.getRowCount(); i++) {
+            // Have to base var in the map in case two different networks are used (e.g. network
+            // has been modified because of set members being chosen)
+            // We want to show variables in the original table models only. However varToDiff may have
+            // too many variables.
+            List<BooleanVariable> pertVars = perturbed.getVariables();
+            Map<String, BooleanVariable> pertPropToVar = new HashMap<>();
+            pertVars.forEach(var -> pertPropToVar.put(var.getProperty(propKey), var));
+            
+            List<BooleanVariable> refVars = reference.getVariables();
+            refVars.forEach(refVar -> {
+                Double diff = varToDiff.get(refVar);
+                if (diff == null)
+                    return;
+                String prop = refVar.getProperty(propKey);
+                BooleanVariable pertVar = pertPropToVar.get(prop);
+                if (pertVar == null)
+                    return;
+
                 Object[] row = new Object[columnHeaders.length];
                 tableData.add(row);
                 // Entity
-                row[0] = sim1.getValueAt(i, 0);
+                row[0] = refVar;
                 // Type
-                row[1] = sim1.getValueAt(i, 1);
-                row[2] = sim2.getValueAt(i, 1);
+                row[1] = perturbed.getValueAt(pertVar, 1);
+                row[2] = reference.getValueAt(refVar, 1);
                 // Initial values
-                row[3] = sim1.getValueAt(i, 2);
-                row[4] = sim2.getValueAt(i, 2);
+                row[3] = perturbed.getValueAt(pertVar, 2);
+                row[4] = reference.getValueAt(refVar, 2);
                 
                 // Type
-                row[5] = sim1.getValueAt(i, 3);
-                row[6] = sim2.getValueAt(i, 3);
+                row[5] = perturbed.getValueAt(pertVar, 3);
+                row[6] = reference.getValueAt(refVar, 3);
                 // Initial values
-                row[7] = sim1.getValueAt(i, 4);
-                row[8] = sim2.getValueAt(i, 4);
+                row[7] = perturbed.getValueAt(pertVar, 4);
+                row[8] = reference.getValueAt(refVar, 4);
                 
-                row[9] = varToDiff.get(row[0]);
-            }
+                row[9] = diff;
+            });
         }
         
         @Override

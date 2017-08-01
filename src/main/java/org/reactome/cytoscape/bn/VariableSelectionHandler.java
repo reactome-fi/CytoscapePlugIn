@@ -41,7 +41,6 @@ public class VariableSelectionHandler implements Selectable {
         ListSelectionModel selectionModel = variableTable.getSelectionModel();
         selectionModel.clearSelection();
         selectionModel.setValueIsAdjusting(true);
-        int index = 0;
         List<Integer> rows = vTableModel.getRowsForSelectedIds(selection);
         for (Integer modelRow : rows) {
             int viewRow = variableTable.convertRowIndexToView(modelRow);

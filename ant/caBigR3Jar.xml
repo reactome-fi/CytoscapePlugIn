@@ -2,8 +2,8 @@
 <!-- Generate a jar file from the caBigR3 project in the local maven repository -->
 <project name="package" default="jarCaBigR3" basedir="..">
 	<property name="targetDir" value="lib" />
-	<property name="eclipseHome" value="/Users/gwu/Documents/EclipseWorkspace" />
-	<property name="caBigR3Dir" value="${eclipseHome}/caBigR3" />
+	<property name="eclipseHome" value="/Users/wug/Documents/eclipse_workspace" />
+	<property name="caBigR3Dir" value="${eclipseHome}/caBIGR3" />
 	<property name="caBigR3Jar" value="${targetDir}/caBIGR3-minimal.jar" />
 	<property name="caBigR3Version" value="3.0" />
 	<property name="FINetworkBuildDir" value="${eclipseHome}/FINetworkBuild" />
@@ -22,7 +22,7 @@
 	<target name="jarCaBigR3">
 		<delete file="${caBigR3Jar}" />
 		<jar destfile="${caBigR3Jar}">
-			<fileset dir="${caBigR3Dir}/classes">
+			<fileset dir="${caBigR3Dir}/bin">
 				<include name="org/reactome/r3/util/FileUtility.class" />
 				<include name="org/reactome/r3/util/InteractionUtilities.class" />
 				<include name="org/reactome/r3/util/MathUtilities*.class" />

@@ -76,7 +76,6 @@ import org.osgi.framework.BundleEvent;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
-import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
@@ -113,22 +112,6 @@ public class PlugInUtilities {
         }
         context.ungetService(sf);
         return networkView;
-    }
-    
-    /**
-     * Get the default value for a BooleanVariable.
-     * @param var
-     * @param suggested
-     * @return
-     */
-    public static Double getBooleanDefaultValue(BooleanVariable var,
-                                                Double suggested) {
-        String role = var.getProperty("role");
-        // Only need default values for variables don't have inputs
-        if (var.getInRelations() == null || var.getInRelations().size() == 0 || "CycleInput".equals(role))
-            return suggested;
-        else 
-            return 0.0d; // There is no need to activate them initially
     }
     
     public static void unselectNetwork() {

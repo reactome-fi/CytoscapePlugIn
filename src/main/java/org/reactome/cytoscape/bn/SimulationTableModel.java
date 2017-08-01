@@ -18,6 +18,7 @@ import org.reactome.booleannetwork.BooleanNetworkUtilities;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.SimulationConfiguration;
 import org.reactome.booleannetwork.SimulationResults;
+import org.reactome.pathway.booleannetwork.BNPerturbationAnalyzer;
 
 public class SimulationTableModel extends AbstractTableModel implements VariableTableModelInterface {
     private List<String> tableHeaders;
@@ -26,6 +27,8 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
     private Double defaultValue;
     // For comparison
     private SimulationResults simulationResults;
+    // For easy search based on BooleanVariable
+    private Map<BooleanVariable, List<Object>> varToValues;
     
     public SimulationTableModel() {
         tableHeaders = new ArrayList<>();
@@ -36,6 +39,7 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
         tableHeaders.add("Modification");
         tableHeaders.add("Strength");
         values = new ArrayList<>();
+        varToValues = new HashMap<>();
     }
     
     public SimulationResults getSimulationResults() {
@@ -78,7 +82,7 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
     }
     
     public boolean isSimulationPerformed() {
-        return tableHeaders.size() > 5; // Show have attractor results displayed
+        return simulationResults != null;
     }
     
     public SimulationConfiguration getConfiguration() {
@@ -149,6 +153,10 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
                                   Map<String, Double> proteinActivation) {
         this.defaultValue = defaultValue;
         List<BooleanVariable> variables = BooleanNetworkUtilities.getSortedVariables(network);
+        // Get a set of reasonable initial values to start
+        BNPerturbationAnalyzer helper = new BNPerturbationAnalyzer();
+        Map<BooleanVariable, Number> varToInit1 = helper.createInitials(network, defaultValue);
+        Map<BooleanVariable, Number> varToInit = varToInit1;
         values.clear();
         for (BooleanVariable var : variables) {
             String reactomeId = var.getProperty("reactomeId");
@@ -158,9 +166,11 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
             values.add(rowValues);
             rowValues.add(var);
             rowValues.add(EntityType.Respondent);
-            // For the time being, use the user's choice. It is very difficult to figure our the best initial values
-            rowValues.add(defaultValue);
-//            rowValues.add(PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
+            Number init = varToInit.get(var);
+            if (init == null)
+                rowValues.add(defaultValue);
+            else
+                rowValues.add(init);
             ModificationType mType = ModificationType.None;
             Double mValue = 0.0d;
             String gene = var.getProperty("gene");
@@ -177,11 +187,14 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
             rowValues.add(mType);
             rowValues.add(mValue);
         }
+        // For easy search
+        varToValues.clear();
+        values.forEach(row -> varToValues.put((BooleanVariable)row.get(0), row));
         // Have to call fire data changed, not structure changed. Otherwise,
         // Editing cannot work!!!
         fireTableDataChanged();
     }
-    
+
     @Override
     public int getRowCount() {
         return values.size();
@@ -232,6 +245,15 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
     public Object getValueAt(int rowIndex, int columnIndex) {
         List<Object> rowValues = values.get(rowIndex);
         if (columnIndex < rowValues.size())
+            return rowValues.get(columnIndex);
+        return null;
+    }
+    
+    public Object getValueAt(BooleanVariable var, int columnIndex) {
+        List<Object> rowValues = varToValues.get(var);
+        if (rowValues == null)
+            return null;
+        if (columnIndex >= 0 && columnIndex < rowValues.size())
             return rowValues.get(columnIndex);
         return null;
     }

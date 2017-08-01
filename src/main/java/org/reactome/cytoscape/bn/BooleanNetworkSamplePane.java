@@ -18,7 +18,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultCellEditor;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
@@ -35,17 +50,17 @@ import org.gk.render.Node;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
-import org.reactome.booleannetwork.Attractor;
 import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.FuzzyLogicSimulator;
 import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
 import org.reactome.booleannetwork.SimulationConfiguration;
+import org.reactome.booleannetwork.SimulationResults;
 import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
 import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.pathway.booleannetwork.BNPerturbationAnalyzer;
 
 /**
  * This customized JPanel is used to set up initial values and then list simulation results.
@@ -382,8 +397,15 @@ public class BooleanNetworkSamplePane extends JPanel {
                                           JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        Attractor attractor = simulator.getAttractor();
-        model.addAttractor(attractor);
+        
+        SimulationResults results = new SimulationResults();
+        results.recordResults(network, simulator);
+        
+        model.setSimulationResults(results);
+        // As of August 1, turn off attractor display here to avoid
+        // clutter. The user should be able to find attractors in the
+        // time course plot.
+//        model.addAttractor(results.getAttractor());
         
         displayTimeCourse(model.getVariables());
     }
@@ -394,9 +416,14 @@ public class BooleanNetworkSamplePane extends JPanel {
         // There are other variables that need values
         // Make sure all variables have values
         Map<BooleanVariable, Number> varToValue = configuration.getInitial();
+        BNPerturbationAnalyzer helper = new BNPerturbationAnalyzer();
+        Map<BooleanVariable, Number> otherVarToInit = helper.createInitials(network, 
+                                                                            defaultValue);
         for (BooleanVariable var : network.getVariables()) {
-            if (!varToValue.containsKey(var))
-                varToValue.put(var, PlugInUtilities.getBooleanDefaultValue(var, defaultValue));
+            if (!varToValue.containsKey(var)) {
+                Number init = otherVarToInit.get(var);
+                varToValue.put(var, init);
+            }
         }
         if (proteinInhibtion != null) {
             Map<BooleanVariable, Double> inhibition = configuration.getInhibition();
@@ -408,10 +435,10 @@ public class BooleanNetworkSamplePane extends JPanel {
         }
     }
 
-    protected void mergeProteinModification(Map<BooleanVariable, Double> inhibition,
-                                            Map<String, Double> proteinInhibtion) {
+    protected void mergeProteinModification(Map<BooleanVariable, Double> varToModification,
+                                            Map<String, Double> proteinToModification) {
         for (BooleanVariable var : network.getVariables()) {
-            if (inhibition.containsKey(var))
+            if (varToModification.containsKey(var))
                 continue; // Always use the current setting
             // Only merge into variables without inputs
             if (var.getInRelations() != null && var.getInRelations().size() > 0)
@@ -419,9 +446,9 @@ public class BooleanNetworkSamplePane extends JPanel {
             String gene = (String) var.getProperty("gene");
             if (gene == null)
                 continue;
-            Double preInhibit = proteinInhibtion.get(gene);
+            Double preInhibit = proteinToModification.get(gene);
             if (preInhibit != null)
-                inhibition.put(var, preInhibit);
+                varToModification.put(var, preInhibit);
         }
     }
     
