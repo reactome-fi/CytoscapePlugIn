@@ -45,7 +45,8 @@ import edu.ohsu.bcb.druggability.Source;
  *
  */
 public class InteractionFilter {
-    private final Double DEFAULT_MAX_VALUE = 100d; // 100 nM
+    // Use 1000 nM as the default
+    private final Double DEFAULT_MAX_VALUE = 1000d; // 100 nM
     
     private List<DataSource> dataSources; // Databases and pubmed
     private List<AffinityFilter> affinityFilters;

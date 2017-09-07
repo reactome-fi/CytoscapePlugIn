@@ -29,7 +29,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
-import org.gk.util.GKApplicationUtilities;
 import org.gk.util.StringUtils;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -78,7 +77,9 @@ public class DrugListView extends JDialog {
         getContentPane().add(controlPane, BorderLayout.SOUTH);
         
         setSize(1055, 630);
-        GKApplicationUtilities.center(this);
+        // Use this method to accommodate in a multi-display environment
+        setLocationRelativeTo(getOwner());
+//        GKApplicationUtilities.center(this);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
     }
     

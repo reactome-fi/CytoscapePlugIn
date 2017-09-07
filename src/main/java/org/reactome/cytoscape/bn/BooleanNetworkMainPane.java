@@ -66,6 +66,8 @@ import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.pathway.booleannetwork.AffinityToModificationMap;
+import org.reactome.pathway.booleannetwork.DefaultAffinityToModificationMap;
 
 import edu.ohsu.bcb.druggability.Interaction;
 
@@ -792,6 +794,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
     }
     
     private class DrugSelectionTableModel extends InteractionListTableModel {
+        // Used to map from affinity to modification strength
+        private AffinityToModificationMap affinityToModificationMap;
         
         public DrugSelectionTableModel() {
             super();
@@ -806,6 +810,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                     "Modification",
                     "Strength"
             };
+            affinityToModificationMap = new DefaultAffinityToModificationMap();
         }
 
         @Override
@@ -850,19 +855,20 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
          * @return
          */
         private double getModificationStrenth(double value) {
-            if (value < 1) // Less than 1 nm
-                return 0.99d;
-            if (value < 10)
-                return 0.90d;
-            if (value < 100)
-                return 0.70;
-            if (value < 1000)
-                return 0.50;
-            if (value < 10000)
-                return 0.30;
-            if (value < 100000)
-                return 0.10;
-            return 0.0d;
+            return affinityToModificationMap.getModificationStrenth(value);
+//            if (value < 1) // Less than 1 nm
+//                return 0.99d;
+//            if (value < 10)
+//                return 0.90d;
+//            if (value < 100)
+//                return 0.70;
+//            if (value < 1000)
+//                return 0.50;
+//            if (value < 10000)
+//                return 0.30;
+//            if (value < 100000)
+//                return 0.10;
+//            return 0.0d;
         }
         
         private Double getMinValue(Object[] row) {

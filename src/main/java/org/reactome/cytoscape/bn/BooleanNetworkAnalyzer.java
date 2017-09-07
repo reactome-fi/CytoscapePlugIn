@@ -13,6 +13,9 @@ import javax.swing.JOptionPane;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.render.ProcessNode;
+import org.gk.render.Renderable;
+import org.gk.render.RenderablePathway;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -23,7 +26,7 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  *
  */
 public class BooleanNetworkAnalyzer {
-    // The target panel showig a pathway diagram
+    // The target panel showing a pathway diagram
     private PathwayEditor pathwayEditor;
     // Used to highlight the displayed pathway diagram
     private PathwayHighlightControlPanel hiliteControlPane;
@@ -48,6 +51,35 @@ public class BooleanNetworkAnalyzer {
 
     public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
         this.hiliteControlPane = hiliteControlPane;
+    }
+    
+    /**
+     * Check if the wrapped pathway can be used for Boolean network simulation. Only pathway
+     * diagrams have entities laid out can be used for simulation.
+     * @return
+     */
+    public boolean isValidPathwayForBNSimulation() {
+        if (pathwayEditor == null)
+            return false;
+        RenderablePathway pathway = (RenderablePathway) pathwayEditor.getRenderable();
+        boolean hasEntity = false;
+        for (Object o : pathway.getComponents()) {
+            Renderable r = (Renderable) o;
+            // If r is not a process node and has reactome id,
+            // the diagram should be ELV
+            if (r.getReactomeId() != null && !(r instanceof ProcessNode)) {
+                hasEntity = true;
+                break;
+            }
+        }
+        if (hasEntity)
+            return true;
+        JOptionPane.showMessageDialog(pathwayEditor,
+                                     "This pathway cannot be used for Boolean network simulation. Choose\n" +
+                                     "its sub-pathway having entities drawn for simulation.",
+                                     "Error in Simulation",
+                                     JOptionPane.ERROR_MESSAGE);
+        return false;
     }
     
     /**

@@ -20,7 +20,18 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JDialog;
+import javax.swing.JEditorPane;
+import javax.swing.JFileChooser;
+import javax.swing.JInternalFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JSlider;
+import javax.swing.SwingUtilities;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -32,7 +43,16 @@ import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.render.*;
+import org.gk.render.HyperEdge;
+import org.gk.render.Node;
+import org.gk.render.ProcessNode;
+import org.gk.render.Renderable;
+import org.gk.render.RenderableChemical;
+import org.gk.render.RenderableCompartment;
+import org.gk.render.RenderableComplex;
+import org.gk.render.RenderableEntitySet;
+import org.gk.render.RenderablePathway;
+import org.gk.render.RenderableProtein;
 import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.SwingImageCreator;
@@ -1129,6 +1149,9 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     private void runBooleanNetworkAnalysis() {
         BooleanNetworkAnalyzer analyzer = new BooleanNetworkAnalyzer();
         analyzer.setPathwayEditor(pathwayEditor);
+        // Check if the selected pathway can be used for simulation.
+        if (!analyzer.isValidPathwayForBNSimulation())
+            return;
         analyzer.setHiliteControlPane(hiliteControlPane);
         analyzer.startSimulation();
     }

@@ -115,7 +115,7 @@ public class InteractionListView extends JDialog {
         controlPane.add(viewDetailsBtn);
         viewDetailsBtn.setEnabled(false);
         
-        JButton filterBtn = new JButton("Filter Targets");
+        JButton filterBtn = new JButton("Filter");
         filterBtn.addActionListener(new ActionListener() {
             
             @Override

@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JLabel;
+
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.SimulationComparator;
 import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
@@ -19,6 +21,8 @@ import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
  *
  */
 public class SimulationComparisonPane extends VariableCytoPaneComponent {
+    // Provide a summary
+    private JLabel summaryLabel;
     
     public SimulationComparisonPane(String title) {
         super(title);
@@ -30,6 +34,8 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
         for (int i = 0; i < controlToolBar.getComponentCount(); i++) {
             controlToolBar.remove(i);
         }
+        summaryLabel = new JLabel();
+        controlToolBar.add(summaryLabel);
         controlToolBar.add(closeGlue);
         createHighlightViewBtn();
         controlToolBar.add(hiliteDiagramBtn);
@@ -47,6 +53,30 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
         model.setSimulations(perturbed, reference);
         // Highlight pathway diagrams based on ratio
         hilitePathway(model.getColumnCount() - 1);
+        showSummary(model);
+    }
+    
+    private void showSummary(ComparisonTableModel model) {
+        // Get the total output variables
+        int counter = 0;
+        double sum = 0.0d;
+        for (int i = 0; i < model.getRowCount(); i++) {
+            BooleanVariable var = (BooleanVariable) model.getValueAt(i, 0);
+            String isOutput = var.getProperty("output");
+            if (isOutput != null && isOutput.equals(Boolean.TRUE + "")) {
+                counter ++;
+                Number value = (Number) model.getValueAt(i, model.getColumnCount() - 1);
+                sum += Math.abs(value.doubleValue());
+            }
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("Summary: ");
+        builder.append(counter).append(" outputs; ");
+        builder.append("Sum of output absolute difference: ");
+        builder.append(String.format("%.2e", sum)).append("; ");
+        double mean = sum / counter;
+        builder.append("Average: ").append(String.format("%.4e", mean)).append(".");
+        summaryLabel.setText(builder.toString());
     }
     
     @Override
