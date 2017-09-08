@@ -25,7 +25,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.JTree;
+import javax.swing.JViewport;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -64,6 +81,9 @@ import org.reactome.r3.util.FileUtility;
  */
 public class EventTreePane extends JPanel implements EventSelectionListener {
     private PathwayEnrichmentResultPane annotationPanel;
+    // This implementation should be changed in the future. This is very bad!!!
+    // Synchronize to drug impact analysis result
+    private List<DrugPathwayImpactResultPane> drugImpactPanes;
     JTree eventTree;
     // To control tree selection event firing
     private TreeSelectionListener selectionListener;
@@ -249,6 +269,18 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().addEventSelectionListener(this);
     }
     
+    public void addDrugImpactResultPane(DrugPathwayImpactResultPane pane) {
+        if (drugImpactPanes == null)
+            drugImpactPanes = new ArrayList<>();
+        drugImpactPanes.add(pane);
+    }
+    
+    public void removeDrugImpactResultPane(DrugPathwayImpactResultPane pane) {
+        if (drugImpactPanes == null)
+            return;
+        drugImpactPanes.remove(pane);
+    }
+    
     @Override
     public void eventSelected(EventSelectionEvent selectionEvent) {
         eventTree.removeTreeSelectionListener(selectionListener);
@@ -277,6 +309,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         showSelectionBranch();
         if (annotationPanel != null)
             annotationPanel.doTreeSelection();
+        if (drugImpactPanes != null)
+            drugImpactPanes.forEach(pane -> pane.doTreeSelection());
         eventTree.addTreeSelectionListener(selectionListener);
     }
     
@@ -369,6 +403,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         }
         if (annotationPanel != null)
             annotationPanel.doTreeSelection();
+        if (drugImpactPanes != null)
+            drugImpactPanes.forEach(pane -> pane.doTreeSelection());
     }
     
     /**
@@ -605,6 +641,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 PathwayEnrichmentAnalysisTask enrichmentTask = new PathwayEnrichmentAnalysisTask();
                 enrichmentTask.setEventPane(EventTreePane.this);
                 DrugListManager.getManager().setEnrichmentTask(enrichmentTask);
+                DrugPathwayImpactAnalysisAction impactAnlysisAction = new DrugPathwayImpactAnalysisAction();
+                impactAnlysisAction.setEventPane(EventTreePane.this);
+                DrugListManager.getManager().setRunImpactAnalysisAction(impactAnlysisAction);
                 DrugListManager.getManager().listDrugs();
             }
         };
@@ -850,6 +889,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                     eventTree.scrollPathToVisible(selectedPath);
                     if (annotationPanel != null) // Force selection in the table
                         annotationPanel.doTreeSelection();
+                    if (drugImpactPanes != null)
+                        drugImpactPanes.forEach(pane -> pane.doTreeSelection());
                 }
             });
         }

@@ -4,6 +4,7 @@
  */
 package org.reactome.cytoscape.drug;
 
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ public class DrugListManager {
     private static DrugListManager manager;
     private List<Drug> drugs;
     private AbstractPathwayEnrichmentAnalysisTask enrichmentTask;
+    private ActionListener runImpactAnalysisAction;
     
     /**
      * Default constructor. This is a private method so that only one copy of DrugListManager
@@ -46,6 +48,14 @@ public class DrugListManager {
         return manager;
     }
     
+    public ActionListener getRunImpactAnalysisAction() {
+        return runImpactAnalysisAction;
+    }
+
+    public void setRunImpactAnalysisAction(ActionListener runImpactAnalysisAction) {
+        this.runImpactAnalysisAction = runImpactAnalysisAction;
+    }
+
     public void setEnrichmentTask(AbstractPathwayEnrichmentAnalysisTask task) {
         this.enrichmentTask = task;
     }

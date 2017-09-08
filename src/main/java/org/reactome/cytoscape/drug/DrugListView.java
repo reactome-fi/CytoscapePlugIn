@@ -153,7 +153,17 @@ public class DrugListView extends JDialog {
             return; // Just in case
         }
         dispose();
-        System.out.println("Perform impact analysis");
+        Thread t = new Thread() {
+            public void run() {
+                ActionListener action = DrugListManager.getManager().getRunImpactAnalysisAction();
+                if (action == null)
+                    return;
+                // This is a hack
+                ActionEvent event = new ActionEvent(DrugListView.this, 0, drugs.get(0));
+                action.actionPerformed(event);
+            }
+        };
+        t.start();
     }
     
     private void google() {

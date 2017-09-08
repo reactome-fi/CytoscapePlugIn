@@ -709,6 +709,12 @@ public class RESTFulFIService implements FINetworkService
         return elm;
     }
     
+    public String runDrugImpactAnalysis(String drug) throws Exception {
+        String url = restfulURL + "cancerDruggability/performImpactAnalysis";
+        String rtn = PlugInUtilities.callHttpInText(url, HTTP_POST, drug);
+        return rtn;
+    }
+    
     public Element queryReactomeInstance(Long dbId) throws Exception {
         String url = restfulURL + "network/queryReactomeInstance/" + dbId;
         Element elm = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);

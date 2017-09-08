@@ -30,7 +30,7 @@ import org.reactome.cytoscape.service.GeneSetAnnotationPanel;
  */
 public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
     
-    private EventTreePane eventTreePane;
+    protected EventTreePane eventTreePane;
     private boolean isFromTable = false;
     private boolean isFromTree = false;
     
