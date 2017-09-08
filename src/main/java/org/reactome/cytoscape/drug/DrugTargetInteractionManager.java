@@ -26,8 +26,8 @@ import org.reactome.cytoscape.service.FIRenderableInteraction;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
-import edu.ohsu.bcb.druggability.ExpEvidence;
-import edu.ohsu.bcb.druggability.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.ExpEvidence;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 /**
  * A singleton to manage a list of drug/target interactions so that interactions will not be duplicated after loading

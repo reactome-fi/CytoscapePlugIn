@@ -33,7 +33,7 @@ import org.gk.util.StringUtils;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
-import edu.ohsu.bcb.druggability.Drug;
+import edu.ohsu.bcb.druggability.dataModel.Drug;
 
 /**
  * A customized JDialog showing a list of cancer drugs fetched from the server-side database.
@@ -44,6 +44,7 @@ public class DrugListView extends JDialog {
     private JTable drugTable;
     private JButton viewTargets;
     private JButton googleBtn;
+    private JButton runImpactBtn;
     
     /**
      * Default constructor.
@@ -63,6 +64,7 @@ public class DrugListView extends JDialog {
                 if (e.getValueIsAdjusting()) {
                     googleBtn.setEnabled(drugTable.getSelectedRowCount() > 0);
                     viewTargets.setEnabled(drugTable.getSelectedRowCount() > 0);
+                    runImpactBtn.setEnabled(drugTable.getSelectedRowCount() == 1);
                 }
             }
         });
@@ -125,7 +127,33 @@ public class DrugListView extends JDialog {
             }
         });
         popup.add(viewTargets);
+        // Work for only one drug
+        List<String> drugs = getSelectedDrugs();
+        if (drugs.size() == 1) {
+            JMenuItem runImpactAnalysis = new JMenuItem("Run Pathway Impact Analysis");
+            runImpactAnalysis.addActionListener(new ActionListener() {
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    runImpactPathwayAnalysis();
+                }
+            });
+            popup.add(runImpactAnalysis);
+        }
         popup.show(drugTable, point.x, point.y);
+    }
+    
+    private void runImpactPathwayAnalysis() {
+        List<String> drugs = getSelectedDrugs();
+        if (drugs.size() != 1) {
+            JOptionPane.showMessageDialog(this,
+                                          "Choose one drug only for pathway impact analysis!",
+                                          "Choose Drug",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return; // Just in case
+        }
+        dispose();
+        System.out.println("Perform impact analysis");
     }
     
     private void google() {
@@ -186,8 +214,19 @@ public class DrugListView extends JDialog {
             }
         });
         
+        runImpactBtn = new JButton("Run Pathway Impact Analysis");
+        runImpactBtn.setEnabled(false);
+        runImpactBtn.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                runImpactPathwayAnalysis();
+            }
+        });
+        
         controlPane.add(googleBtn);
         controlPane.add(viewTargets);
+        controlPane.add(runImpactBtn);
         JButton closeBtn = new JButton("Close");
         closeBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

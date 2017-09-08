@@ -29,9 +29,9 @@ import javax.swing.event.HyperlinkListener;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
-import edu.ohsu.bcb.druggability.ExpEvidence;
-import edu.ohsu.bcb.druggability.Interaction;
-import edu.ohsu.bcb.druggability.Source;
+import edu.ohsu.bcb.druggability.dataModel.ExpEvidence;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.Source;
 
 /**
  * A customized JPanel to show details of a drug/target interaction.

@@ -26,7 +26,7 @@ import javax.swing.table.TableRowSorter;
 
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
-import edu.ohsu.bcb.druggability.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 /**
  * A customized JDialog showing a list of drug/target interactions.

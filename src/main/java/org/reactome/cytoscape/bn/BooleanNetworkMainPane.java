@@ -69,7 +69,7 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.pathway.booleannetwork.AffinityToModificationMap;
 import org.reactome.pathway.booleannetwork.DefaultAffinityToModificationMap;
 
-import edu.ohsu.bcb.druggability.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 /**
  * Implemented as a CytoPanelComponent to be listed in the "Results Panel".

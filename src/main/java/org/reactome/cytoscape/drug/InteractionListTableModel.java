@@ -13,8 +13,8 @@ import javax.swing.RowFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 
-import edu.ohsu.bcb.druggability.ExpEvidence;
-import edu.ohsu.bcb.druggability.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.ExpEvidence;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 public class InteractionListTableModel extends AbstractTableModel {
     protected String[] colNames = new String[] {

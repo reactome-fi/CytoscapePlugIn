@@ -35,9 +35,9 @@ import org.gk.util.GKApplicationUtilities;
 import org.reactome.cytoscape.service.CyPathwayEditor;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
-import edu.ohsu.bcb.druggability.ExpEvidence;
-import edu.ohsu.bcb.druggability.Interaction;
-import edu.ohsu.bcb.druggability.Source;
+import edu.ohsu.bcb.druggability.dataModel.ExpEvidence;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.Source;
 
 /**
  * A customized JDialog for filtering drug/target interactions.

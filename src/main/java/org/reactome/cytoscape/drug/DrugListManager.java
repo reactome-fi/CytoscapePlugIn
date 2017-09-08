@@ -20,8 +20,8 @@ import org.reactome.cytoscape.service.AbstractPathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
-import edu.ohsu.bcb.druggability.Drug;
-import edu.ohsu.bcb.druggability.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.Drug;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 /**
  * This class is used to manage the list of cancer drugs fetched from the server-side application.

@@ -17,13 +17,13 @@ import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
 import org.junit.Test;
 
-import edu.ohsu.bcb.druggability.DatabaseRef;
-import edu.ohsu.bcb.druggability.Drug;
-import edu.ohsu.bcb.druggability.ExpEvidence;
-import edu.ohsu.bcb.druggability.Interaction;
-import edu.ohsu.bcb.druggability.LitEvidence;
-import edu.ohsu.bcb.druggability.Source;
-import edu.ohsu.bcb.druggability.Target;
+import edu.ohsu.bcb.druggability.dataModel.DatabaseRef;
+import edu.ohsu.bcb.druggability.dataModel.Drug;
+import edu.ohsu.bcb.druggability.dataModel.ExpEvidence;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.LitEvidence;
+import edu.ohsu.bcb.druggability.dataModel.Source;
+import edu.ohsu.bcb.druggability.dataModel.Target;
 
 /**
  * This class is used to parse cancer drug/target interactions in XML received from a RESTful API. Don't try to reuse

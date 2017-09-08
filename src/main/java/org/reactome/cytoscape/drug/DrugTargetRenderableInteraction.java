@@ -21,7 +21,7 @@ import org.gk.render.RendererFactory;
 import org.reactome.cytoscape.service.FIRenderableInteraction;
 import org.reactome.cytoscape.service.FIRenderableInteractionRenderer;
 
-import edu.ohsu.bcb.druggability.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 /**
  * A customized FIRenderableInteraction for cancer drug/target interactions.

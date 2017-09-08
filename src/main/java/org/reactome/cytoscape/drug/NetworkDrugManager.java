@@ -24,7 +24,7 @@ import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
-import edu.ohsu.bcb.druggability.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 /**
  * This manager is used to handle cancer drug overlay for the FI network view.

@@ -4,7 +4,6 @@
  */
 package org.reactome.cytoscape.drug;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -14,8 +13,8 @@ import java.util.Map;
 
 import javax.swing.JOptionPane;
 
-import org.gk.graphEditor.PathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
+import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
 import org.gk.render.RenderableChemical;
@@ -24,8 +23,8 @@ import org.reactome.cytoscape.service.PathwayDiagramOverlayHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
-import edu.ohsu.bcb.druggability.Drug;
-import edu.ohsu.bcb.druggability.Interaction;
+import edu.ohsu.bcb.druggability.dataModel.Drug;
+import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 /**
  * This class is used to handle display of drug/target interactions.
