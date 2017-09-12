@@ -38,6 +38,7 @@ import javax.swing.event.HyperlinkListener;
 import org.apache.commons.math.MathException;
 import org.cytoscape.property.CyProperty;
 import org.cytoscape.util.swing.FileUtil;
+import org.gk.gkEditor.RenderableDisplayFormatDialog;
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
@@ -682,6 +683,34 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         PlugInUtilities.queryGeneCard(protein.getDisplayName());
     }
     
+    private void addHilightMenu(JPopupMenu popup) {
+        JMenuItem item = new JMenuItem("Highlight");
+        item.addActionListener(event -> {
+            List<Renderable> selection = getPathwayEditor().getSelection();
+            if (selection == null || selection.size() == 0)
+                return;
+            // Used as an example
+            Renderable r = (Renderable) selection.get(0);
+            RenderableDisplayFormatDialog dialog = new RenderableDisplayFormatDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
+            dialog.setPrivateNoteSupport(true);
+            dialog.setRenderables(selection);
+            dialog.setEditorPane(getPathwayEditor());
+            // Try to make location nice
+            dialog.setLocationRelativeTo(CyZoomablePathwayEditor.this);
+//            final UndoableFormatEdit edit = new UndoableFormatEdit(selection, getPathwayEditor());
+            dialog.addOKListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+//                    graphPane.addUndoableEdit(edit);
+                      PathwayEditor editor = getPathwayEditor();
+                      editor.repaint(editor.getVisibleRect());
+                }
+            });
+            dialog.setModal(true);
+            dialog.setVisible(true);
+        });
+        popup.add(item);
+    }
+    
     private void doPopup(MouseEvent event) {
         @SuppressWarnings("unchecked")
         List<Renderable> selection = getPathwayEditor().getSelection();
@@ -692,6 +721,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         if (selection.size() != 1) {
             // Add a feature to export selected diagrams
             JPopupMenu popup = new JPopupMenu();
+            addHilightMenu(popup);
             addExportDiagramMenu(popup);
             popup.show(getPathwayEditor(), 
                        event.getX(),
@@ -824,6 +854,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             }
         }
         popup.addSeparator();
+        addHilightMenu(popup);
         addExportDiagramMenu(popup);
         popup.show(getPathwayEditor(), 
                    event.getX(),
