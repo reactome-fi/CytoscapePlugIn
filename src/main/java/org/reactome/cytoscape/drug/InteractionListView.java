@@ -17,6 +17,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.RowFilter;
 import javax.swing.event.ListSelectionEvent;
@@ -35,6 +36,7 @@ import edu.ohsu.bcb.druggability.dataModel.Interaction;
  */
 public class InteractionListView extends JDialog {
     protected JTable interactionTable;
+    private DrugAffinityPlotPanel plotPane;
     private JButton viewDetailsBtn;
     private JButton overlayBtn;
     private TableListInteractionFilter interactionFilter;
@@ -54,6 +56,8 @@ public class InteractionListView extends JDialog {
     public void setInteractions(List<Interaction> interactions) {
         InteractionListTableModel model = (InteractionListTableModel) interactionTable.getModel();
         model.setInteractions(interactions);
+        
+        plotPane.setInteractions(interactions);
     }
     
     protected InteractionListTableModel createTableModel() {
@@ -72,7 +76,15 @@ public class InteractionListView extends JDialog {
         interactionFilter.setTable(interactionTable);
         RowFilter<TableModel, Object> rowFilter = model.createFilter(interactionFilter);
         rowSorter.setRowFilter(rowFilter);
-        getContentPane().add(new JScrollPane(interactionTable), BorderLayout.CENTER);
+        
+        plotPane = new DrugAffinityPlotPanel();
+        
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        tabbedPane.addTab("Table View", new JScrollPane(interactionTable));
+        tabbedPane.addTab("Plot View", plotPane);
+        
+        getContentPane().add(tabbedPane, BorderLayout.CENTER);
         
         JPanel controlPane = createControlPane();
         getContentPane().add(controlPane, BorderLayout.SOUTH);
