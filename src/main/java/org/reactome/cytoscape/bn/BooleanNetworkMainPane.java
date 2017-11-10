@@ -31,6 +31,7 @@ import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -899,6 +900,25 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             TableListInteractionFilter filter = super.createInteractionFilter();
             filter.resetAffinityFilterValues();
             return filter;
+        }
+
+        @Override
+        protected JComponent createContentPane() {
+            return super.createTablePane();
+        }
+
+        @Override
+        protected JPanel createDialogControlPane() {
+            JPanel controlPane = super.createTableControlPane();
+            JButton closeBtn = new JButton("Close");
+            closeBtn.addActionListener(e -> dispose());
+            controlPane.add(closeBtn);
+            return controlPane;
+        }
+
+        @Override
+        protected JPanel createTableControlPane() {
+            return null;
         }
 
         @Override

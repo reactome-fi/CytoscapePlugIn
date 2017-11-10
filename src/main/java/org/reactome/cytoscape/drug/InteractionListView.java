@@ -14,6 +14,7 @@ import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -49,22 +50,21 @@ public class InteractionListView extends JDialog {
     }
     
     public InteractionListView(Window owner) {
-        super(owner);
         init();
     }
     
     public void setInteractions(List<Interaction> interactions) {
         InteractionListTableModel model = (InteractionListTableModel) interactionTable.getModel();
         model.setInteractions(interactions);
-        
-        plotPane.setInteractions(interactions);
+        if (plotPane != null)
+            plotPane.setInteractions(interactions);
     }
     
     protected InteractionListTableModel createTableModel() {
         return new InteractionListTableModel();
     }
     
-    private JPanel createTablePane() {
+    protected JPanel createTablePane() {
         JPanel pane = new JPanel();
         pane.setLayout(new BorderLayout());
         
@@ -79,8 +79,9 @@ public class InteractionListView extends JDialog {
         rowSorter.setRowFilter(rowFilter);
         pane.add(new JScrollPane(interactionTable), BorderLayout.CENTER);
         
-        JPanel controlPane = createControlPane();
-        pane.add(controlPane, BorderLayout.SOUTH);
+        JPanel controlPane = createTableControlPane();
+        if (controlPane != null)
+            pane.add(controlPane, BorderLayout.SOUTH);
         
         return pane;
     }
@@ -88,27 +89,16 @@ public class InteractionListView extends JDialog {
     protected void init() {
         setTitle("Drug Targets View");
         
-        JPanel tablePane = createTablePane();
-        
-        plotPane = new DrugAffinityPlotPanel();
-        
-        JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.setTabPlacement(JTabbedPane.TOP);
-        tabbedPane.addTab("Table View", tablePane);
-        tabbedPane.addTab("Plot View", plotPane);
-        
+        JComponent tabbedPane = createContentPane();
+
         getContentPane().add(tabbedPane, BorderLayout.CENTER);
-        
+
         // Add a close button
-        JPanel closePane = new JPanel();
-        closePane.setBorder(BorderFactory.createEtchedBorder());
-        JButton closeBtn = new JButton("Close");
-        closeBtn.addActionListener(event -> dispose());
-        closePane.add(closeBtn);
+        JPanel closePane = createDialogControlPane();
         getContentPane().add(closePane, BorderLayout.SOUTH);
-        
+
         interactionTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            
+
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (e.getValueIsAdjusting()) {
@@ -121,6 +111,27 @@ public class InteractionListView extends JDialog {
         setLocationRelativeTo(getOwner());
     }
 
+    protected JComponent createContentPane() {
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        
+        JPanel tablePane = createTablePane();
+        tabbedPane.addTab("Table View", tablePane);
+        
+        plotPane = new DrugAffinityPlotPanel();
+        tabbedPane.addTab("Plot View", plotPane);
+        return tabbedPane;
+    }
+
+    protected JPanel createDialogControlPane() {
+        JPanel closePane = new JPanel();
+        closePane.setBorder(BorderFactory.createEtchedBorder());
+        JButton closeBtn = new JButton("Close");
+        closeBtn.addActionListener(event -> dispose());
+        closePane.add(closeBtn);
+        return closePane;
+    }
+
     protected TableListInteractionFilter createInteractionFilter() {
         return new TableListInteractionFilter();
     }
@@ -130,7 +141,7 @@ public class InteractionListView extends JDialog {
         overlayBtn.setEnabled(interactionTable.getSelectedRowCount() > 0);
     }
     
-    private JPanel createControlPane() {
+    protected JPanel createTableControlPane() {
         JPanel controlPane = new JPanel();
         controlPane.setBorder(BorderFactory.createEtchedBorder());
         

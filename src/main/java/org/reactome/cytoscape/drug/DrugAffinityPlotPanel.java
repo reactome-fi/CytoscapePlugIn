@@ -101,8 +101,8 @@ public class DrugAffinityPlotPanel extends JPanel {
             return; // Do nothing
         }
         if (drugs.size() > 1) {
-            String message = "More than one drug is found. Plot<br>"
-                           + "is desgined for one drug only.";
+            String message = "<html>More than one drug is found. Plotting<br />"
+                           + "is desgined for one drug only.</html>";
             showEmptyMessage(message);
             return;
 //            throw new IllegalArgumentException("More than one drug is listed in the table!");
@@ -125,6 +125,12 @@ public class DrugAffinityPlotPanel extends JPanel {
                 continue;
             XYPlot plot = createPlot(dataset, type);
             combinedPlot.add(plot);
+        }
+        
+        // We may get this problem because of the data error
+        if (combinedPlot.getSubplots() == null || combinedPlot.getSubplots().size() == 0) {
+            showEmptyMessage("Nothing to plot!");
+            return;
         }
         
         JFreeChart chart = new JFreeChart(drugs.iterator().next(), combinedPlot);
