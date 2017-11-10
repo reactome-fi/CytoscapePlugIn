@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
@@ -73,7 +74,7 @@ public class DrugListManager {
         taskManager.execute(new TaskIterator(enrichmentTask));
     }
     
-    public void showDrugTargetInteractions(List<String> drugNames) {
+    public void showDrugTargetInteractions(List<String> drugNames, JDialog parent) {
         if (drugNames == null || drugNames.size() == 0)
             return;
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
@@ -85,7 +86,7 @@ public class DrugListManager {
             parser.parse(rootElm);
             List<Interaction> interactions = parser.getInteractions();
             frame.getGlassPane().setVisible(false);
-            showInteractions(interactions);
+            showInteractions(interactions, parent);
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -97,7 +98,7 @@ public class DrugListManager {
         }
     }
     
-    private void showInteractions(List<Interaction> interactions) {
+    private void showInteractions(List<Interaction> interactions, JDialog parent) {
         if (interactions == null || interactions.size() == 0) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "No interactions to display.",
@@ -105,7 +106,7 @@ public class DrugListManager {
                                           JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        InteractionListView view = new InteractionListView();
+        InteractionListView view = new InteractionListView(parent);
         view.setInteractions(interactions);
         view.setModal(true);
         view.setVisible(true);

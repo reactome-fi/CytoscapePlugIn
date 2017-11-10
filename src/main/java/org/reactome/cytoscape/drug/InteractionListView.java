@@ -107,7 +107,7 @@ public class InteractionListView extends JDialog {
             }
         });
         
-        setSize(625, 250);
+        setSize(750, 500);
         setLocationRelativeTo(getOwner());
     }
 

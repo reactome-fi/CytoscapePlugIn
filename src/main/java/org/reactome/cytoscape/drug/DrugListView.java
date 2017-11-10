@@ -184,8 +184,8 @@ public class DrugListView extends JDialog {
         }
         List<String> drugs = getSelectedDrugs();
         // Close the dialog first
-        dispose();
-        DrugListManager.getManager().showDrugTargetInteractions(drugs);
+//        dispose(); // Keep the dialog for repeated use
+        DrugListManager.getManager().showDrugTargetInteractions(drugs, this);
     }
 
     private List<String> getSelectedDrugs() {

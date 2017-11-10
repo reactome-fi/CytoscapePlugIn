@@ -116,8 +116,12 @@ public class InteractionView extends JDialog {
         String type = evidence.getAssayType();
         if (type.equals("Kd"))
             type = "KD"; // Fix some error for merging
-        text.append(evidence.getAssayType());
-        text.append(evidence.getAssayRelation());
+        text.append(type);
+        String relation = evidence.getAssayRelation();
+        if (relation == null || relation.trim().length() == 0)
+            text.append("?");
+        else
+            text.append(relation);
         if (evidence.getAssayValueMedian() != null)
             text.append(DrugTargetInteractionManager.getManager().getExpEvidenceValue(evidence)); // Want to use double to avoid weird many zero
         else // We should get low and high value
@@ -152,6 +156,8 @@ public class InteractionView extends JDialog {
             if (c > 0)
                 builder.append("<tr>");
             String key = generateKeyForExpEvidence(evidence);
+            // Need to be encoded since < or >
+            key = key.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
             text.append(key);
             Set<Source> sources = repExpToSources.get(evidence);
             if (sources != null)

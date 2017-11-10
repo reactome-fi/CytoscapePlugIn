@@ -71,7 +71,10 @@ public class DrugAffinityPlotPanel extends JPanel {
             if (interaction.getExpEvidenceSet() != null) {
                 if (interaction.getExpEvidenceSet() != null) {
                     for (ExpEvidence evidence : interaction.getExpEvidenceSet()) {
-                        if (evidence.getAssayRelation().equals("=")) {
+                        String relation = evidence.getAssayRelation();
+                        if (relation == null)
+                            continue;
+                        if (relation.equals("=") || relation.equals("<")) { // Since we can get the largest value
                             targetSet.add(interaction.getIntTarget().getTargetName());
                             break;
                         }
@@ -187,8 +190,9 @@ public class DrugAffinityPlotPanel extends JPanel {
             String target = interaction.getIntTarget().getTargetName();
             if (interaction.getExpEvidenceSet() != null) {
                 for (ExpEvidence evidence : interaction.getExpEvidenceSet()) {
-                    if (!evidence.getAssayRelation().equals("="))
-                        continue; // Only pick equal
+                    String relation = evidence.getAssayRelation();
+                    if (relation == null || !(relation.equals("=") || relation.equals("<")))
+                        continue; // Only pick equal and maximum value
                     String type = evidence.getAssayType();
                     if (type == null)
                         continue;
