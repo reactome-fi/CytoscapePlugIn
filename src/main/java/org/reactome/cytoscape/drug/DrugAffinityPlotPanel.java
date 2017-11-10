@@ -2,6 +2,8 @@ package org.reactome.cytoscape.drug;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,16 +13,13 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.jdom.Element;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.LegendItem;
-import org.jfree.chart.LegendItemCollection;
-import org.jfree.chart.annotations.Annotation;
-import org.jfree.chart.axis.CategoryAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.SymbolAxis;
 import org.jfree.chart.axis.ValueAxis;
@@ -30,8 +29,6 @@ import org.jfree.chart.plot.CombinedDomainXYPlot;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StackedXYBarRenderer;
 import org.jfree.chart.title.LegendTitle;
-import org.jfree.chart.title.TextTitle;
-import org.jfree.chart.title.Title;
 import org.jfree.data.xy.CategoryTableXYDataset;
 import org.jfree.ui.RectangleEdge;
 import org.reactome.cytoscape.service.RESTFulFIService;
@@ -49,7 +46,7 @@ import edu.ohsu.bcb.druggability.dataModel.Interaction;
  */
 @SuppressWarnings("serial")
 public class DrugAffinityPlotPanel extends JPanel {
-    // Cachec this so that only one renderer is used to get the same colors for same targest
+    // Cache this so that only one renderer is used to get the same colors for same targest
     private StackedXYBarRenderer renderer;
     
     public DrugAffinityPlotPanel() {
@@ -86,15 +83,35 @@ public class DrugAffinityPlotPanel extends JPanel {
         Collections.sort(targets);
     }
     
+    private void showEmptyMessage(String message) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+        JLabel label = new JLabel(message);
+        panel.add(label, new GridBagConstraints());
+        add(panel, BorderLayout.CENTER);
+    }
+    
     private void updatePlot(List<Interaction> interactions) {
         // Ensure only one drug is used
         Set<String> drugs = new HashSet<>();
         List<String> targets = new ArrayList<>();
         checkInteractions(interactions, drugs, targets);
-        if (drugs.size() == 0)
+        if (drugs.size() == 0) {
+            showEmptyMessage("Cannot find any drug for plotting!");
             return; // Do nothing
-        if (drugs.size() > 1)
-            throw new IllegalArgumentException("More than one drug is listed in the table!");
+        }
+        if (drugs.size() > 1) {
+            String message = "More than one drug is found. Plot<br>"
+                           + "is desgined for one drug only.";
+            showEmptyMessage(message);
+            return;
+//            throw new IllegalArgumentException("More than one drug is listed in the table!");
+        }
+        
+        if (targets.size() == 0) {
+            showEmptyMessage("Cannot find any target for plotting!");
+            return;
+        }
         
         String[] types = {"KD", "IC50", "Ki", "EC50"};
         NumberAxis xAxis = createAxis("Binding Assay Value (nM)");
@@ -104,6 +121,8 @@ public class DrugAffinityPlotPanel extends JPanel {
             CategoryTableXYDataset dataset = createDataset(interactions,
                                                            type,
                                                            targets);
+            if (dataset == null)
+                continue;
             XYPlot plot = createPlot(dataset, type);
             combinedPlot.add(plot);
         }
@@ -134,7 +153,7 @@ public class DrugAffinityPlotPanel extends JPanel {
                               String type) {
         NumberAxis xAxis = createAxis("Binding Assay Value (nM)");
         xAxis.setRange(0, 100); // Default range between 0 and 100 nM
-        NumberAxis yAxis = createAxis("Count (" + type + ")");
+        NumberAxis yAxis = createAxis("Count");
         if (renderer == null)
             renderer = new StackedXYBarRenderer();
         renderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator());
@@ -143,10 +162,12 @@ public class DrugAffinityPlotPanel extends JPanel {
                 xAxis,
                 yAxis, 
                 renderer);
-
+        // This is a hack to add a label for different plots
         ValueAxis axis = new SymbolAxis(type, new String[] {});
         axis.setTickMarksVisible(false);
         axis.setMinorTickMarksVisible(false);
+        // Keep the line, which looks better than without the line.
+//        axis.setAxisLineVisible(false); // Don't show the actual line
         plot.setRangeAxis(1, axis);
         
         return plot;

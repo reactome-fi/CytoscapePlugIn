@@ -64,8 +64,9 @@ public class InteractionListView extends JDialog {
         return new InteractionListTableModel();
     }
     
-    protected void init() {
-        setTitle("Drug Targets View");
+    private JPanel createTablePane() {
+        JPanel pane = new JPanel();
+        pane.setLayout(new BorderLayout());
         
         interactionTable = new JTable();
         InteractionListTableModel model = createTableModel();
@@ -76,18 +77,35 @@ public class InteractionListView extends JDialog {
         interactionFilter.setTable(interactionTable);
         RowFilter<TableModel, Object> rowFilter = model.createFilter(interactionFilter);
         rowSorter.setRowFilter(rowFilter);
+        pane.add(new JScrollPane(interactionTable), BorderLayout.CENTER);
+        
+        JPanel controlPane = createControlPane();
+        pane.add(controlPane, BorderLayout.SOUTH);
+        
+        return pane;
+    }
+    
+    protected void init() {
+        setTitle("Drug Targets View");
+        
+        JPanel tablePane = createTablePane();
         
         plotPane = new DrugAffinityPlotPanel();
         
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setTabPlacement(JTabbedPane.TOP);
-        tabbedPane.addTab("Table View", new JScrollPane(interactionTable));
+        tabbedPane.addTab("Table View", tablePane);
         tabbedPane.addTab("Plot View", plotPane);
         
         getContentPane().add(tabbedPane, BorderLayout.CENTER);
         
-        JPanel controlPane = createControlPane();
-        getContentPane().add(controlPane, BorderLayout.SOUTH);
+        // Add a close button
+        JPanel closePane = new JPanel();
+        closePane.setBorder(BorderFactory.createEtchedBorder());
+        JButton closeBtn = new JButton("Close");
+        closeBtn.addActionListener(event -> dispose());
+        closePane.add(closeBtn);
+        getContentPane().add(closePane, BorderLayout.SOUTH);
         
         interactionTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             
@@ -140,16 +158,6 @@ public class InteractionListView extends JDialog {
         overlayBtn = createActionButton();
         overlayBtn.setEnabled(false);
         controlPane.add(overlayBtn);
-        
-        JButton closeBtn = new JButton("Close");
-        closeBtn.addActionListener(new ActionListener() {
-            
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
-        controlPane.add(closeBtn);
         
         return controlPane;
     }
