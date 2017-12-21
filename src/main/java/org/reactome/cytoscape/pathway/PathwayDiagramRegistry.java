@@ -464,7 +464,7 @@ public class PathwayDiagramRegistry {
     }
 
     /**
-     * A utilty method to show JInternalFrame for showing a pathway.
+     * A utility method to show JInternalFrame for displaying a pathway.
      * @param frame
      */
     public void showPathwayDiagramFrame(JInternalFrame frame) {

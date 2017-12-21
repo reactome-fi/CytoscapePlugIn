@@ -7,6 +7,7 @@ package org.reactome.cytoscape.util;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.LayoutManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -203,6 +204,18 @@ public class PlugInObjectManager {
             pathwayDesktop = searchDesktopPane();
         }
         return pathwayDesktop;
+    }
+    
+    public void removePathwayDesktop() {
+        if (pathwayDesktop == null)
+            return;
+        Container container = pathwayDesktop.getParent();
+        if (container == null)
+            return;
+        container.remove(pathwayDesktop);
+        LayoutManager layout = container.getLayout();
+        layout.removeLayoutComponent(pathwayDesktop);
+        pathwayDesktop = null; // Have to null it to show network views as of Cytoscape 3.6.0.
     }
     
     /**

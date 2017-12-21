@@ -134,7 +134,10 @@ public class DiagramAndNetworkSwitcher {
         // Make sure this PathwayInternalFrame should be closed
         pathwayFrame.setVisible(false);
         pathwayFrame.dispose();
-        // Mimc manual closing
+        // We have to remove pathway desktop to show networks as of Cytoscape 3.6.0.
+        // Otherwise, the network view cannot be displayed.
+        PlugInObjectManager.getManager().removePathwayDesktop();
+        // Mimic manual closing
         
         taskMonitor.setProgress(0.50d);
         // Need to create a new CyNetwork

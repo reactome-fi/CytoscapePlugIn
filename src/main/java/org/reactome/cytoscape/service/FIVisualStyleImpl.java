@@ -373,6 +373,20 @@ public class FIVisualStyleImpl implements FIVisualStyle {
     protected JMenuItem getLayoutMenu() {
         return getLayoutMenu("Organic");
     }
+    
+    /**
+     * This new implementation is for Cytoscape 3.6.0.
+     * @return
+     */
+    private JMenuItem getPreferredLayout() {
+        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
+        for (Component item : desktopApp.getJMenu("Layout").getMenuComponents()) {
+            if (item instanceof JMenuItem && ((JMenuItem) item).getText().equals("Apply Preferred Layout")) {
+                return (JMenuItem) item;
+            }
+        }
+        return null;
+    }
 
     @Override
     public void doLayout() {
@@ -380,10 +394,13 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         // This method manually clicks the menu item to trigger
         // the new layout, as yFiles layouts are not available
         // for programmatic use.
-        JMenuItem yFilesOrganicMenuItem = getLayoutMenu();
-        if (yFilesOrganicMenuItem != null) {
-            yFilesOrganicMenuItem.doClick();
-        }
+//        JMenuItem yFilesOrganicMenuItem = getLayoutMenu();
+//        if (yFilesOrganicMenuItem != null) {
+//            yFilesOrganicMenuItem.doClick();
+//        }
+        JMenuItem layout = getPreferredLayout();
+        if (layout != null)
+            layout.doClick();
     }
 
 }
