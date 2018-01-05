@@ -628,6 +628,18 @@ public class PlugInUtilities {
     {
         nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, true);
     }
+    
+    public static void showAllNodes(CyNetworkView view) {
+        if (view == null)
+            return;
+        view.getNodeViews().forEach(nodeView -> showNode(nodeView));
+    }
+    
+    public static void showAllEdges(CyNetworkView view) {
+        if (view == null)
+            return;
+        view.getEdgeViews().forEach(edgeView -> showEdge(edgeView));
+    }
 
     /**
      * A convenience method to hide a node in the current network view.

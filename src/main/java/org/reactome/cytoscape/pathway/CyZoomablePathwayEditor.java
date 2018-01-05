@@ -131,7 +131,17 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         initColorSpectrumPane();
     }
     
-    private void initColorSpectrumPane() {
+    protected void initColorSpectrumPane() {
+        JPanel southPane = getSouthPane();
+        if (southPane == null)
+            return; // Cannot do anything
+        hiliteControlPane = new PathwayHighlightControlPanel();
+        southPane.add(hiliteControlPane);
+        hiliteControlPane.setVisible(false); // Default is null
+        hiliteControlPane.setPathwayEditor(pathwayEditor);
+    }
+
+    protected JPanel getSouthPane() {
         JPanel southPane = null;
         for (Component comp : getComponents()) {
             if (!(comp instanceof JPanel))
@@ -144,12 +154,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 }
             }
         }
-        if (southPane == null)
-            return; // Cannot do anything
-        hiliteControlPane = new PathwayHighlightControlPanel();
-        southPane.add(hiliteControlPane);
-        hiliteControlPane.setVisible(false); // Default is null
-        hiliteControlPane.setPathwayEditor(pathwayEditor);
+        return southPane;
     }
     
     public PathwayHighlightControlPanel getHighlightControlPane() {
@@ -287,6 +292,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     
     private void doPathwayPopup(MouseEvent e) {
         JPopupMenu popup = new JPopupMenu();
+        
+        addDataAnalysisMenus(popup);
+        addPathwayViewPopupMenus(popup);
+        
+        popup.show(getPathwayEditor(),
+                   e.getX(),
+                   e.getY());
+    }
+
+    protected void addDataAnalysisMenus(JPopupMenu popup) {
         JMenuItem convertToFINetwork = new JMenuItem("Convert to FI Network");
         convertToFINetwork.addActionListener(new ActionListener() {
             
@@ -416,9 +431,12 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             });
             popup.add(convertAsFactorGraph);
         }
-        
+    }
+
+    protected void addPathwayViewPopupMenus(JPopupMenu popup) {
         if (PlugInObjectManager.getManager().isCancerTargetEnabled()) {
-            popup.addSeparator();
+            if (popup.getComponentCount() > 0)
+                popup.addSeparator();
             // Fetch cancer drugs for the whole pathway diagram
             JMenuItem fetchDrugs = new JMenuItem("Fetch Cancer Drugs");
             fetchDrugs.addActionListener(new ActionListener() {
@@ -471,10 +489,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         popup.add(searchReaction);
         
         addExportDiagramMenu(popup);
-        
-        popup.show(getPathwayEditor(),
-                   e.getX(),
-                   e.getY());
     }
 
     protected void addExportDiagramMenu(JPopupMenu popup) {
@@ -784,25 +798,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 }
             });
             popup.add(listGenesItem);
-            JMenuItem showGeneLevelPGMResults = new JMenuItem("Show Gene Level Analysis Results");
-            showGeneLevelPGMResults.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    showGeneLevelPGMResultsForEntity(dbId, name);
-                }
-            });
-            popup.addSeparator();
-            popup.add(showGeneLevelPGMResults);
-            JMenuItem showObservations = new JMenuItem("Show Observation");
-            showObservations.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    showObservationsForEntity(dbId, name);
-                }
-            });
-            popup.add(showObservations);
+            addDataAnalysisMenusForObject(dbId, name, popup);
+            
             popup.addSeparator();
             
             // For cancer drug/target interactions
@@ -859,6 +856,28 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         popup.show(getPathwayEditor(), 
                    event.getX(),
                    event.getY());
+    }
+
+    protected void addDataAnalysisMenusForObject(final Long dbId, final String name, JPopupMenu popup) {
+        popup.addSeparator();
+        JMenuItem showGeneLevelPGMResults = new JMenuItem("Show Gene Level Analysis Results");
+        showGeneLevelPGMResults.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showGeneLevelPGMResultsForEntity(dbId, name);
+            }
+        });
+        popup.add(showGeneLevelPGMResults);
+        JMenuItem showObservations = new JMenuItem("Show Observation");
+        showObservations.addActionListener(new ActionListener() {
+            
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showObservationsForEntity(dbId, name);
+            }
+        });
+        popup.add(showObservations);
     }
     
     private void  showObservationsForEntity(final Long dbId,

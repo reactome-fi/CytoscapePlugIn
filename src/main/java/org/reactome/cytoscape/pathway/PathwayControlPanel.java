@@ -6,6 +6,7 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.Point;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -17,10 +18,13 @@ import java.util.List;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.Icon;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
 import javax.swing.event.InternalFrameAdapter;
@@ -74,7 +78,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     // Used to hold the overview so that a border can be used
     private JPanel overviewContainer;
     // Create a whole view during the FI network view
-    private CyZoomablePathwayEditor pathwayView;
+    private ControlPathwayView pathwayView;
     private EventTreePane eventPane;
     // Used to hold two parts of views
     private JSplitPane jsp;
@@ -346,9 +350,14 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             if (r.getReactomeId() != null)
                 dbIds.add(r.getReactomeId().toString());
         }
+        if (pathwayView.showFIsForSelectedOnly()) {
+            showWholeNetwork();
+        }
         TableHelper tableHelper = new TableHelper();
         // Do selection for edges
         int totalSelected = 0;
+        // To be escaped for node checking
+        Set<CyNode> checkedNodes = new HashSet<>();
         for (View<CyEdge> edgeView : networkView.getEdgeViews()) {
             // De-select first
             tableHelper.setEdgeSelected(networkView.getModel(),
@@ -367,12 +376,30 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                                                 edgeView.getModel(),
                                                 true);
                     totalSelected ++;
+                    // We want to select attached nodes too for easy handling
+                    CyEdge edge = edgeView.getModel();
+                    if (edge.getSource() != null) {
+                        tableHelper.setNodeSelected(networkView.getModel(),
+                                                    edge.getSource(), 
+                                                    true);
+                        totalSelected ++;
+                        checkedNodes.add(edge.getSource());
+                    }
+                    if (edge.getTarget() != null) {
+                        tableHelper.setNodeSelected(networkView.getModel(),
+                                                    edge.getTarget(), 
+                                                    true);
+                        checkedNodes.add(edge.getTarget());
+                        totalSelected ++;
+                    }
                     break;
                 }
             }
         }
         // Do selection for nodes
         for (View<CyNode> nodeView : networkView.getNodeViews()) {
+            if (checkedNodes.contains(nodeView.getModel()))
+                continue;
             tableHelper.setNodeSelected(networkView.getModel(),
                                         nodeView.getModel(), 
                                         false);
@@ -392,10 +419,42 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                 }
             }
         }
-        PlugInUtilities.zoomToSelected(networkView, 
-                                       totalSelected);
+        if (!pathwayView.showFIsForSelectedOnly())
+            PlugInUtilities.zoomToSelected(networkView, 
+                                           totalSelected);
+        hideNotSelected(); 
         networkView.updateView();
         selectFromPathway = false;
+    }
+
+    private void showWholeNetwork() {
+        PlugInUtilities.showAllEdges(networkView);
+        PlugInUtilities.showAllNodes(networkView);
+    }
+
+    private void hideNotSelected() {
+        if (!pathwayView.showFIsForSelectedOnly())
+            return;
+        List<CyEdge> selecedEdges = CyTableUtil.getEdgesInState(networkView.getModel(),
+                CyNetwork.SELECTED,
+                true);
+        List<CyNode> selectedNodes = CyTableUtil.getNodesInState(networkView.getModel(),
+                CyNetwork.SELECTED,
+                true);
+        if (selecedEdges.size() == 0 && selectedNodes.size() == 0)
+            return; // We want to show all
+        networkView.getEdgeViews().forEach(edgeView -> {
+            if (selecedEdges.contains(edgeView.getModel()))
+                PlugInUtilities.showEdge(edgeView);
+            else
+                PlugInUtilities.hideEdge(edgeView);
+        });
+        networkView.getNodeViews().forEach(nodeView -> {
+            if (selectedNodes.contains(nodeView.getModel()))
+                PlugInUtilities.showNode(nodeView);
+            else
+                PlugInUtilities.hideNode(nodeView);
+        });
     }
     
     private void doNetworkViewIsSelected(CyNetworkView networkView) {
@@ -428,7 +487,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         if (getParent() == null || !isVisible())
             return; // Do nothing is this component is not displayed.
         if (pathwayView == null) {
-            pathwayView = new CyZoomablePathwayEditor();
+            pathwayView = new ControlPathwayView();
             // Make sure the overview is at the correct place
             pathwayView.addComponentListener(new ComponentAdapter() {
                 
@@ -436,7 +495,6 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                 public void componentResized(ComponentEvent e) {
                     setOverviewPositionInPathwayView();
                 }
-                
             });
             
             // Synchronize selection
@@ -573,6 +631,59 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                                                      3, 
                                                      parentComp);
         overviewContainer.setLocation(location);
+    }
+    
+    private class ControlPathwayView extends CyZoomablePathwayEditor {
+        
+        // Used to control if only FIs for selected reactions should be displayed
+        private JCheckBox showFIsForSelectedOnly;
+        
+        public ControlPathwayView() {
+            super();
+            Font font = getFont();
+            // Use a smaller font to save space
+            font = font.deriveFont(font.getSize() - 2.0f);
+            setFont(font);
+        }
+        
+        @Override
+        protected void initColorSpectrumPane() {
+            JPanel southPane = getSouthPane();
+            if (southPane == null)
+                return; // Cannot do anything
+            JPanel newSouthPane = new JPanel();
+            newSouthPane.setBorder(BorderFactory.createEtchedBorder());
+            newSouthPane.setLayout(new BoxLayout(newSouthPane, BoxLayout.Y_AXIS));
+            showFIsForSelectedOnly = new JCheckBox("Show FIs Only for Selected");
+            showFIsForSelectedOnly.addActionListener(event -> {
+                if (showFIsForSelectedOnly.isSelected())
+                    hideNotSelected();
+                else 
+                    showWholeNetwork();
+            });
+            remove(southPane);
+            southPane.setBorder(BorderFactory.createEtchedBorder());
+            newSouthPane.add(southPane);
+            // Just to get the border for better view
+            JPanel pane = new JPanel();
+            pane.setBorder(BorderFactory.createEtchedBorder());
+            pane.add(showFIsForSelectedOnly);
+            newSouthPane.add(pane);
+            add(newSouthPane, BorderLayout.SOUTH);
+        }
+        
+        public boolean showFIsForSelectedOnly() {
+            return showFIsForSelectedOnly.isSelected();
+        }
+        
+        @Override
+        protected void addDataAnalysisMenus(JPopupMenu popup) {
+        }
+
+        @Override
+        protected void addDataAnalysisMenusForObject(Long dbId, String name, JPopupMenu popup) {
+        }
+        
     }
     
 }

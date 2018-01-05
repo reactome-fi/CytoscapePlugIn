@@ -19,7 +19,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JToolBar;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -27,7 +38,6 @@ import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
-import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
@@ -206,26 +216,12 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         doTableSelection(null);
     }
     
-    private void showAllEdges()
-    {
-        if (this.view != null)
-        {
-            for (View<CyEdge> edgeView : view.getEdgeViews())
-            {
-                PlugInUtilities.showEdge(edgeView);
-            }
-        }
+    private void showAllEdges() {
+       PlugInUtilities.showAllEdges(view);
     }
     
-    private void showAllNodes()
-    {
-        if (this.view != null)
-        {
-            for (View<CyNode> nodeView : view.getNodeViews())
-            {
-                PlugInUtilities.showNode(nodeView);
-            }
-        }
+    private void showAllNodes() {
+        PlugInUtilities.showAllNodes(view);
     }
     
     protected void doTableSelection(ListSelectionEvent event) {
