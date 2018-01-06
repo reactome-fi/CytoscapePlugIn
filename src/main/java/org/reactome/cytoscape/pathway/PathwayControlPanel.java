@@ -428,8 +428,11 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     }
 
     private void showWholeNetwork() {
-        PlugInUtilities.showAllEdges(networkView);
+        // Have to call show all nodes first.
+        // Otherwise, the edge lines are curved, most likely
+        // because there are no nodes can be displayed for some edges.
         PlugInUtilities.showAllNodes(networkView);
+        PlugInUtilities.showAllEdges(networkView);
     }
 
     private void hideNotSelected() {
@@ -656,10 +659,13 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             newSouthPane.setLayout(new BoxLayout(newSouthPane, BoxLayout.Y_AXIS));
             showFIsForSelectedOnly = new JCheckBox("Show FIs Only for Selected");
             showFIsForSelectedOnly.addActionListener(event -> {
+                if (networkView == null)
+                    return; // Just in case if the network is closed
                 if (showFIsForSelectedOnly.isSelected())
                     hideNotSelected();
                 else 
                     showWholeNetwork();
+                networkView.updateView();
             });
             remove(southPane);
             southPane.setBorder(BorderFactory.createEtchedBorder());

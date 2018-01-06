@@ -206,14 +206,13 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         setVisible(true);
     }
     
-    private void doHideOtherNodesAction()
-    {
-        if (!hideOtherNodesBox.isSelected())
-        {
+    private void doHideOtherNodesAction() {
+        if (!hideOtherNodesBox.isSelected()) {
+            showAllNodes(); // Call showAllNodes first to make sure edges can be displayed correctly
             showAllEdges();
-            showAllNodes();
         }
-        doTableSelection(null);
+        else 
+            doTableSelection(null);
     }
     
     private void showAllEdges() {
