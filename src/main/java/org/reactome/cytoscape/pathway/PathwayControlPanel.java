@@ -290,9 +290,11 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     
     /**
      * A helper method to handle edge selection from a FI network.
+     * For some reason, node selection is called by two threads. Therefore,
+     * syncrhonized it.
      * @param edges
      */
-    private void handleNetworkSelection(List<CyEdge> edges,
+    private synchronized void handleNetworkSelection(List<CyEdge> edges,
                                         List<CyNode> nodes) {
         if (selectFromPathway)
             return; // Don't do anything
@@ -436,7 +438,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     }
 
     private void hideNotSelected() {
-        if (!pathwayView.showFIsForSelectedOnly())
+        // Escape it if the selection is from the network
+        if (!pathwayView.showFIsForSelectedOnly() || selectFromNetwork)
             return;
         List<CyEdge> selecedEdges = CyTableUtil.getEdgesInState(networkView.getModel(),
                 CyNetwork.SELECTED,
