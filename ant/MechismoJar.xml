@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!-- Generate a jar file from the caBigR3 project in the local maven repository -->
+<project name="package" default="mechismoJar" basedir="..">
+	<property name="targetDir" value="lib" />
+	<property name="mechismoHome" value="../FIVizWS/mechismows" />
+	<property name="mechismoJar" value="${targetDir}/mechismo.jar" />
+	<property name="mechismoJarVersion" value="1.0" />
+	
+	<!-- Package some needed classes from the caBigR3 project -->
+	<target name="mechismoJar">
+		<delete file="${mechismoJar}" />
+		<jar destfile="${mechismoJar}">
+			<fileset dir="${mechismoHome}/target/classes">
+				<include name="org/reactome/mechismo/model/**.class" />
+			</fileset>
+		</jar>
+		<exec executable="${targetDir}/installJar.sh">
+			<!-- file anem -->
+			<arg value="${mechismoJar}"/>
+			<!-- groupId -->
+			<arg value="org.reactome" />
+			<!-- artifactId -->
+			<arg value="mechismo" />
+			<!-- version -->
+			<arg value="${mechismoJarVersion}" />
+		</exec>
+	</target>
+</project>
