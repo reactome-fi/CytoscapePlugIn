@@ -818,19 +818,6 @@ public class PlugInUtilities {
         }
     }
     
-    private static HttpClient initializeHTTPClient(PostMethod post, 
-                                                   String sendType,
-                                                   String query) throws UnsupportedEncodingException {
-        RequestEntity entity = new StringRequestEntity(query, 
-                                                       sendType,
-//                                                       "text/plain",
-                                                       "UTF-8");
-        post.setRequestEntity(entity);
-        post.setRequestHeader("Accept", "application/xml, text/plain");
-        HttpClient client = new HttpClient();
-        return client;
-    }
-    
     /**
      * Call a RESTful API for an XML document.
      * @param url
@@ -870,18 +857,19 @@ public class PlugInUtilities {
     }
     
     /**
-     * Call a POST HTTP method. The query should be in an XML, and returned text will be in XML too.
+     * Call a RESTful API. The returned text should be in a json text.
      * @param url
-     * @param query query text should be in XML.
-     * @return returned text should be in XML.
+     * @param type 
+     * @param query
+     * @return
      * @throws IOException
      */
-    public static String postHttpInXML(String url, String query) throws IOException {
+    public static String callHttpInJson(String url, String type, String query) throws IOException {
         return callHttp(url, 
-                        HTTP_POST, 
+                        type, 
                         query, 
-                        "application/xml",
-                        "application/xml, application/json, text/plain"); // A String may be wrapped in an XML element.
+                        "text/plain",
+                        "application/json"); // A String may be wrapped in an XML element.
     }
     
     /**
@@ -899,16 +887,21 @@ public class PlugInUtilities {
                                    String sendType,
                                    String requestType) throws IOException {
         HttpMethod method = null;
-        HttpClient client = null;
+        
         if (type.equals(HTTP_POST)) {
             method = new PostMethod(url);
-            client = initializeHTTPClient((PostMethod) method, sendType, query);
+            PostMethod post = (PostMethod) method;
+            RequestEntity entity = new StringRequestEntity(query, 
+                    sendType,
+                    "UTF-8");
+            post.setRequestEntity(entity);
+            post.setRequestHeader("Accept", requestType);
         }
         else {
             method = new GetMethod(url); // Default
             method.setRequestHeader("Accept", requestType);
-            client = new HttpClient();
         }
+        HttpClient client = new HttpClient();
         int responseCode = client.executeMethod(method);
         if (responseCode == HttpStatus.SC_OK) {
             InputStream is = method.getResponseBodyAsStream();

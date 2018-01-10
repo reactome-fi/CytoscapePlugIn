@@ -52,8 +52,7 @@ import org.reactome.r3.graph.NetworkClusterResult;
 import org.reactome.r3.util.InteractionUtilities;
 import org.w3c.dom.NodeList;
 
-public class RESTFulFIService implements FINetworkService
-{
+public class RESTFulFIService implements FINetworkService {
     private final static String HTTP_GET = PlugInUtilities.HTTP_GET;
     private final static String HTTP_POST = PlugInUtilities.HTTP_POST;
     private String restfulURL;

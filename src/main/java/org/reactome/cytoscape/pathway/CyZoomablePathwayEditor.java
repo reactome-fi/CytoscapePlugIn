@@ -62,6 +62,7 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.bn.BooleanNetworkAnalyzer;
 import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
+import org.reactome.cytoscape.mechismo.MechismoDataFetcher;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResultsIO;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
@@ -472,6 +473,15 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             popup.addSeparator();
             popup.add(item);
         }
+        
+        if (PlugInObjectManager.getManager().isMechismoEnabled()) {
+            if (popup.getComponentCount() > 0)
+                popup.addSeparator();
+            JMenuItem loadMechismo = new JMenuItem("Load Mechismo Result");
+            loadMechismo.addActionListener(event -> loadMechismoResults());
+            popup.add(loadMechismo);
+        }
+        
         JMenuItem searchDiagram = new JMenuItem("Search Entities");
         searchDiagram.addActionListener(new ActionListener() {
             
@@ -922,6 +932,11 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             }
         };
         t.start();
+    }
+    
+    private void loadMechismoResults() {
+        MechismoDataFetcher fetcher = new MechismoDataFetcher();
+        fetcher.loadMechismoReactions(getPathwayEditor());
     }
     
     private Set<String> fetchGenes(Long dbId, String name) {

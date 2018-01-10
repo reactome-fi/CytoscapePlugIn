@@ -193,25 +193,56 @@
 			<artifactId>jackson-databind</artifactId>
 			<version>2.8.7</version>
 		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
+		<!-- Thought the above dependency (databind) will pull the following jar file. However,
+		the pulled jar cannot be built into the target app, which is strange. Have to add this
+		dependency. -->
+		<dependency>
+    			<groupId>com.fasterxml.jackson.core</groupId>
+    			<artifactId>jackson-core</artifactId>
+    			<version>2.8.7</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations -->
+	<dependency>
+    		<groupId>com.fasterxml.jackson.core</groupId>
+    		<artifactId>jackson-annotations</artifactId>
+    		<version>2.8.7</version>
+	</dependency>
 
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>org.osgi.core</artifactId>
 			<version>4.2.0</version>
 		</dependency>
-		
+
+		<dependency>
+			<groupId>org.ops4j.pax.logging</groupId>
+			<artifactId>pax-logging-api</artifactId>
+			<version>1.5.2</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>1.7.5</version>
+			<version>1.7.25</version>
 		</dependency>
 		
+		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j-impl -->
 		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-jdk14</artifactId>
-			<version>1.7.5</version>
+    			<groupId>org.apache.logging.log4j</groupId>
+    			<artifactId>log4j-slf4j-impl</artifactId>
+    			<version>2.10.0</version>
 		</dependency>
-            
+		
+		<!-- Add this to get rid of the annoying SLF4J warning -->
+		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
+		<dependency>
+    			<groupId>org.slf4j</groupId>
+    			<artifactId>slf4j-log4j12</artifactId>
+    			<version>1.7.25</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>service-api</artifactId>

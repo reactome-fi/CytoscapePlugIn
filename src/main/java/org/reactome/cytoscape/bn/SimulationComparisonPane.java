@@ -85,7 +85,7 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
         hilitePathway(contentTable.getColumnCount() - 1);
     }
     
-    private class ComparisonTableModel extends VariableTableModel implements VariableTableModelInterface {
+    private class ComparisonTableModel extends VariableTableModel {
         
         public ComparisonTableModel() {
         }

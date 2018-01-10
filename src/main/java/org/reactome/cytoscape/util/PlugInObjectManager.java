@@ -316,8 +316,13 @@ public class PlugInObjectManager {
      * @return
      */
     public boolean isCancerTargetEnabled() {
-        String enableCancerTargetome = PlugInObjectManager.getManager().getProperties().getProperty("enableCancerTargetome", "false");
+        String enableCancerTargetome = getManager().getProperties().getProperty("enableCancerTargetome", "false");
         return enableCancerTargetome.equals("true");
+    }
+    
+    public boolean isMechismoEnabled() {
+        String enabled = getManager().getProperties().getProperty("enableMechismo", "false");
+        return enabled.equals("true");
     }
     
     public String getFiNetworkVersion()
