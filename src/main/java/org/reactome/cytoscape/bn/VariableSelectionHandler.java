@@ -17,8 +17,8 @@ import org.reactome.booleannetwork.BooleanVariable;
 
 public class VariableSelectionHandler implements Selectable {
     
-    private JTable variableTable;
-    private List<Long> selectedIds; // Use a single List object to save some GC
+    protected JTable variableTable;
+    protected List<Long> selectedIds; // Use a single List object to save some GC
     
     public VariableSelectionHandler() {
         selectedIds = new ArrayList<>();

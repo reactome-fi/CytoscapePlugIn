@@ -329,7 +329,6 @@ public class PathwayInternalFrame extends JInternalFrame implements Selectable {
                                       (RenderablePathway)pathwayEditor.getPathwayEditor().getRenderable(),
                                       hitGenes,
                                       this);
-            
 //            // Make sure this PathwayInternalFrame should be closed
 //            setVisible(false);
 //            dispose();

@@ -77,7 +77,7 @@ public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
     protected abstract void reHilitePathway();
     
     private void synchronizeSelection() {
-        selectionHandler = new VariableSelectionHandler();
+        selectionHandler = createSelectionHandler();
         selectionHandler.setVariableTable(contentTable);
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         mediator.addSelectable(selectionHandler);
@@ -89,6 +89,10 @@ public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
                 handleTableSelection();
             }
         });
+    }
+    
+    protected VariableSelectionHandler createSelectionHandler() {
+        return new VariableSelectionHandler();
     }
     
     @Override

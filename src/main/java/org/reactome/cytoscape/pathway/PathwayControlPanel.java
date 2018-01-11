@@ -447,8 +447,9 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         List<CyNode> selectedNodes = CyTableUtil.getNodesInState(networkView.getModel(),
                 CyNetwork.SELECTED,
                 true);
-        if (selecedEdges.size() == 0 && selectedNodes.size() == 0)
-            return; // We want to show all
+//        // Hide all if nothing is selected, which seems better than showing all.
+//        if (selecedEdges.size() == 0 && selectedNodes.size() == 0)
+//            return; // We want to show all
         networkView.getEdgeViews().forEach(edgeView -> {
             if (selecedEdges.contains(edgeView.getModel()))
                 PlugInUtilities.showEdge(edgeView);

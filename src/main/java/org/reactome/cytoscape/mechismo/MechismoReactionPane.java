@@ -9,8 +9,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.reactome.cytoscape.bn.SimulationComparisonPane;
+import org.reactome.cytoscape.bn.VariableSelectionHandler;
 import org.reactome.mechismo.model.AnalysisResult;
-import org.reactome.mechismo.model.CancerType;
 import org.reactome.mechismo.model.Reaction;
 
 /**
@@ -20,9 +20,23 @@ import org.reactome.mechismo.model.Reaction;
  *
  */
 public class MechismoReactionPane extends SimulationComparisonPane {
+    public static final String TITLE = "Mechismo Reaction";
     
-    public MechismoReactionPane(String title) {
+    public MechismoReactionPane() {
+        super(TITLE);
+    }
+    
+    /**
+     * Just for sub-classing
+     * @param title
+     */
+    protected MechismoReactionPane(String title) {
         super(title);
+    }
+    
+    @Override
+    protected VariableSelectionHandler createSelectionHandler() {
+        return new ReactionSelectionHandler();
     }
     
     @Override
@@ -33,9 +47,10 @@ public class MechismoReactionPane extends SimulationComparisonPane {
     public void setReactions(List<Reaction> reactions) {
         MechismoReactionModel model = (MechismoReactionModel) contentTable.getModel();
         model.setReactions(reactions);
+        summaryLabel.setText("Mechismo reaction analysis result FDR:");
     }
 
-    private class MechismoReactionModel extends VariableTableModel {
+    protected class MechismoReactionModel extends VariableTableModel {
         
         public MechismoReactionModel() {
         }
@@ -45,7 +60,7 @@ public class MechismoReactionPane extends SimulationComparisonPane {
             // Using jackson creates many copies of same CancerType. Therefore
             // use String instead.
             List<String> cancerTypes = grepCancerTypes(reactions);
-            setUpColumnNames(cancerTypes);
+            setUpColumnNames(cancerTypes, true);
             addValues(reactions, cancerTypes);
             fireTableStructureChanged();
         }
@@ -78,7 +93,7 @@ public class MechismoReactionPane extends SimulationComparisonPane {
             });
         }
         
-        private Map<String, Double> getFDRs(Set<AnalysisResult> results) {
+        protected Map<String, Double> getFDRs(Set<AnalysisResult> results) {
             Map<String, Double> cancerToFDR = new HashMap<>();
             if (results == null)
                 return cancerToFDR;
@@ -86,12 +101,18 @@ public class MechismoReactionPane extends SimulationComparisonPane {
             return cancerToFDR;
         }
         
-        private void setUpColumnNames(List<String> cancerTypes) {
-            columnHeaders = new String[2 + cancerTypes.size()];
-            columnHeaders[0] = "ID";
-            columnHeaders[1] = "Name";
+        protected void setUpColumnNames(List<String> cancerTypes,
+                                        boolean needId) {
+            int reserved = 1;
+            if (needId)
+                reserved = 2;
+            columnHeaders = new String[reserved + cancerTypes.size()];
+            int start = 0;
+            if (needId) 
+                columnHeaders[start ++] = "ID";
+            columnHeaders[start ++] = "Name";
             for (int i = 0; i < cancerTypes.size(); i++)
-                columnHeaders[i + 2] = cancerTypes.get(i);
+                columnHeaders[start ++] = cancerTypes.get(i);
         }
         
         private List<String> grepCancerTypes(List<Reaction> reactions) {
@@ -101,6 +122,10 @@ public class MechismoReactionPane extends SimulationComparisonPane {
                     return;
                 reaction.getAnalysisResults().forEach(result -> cancerTypes.add(result.getCancerType().getAbbreviation()));
             });
+            return resortPanCancer(cancerTypes);
+        }
+
+        protected List<String> resortPanCancer(Set<String> cancerTypes) {
             List<String> list = new ArrayList<>(cancerTypes);
             Collections.sort(list);
             // Check if pancancer is there

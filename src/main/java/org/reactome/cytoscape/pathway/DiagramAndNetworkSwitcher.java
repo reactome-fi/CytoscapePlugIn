@@ -31,6 +31,7 @@ import org.gk.render.RenderablePathway;
 import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.mechismo.MechismoDataFetcher;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.PGMFIVisualStyle;
@@ -92,7 +93,7 @@ public class DiagramAndNetworkSwitcher {
                                    final RenderablePathway pathway,
                                    final Set<String> hitGenes,
                                    final PathwayInternalFrame pathwayFrame) throws Exception {
-        Task task = new AbstractTask() {
+        Task convertToFITask = new AbstractTask() {
             
             @Override
             public void run(TaskMonitor taskMonitor) throws Exception {
@@ -103,9 +104,21 @@ public class DiagramAndNetworkSwitcher {
                                           pathwayFrame);
             }
         }; 
+        // If Mechismo results are loaded, load mechisnmo FIs then
+        Task loadMechsimoFITask = new AbstractTask() {
+            @Override
+            public void run(TaskMonitor monitor) throws Exception {
+                CyNetworkView networkView = PlugInUtilities.getCurrentNetworkView();
+                if (networkView == null)
+                    return;
+                MechismoDataFetcher fetcher = new MechismoDataFetcher();
+                fetcher.loadMechismoInteractions(networkView);
+            }
+        };
         @SuppressWarnings("rawtypes")
         TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
-        taskManager.execute(new TaskIterator(task));
+        TaskIterator taskIterator = new TaskIterator(convertToFITask, loadMechsimoFITask);
+        taskManager.execute(taskIterator);
     }
     
     private void convertPathwayToFINetwork(final Long pathwayId,

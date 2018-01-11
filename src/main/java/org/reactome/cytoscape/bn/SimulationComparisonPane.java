@@ -22,7 +22,7 @@ import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
  */
 public class SimulationComparisonPane extends VariableCytoPaneComponent {
     // Provide a summary
-    private JLabel summaryLabel;
+    protected JLabel summaryLabel;
     
     public SimulationComparisonPane(String title) {
         super(title);

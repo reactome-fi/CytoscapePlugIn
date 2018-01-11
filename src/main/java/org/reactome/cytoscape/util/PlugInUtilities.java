@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -521,9 +520,9 @@ public class PlugInUtilities {
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
-    public static CytoPanelComponent getCytoPanelComponent(Class<?> cytoPanelCls,
-                                                           CytoPanelName name,
-                                                           String title) throws IllegalAccessException, InstantiationException{
+    public static <T extends CytoPanelComponent> T getCytoPanelComponent(Class<T> cytoPanelCls,
+                                                                         CytoPanelName name,
+                                                                         String title) {
         // Show samples for the user's selection
         CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(name);
         // We want the east pane in the dock state
@@ -546,12 +545,17 @@ public class PlugInUtilities {
             }
         }
         if (index < 0) {
-            component = (CytoPanelComponent) cytoPanelCls.newInstance();
-            index = cytoPanel.indexOfComponent(component.getComponent());
+            try {
+                component =  (CytoPanelComponent) cytoPanelCls.newInstance();
+                index = cytoPanel.indexOfComponent(component.getComponent());
+            }
+            catch(Exception e) {
+                throw new IllegalStateException(e);
+            }
         }
         if (index > -1)
             cytoPanel.setSelectedIndex(index);
-        return component;
+        return (T) component;
     }
                                             
     
