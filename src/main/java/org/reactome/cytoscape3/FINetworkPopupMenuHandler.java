@@ -46,6 +46,7 @@ import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape3.EdgeActionCollection.DrugTargetDetailsMenuItem;
+import org.reactome.cytoscape3.EdgeActionCollection.EdgeLoadMechsimoMenuItem;
 import org.reactome.cytoscape3.EdgeActionCollection.EdgeQueryFIMenuItem;
 import org.reactome.cytoscape3.NodeActionCollection.CancerGeneIndexMenu;
 import org.reactome.cytoscape3.NodeActionCollection.CosmicMenu;
@@ -265,6 +266,12 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         edgeMenuProps.setProperty(ServiceProperties.TITLE, "Query FI Source");
         edgeMenuProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, edgeQueryMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
+        
+        EdgeLoadMechsimoMenuItem mechimoMenu = new EdgeActionCollection.EdgeLoadMechsimoMenuItem();
+        edgeMenuProps = new Properties();
+        edgeMenuProps.setProperty(ServiceProperties.TITLE, "Fetch Mechismo Results");
+        edgeMenuProps.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
+        addPopupMenu(context, mechimoMenu, CyEdgeViewContextMenuFactory.class, edgeMenuProps);
         
         DrugTargetDetailsMenuItem drugTargetDetailsMenu = new EdgeActionCollection.DrugTargetDetailsMenuItem();
         edgeMenuProps = new Properties();

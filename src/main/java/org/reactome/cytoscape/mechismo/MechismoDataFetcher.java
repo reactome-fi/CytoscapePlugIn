@@ -1,11 +1,14 @@
 package org.reactome.cytoscape.mechismo;
 
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.swing.JOptionPane;
 
+import org.biojava.nbio.structure.Structure;
+import org.biojava.nbio.structure.StructureIO;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyTable;
@@ -16,7 +19,9 @@ import org.gk.render.Renderable;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.mechismo.model.Interaction;
+import org.reactome.mechismo.model.Mutation;
 import org.reactome.mechismo.model.Reaction;
+import org.reactome.mechismo.model.ResidueStructure;
 import org.reactome.r3.util.InteractionUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +42,67 @@ public class MechismoDataFetcher {
         restfulHost = PlugInObjectManager.getManager().getProperties().getProperty("MechismoWSURL");
         if (restfulHost == null)
             throw new IllegalStateException("MechismoWSURL has not been configured!");
+    }
+    
+    public void loadMechismoInteraction(String name) {
+        try {
+            // Required by the WS
+            String[] tokens = name.split(" ");
+            // Need to encode it
+            String tmpName = InteractionUtilities.generateFIFromGene(tokens[0], tokens[2]);
+            tmpName = URLEncoder.encode(tmpName, "UTF-8");
+            String url = restfulHost + "interaction/" + tmpName;
+            String output = PlugInUtilities.callHttpInJson(url,
+                                                          PlugInUtilities.HTTP_GET,
+                                                          null);
+            ObjectMapper mapper = new ObjectMapper();
+            Interaction interaction = mapper.readValue(output,
+                                                        new TypeReference<Interaction>() {
+                                                        });
+            displayInteraction(interaction);
+        }
+        catch(Exception e) {
+            logger.error(e.getMessage(), e);
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Error in fetching Mechismo analysis results:\n" + e.getMessage(),
+                                          "Error in Fetching Mechismo Results",
+                                          JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void displayInteraction(Interaction interaction) {
+        System.out.println("Display interaction: " + interaction.getName());
+        // The following is for test
+        String pdb = null;
+        Set<Mutation> mutations = interaction.getMutations();
+        for (Mutation mutation : mutations) {
+            ResidueStructure structure = mutation.getResidue().getStructure();
+            pdb = structure.getPdb();
+            break;
+        }
+        if (pdb == null)
+            System.out.println("Cannot find a pdb!");
+        else 
+            displayStructure(pdb);
+    }
+    
+    private void displayStructure(String pdb) {
+        try {
+            
+            Structure struc = StructureIO.getStructure(pdb);
+
+            InteractionMutationView mutationView = new InteractionMutationView();
+
+            mutationView.setStructure(struc);
+
+            // send some commands to Jmol
+            mutationView.evalString("select * ; color chain;");            
+            mutationView.evalString("select *; spacefill off; wireframe off; cartoon on;  ");
+            mutationView.evalString("select ligands; cartoon off; wireframe 0.3; spacefill 0.5; color cpk;");
+        } 
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
     
     public void loadMechismoInteractions(CyNetworkView networkView) {

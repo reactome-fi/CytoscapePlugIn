@@ -462,6 +462,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             else
                 PlugInUtilities.hideNode(nodeView);
         });
+        PropertyChangeEvent event = new PropertyChangeEvent(networkView, "edgeVisibleUpdate", null, null);
+        PlugInObjectManager.getManager().firePropertyChangeEvent(event);
     }
     
     private void doNetworkViewIsSelected(CyNetworkView networkView) {

@@ -8,6 +8,9 @@ import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.LayoutManager;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -86,18 +89,33 @@ public class PlugInObjectManager {
     private JDesktopPane pathwayDesktop;
     // Used as a label for card layout for pathwaydesktop in Cytoscape 3.4.0 or above
     private final String PATHWAY_DIAGRAM_CARD_LABEL = "PathwayDiagramDesktop";
+    // For connecting some remote links
+    private PropertyChangeSupport propertyChangeSupport;
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
      */
     private PlugInObjectManager() {
         serviceReferences = new ArrayList<ServiceReference>();
+        propertyChangeSupport = new PropertyChangeSupport(this);
     }
     
     public static PlugInObjectManager getManager() {
         if (manager == null)
             manager = new PlugInObjectManager();
         return manager;
+    }
+    
+    public void addPropetyChangeListener(PropertyChangeListener l) {
+        propertyChangeSupport.addPropertyChangeListener(l);
+    }
+    
+    public void removePropertyChangeLisener(PropertyChangeListener l) {
+        propertyChangeSupport.removePropertyChangeListener(l);
+    }
+    
+    public void firePropertyChangeEvent(PropertyChangeEvent event) {
+        propertyChangeSupport.firePropertyChange(event);
     }
     
     public PathwayPGMConfiguration getPathwayPGMConfig() {

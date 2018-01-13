@@ -21,6 +21,7 @@ import org.cytoscape.view.model.View;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.drug.InteractionView;
 import org.reactome.cytoscape.drug.NetworkDrugManager;
+import org.reactome.cytoscape.mechismo.MechismoDataFetcher;
 import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.TableHelper;
@@ -176,6 +177,26 @@ public class EdgeActionCollection {
         String edgeType = (String) edgeTable.getRow(edgeView.getModel().getSUID()).get("EDGE_TYPE", String.class);
         return edgeType;
     }
+    
+    
+    static class EdgeLoadMechsimoMenuItem implements CyEdgeViewContextMenuFactory {
+
+        @Override
+        public CyMenuItem createMenuItem(CyNetworkView networkView, View<CyEdge> edgeView) {
+            JMenuItem item = new JMenuItem("Fetch Mechismo Results");
+            CyTable table = networkView.getModel().getDefaultEdgeTable();
+            String name = table.getRow(edgeView.getModel().getSUID()).get("name", String.class);
+            item.addActionListener(event -> queryMechismoResults(name));
+            return new CyMenuItem(item, 2.0f);
+        }
+        
+        private void queryMechismoResults(String name) {
+            MechismoDataFetcher fetcher = new MechismoDataFetcher();
+            fetcher.loadMechismoInteraction(name);
+        }
+    
+    }
+    
     
     static class EdgeQueryFIMenuItem implements CyEdgeViewContextMenuFactory {
         
