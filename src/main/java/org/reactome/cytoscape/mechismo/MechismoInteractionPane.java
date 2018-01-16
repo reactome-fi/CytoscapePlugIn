@@ -28,6 +28,11 @@ public class MechismoInteractionPane extends MechismoReactionPane {
     }
     
     @Override
+    protected void handleTableSelection() {
+        
+    }
+    
+    @Override
     protected void modifyContentPane() {
         super.modifyContentPane();
         viewUpdateListener = new PropertyChangeListener() {

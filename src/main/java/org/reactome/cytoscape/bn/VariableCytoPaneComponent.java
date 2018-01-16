@@ -104,7 +104,7 @@ public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
         PlugInObjectManager.getManager().unregisterRadioButton(BUTTON_GROUP_NAME, hiliteDiagramBtn);
     }
 
-    private void handleTableSelection() {
+    protected void handleTableSelection() {
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         mediator.fireSelectionEvent(selectionHandler);
     }

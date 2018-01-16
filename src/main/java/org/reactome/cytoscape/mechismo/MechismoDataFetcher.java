@@ -7,8 +7,6 @@ import java.util.stream.Collectors;
 
 import javax.swing.JOptionPane;
 
-import org.biojava.nbio.structure.Structure;
-import org.biojava.nbio.structure.StructureIO;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyTable;
@@ -19,9 +17,7 @@ import org.gk.render.Renderable;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.mechismo.model.Interaction;
-import org.reactome.mechismo.model.Mutation;
 import org.reactome.mechismo.model.Reaction;
-import org.reactome.mechismo.model.ResidueStructure;
 import org.reactome.r3.util.InteractionUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,38 +67,8 @@ public class MechismoDataFetcher {
     }
     
     private void displayInteraction(Interaction interaction) {
-        System.out.println("Display interaction: " + interaction.getName());
-        // The following is for test
-        String pdb = null;
-        Set<Mutation> mutations = interaction.getMutations();
-        for (Mutation mutation : mutations) {
-            ResidueStructure structure = mutation.getResidue().getStructure();
-            pdb = structure.getPdb();
-            break;
-        }
-        if (pdb == null)
-            System.out.println("Cannot find a pdb!");
-        else 
-            displayStructure(pdb);
-    }
-    
-    private void displayStructure(String pdb) {
-        try {
-            
-            Structure struc = StructureIO.getStructure(pdb);
-
-            InteractionMutationView mutationView = new InteractionMutationView();
-
-            mutationView.setStructure(struc);
-
-            // send some commands to Jmol
-            mutationView.evalString("select * ; color chain;");            
-            mutationView.evalString("select *; spacefill off; wireframe off; cartoon on;  ");
-            mutationView.evalString("select ligands; cartoon off; wireframe 0.3; spacefill 0.5; color cpk;");
-        } 
-        catch (Exception e){
-            e.printStackTrace();
-        }
+        InteractionMutationView view = new InteractionMutationView();
+        view.setInteraction(interaction);
     }
     
     public void loadMechismoInteractions(CyNetworkView networkView) {
