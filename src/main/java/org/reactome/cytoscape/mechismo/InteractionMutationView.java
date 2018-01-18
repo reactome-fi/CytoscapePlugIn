@@ -1,17 +1,18 @@
 package org.reactome.cytoscape.mechismo;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.event.ItemEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,14 +21,17 @@ import java.util.stream.IntStream;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JFrame;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.RowFilter;
@@ -36,7 +40,8 @@ import javax.swing.table.TableRowSorter;
 
 import org.biojava.nbio.structure.Structure;
 import org.biojava.nbio.structure.StructureIO;
-import org.biojava.nbio.structure.gui.BiojavaJmol;
+import org.biojava.nbio.structure.align.gui.jmol.JmolPanel;
+import org.biojava.nbio.structure.align.gui.jmol.RasmolCommandListener;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.mechismo.model.Interaction;
 import org.reactome.mechismo.model.Mutation;
@@ -52,41 +57,72 @@ import org.slf4j.LoggerFactory;
  * @author wug
  *
  */
-public class InteractionMutationView extends BiojavaJmol {
+@SuppressWarnings("serial")
+public class InteractionMutationView extends JDialog {
     private final Logger logger = LoggerFactory.getLogger(InteractionMutationView.class);
     private MutationPane mutationPane;
+    private JTabbedPane structureTabs;
+    // Keep this map for quick access
+    private Map<String, StructurePane> pdbToStructurePane;
     
     public InteractionMutationView() {
-        super();
+        super(PlugInObjectManager.getManager().getCytoscapeDesktop());
         init();
     }
     
     public void setInteraction(Interaction interaction) {
-        // The following is for test
-        String pdb = null;
         Set<Mutation> mutations = interaction.getMutations();
+        if (mutations == null || mutations.size() == 0) {
+            JOptionPane.showMessageDialog(getOwner(),
+                    "Cannot find any mutation related to this interaction.", 
+                    "No Mutation", 
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        // Multiple structures may be cited in one interaction
+        Set<String> pdbIds = new HashSet<>();
         for (Mutation mutation : mutations) {
             ResidueStructure structure = mutation.getResidue().getStructure();
-            pdb = structure.getPdb();
-            break;
+            if (structure.getPdb() != null)
+                pdbIds.add(structure.getPdb());
         }
-        if (pdb == null) {
-            JOptionPane.showMessageDialog(getFrame(),
-                    "Cannot find any PDB identifier associated with this interaction!",
+        if (pdbIds.size() == 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Cannot find any PDB identifier associated with this interaction.",
                     "No PDB",
                     JOptionPane.ERROR_MESSAGE);
+            return;
         }
-        else {
-            mutationPane.setInteraction(interaction);
-            displayStructure(pdb);
-            highlightVariants();
-            // The title should be set after display structure. Otherwise,
-            // PDB id will be used as title.
-            String title = "Mutation Profile for " + interaction.getName();
-            title = title.replace("\t", " "); // Since interaction using tab.
-            getFrame().setTitle(title);
-            setMutationPaneTitle(interaction);
-        }
+        displayStructures(pdbIds);
+        mutationPane.setInteraction(interaction);
+        highlightVariants();
+        // The title should be set after display structure. Otherwise,
+        // PDB id will be used as title.
+        String title = "Mutation Profile for " + interaction.getName().replace("\t", " ");
+        setTitle(title);
+        setMutationPaneTitle(interaction);
+        
+        setModal(false);
+        setVisible(true);
+    }
+    
+    private void displayStructures(Set<String> pdbIds) {
+        // Need to sort it first
+        pdbIds.stream().sorted().forEach(pdbId -> {
+            StructurePane pane = new StructurePane();
+            try {
+                pane.displayStructure(pdbId);
+                structureTabs.add(pdbId, pane);
+                pdbToStructurePane.put(pdbId, pane);
+            } 
+            catch (Exception e) {
+                logger.error(e.getMessage(), e);
+                JOptionPane.showMessageDialog(InteractionMutationView.this,
+                                              "Cannot show structure for " + pdbId + ": " + e.getMessage(),
+                                              "Error in Structure Display",
+                                              JOptionPane.ERROR_MESSAGE);
+            }
+        });
     }
     
     private void setMutationPaneTitle(Interaction interaction) {
@@ -96,112 +132,61 @@ public class InteractionMutationView extends BiojavaJmol {
         mutationPane.titleLabel.setText(builder.toString());
     }
     
-    private void displayStructure(String pdb) {
-        try {
-            Structure struc = StructureIO.getStructure(pdb);
-            setStructure(struc);
-            // send some commands to Jmol
-            // The following lines are needed for a nice preview
-            evalString("select * ; color chain;");            
-            evalString("select *; spacefill off; wireframe off; cartoon on;  ");
-            evalString("select ligands; cartoon off; wireframe 0.3; spacefill 0.5; color cpk;");
-            // To show selection. To show this, have to make sure selection checkbox is checked
-            evalString("set display selected;");
-        } 
-        catch (Exception e){
-            logger.error("displayStructure: " + e.getMessage(), e);
-            JOptionPane.showMessageDialog(getFrame(),
-                                         "Error in showing structure: " + e.getMessage(),
-                                         "Error in Structure Display",
-                                         JOptionPane.ERROR_MESSAGE);
-        }
-    }
-    
     private void highlightVariants() {
         // Get a list of residues to highlight
-        String residueInChain = mutationPane.getResidueInChains();
-//        System.out.println(residueInChain);
-        // After that, don't select any more
-        evalString("select " + residueInChain + "; color white; spacefill; zoom out; select none; ");
+        Map<String, String> pdbToResidueInChain = mutationPane.getResidueInChains();
+        pdbToResidueInChain.forEach((pdb, residues) -> {
+            StructurePane structurePane = pdbToStructurePane.get(pdb);
+            if (structurePane == null)
+                return;
+            structurePane.highlightVariants(residues);
+        });
     }
     
     /**
      * Need some customization here.
      */
     private void init() {
-        JFrame frame = getFrame();
-        JMenuBar menuBar = new JMenuBar();
-        frame.setJMenuBar(menuBar); // Don't want to have any menu bar
-        WindowListener[] windowListeners = frame.getWindowListeners();
-        if (windowListeners != null && windowListeners.length > 0) 
-            Arrays.asList(windowListeners).forEach(l -> frame.removeWindowListener(l));
-        frame.addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                frame.dispose();
-            }
-        });
-        frame.setLocationRelativeTo(PlugInObjectManager.getManager().getCytoscapeDesktop());
-        frame.setSize(700, 800);
+        setLocationRelativeTo(PlugInObjectManager.getManager().getCytoscapeDesktop());
+        setSize(700, 800);
         
-        Component jmolPane = getJMolContainer(frame);
-        if (jmolPane == null)
-            throw new IllegalStateException("Cannot find jMol pane!");
-        checkShowSelectionBox(jmolPane);
-        
-        Container container = frame.getContentPane();
-        container.remove(jmolPane);
+        structureTabs = new JTabbedPane();
         
         mutationPane = new MutationPane();
         mutationPane.mutationTable.getSelectionModel().addListSelectionListener(e -> handleTableSelection());
-        JSplitPane jsp = new JSplitPane(JSplitPane.VERTICAL_SPLIT, jmolPane, mutationPane);
+        JSplitPane jsp = new JSplitPane(JSplitPane.VERTICAL_SPLIT, structureTabs, mutationPane);
         jsp.setDividerLocation(550); // Assign a more space for the structure part
         
-        container.add(jsp, BorderLayout.CENTER);
+        add(jsp, BorderLayout.CENTER);
+        
+        JPanel controlPane = new JPanel();
+        JButton closeBtn = new JButton("Close");
+        closeBtn.addActionListener(e -> dispose());
+        controlPane.add(closeBtn);
+        add(controlPane, BorderLayout.SOUTH);
+        addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                dispose();
+            }
+            
+        });
+        
+        pdbToStructurePane = new HashMap<>();
     }
     
     private void handleTableSelection() {
-        String residues = mutationPane.getSelectedResidueInChains();
-        evalString("select none; select " + residues + "; ");
-    }
-    
-    private void checkShowSelectionBox(Component jmolPane) {
-        if (!(jmolPane instanceof Box))
-            return;
-        Box box = (Box) jmolPane;
-        Set<Container> current = new HashSet<>();
-        Set<Container> next = new HashSet<>();
-        current.add(box);
-        while (current.size() > 0) {
-            for (Container container : current) {
-                Component[] comps = container.getComponents();
-                if (comps == null || comps.length == 0)
-                    continue;
-                for (int i = 0; i < comps.length; i++) {
-                    if (comps[i] instanceof JCheckBox) {
-                        JCheckBox checkBox = (JCheckBox) comps[i];
-                        String label = checkBox.getText();
-                        if (label.equals("Show Selection")) {
-                            checkBox.setSelected(true);
-                            break;
-                        }
-                    }
-                    else if (comps[i] instanceof Container)
-                        next.add((Container)comps[i]);
-                }
+        Map<String, String> pdbToResidues = mutationPane.getSelectedResidueInChains();
+        pdbToResidues.forEach((pdb, residues) -> {
+            StructurePane structurePane = pdbToStructurePane.get(pdb);
+            if (structurePane != null) {
+                structurePane.selectResidues(residues);
+                // This is a little bit random if more than one structure
+                // is selected
+                structureTabs.setSelectedComponent(structurePane);
             }
-            current.clear();
-            current.addAll(next);
-            next.clear();
-        }
-    }
-    
-    private Component getJMolContainer(JFrame frame) {
-        Component[] comps = frame.getContentPane().getComponents();
-        for (int i = 0; i < comps.length; i++) {
-            if (comps[i] instanceof Box)
-                return comps[i];
-        }
-        return null;
+        });
     }
     
     /**
@@ -256,13 +241,19 @@ public class InteractionMutationView extends BiojavaJmol {
             model.setInteraction(interaction);
         }
         
-        public String getResidueInChains() {
+        public Map<String, String> getResidueInChains() {
             MutationTableModel model = (MutationTableModel) mutationTable.getModel();
-            Set<String> residues = model.getResiduesInChains();
-            return String.join(",", residues);
+            Map<String, Set<String>> pdbToResidues = model.getResiduesInChains();
+            return getResidueInChains(pdbToResidues);
+        }
+
+        private Map<String, String> getResidueInChains(Map<String, Set<String>> pdbToResidues) {
+            Map<String, String> pdbToText = new HashMap<>();
+            pdbToResidues.forEach((pdb, residues) -> pdbToText.put(pdb, String.join(",", residues)));
+            return pdbToText;
         }
         
-        public String getSelectedResidueInChains() {
+        public Map<String, String> getSelectedResidueInChains() {
             MutationTableModel model = (MutationTableModel) mutationTable.getModel();
             int[] selectedRows = mutationTable.getSelectedRows();
             if (selectedRows == null || selectedRows.length == 0)
@@ -272,8 +263,116 @@ public class InteractionMutationView extends BiojavaJmol {
                 int rowInModel = mutationTable.convertRowIndexToModel(selectedRows[i]);
                 rowList.add(rowInModel);
             }
-            Set<String> residues = model.getResiduesInChains(rowList);
-            return String.join(",", residues);
+            return getResidueInChains(model.getResiduesInChains(rowList));
+        }
+        
+    }
+    
+    /**
+     * The following customized JPanel is modified from BiojavaJmol class so that
+     * we can create multiple copies of structure view.
+     * @author wug
+     *
+     */
+    private class StructurePane extends JPanel {
+        private JmolPanel jmolPanel;
+        
+        public StructurePane() {
+            init();
+        }
+        
+        // The following code was copied directly from BiojavaJMol class with a little bit
+        // of modification.
+        private void init() {
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+
+            jmolPanel = new JmolPanel();
+
+            jmolPanel.setPreferredSize(new Dimension(500,500));
+            add(jmolPanel);
+
+            JTextField field = new JTextField();
+
+            field.setMaximumSize(new Dimension(Short.MAX_VALUE,30));
+            field.setText("Enter RASMOL like command...");
+            RasmolCommandListener listener = new RasmolCommandListener(jmolPanel,field) ;
+
+            field.addActionListener(listener);
+            field.addMouseListener(listener);
+            field.addKeyListener(listener);
+            add(field);
+
+            Box hBox1 = Box.createHorizontalBox();
+            hBox1.setMaximumSize(new Dimension(Short.MAX_VALUE,30));
+
+            String[] styles = new String[] { "Cartoon", "Backbone", "CPK", "Ball and Stick", "Ligands","Ligands and Pocket"};
+            JComboBox<String> style = new JComboBox<>(styles);
+
+            hBox1.add(new JLabel("Style"));
+            hBox1.add(style);
+            add(hBox1);
+
+            style.addActionListener(jmolPanel);
+
+            String[] colorModes = new String[] { "Secondary Structure", "By Chain", "Rainbow", "By Element", "By Amino Acid", "Hydrophobicity" };
+            JComboBox<String> colors = new JComboBox<>(colorModes);
+            colors.addActionListener(jmolPanel);
+            hBox1.add(Box.createGlue());
+            hBox1.add(new JLabel("Color"));
+            hBox1.add(colors);
+
+            // Check boxes
+            Box hBox2 = Box.createHorizontalBox();
+            hBox2.setMaximumSize(new Dimension(Short.MAX_VALUE,30));
+
+            JButton resetDisplay = new JButton("Reset Display");
+
+            resetDisplay.addActionListener(e -> {
+                jmolPanel.executeCmd("restore STATE state_1");
+            });
+
+            hBox2.add(resetDisplay); hBox2.add(Box.createGlue());
+
+            JCheckBox toggleSelection = new JCheckBox("Show Selection");
+            toggleSelection.addItemListener(e -> {
+                boolean showSelection = (e.getStateChange() == ItemEvent.SELECTED);
+                if (showSelection){
+                    jmolPanel.executeCmd("set display selected");
+                } else {
+                    jmolPanel.executeCmd("set display off");
+                }
+            });
+            // Default should be selected
+            toggleSelection.setSelected(true);
+            hBox2.add(toggleSelection);
+            hBox2.add(Box.createGlue());
+            add(hBox2);
+        }
+        
+        public void displayStructure(String pdbId) throws Exception {
+            Structure struc = StructureIO.getStructure(pdbId);
+            String pdb = struc.toPDB();
+            jmolPanel.openStringInline(pdb);
+            // send some commands to Jmol
+            // The following lines are needed for a nice preview
+            evalString("select * ; color chain;");            
+            evalString("select *; spacefill off; wireframe off; cartoon on;  ");
+            evalString("select ligands; cartoon off; wireframe 0.3; spacefill 0.5; color cpk;");
+            // To show selection. To show this, have to make sure selection checkbox is checked
+            evalString("set display selected;");
+        }
+        
+        public void highlightVariants(String residuesInChain) {
+            // After that, don't select any more
+            evalString("select " + residuesInChain + "; color white; spacefill; zoom out; select none; ");
+        }
+        
+        public void selectResidues(String residues) {
+            evalString("select none; select " + residues + "; ");
+        }
+        
+        private void evalString(String string) {
+            jmolPanel.evalString(string);
         }
         
     }
@@ -345,13 +444,13 @@ public class InteractionMutationView extends BiojavaJmol {
             return builder.toString();
         }
         
-        public Set<String> getResiduesInChains() {
+        public Map<String, Set<String>> getResiduesInChains() {
             List<Integer> rows = IntStream.range(0, getRowCount()).mapToObj(i -> new Integer(i)).collect(Collectors.toList());
             return getResiduesInChains(rows);
         }
         
-        public Set<String> getResiduesInChains(List<Integer> rows) {
-            Set<String> rtn = new HashSet<>();
+        public Map<String, Set<String>> getResiduesInChains(List<Integer> rows) {
+            Map<String, Set<String>> pdbToResidues = new HashMap<>();
             Pattern pattern = Pattern.compile("\\d+");
             rows.forEach(row -> {
                 String residueInPDB = (String) getValueAt(row, getColumnCount() - 1);
@@ -360,12 +459,19 @@ public class InteractionMutationView extends BiojavaJmol {
                 Matcher matcher = pattern.matcher(tokens[1]);
                 if (matcher.find()) {
                     String location = matcher.group(0);
-                    rtn.add(location + ":" + tokens[0]);
+                    String text = location + ":" + tokens[0];
+                    String pdb = (String) getValueAt(row, getColumnCount() - 2);
+                    pdbToResidues.compute(pdb, (key, set) -> {
+                        if (set == null)
+                            set = new HashSet<>();
+                        set.add(text);
+                        return set;
+                    });
                 }
                 else // Which should not be possible
                     logger.error("Cannot find PDB residue location for " + residueInPDB);
             });
-            return rtn;
+            return pdbToResidues;
         }
         
         @Override

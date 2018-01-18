@@ -51,6 +51,13 @@ public class MechismoDataFetcher {
             String output = PlugInUtilities.callHttpInJson(url,
                                                           PlugInUtilities.HTTP_GET,
                                                           null);
+            if (output == null || output.trim().length() == 0) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "No mechismo analysis result is available for this interaction.",
+                                          "No Result",
+                                          JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             ObjectMapper mapper = new ObjectMapper();
             Interaction interaction = mapper.readValue(output,
                                                         new TypeReference<Interaction>() {
