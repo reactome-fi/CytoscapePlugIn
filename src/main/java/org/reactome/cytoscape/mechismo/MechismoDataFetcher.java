@@ -1,12 +1,15 @@
 package org.reactome.cytoscape.mechismo;
 
+import java.awt.Component;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.swing.JOptionPane;
 
+import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyTable;
@@ -14,6 +17,8 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.HyperEdge;
 import org.gk.render.Renderable;
+import org.reactome.cytoscape.bn.VariableCytoPaneComponent;
+import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.mechismo.model.Interaction;
@@ -33,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class MechismoDataFetcher {
     private Logger logger = LoggerFactory.getLogger(MechismoDataFetcher.class);
     private String restfulHost;
+    private PathwayHighlightControlPanel hiliteControlPane;
     
     public MechismoDataFetcher() {
         restfulHost = PlugInObjectManager.getManager().getProperties().getProperty("MechismoWSURL");
@@ -40,6 +46,33 @@ public class MechismoDataFetcher {
             throw new IllegalStateException("MechismoWSURL has not been configured!");
     }
     
+    public PathwayHighlightControlPanel getHiliteControlPane() {
+        return hiliteControlPane;
+    }
+
+    public void setHiliteControlPane(PathwayHighlightControlPanel hiliteControlPane) {
+        this.hiliteControlPane = hiliteControlPane;
+    }
+    
+    public void removeMechismoResults(PathwayEditor editor) {
+        if (editor == null || hiliteControlPane == null)
+            return;
+        // Remove highlight colors
+        hiliteControlPane.removeHighlight();
+        hiliteControlPane.setVisible(false);
+        // Remove tabs related to BNs
+        // Remove tabs for showing BN results
+        CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(CytoPanelName.SOUTH);
+        List<VariableCytoPaneComponent> toBeClosed = new ArrayList<>();
+        for (int i = 0; i < cytoPanel.getCytoPanelComponentCount(); i++) {
+            Component c = cytoPanel.getComponentAt(i);
+            if (c instanceof MechismoReactionPane || c instanceof MechismoInteractionPane) {
+                toBeClosed.add((VariableCytoPaneComponent)c);
+            }
+        }
+        toBeClosed.stream().forEach(p -> p.close());
+    }
+
     public void loadMechismoInteraction(String name) {
         try {
             // Required by the WS
@@ -153,7 +186,8 @@ public class MechismoDataFetcher {
         MechismoReactionPane pane = PlugInUtilities.getCytoPanelComponent(MechismoReactionPane.class,
                                                                           CytoPanelName.SOUTH, 
                                                                           MechismoReactionPane.TITLE);
-         pane.setReactions(reactions);
+        pane.setHiliteControlPane(hiliteControlPane); 
+        pane.setReactions(reactions);
     }
     
     @SuppressWarnings("unchecked")

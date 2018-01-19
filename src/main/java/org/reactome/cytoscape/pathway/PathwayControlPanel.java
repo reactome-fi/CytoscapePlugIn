@@ -56,6 +56,8 @@ import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
+import org.gk.graphEditor.Selectable;
+import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.jdom.Element;
@@ -642,7 +644,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         overviewContainer.setLocation(location);
     }
     
-    private class ControlPathwayView extends CyZoomablePathwayEditor {
+    private class ControlPathwayView extends CyZoomablePathwayEditor implements Selectable {
         
         // Used to control if only FIs for selected reactions should be displayed
         private JCheckBox showFIsForSelectedOnly;
@@ -653,6 +655,14 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             // Use a smaller font to save space
             font = font.deriveFont(font.getSize() - 2.0f);
             setFont(font);
+            PlugInObjectManager.getManager().getDBIdSelectionMediator().addSelectable(this);
+            // Need to send the db id selection
+            getPathwayEditor().getSelectionModel().addGraphEditorActionListener(e -> {
+                if (e.getID() == ActionType.SELECTION) {
+                    SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
+                    mediator.fireSelectionEvent(ControlPathwayView.this);
+                }
+            });
         }
         
         @Override
@@ -694,6 +704,16 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
 
         @Override
         protected void addDataAnalysisMenusForObject(Long dbId, String name, JPopupMenu popup) {
+        }
+
+        @Override
+        public void setSelection(List selection) {
+            PlugInUtilities.selectByDbIds(getPathwayEditor(), selection);
+        }
+
+        @Override
+        public List getSelection() {
+            return PlugInUtilities.getSelectedDBIDs(getPathwayEditor());
         }
         
     }

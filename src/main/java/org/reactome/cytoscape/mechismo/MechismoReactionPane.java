@@ -1,12 +1,21 @@
 package org.reactome.cytoscape.mechismo;
 
+import java.awt.FlowLayout;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 import org.reactome.cytoscape.bn.SimulationComparisonPane;
 import org.reactome.cytoscape.bn.VariableSelectionHandler;
@@ -21,17 +30,59 @@ import org.reactome.mechismo.model.Reaction;
  */
 public class MechismoReactionPane extends SimulationComparisonPane {
     public static final String TITLE = "Mechismo Reaction";
+    private JComboBox<String> cancerBox;
     
     public MechismoReactionPane() {
         super(TITLE);
     }
-    
+
     /**
      * Just for sub-classing
      * @param title
      */
     protected MechismoReactionPane(String title) {
         super(title);
+    }
+    
+    @Override
+    protected void modifyContentPane() {
+        super.modifyContentPane();
+        // Re-create control tool bars
+        for (int i = 0; i < controlToolBar.getComponentCount(); i++) {
+            controlToolBar.remove(i);
+        }
+        addControls();
+        controlToolBar.add(closeGlue);
+        createHighlightViewBtn();
+        controlToolBar.add(hiliteDiagramBtn);
+        controlToolBar.add(closeBtn);
+    }
+    
+    private void addControls() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        // Show a list of samples
+        JLabel label = new JLabel("Choose a cancer type to highlight reactions based on FDRs in the table:");
+        cancerBox = new JComboBox<>();
+        cancerBox.setEditable(false);
+        DefaultComboBoxModel<String> sampleModel = new DefaultComboBoxModel<>();
+        cancerBox.setModel(sampleModel);
+        panel.add(label);
+        panel.add(cancerBox);
+
+        // Link these two boxes together
+        cancerBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED)
+                handleCancerBoxSelection();
+        });
+        controlToolBar.add(panel);
+    }
+    
+    private void handleCancerBoxSelection() {
+        String cancer = (String) cancerBox.getSelectedItem();
+        MechismoReactionModel model = (MechismoReactionModel) contentTable.getModel();
+        int col = model.mapCancerToColumn(cancer);
+        hilitePathway(col);
     }
     
     @Override
@@ -48,6 +99,23 @@ public class MechismoReactionPane extends SimulationComparisonPane {
         MechismoReactionModel model = (MechismoReactionModel) contentTable.getModel();
         model.setReactions(reactions);
         summaryLabel.setText("Mechismo reaction analysis result FDR:");
+        // Need to fill in cancerbox
+        ItemListener[] listener = cancerBox.getItemListeners();
+        Arrays.asList(listener).forEach(l -> cancerBox.removeItem(l));
+        DefaultComboBoxModel<String> cancerModel = (DefaultComboBoxModel<String>)cancerBox.getModel();
+        cancerModel.removeAllElements();
+        for (int i = 2; i < model.getColumnCount(); i++)
+            cancerModel.addElement(model.getColumnName(i));
+        Arrays.asList(listener).forEach(l -> cancerBox.addItemListener(l));
+        cancerBox.setSelectedIndex(0);
+    }
+    
+    @Override
+    protected void hilitePathway(int column) {
+        hiliteControlPane.setForReaction(true);
+        super.hilitePathway(column);
+        // Set it back
+        hiliteControlPane.setForReaction(false);
     }
 
     protected class MechismoReactionModel extends VariableTableModel {
@@ -65,6 +133,14 @@ public class MechismoReactionPane extends SimulationComparisonPane {
             fireTableStructureChanged();
         }
         
+        public int mapCancerToColumn(String cancer) {
+            for (int i = 0; i < columnHeaders.length; i++) {
+                if (columnHeaders[i].equals(cancer))
+                    return i;
+            }
+            return -1;
+        }
+        
         @Override
         public List<Integer> getRowsForSelectedIds(List<Long> selection) {
             List<Integer> rtn = new ArrayList<>();
@@ -77,6 +153,20 @@ public class MechismoReactionPane extends SimulationComparisonPane {
             return rtn;
         }
         
+        @Override
+        public Map<String, Double> getIdToValue(int column) {
+            Map<String, Double> idToValue = new HashMap<>();
+            // Use the last column
+            for (int i = 0; i < tableData.size(); i++) {
+                Object[] row = tableData.get(i);
+                String id = row[0] + "";
+                Double value = (Double) row[column];
+                if (value != null)
+                    idToValue.put(id, value);
+            }
+            return idToValue;
+        }
+
         private void addValues(List<Reaction> reactions, List<String> cancerTypes) {
             reactions.sort((rxt1, rxt2) -> rxt1.getId().compareTo(rxt2.getId()));
             tableData.clear();
@@ -146,7 +236,7 @@ public class MechismoReactionPane extends SimulationComparisonPane {
         @Override
         public Class<?> getColumnClass(int columnIndex) {
             if (columnIndex == 0)
-                return Integer.class;
+                return Long.class;
             if (columnIndex == 1)
                 return String.class;
             return Double.class;

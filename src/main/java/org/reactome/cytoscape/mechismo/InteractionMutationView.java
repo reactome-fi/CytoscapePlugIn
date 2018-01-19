@@ -8,7 +8,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -140,6 +139,7 @@ public class InteractionMutationView extends JDialog {
             if (structurePane == null)
                 return;
             structurePane.highlightVariants(residues);
+            structurePane.saveState(); // To be reset if needed
         });
     }
     
@@ -276,6 +276,7 @@ public class InteractionMutationView extends JDialog {
      */
     private class StructurePane extends JPanel {
         private JmolPanel jmolPanel;
+        private JComboBox<String> colorBox;
         
         public StructurePane() {
             init();
@@ -315,20 +316,21 @@ public class InteractionMutationView extends JDialog {
             style.addActionListener(jmolPanel);
 
             String[] colorModes = new String[] { "Secondary Structure", "By Chain", "Rainbow", "By Element", "By Amino Acid", "Hydrophobicity" };
-            JComboBox<String> colors = new JComboBox<>(colorModes);
-            colors.addActionListener(jmolPanel);
+            colorBox = new JComboBox<>(colorModes);
+            colorBox.addActionListener(jmolPanel);
             hBox1.add(Box.createGlue());
             hBox1.add(new JLabel("Color"));
-            hBox1.add(colors);
-
+            hBox1.add(colorBox);
+            
             // Check boxes
             Box hBox2 = Box.createHorizontalBox();
             hBox2.setMaximumSize(new Dimension(Short.MAX_VALUE,30));
 
+            // Make sure select none is called
             JButton resetDisplay = new JButton("Reset Display");
 
             resetDisplay.addActionListener(e -> {
-                jmolPanel.executeCmd("restore STATE state_1");
+                jmolPanel.executeCmd("restore STATE state_1; select none; ");
             });
 
             hBox2.add(resetDisplay); hBox2.add(Box.createGlue());
@@ -358,6 +360,7 @@ public class InteractionMutationView extends JDialog {
             evalString("select * ; color chain;");            
             evalString("select *; spacefill off; wireframe off; cartoon on;  ");
             evalString("select ligands; cartoon off; wireframe 0.3; spacefill 0.5; color cpk;");
+            colorBox.setSelectedIndex(1); // Color by chain is chosen
             // To show selection. To show this, have to make sure selection checkbox is checked
             evalString("set display selected;");
         }
@@ -365,6 +368,10 @@ public class InteractionMutationView extends JDialog {
         public void highlightVariants(String residuesInChain) {
             // After that, don't select any more
             evalString("select " + residuesInChain + "; color white; spacefill; zoom out; select none; ");
+        }
+        
+        public void saveState() {
+            jmolPanel.evalString("save STATE state_1"); // Save this state to reset it
         }
         
         public void selectResidues(String residues) {
@@ -382,10 +389,11 @@ public class InteractionMutationView extends JDialog {
                 "Cancer",
                 "Sample",
                 "Mutation",
+                "MechismoScore",
                 "PDB",
                 "ResidueInPDB"
         };
-        private List<List<String>> data;
+        private List<List<Object>> data;
         
         public MutationTableModel() {
             data = new ArrayList<>();
@@ -406,11 +414,13 @@ public class InteractionMutationView extends JDialog {
                 ResidueStructure structure = mutation.getResidue().getStructure();
                 String variant = getVariant(mutation);
                 String residueStructue = getResidueStructure(structure);
+                Double mechismoScore = mutation.getResidue().getMechismoScore();
                 samples.forEach(sample -> {
                     List<String> row = new ArrayList<>();
                     row.add(sample.getCancerType().getAbbreviation());
                     row.add(sample.getName());
                     row.add(variant);
+                    row.add(mechismoScore + "");
                     row.add(structure.getPdb());
                     row.add(residueStructue);
                     set.add(String.join("\t", row));
@@ -418,7 +428,19 @@ public class InteractionMutationView extends JDialog {
             });
             set.forEach(row -> {
                 String[] tokens = row.split("\t");
-                data.add(Arrays.asList(tokens));
+                // the third is a Double
+                List<Object> rowData = new ArrayList<>();
+                for (int i = 0; i < tokens.length; i++) {
+                    if (i == 3) {
+                        if (tokens[i].equals("null"))
+                            rowData.add(null);
+                        else
+                            rowData.add(new Double(tokens[i]));
+                    }
+                    else
+                        rowData.add(tokens[i]);
+                }
+                data.add(rowData);
             });
             fireTableStructureChanged();
         }
@@ -491,12 +513,14 @@ public class InteractionMutationView extends JDialog {
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            List<String> row = data.get(rowIndex);
+            List<Object> row = data.get(rowIndex);
             return row.get(columnIndex);
         }
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {
+            if (columnIndex == 3)
+                return Double.class;
             return String.class;
         }
         

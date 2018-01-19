@@ -407,6 +407,16 @@ public class PlugInUtilities {
         pathwayEditor.setSelection(selection);
     }
     
+    public static List<Long> getSelectedDBIDs(PathwayEditor editor) {
+        Set<Long> dbIds = new HashSet<Long>();
+        List<Renderable> selection = editor.getSelection();
+        for (Renderable r : selection) {
+            if (r.getReactomeId() != null)
+                dbIds.add(r.getReactomeId());
+        }
+        return new ArrayList<Long>(dbIds);
+    }
+    
     /**
      * Calculate a list of IPAs for values in sampleToProbs. The returned list is
      * sorted by sample names alphabetically.

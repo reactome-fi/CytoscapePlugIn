@@ -477,9 +477,12 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         if (PlugInObjectManager.getManager().isMechismoEnabled()) {
             if (popup.getComponentCount() > 0)
                 popup.addSeparator();
-            JMenuItem loadMechismo = new JMenuItem("Load Mechismo Result");
+            JMenuItem loadMechismo = new JMenuItem("Load Mechismo Results");
             loadMechismo.addActionListener(event -> loadMechismoResults());
             popup.add(loadMechismo);
+            JMenuItem removeMechismo = new JMenuItem("Remove Mechismo Results");
+            removeMechismo.addActionListener(event -> removeMechismoResults());
+            popup.add(removeMechismo);
         }
         
         JMenuItem searchDiagram = new JMenuItem("Search Entities");
@@ -936,7 +939,14 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     
     private void loadMechismoResults() {
         MechismoDataFetcher fetcher = new MechismoDataFetcher();
+        fetcher.setHiliteControlPane(hiliteControlPane);
         fetcher.loadMechismoReactions(getPathwayEditor());
+    }
+    
+    private void removeMechismoResults() {
+        MechismoDataFetcher fetcher = new MechismoDataFetcher();
+        fetcher.setHiliteControlPane(hiliteControlPane);
+        fetcher.removeMechismoResults(getPathwayEditor());
     }
     
     private Set<String> fetchGenes(Long dbId, String name) {

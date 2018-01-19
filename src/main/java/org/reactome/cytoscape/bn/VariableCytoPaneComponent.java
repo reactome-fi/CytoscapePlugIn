@@ -54,6 +54,8 @@ public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
             }
             
         });
+        // Disable this to avoid any issue
+        contentTable.getTableHeader().setReorderingAllowed(false);
     }
     
     protected void createHighlightViewBtn() {

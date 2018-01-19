@@ -10,7 +10,6 @@ import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -354,13 +353,7 @@ public class PathwayInternalFrame extends JInternalFrame implements Selectable {
 
     @Override
     public List getSelection() {
-        Set<Long> dbIds = new HashSet<Long>();
-        List<Renderable> selection = getPathwayEditor().getSelection();
-        for (Renderable r : selection) {
-            if (r.getReactomeId() != null)
-                dbIds.add(r.getReactomeId());
-        }
-        return new ArrayList<Long>(dbIds);
+        return PlugInUtilities.getSelectedDBIDs(getPathwayEditor());
     }
     
 }

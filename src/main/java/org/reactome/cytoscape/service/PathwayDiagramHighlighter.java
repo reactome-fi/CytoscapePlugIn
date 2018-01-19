@@ -23,10 +23,20 @@ public class PathwayDiagramHighlighter {
     // Default colors
     private Color minColor = Color.GREEN;
     private Color maxColor = Color.RED;
+    // A flag to indicate if this is for reaction
+    private boolean isForReaction;
     
     public PathwayDiagramHighlighter() {
     }
     
+    public boolean isForReaction() {
+        return isForReaction;
+    }
+
+    public void setForReaction(boolean isForReaction) {
+        this.isForReaction = isForReaction;
+    }
+
     public void setMinColor(Color minColor) {
         this.minColor = minColor;
     }
@@ -82,9 +92,44 @@ public class PathwayDiagramHighlighter {
                              double max) {
         if (colors == null)
             initColors();
+        if (isForReaction)
+            hiliteEdges(diagram, idToValue, min, max);
+        else
+            hiliteNodes(diagram, idToValue, min, max);
+    }
+    
+    private void hiliteEdges(RenderablePathway diagram, Map<String, Double> idToValue, double min, double max) {
         for (Object obj : diagram.getComponents()) {
             Renderable r = (Renderable) obj;
-            if (!(r instanceof Node))
+            if (r instanceof Node) {
+                r.setBackgroundColor(Color.WHITE);
+                continue; // Reset all nodes to white for easy results view
+            }
+            if (!(r instanceof org.gk.render.HyperEdge))
+                continue; 
+            Long dbId = r.getReactomeId();
+            if (dbId == null || !idToValue.containsKey(dbId.toString())) {
+                r.setLineColor(Color.LIGHT_GRAY); // Use this as a background
+                continue;
+            }
+            Double value = idToValue.get(dbId.toString());
+            // In case this value is out-of-range
+            if (value > max)
+                value = max;
+            if (value < min)
+                value = min;
+            double rel = (value - min) / (max - min);
+            // Add 0.5d to round half up
+            int index = (int) (rel * (colors.length - 1) + 0.5d); // The last index should be --.
+            Color color = new Color(colors[index]);
+            r.setLineColor(color);
+        }
+    }
+
+    private void hiliteNodes(RenderablePathway diagram, Map<String, Double> idToValue, double min, double max) {
+        for (Object obj : diagram.getComponents()) {
+            Renderable r = (Renderable) obj;
+            if (!(r instanceof org.gk.render.Node))
                 continue; // Want to work on nodes only
 //            r.setForegroundColor(Color.LIGHT_GRAY);
             // Better to use black, which is the default.

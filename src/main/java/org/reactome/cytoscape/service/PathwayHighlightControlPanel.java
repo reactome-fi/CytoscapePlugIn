@@ -31,6 +31,8 @@ import javax.swing.JTextField;
 
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.render.HyperEdge;
+import org.gk.render.Node;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
@@ -48,6 +50,8 @@ public class PathwayHighlightControlPanel extends JPanel {
     private Map<String, Double> idToValue;
     // Keep the original color so that we can reset them
     private Map<Renderable, Color> oldColors;
+    // A flag to indicate if this is for reaction
+    private boolean isForReaction;
     
     /**
      * Default constructor.
@@ -98,6 +102,14 @@ public class PathwayHighlightControlPanel extends JPanel {
         this.pathwayEditor = pathwayEditor;
     }
     
+    public boolean isForReaction() {
+        return isForReaction;
+    }
+
+    public void setForReaction(boolean isForReaction) {
+        this.isForReaction = isForReaction;
+    }
+
     @SuppressWarnings("unchecked")
     private void keepOldColors() {
         if (pathwayEditor == null)
@@ -108,7 +120,10 @@ public class PathwayHighlightControlPanel extends JPanel {
             oldColors.clear();
         pathwayEditor.getRenderable().getComponents().forEach(o -> {
             Renderable r = (Renderable) o;
-            oldColors.put(r, r.getBackgroundColor());
+            if (o instanceof Node)
+                oldColors.put(r, r.getBackgroundColor());
+            else if (o instanceof HyperEdge)
+                oldColors.put(r, r.getLineColor());
         });
     }
 
@@ -163,7 +178,12 @@ public class PathwayHighlightControlPanel extends JPanel {
     public void removeHighlight() {
         if (pathwayEditor == null || oldColors == null || oldColors.size() == 0)
             return;
-        oldColors.forEach((r, c) -> r.setBackgroundColor(c));
+        oldColors.forEach((r, c) -> {
+            if (r instanceof Node)
+                r.setBackgroundColor(c);
+            else if (r instanceof HyperEdge)
+                r.setLineColor(c);
+        });
         pathwayEditor.repaint(pathwayEditor.getVisibleRect());
         // Since there is no HIGHLIGHT ActionType, using SELECTION instead
         // to make repaint consistent.
@@ -176,6 +196,7 @@ public class PathwayHighlightControlPanel extends JPanel {
         if (oldColors == null || oldColors.size() == 0)
             keepOldColors();
         PathwayDiagramHighlighter highlighter = new PathwayDiagramHighlighter();
+        highlighter.setForReaction(isForReaction);
         highlighter.highlightELV((RenderablePathway)pathwayEditor.getRenderable(),
                                  idToValue,
                                  minMaxValues[0], 

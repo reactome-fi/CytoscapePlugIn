@@ -2,17 +2,20 @@ package org.reactome.cytoscape.mechismo;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JTable;
 import javax.swing.RowFilter;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.reactome.cytoscape.bn.VariableSelectionHandler;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.mechismo.model.Interaction;
@@ -83,6 +86,23 @@ public class MechismoInteractionPane extends MechismoReactionPane {
         return new MechismoInteractionModel();
     }
     
+    @Override
+    protected VariableSelectionHandler createSelectionHandler() {
+        VariableSelectionHandler handler = new VariableSelectionHandler() {
+
+            @Override
+            public void setSelection(List selection) {
+            }
+
+            @Override
+            public List getSelection() {
+                return new ArrayList<>();
+            }
+            
+        };
+        return handler;
+    }
+
     public void setInteractions(List<Interaction> interactions) {
         MechismoInteractionModel model = (MechismoInteractionModel) contentTable.getModel();
         model.setInteractions(interactions);
