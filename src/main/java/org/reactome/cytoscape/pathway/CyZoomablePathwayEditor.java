@@ -71,6 +71,7 @@ import org.reactome.cytoscape.pgm.ObservationDataDialog;
 import org.reactome.cytoscape.service.CyPathwayEditor;
 import org.reactome.cytoscape.service.FIRenderableInteraction;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
+import org.reactome.cytoscape.service.PathwayHighlightDataType;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -160,6 +161,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     
     public PathwayHighlightControlPanel getHighlightControlPane() {
         return this.hiliteControlPane;
+    }
+    
+    public PathwayHighlightDataType getHighlightDataType() {
+        if (!hiliteControlPane.isVisible())
+            return null;
+        return hiliteControlPane.getDataType();
+    }
+    
+    public void setHighlightDataType(PathwayHighlightDataType dataType) {
+        hiliteControlPane.setDataType(dataType);
     }
     
     @Override

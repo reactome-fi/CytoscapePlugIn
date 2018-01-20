@@ -52,6 +52,7 @@ public class PathwayHighlightControlPanel extends JPanel {
     private Map<Renderable, Color> oldColors;
     // A flag to indicate if this is for reaction
     private boolean isForReaction;
+    private PathwayHighlightDataType dataType = PathwayHighlightDataType.Undefined;
     
     /**
      * Default constructor.
@@ -94,6 +95,14 @@ public class PathwayHighlightControlPanel extends JPanel {
         setToolTipText("Double click to change the min/max values");
     }
     
+    public PathwayHighlightDataType getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(PathwayHighlightDataType dataType) {
+        this.dataType = dataType;
+    }
+
     public PathwayEditor getPathwayEditor() {
         return pathwayEditor;
     }

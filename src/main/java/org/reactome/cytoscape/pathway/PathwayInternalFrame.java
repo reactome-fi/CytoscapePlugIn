@@ -41,6 +41,7 @@ import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.pgm.IPAPathwaySummaryPane;
 import org.reactome.cytoscape.pgm.InferenceResultsControl;
+import org.reactome.cytoscape.service.PathwayHighlightDataType;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.FactorGraph;
@@ -162,6 +163,10 @@ public class PathwayInternalFrame extends JInternalFrame implements Selectable {
         tableSelectionRegistration = context.registerService(PropertyChangeListener.class.getName(), 
                                                              listener,
                                                              props);
+    }
+    
+    public PathwayHighlightDataType getHighlightDataType() {
+        return pathwayEditor.getHighlightDataType();
     }
     
     private IPAPathwaySummaryPane getSummaryPane() {

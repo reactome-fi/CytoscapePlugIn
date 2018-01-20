@@ -122,7 +122,7 @@ public class MechismoDataFetcher {
             List<Interaction> interactions = mapper.readValue(output,
                                                         new TypeReference<List<Interaction>>() {
                                                         });
-            displayInteractions(interactions);
+            displayInteractions(interactions, networkView);
         }
         catch(Exception e) {
             logger.error(e.getMessage(), e);
@@ -133,10 +133,12 @@ public class MechismoDataFetcher {
         }
     }
     
-    private void displayInteractions(List<Interaction> interactions) {
+    private void displayInteractions(List<Interaction> interactions,
+                                     CyNetworkView networkView) {
         MechismoInteractionPane pane = PlugInUtilities.getCytoPanelComponent(MechismoInteractionPane.class,
                 CytoPanelName.SOUTH, 
                 MechismoInteractionPane.TITLE);
+        pane.setNetworkView(networkView);
         pane.setInteractions(interactions);
     }
     

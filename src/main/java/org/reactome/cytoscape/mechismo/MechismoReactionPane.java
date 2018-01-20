@@ -19,6 +19,7 @@ import javax.swing.JPanel;
 
 import org.reactome.cytoscape.bn.SimulationComparisonPane;
 import org.reactome.cytoscape.bn.VariableSelectionHandler;
+import org.reactome.cytoscape.service.PathwayHighlightDataType;
 import org.reactome.mechismo.model.AnalysisResult;
 import org.reactome.mechismo.model.Reaction;
 
@@ -62,7 +63,7 @@ public class MechismoReactionPane extends SimulationComparisonPane {
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
         // Show a list of samples
-        JLabel label = new JLabel("Choose a cancer type to highlight reactions based on FDRs in the table:");
+        JLabel label = new JLabel("Choose a cancer type to highlight " + getDataType() + " based on FDRs in the table:");
         cancerBox = new JComboBox<>();
         cancerBox.setEditable(false);
         DefaultComboBoxModel<String> sampleModel = new DefaultComboBoxModel<>();
@@ -98,13 +99,20 @@ public class MechismoReactionPane extends SimulationComparisonPane {
     public void setReactions(List<Reaction> reactions) {
         MechismoReactionModel model = (MechismoReactionModel) contentTable.getModel();
         model.setReactions(reactions);
-        summaryLabel.setText("Mechismo reaction analysis result FDR:");
+        fillCancerTypes(model, 2);
+    }
+    
+    protected String getDataType() {
+        return "reactions";
+    }
+
+    protected void fillCancerTypes(MechismoReactionModel model, int firstCancerCol) {
         // Need to fill in cancerbox
         ItemListener[] listener = cancerBox.getItemListeners();
         Arrays.asList(listener).forEach(l -> cancerBox.removeItem(l));
         DefaultComboBoxModel<String> cancerModel = (DefaultComboBoxModel<String>)cancerBox.getModel();
         cancerModel.removeAllElements();
-        for (int i = 2; i < model.getColumnCount(); i++)
+        for (int i = firstCancerCol; i < model.getColumnCount(); i++)
             cancerModel.addElement(model.getColumnName(i));
         Arrays.asList(listener).forEach(l -> cancerBox.addItemListener(l));
         cancerBox.setSelectedIndex(0);
@@ -114,6 +122,7 @@ public class MechismoReactionPane extends SimulationComparisonPane {
     protected void hilitePathway(int column) {
         hiliteControlPane.setForReaction(true);
         super.hilitePathway(column);
+        hiliteControlPane.setDataType(PathwayHighlightDataType.Mechismo);
         // Set it back
         hiliteControlPane.setForReaction(false);
     }

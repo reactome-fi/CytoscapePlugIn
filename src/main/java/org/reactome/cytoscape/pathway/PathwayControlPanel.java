@@ -94,7 +94,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     private static PathwayControlPanel instance;
     
     /** 
-     * Default private constrcutor so that this class should be used as a singleton only.
+     * Default private constructor so that this class should be used as a singleton only.
      */
     private PathwayControlPanel() {
         init();
@@ -428,6 +428,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                                            totalSelected);
         hideNotSelected(); 
         networkView.updateView();
+        fireEdgeVisibilityChangeEvent();
         selectFromPathway = false;
     }
 
@@ -464,6 +465,9 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             else
                 PlugInUtilities.hideNode(nodeView);
         });
+    }
+
+    private void fireEdgeVisibilityChangeEvent() {
         PropertyChangeEvent event = new PropertyChangeEvent(networkView, "edgeVisibleUpdate", null, null);
         PlugInObjectManager.getManager().firePropertyChangeEvent(event);
     }
@@ -682,6 +686,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                 else 
                     showWholeNetwork();
                 networkView.updateView();
+                fireEdgeVisibilityChangeEvent();
             });
             remove(southPane);
             southPane.setBorder(BorderFactory.createEtchedBorder());

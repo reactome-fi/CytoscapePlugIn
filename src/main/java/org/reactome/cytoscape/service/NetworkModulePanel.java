@@ -68,7 +68,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     // Used for control
     protected JToolBar controlToolBar;
     // Used to control selection
-    private boolean isFromTable;
+    protected boolean isFromTable;
     // Used to link to table selection
     private ListSelectionListener tableSelectionListener;
     // To control its position
@@ -130,15 +130,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
             public void run() {
                 while (rowsSelectionEvent != null) {
                     rowsSelectionEvent = null; // Consume this event
-                    CyNetwork network = view.getModel();
-                    List<CyNode> selectedNodes = CyTableUtil.getNodesInState(network,
-                                                                             CyNetwork.SELECTED,
-                                                                             true);
-                    List<String> nodeIds = new ArrayList<String>();
-                    for (CyNode node : selectedNodes) {
-                        nodeIds.add(network.getRow(node).get(CyNetwork.NAME, String.class));
-                    }
-                    selectTableRowsForNodes(nodeIds);
+                    _handleNetworkSelection();
                 }
                 nodeSelectionThread = null; // Null the current thread
             }
@@ -436,6 +428,18 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         contentTable.getSelectionModel().addListSelectionListener(tableSelectionListener);
     }
     
+    protected void _handleNetworkSelection() {
+        CyNetwork network = view.getModel();
+        List<CyNode> selectedNodes = CyTableUtil.getNodesInState(network,
+                                                                 CyNetwork.SELECTED,
+                                                                 true);
+        List<String> nodeIds = new ArrayList<String>();
+        for (CyNode node : selectedNodes) {
+            nodeIds.add(network.getRow(node).get(CyNetwork.NAME, String.class));
+        }
+        selectTableRowsForNodes(nodeIds);
+    }
+
     protected abstract class NetworkModuleTableModel extends AbstractTableModel {
         protected List<Object[]> tableData;
         protected String[] columnHeaders;

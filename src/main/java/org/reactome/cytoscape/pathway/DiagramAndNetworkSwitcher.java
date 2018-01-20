@@ -38,6 +38,7 @@ import org.reactome.cytoscape.pgm.PGMFIVisualStyle;
 import org.reactome.cytoscape.pgm.VariableInferenceResults;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.PathwayHighlightDataType;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
@@ -104,20 +105,23 @@ public class DiagramAndNetworkSwitcher {
                                           pathwayFrame);
             }
         }; 
+        TaskIterator taskIterator = new TaskIterator(convertToFITask);
         // If Mechismo results are loaded, load mechisnmo FIs then
-        Task loadMechsimoFITask = new AbstractTask() {
-            @Override
-            public void run(TaskMonitor monitor) throws Exception {
-                CyNetworkView networkView = PlugInUtilities.getCurrentNetworkView();
-                if (networkView == null)
-                    return;
-                MechismoDataFetcher fetcher = new MechismoDataFetcher();
-                fetcher.loadMechismoInteractions(networkView);
-            }
-        };
+        if (PathwayHighlightDataType.Mechismo == pathwayFrame.getHighlightDataType()) {
+            Task loadMechsimoFITask = new AbstractTask() {
+                @Override
+                public void run(TaskMonitor monitor) throws Exception {
+                    CyNetworkView networkView = PlugInUtilities.getCurrentNetworkView();
+                    if (networkView == null)
+                        return;
+                    MechismoDataFetcher fetcher = new MechismoDataFetcher();
+                    fetcher.loadMechismoInteractions(networkView);
+                }
+            };
+            taskIterator.append(loadMechsimoFITask);
+        }
         @SuppressWarnings("rawtypes")
         TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
-        TaskIterator taskIterator = new TaskIterator(convertToFITask, loadMechsimoFITask);
         taskManager.execute(taskIterator);
     }
     
