@@ -83,14 +83,6 @@ public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
         selectionHandler.setVariableTable(contentTable);
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         mediator.addSelectable(selectionHandler);
-        
-        contentTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                handleTableSelection();
-            }
-        });
     }
     
     protected VariableSelectionHandler createSelectionHandler() {
@@ -106,7 +98,8 @@ public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
         PlugInObjectManager.getManager().unregisterRadioButton(BUTTON_GROUP_NAME, hiliteDiagramBtn);
     }
 
-    protected void handleTableSelection() {
+    @Override
+    protected void doTableSelection(ListSelectionEvent e) {
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         mediator.fireSelectionEvent(selectionHandler);
     }

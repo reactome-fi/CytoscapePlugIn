@@ -1,23 +1,29 @@
 package org.reactome.cytoscape.mechismo;
 
+import java.awt.Color;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.RowFilter;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableUtil;
-import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.reactome.cytoscape.bn.VariableSelectionHandler;
-import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.cytoscape.service.PathwayDiagramHighlighter;
 import org.reactome.mechismo.model.Interaction;
 
 @SuppressWarnings("serial")
@@ -30,7 +36,45 @@ public class MechismoInteractionPane extends MechismoReactionPane {
     }
     
     @Override
-    protected void handleTableSelection() {
+    protected void doTableSelection(ListSelectionEvent e) {
+        // For the time being, follow the default edge table behavior,
+        // don't do anything.
+    }
+    
+    private void selectEdgesForSelectedRows() {
+        if (view == null || view.getModel() == null)
+            return;
+        CyTable table = view.getModel().getDefaultEdgeTable();
+        if (table == null)
+            return;
+        // Get the list of selected FIs
+        Set<String> selectedFIs = new HashSet<>();
+        int[] selectedRows = contentTable.getSelectedRows();
+        if (selectedRows != null && selectedRows.length > 0) {
+            for (int i = 0; i < selectedRows.length; i++) {
+                int modelRow = contentTable.convertRowIndexToModel(selectedRows[i]);
+                String fi = (String) contentTable.getModel().getValueAt(modelRow, 0);
+                selectedFIs.add(fi);
+            }
+        }
+        view.getEdgeViews().forEach(edgeView -> {
+            CyRow row = table.getRow(edgeView.getModel().getSUID());
+            String edgeName = row.get("name", String.class);
+            row.set("selected", selectedFIs.contains(edgeName));
+        });
+    }
+    
+    @Override
+    protected void doContentTablePopup(MouseEvent e) {
+        JPopupMenu popup = createExportAnnotationPopup();
+        popup.addSeparator();
+        JMenuItem selectItem = new JMenuItem("Selected edges for selected rows");
+        selectItem.addActionListener(actionEvent -> selectEdgesForSelectedRows());
+        popup.add(selectItem);
+        
+        popup.show(contentTable, 
+                   e.getX(), 
+                   e.getY());
     }
     
     @Override
@@ -64,19 +108,6 @@ public class MechismoInteractionPane extends MechismoReactionPane {
         };
         TableRowSorter sorter = (TableRowSorter) contentTable.getRowSorter();
         sorter.setRowFilter(filter);
-    }
-    
-    private Set<String> getDisplayedFIs() {
-        CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
-        Set<String> names = new HashSet<>();
-        CyTable table = view.getModel().getDefaultEdgeTable();
-        view.getEdgeViews().forEach(edgeView -> {
-            String name = table.getRow(edgeView.getModel().getSUID()).get("name", String.class);
-            Boolean isVisible = edgeView.getVisualProperty(BasicVisualLexicon.EDGE_VISIBLE);
-            if (isVisible)
-                names.add(name);
-        });
-        return names;
     }
 
     @Override
@@ -113,6 +144,33 @@ public class MechismoInteractionPane extends MechismoReactionPane {
      */
     @Override
     protected void hilitePathway(int column) {
+        if (view == null || view.getModel() == null)
+            return;
+        PathwayDiagramHighlighter highlighter = new PathwayDiagramHighlighter();
+        highlighter.setMinColor(Color.YELLOW);
+        highlighter.setMaxColor(Color.MAGENTA);
+        MechismoInteractionModel model = (MechismoInteractionModel) contentTable.getModel();
+        double[] minMax = model.getMinMaxFDR(column);
+        Map<String, Double> fiToFDR = model.getFIToFDR(column);
+        // Need to check this code
+        CyTable table = view.getModel().getDefaultEdgeTable();
+        view.getEdgeViews().forEach(edgeView -> {
+            String fi = table.getRow(edgeView.getModel().getSUID()).get("name", String.class);
+            Double fdr = fiToFDR.get(fi);
+            Color lineColor = null;
+            if (fdr == null) {
+                if (fiToFDR.containsKey(fi))
+                    lineColor = Color.BLACK; // Means there is mechismo information
+                else
+                    lineColor = Color.LIGHT_GRAY; // Used as the background
+            }
+            else
+                lineColor = highlighter.getColor(fdr, minMax[0], minMax[1]);
+            edgeView.setVisualProperty(BasicVisualLexicon.EDGE_STROKE_UNSELECTED_PAINT, lineColor);
+        });
+        // Use white background for nodes so that we can see all
+        view.getNodeViews().forEach(nodeView -> nodeView.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.WHITE));
+        view.updateView();
     }
     
     private class MechismoInteractionModel extends MechismoReactionModel {
@@ -168,6 +226,36 @@ public class MechismoInteractionPane extends MechismoReactionPane {
             if (columnIndex == 0)
                 return String.class;
             return Double.class;
+        }
+        
+        public Map<String, Double> getFIToFDR(int column) {
+            if (column == 0)
+                return null;
+            Map<String, Double> fiToFDR = new HashMap<>();
+            for (int i = 0; i < getRowCount(); i++) {
+                String fi = (String) getValueAt(i, 0);
+                Double value = (Double) getValueAt(i, column);
+                fiToFDR.put(fi, value);
+            }
+            return fiToFDR;
+        }
+        
+        public double[] getMinMaxFDR(int column) {
+            if (column == 0)
+                return null;
+            Double min = Double.POSITIVE_INFINITY;
+            Double max = Double.NEGATIVE_INFINITY;
+            for (int i = 0; i < getRowCount(); i++) {
+                Double value = (Double) getValueAt(i, column);
+                if (value == null)
+                    continue;
+                if (value > max)
+                    max = value;
+                if (value < min)
+                    min = value;
+            }
+            // Min and max may be the same
+            return new double[]{min, max}; 
         }
         
     }

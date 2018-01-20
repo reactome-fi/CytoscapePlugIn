@@ -113,17 +113,24 @@ public class PathwayDiagramHighlighter {
                 continue;
             }
             Double value = idToValue.get(dbId.toString());
-            // In case this value is out-of-range
-            if (value > max)
-                value = max;
-            if (value < min)
-                value = min;
-            double rel = (value - min) / (max - min);
-            // Add 0.5d to round half up
-            int index = (int) (rel * (colors.length - 1) + 0.5d); // The last index should be --.
-            Color color = new Color(colors[index]);
+            Color color = getColor(value, min, max);
             r.setLineColor(color);
         }
+    }
+    
+    public Color getColor(Double value, double min, double max) {
+        if (colors == null)
+            initColors();
+        // In case this value is out-of-range
+        if (value > max)
+            value = max;
+        if (value < min)
+            value = min;
+        double rel = (value - min) / (max - min);
+        // Add 0.5d to round half up
+        int index = (int) (rel * (colors.length - 1) + 0.5d); // The last index should be --.
+        Color color = new Color(colors[index]);
+        return color;
     }
 
     private void hiliteNodes(RenderablePathway diagram, Map<String, Double> idToValue, double min, double max) {
@@ -140,15 +147,7 @@ public class PathwayDiagramHighlighter {
                 continue;
             }
             Double value = idToValue.get(dbId.toString());
-            // In case this value is out-of-range
-            if (value > max)
-                value = max;
-            if (value < min)
-                value = min;
-            double rel = (value - min) / (max - min);
-            // Add 0.5d to round half up
-            int index = (int) (rel * (colors.length - 1) + 0.5d); // The last index should be --.
-            Color color = new Color(colors[index]);
+            Color color = getColor(value, min, max);
             r.setBackgroundColor(color);
 //            System.out.println(r.getDisplayName() + "\t" + value + 
 //                               "\t" + index + 

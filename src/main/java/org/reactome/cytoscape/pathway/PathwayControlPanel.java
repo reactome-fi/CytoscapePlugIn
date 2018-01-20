@@ -293,7 +293,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     /**
      * A helper method to handle edge selection from a FI network.
      * For some reason, node selection is called by two threads. Therefore,
-     * syncrhonized it.
+     * synchronize it.
      * @param edges
      */
     private synchronized void handleNetworkSelection(List<CyEdge> edges,
