@@ -38,6 +38,11 @@ import javax.swing.event.HyperlinkListener;
 import org.apache.commons.math.MathException;
 import org.cytoscape.property.CyProperty;
 import org.cytoscape.util.swing.FileUtil;
+import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.Task;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
+import org.cytoscape.work.TaskMonitor;
 import org.gk.gkEditor.RenderableDisplayFormatDialog;
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
@@ -949,9 +954,22 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     }
     
     private void loadMechismoResults() {
-        MechismoDataFetcher fetcher = new MechismoDataFetcher();
-        fetcher.setHiliteControlPane(hiliteControlPane);
-        fetcher.loadMechismoReactions(getPathwayEditor());
+        Task task = new AbstractTask() {
+            @Override
+            public void run(TaskMonitor monitor) throws Exception {
+                MechismoDataFetcher fetcher = new MechismoDataFetcher();
+                fetcher.setHiliteControlPane(hiliteControlPane);
+                monitor.setTitle("Mechismo Results");
+                monitor.setStatusMessage("Loading Mechismo reaction results...");
+                monitor.setProgress(0.0d);
+                fetcher.loadMechismoReactions(getPathwayEditor());
+                monitor.setProgress(1.0d);
+            }
+        };
+        TaskIterator taskIterator = new TaskIterator(task);
+        @SuppressWarnings("rawtypes")
+        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
+        taskManager.execute(taskIterator);
     }
     
     private void removeMechismoResults() {

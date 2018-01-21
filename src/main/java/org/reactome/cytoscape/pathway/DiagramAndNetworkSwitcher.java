@@ -110,12 +110,17 @@ public class DiagramAndNetworkSwitcher {
         if (PathwayHighlightDataType.Mechismo == pathwayFrame.getHighlightDataType()) {
             Task loadMechsimoFITask = new AbstractTask() {
                 @Override
-                public void run(TaskMonitor monitor) throws Exception {
+                public void run(TaskMonitor taskMonitor) throws Exception {
                     CyNetworkView networkView = PlugInUtilities.getCurrentNetworkView();
                     if (networkView == null)
                         return;
                     MechismoDataFetcher fetcher = new MechismoDataFetcher();
+                    taskMonitor.setTitle("Mechismo Results");
+                    taskMonitor.setStatusMessage("Loading Mechismo interaction results...");
+                    taskMonitor.setProgress(0.0d);
                     fetcher.loadMechismoInteractions(networkView);
+                    taskMonitor.setStatusMessage("Done loading.");
+                    taskMonitor.setProgress(1.0d);
                 }
             };
             taskIterator.append(loadMechsimoFITask);

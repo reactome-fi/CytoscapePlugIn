@@ -18,6 +18,11 @@ import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
+import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.Task;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
+import org.cytoscape.work.TaskMonitor;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.drug.InteractionView;
 import org.reactome.cytoscape.drug.NetworkDrugManager;
@@ -191,8 +196,21 @@ public class EdgeActionCollection {
         }
         
         private void queryMechismoResults(String name) {
-            MechismoDataFetcher fetcher = new MechismoDataFetcher();
-            fetcher.loadMechismoInteraction(name);
+            Task task = new AbstractTask() {
+                
+                @Override
+                public void run(TaskMonitor monitor) throws Exception {
+                    monitor.setTitle("Mechismo Results");
+                    monitor.setStatusMessage("Loading Mechismo mutation results...");
+                    monitor.setProgress(0.0d);
+                    MechismoDataFetcher fetcher = new MechismoDataFetcher();
+                    fetcher.loadMechismoInteraction(name);
+                    monitor.setProgress(1.0d);
+                }
+            };
+            TaskIterator taskIterator = new TaskIterator(task);
+            TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
+            taskManager.execute(taskIterator);
         }
     
     }
