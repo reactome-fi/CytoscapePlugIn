@@ -1,13 +1,5 @@
-package org.reactome.cytoscape3;
+package org.reactome.cytoscape;
 
-/**
- * This is the main entry point for
- * the Reactome FI app. In OSGi parlance,
- * it is a bundle activator. For more info on
- * OSGi, check out Richard Hall's "OSGi in Action"
- * and the OSGi R4 specs.
- * @author Eric T Dawson & Guanming Wu
- */
 import java.util.Properties;
 
 import org.cytoscape.application.swing.CySwingApplication;
@@ -16,19 +8,27 @@ import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
 import org.cytoscape.service.util.AbstractCyActivator;
 import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
-import org.cytoscape.util.swing.FileUtil;
-import org.cytoscape.view.layout.CyLayoutAlgorithmManager;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.fipgm.PGMImpactAnalysisAction;
 import org.reactome.cytoscape.fipgm.PGMImpactAnalysisResultLoadAction;
 import org.reactome.cytoscape.pathway.FactorGraphPopupMenuHandler;
 import org.reactome.cytoscape.pathway.ReactomePathwayAction;
+import org.reactome.cytoscape.rest.ReactomeFIVizResource;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.FIVisualStyleImpl;
 import org.reactome.cytoscape.service.PopupMenuManager;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape3.FactorGraphImportAction;
+import org.reactome.cytoscape3.GeneSetFINetworkPopupMenuHandler;
+import org.reactome.cytoscape3.GeneSetMutationAnalysisAction;
+import org.reactome.cytoscape3.HotNetAnalysisAction;
+import org.reactome.cytoscape3.MicroarrayAnalysisAction;
+import org.reactome.cytoscape3.PGMFINetworkPopupMenuHandler;
+import org.reactome.cytoscape3.PathwayFINetworkPopupMenuHandler;
+import org.reactome.cytoscape3.ReactionNetworkPopupMenuHandler;
+import org.reactome.cytoscape3.UserGuideAction;
 
 public class ReactomeFIBundleActivator extends AbstractCyActivator {
 
@@ -39,27 +39,6 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
     @Override
     public void start(BundleContext context) throws Exception {
         PlugInObjectManager.getManager().setBundleContext(context);
-        
-        /* Grab essential Cytoscape Service References */
-        CySwingApplication desktopApp = getService(context,
-                CySwingApplication.class);
-//        TaskManager taskManager = getService(context, TaskManager.class);
-//        CyNetworkManager networkManager = getService(context,
-//                CyNetworkManager.class);
-//        CySessionManager sessionManager = getService(context,
-//                CySessionManager.class);
-//        CyNetworkFactory networkFactory = getService(context,
-//                CyNetworkFactory.class);
-        
-//        CyNetworkViewFactory viewFactory = getService(context,
-//                CyNetworkViewFactory.class);
-//        CyNetworkViewManager viewManager = getService(context,
-//                CyNetworkViewManager.class);
-//        SaveSessionAsTaskFactory saveSessionAsTaskFactory = getService(context,
-//                SaveSessionAsTaskFactory.class);
-        FileUtil fileUtil = getService(context, FileUtil.class);
-        CyLayoutAlgorithmManager layoutManager = getService(context,
-                CyLayoutAlgorithmManager.class);
         
         // Register FI network visualization mapping as OSGi services
         //Initialize and register the FI VIsual Style with the framework,
@@ -85,6 +64,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         registerAllServices(context, tableFormatter, tableFormatterProps);
         
         //Instantiate Reactome FI App services
+        CySwingApplication desktopApp = getService(context,
+                CySwingApplication.class);
         GeneSetMutationAnalysisAction gsma = new GeneSetMutationAnalysisAction(desktopApp);
         
         // Use for debug
@@ -113,6 +94,10 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         registerAllServices(context, maa, prop);
         registerAllServices(context, pathwayLoadAction, prop);
         registerAllServices(context, uga, prop);
+        
+        // Register REST functions for Cytoscape automation
+        ReactomeFIVizResource resource = new ReactomeFIVizResource();
+        registerService(context, resource, ReactomeFIVizResource.class, prop);
 
         PopupMenuManager popupManager = PopupMenuManager.getManager();
         popupManager.registerMenuHandler(ReactomeNetworkType.FINetwork,

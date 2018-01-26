@@ -8,6 +8,7 @@
         <!-- Prevent Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
         See: https://maven.apache.org/general.html -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <cytoscape.api.version>3.6.0</cytoscape.api.version>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
@@ -109,9 +110,9 @@
 <!--                         </Import-Package> -->
 <!-- 						<Export-Package>${bundle.namespace}</Export-Package> -->
 						<Private-Package>org.reactome.cytoscape3.*,org.reactome.cytoscape.*,org.reactome.cancerindex.*</Private-Package>
-						<Bundle-Activator>${bundle.namespace}.cytoscape3.ReactomeFIBundleActivator</Bundle-Activator>
+						<Bundle-Activator>${bundle.namespace}.cytoscape.ReactomeFIBundleActivator</Bundle-Activator>
 						<Embed-Dependency>
-							*;groupId=!org.osgi|org.cytoscape;
+							*;scope=!provided;groupId=!org.osgi|org.cytoscape;
 						</Embed-Dependency>
 					</instructions>
 				</configuration>
@@ -247,50 +248,50 @@
 			<groupId>org.cytoscape</groupId>
 			<artifactId>service-api</artifactId>
             <!-- Use a specified version to avoid the latest version to save some headache. -->
-			<version>3.6.0</version>
+			<version>${cytoscape.api.version}</version>
 		</dependency>
 		
 		<dependency>
     		<groupId>org.cytoscape</groupId>
     		<artifactId>io-api</artifactId>
-    		<version>3.6.0</version>
+    		<version>${cytoscape.api.version}</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>swing-application-api</artifactId>
-			<version>3.6.0</version>
+			<version>${cytoscape.api.version}</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>session-api</artifactId>
-			<version>3.6.0</version>
+			<version>${cytoscape.api.version}</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>swing-util-api</artifactId>
-			<version>3.6.0</version>
+			<version>${cytoscape.api.version}</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>core-task-api</artifactId>
-			<version>3.6.0</version>
+			<version>${cytoscape.api.version}</version>
 		</dependency>
 		<!-- Logging -->
 
         <dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>event-api</artifactId>
-			<version>3.6.0</version> 
+			<version>${cytoscape.api.version}</version> 
 		</dependency>
 		
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>layout-api</artifactId>
-			<version>3.6.0</version>
+			<version>${cytoscape.api.version}</version>
 		</dependency>
 		
 		<dependency>
@@ -302,7 +303,7 @@
 		<dependency>
 				<groupId>org.cytoscape</groupId>
 				<artifactId>property-api</artifactId>
-				<version>3.6.0</version> 
+				<version>${cytoscape.api.version}</version> 
 		</dependency>
 		
 		<!-- In order to use app API -->
@@ -369,7 +370,6 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>com.springsource.org.apache.commons.httpclient</artifactId>
 			<version>3.1.0</version>
-			<scope>provided</scope>
 		</dependency>
 			
 		<dependency> 
@@ -474,6 +474,28 @@
 		  	<groupId>java3d</groupId>
   			<artifactId>vecmath</artifactId>
   			<version>1.3.1</version>
+		</dependency>
+		
+		<!-- The following are used to support functions-based Cytoscape automatation. 
+		Make sure their scope is provided and embed-depenenency has excluded them in osgi plugin. Otherwise,
+		CyREST cannot pick up the REST functions. -->
+		<dependency>
+			<groupId>javax.ws.rs</groupId>
+			<artifactId>javax.ws.rs-api</artifactId>
+			<version>2.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.swagger</groupId>
+			<artifactId>swagger-annotations</artifactId>
+			<version>1.5.7</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+		 	<groupId>org.cytoscape</groupId>
+  			<artifactId>ci-api</artifactId>
+  			<version>${cytoscape.api.version}</version>
+  			<scope>provided</scope>
 		</dependency>
         
 	 </dependencies>     
