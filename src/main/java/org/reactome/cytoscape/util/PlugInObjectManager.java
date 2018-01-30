@@ -36,6 +36,7 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.SelectionMediator;
 import org.osgi.framework.BundleContext;
@@ -54,6 +55,7 @@ import org.slf4j.LoggerFactory;
  * @author gwu
  *
  */
+@SuppressWarnings("rawtypes")
 public class PlugInObjectManager {
     private final Logger logger = LoggerFactory.getLogger(PlugInObjectManager.class);
     // BundleContext for the whole Reactome FI plug-in.
@@ -70,8 +72,9 @@ public class PlugInObjectManager {
     // Cache to fetch the version of Cytoscape
     private CyVersion cyVersion;
     // Cache TaskManager since it will be used multiple times
-    @SuppressWarnings("rawtypes")
     private TaskManager taskManager;
+    // Sometimes we may need to use synchronized version of TaskManager
+    private SynchronousTaskManager syncTaskManager;
     // Currently selected FI network version
     private String fiNetworkVersion;
     // Used for setting colors for pathway diagram highlighting
@@ -451,7 +454,6 @@ public class PlugInObjectManager {
     /**
      * Get the system-wide TaskManager that is registered as a service
      */
-    @SuppressWarnings("rawtypes")
     public TaskManager getTaskManager() {
         if (taskManager != null)
             return taskManager;
@@ -462,6 +464,18 @@ public class PlugInObjectManager {
         if (taskManager != null)
             serviceReferences.add(ref);
         return taskManager;
+    }
+    
+    public SynchronousTaskManager getSyncTaskManager() {
+        if (syncTaskManager != null)
+            return syncTaskManager;
+        ServiceReference ref = context.getServiceReference(SynchronousTaskManager.class.getName());
+        if (ref == null)
+            return null;
+        syncTaskManager = (SynchronousTaskManager) context.getService(ref);
+        if (syncTaskManager != null)
+            serviceReferences.add(ref);
+        return syncTaskManager;
     }
     
     /**
