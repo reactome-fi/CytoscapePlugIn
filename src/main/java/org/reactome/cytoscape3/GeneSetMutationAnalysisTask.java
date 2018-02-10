@@ -74,6 +74,23 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
         this.fetchFIAnnotations = gui.shouldFIAnnotationsBeFetched();
     }
     
+    public GeneSetMutationAnalysisTask(GeneSetMutationAnalysisOptions options) {
+        this.chooseHomoGenes = options.isChooseHomoGenes();
+        this.useLinkers = options.isUseLinkers();
+        this.showUnlinked = options.isShowUnlinked();
+        this.format = options.getFormat();
+        if (options.getFile() != null && !options.getFile().trim().equals("null")) // If a file is provided, we will use the file
+            this.file = new File(options.getFile());
+        else
+            this.enteredGenes = options.getEnteredGenes();
+        this.sampleCutoffValue = options.getSampleCutoffValue();
+        this.showUnlinked = options.isShowUnlinked();
+        this.fetchFIAnnotations = options.isFetchFIAnnotations();
+        // Set the version
+        if (options.getFiVersion() != null)
+            PlugInObjectManager.getManager().setFiNetworkVersion(options.getFiVersion());
+    }
+    
     @Override
     protected void doAnalysis() {
         ProgressPane progPane = new ProgressPane();

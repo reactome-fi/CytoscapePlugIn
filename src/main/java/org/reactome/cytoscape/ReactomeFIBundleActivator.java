@@ -14,6 +14,7 @@ import org.reactome.cytoscape.fipgm.PGMImpactAnalysisResultLoadAction;
 import org.reactome.cytoscape.pathway.FactorGraphPopupMenuHandler;
 import org.reactome.cytoscape.pathway.ReactomePathwayAction;
 import org.reactome.cytoscape.rest.ReactomeFIVizResource;
+import org.reactome.cytoscape.rest.ReactomeFIVizResourceImp;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.FIVisualStyleImpl;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -96,7 +97,7 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         registerAllServices(context, uga, prop);
         
         // Register REST functions for Cytoscape automation
-        ReactomeFIVizResource resource = new ReactomeFIVizResource();
+        ReactomeFIVizResource resource = new ReactomeFIVizResourceImp();
         registerService(context, resource, ReactomeFIVizResource.class, prop);
 
         PopupMenuManager popupManager = PopupMenuManager.getManager();

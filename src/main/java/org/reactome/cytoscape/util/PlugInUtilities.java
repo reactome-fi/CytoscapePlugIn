@@ -162,6 +162,27 @@ public class PlugInUtilities {
         buffer.append("</tr>");
     }
     
+    /**
+     * Used to parse sample lists in a table.
+     * @param nodeToSamples
+     * @return
+     */
+    public static Map<String, Set<String>> extractNodeToSampleSet(Map<String, Object> nodeToSamples) {
+        Map<String, Set<String>> nodeToSampleSet = null;
+        if (nodeToSamples != null) {
+            nodeToSampleSet = new HashMap<String, Set<String>>();
+            for (String node : nodeToSamples.keySet()) {
+                String sampleText = (String) nodeToSamples.get(node);
+                String[] tokens = sampleText.split(";");
+                Set<String> set = new HashSet<String>();
+                for (String token : tokens) {
+                    set.add(token);
+                }
+                nodeToSampleSet.put(node, set);
+            }
+        }
+        return nodeToSampleSet;
+    }
     
     public static void fillTableRowHeader(String header, StringBuilder buffer, int rowSpan) {
         buffer.append("<th align=\"left\" bgcolor=\"#C0C0C0\" rowspan=\"" + rowSpan + "\">" + header + "</th>");

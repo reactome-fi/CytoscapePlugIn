@@ -1,4 +1,4 @@
-package org.reactome.cytoscape.rest;
+package org.reactome.cytoscape.rest.tasks;
 
 import java.util.ArrayList;
 

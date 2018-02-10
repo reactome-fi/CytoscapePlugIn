@@ -20,7 +20,6 @@ import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
 import org.cytoscape.application.swing.CySwingApplication;
-import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
@@ -28,19 +27,16 @@ import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.work.ServiceProperties;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
 import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.DiseaseData;
 import org.reactome.cytoscape.drug.NetworkDrugManager;
 import org.reactome.cytoscape.service.AbstractPopupMenuHandler;
-import org.reactome.cytoscape.service.FINetworkService;
-import org.reactome.cytoscape.service.FINetworkServiceFactory;
-import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.RESTFulFIService;
-import org.reactome.cytoscape.service.TableFormatter;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -53,8 +49,6 @@ import org.reactome.cytoscape3.NodeActionCollection.CosmicMenu;
 import org.reactome.cytoscape3.NodeActionCollection.FetchFIsMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GoogleMenu;
-import org.reactome.r3.graph.GeneClusterPair;
-import org.reactome.r3.graph.NetworkClusterResult;
 import org.reactome.r3.util.InteractionUtilities;
 
 /**
@@ -737,7 +731,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
                                               "Survival Analysis can not be performed because no sample information exists.");
                     return;
                 }
-                Map<String, Set<String>> nodeToSampleSet = extractNodeToSampleSet(nodeToSamples);
+                Map<String, Set<String>> nodeToSampleSet = PlugInUtilities.extractNodeToSampleSet(nodeToSamples);
                 ModuleBasedSurvivalAnalysisHelper survivalHelper = new ModuleBasedSurvivalAnalysisHelper();
                 survivalHelper.doSurvivalAnalysis(nodeToModule, nodeToSampleSet);
             }
@@ -789,83 +783,11 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
     /**
      * The actual place for doing network clustering.
      */
+    @SuppressWarnings("rawtypes")
     private void clusterFINetwork(JFrame frame, CyNetworkView view) {
-        ProgressPane progPane = new ProgressPane();
-        progPane.setIndeterminate(true);
-        progPane.setText("Clustering FI network...");
-        frame.setGlassPane(progPane);
-        frame.getGlassPane().setVisible(true);
-        
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceReference tableFormatterServRef = context.getServiceReference(TableFormatter.class.getName());
-        if (tableFormatterServRef == null)
-            return;
-            
-        TableFormatterImpl tableFormatter = (TableFormatterImpl) context.getService(tableFormatterServRef);
-        tableFormatter.makeModuleAnalysisTables(view.getModel());
-        List<CyEdge> edgeList = view.getModel().getEdgeList();
-        
-        try {
-            // As of July 23, 2016, this Spectral partition based network clustering
-            // has been moved to the client side because of the long process in the server-side
-            // for large networks submitted by users.
-            FINetworkService service = new FINetworkServiceFactory().getFINetworkService();
-            NetworkClusterResult clusterResult = service.cluster(edgeList, view);
-            Map<String, Integer> nodeToCluster = new HashMap<String, Integer>();
-            List<GeneClusterPair> geneClusterPairs = clusterResult.getGeneClusterPairs();
-            if (geneClusterPairs != null) {
-                for (GeneClusterPair geneCluster : geneClusterPairs) {
-                    nodeToCluster.put(geneCluster.getGeneId(), geneCluster.getCluster());
-                }
-            }
-            
-            TableHelper tableHelper = new TableHelper();
-            tableHelper.storeNodeAttributesByName(view, "module", nodeToCluster);
-            
-            progPane.setText("Storing clustering results...");
-            tableHelper.storeClusteringType(view, TableFormatterImpl.getSpectralPartitionCluster());
-            Map<String, Object> nodeToSamples = tableHelper.getNodeTableValuesByName(view.getModel(), "samples",
-                                                                                     String.class);
-                                                                                     
-            showModuleInTab(nodeToCluster, nodeToSamples, clusterResult.getModularity(), view);
-        }
-        catch (Exception e) {
-            JOptionPane.showMessageDialog(frame, "Error in clustering FI network: " + e.getMessage(),
-                                          "Error in Clustering", JOptionPane.ERROR_MESSAGE);
-            frame.getGlassPane().setVisible(false);
-        }
-        
-        ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-        FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
-        visStyler.setVisualStyle(view, false);
-        
-        context.ungetService(servRef);
-        context.ungetService(tableFormatterServRef);
-        
-        frame.getGlassPane().setVisible(false);
-    }
-    
-    private void showModuleInTab(Map<String, Integer> nodeToCluster, Map<String, Object> nodeToSamples,
-                                 Double modularity, CyNetworkView view) {
-        Map<String, Set<String>> nodeToSampleSet = extractNodeToSampleSet(nodeToSamples);
-        ResultDisplayHelper.getHelper().showModuleInTab(nodeToCluster, nodeToSampleSet, modularity, view);
-    }
-    
-    private Map<String, Set<String>> extractNodeToSampleSet(Map<String, Object> nodeToSamples) {
-        Map<String, Set<String>> nodeToSampleSet = null;
-        if (nodeToSamples != null) {
-            nodeToSampleSet = new HashMap<String, Set<String>>();
-            for (String node : nodeToSamples.keySet()) {
-                String sampleText = (String) nodeToSamples.get(node);
-                String[] tokens = sampleText.split(";");
-                Set<String> set = new HashSet<String>();
-                for (String token : tokens) {
-                    set.add(token);
-                }
-                nodeToSampleSet.put(node, set);
-            }
-        }
-        return nodeToSampleSet;
+        TaskManager manager = PlugInObjectManager.getManager().getTaskManager();
+        ClusterFINetworkTask task = new ClusterFINetworkTask(view, frame);
+        manager.execute(new TaskIterator(task));
     }
     
     /**

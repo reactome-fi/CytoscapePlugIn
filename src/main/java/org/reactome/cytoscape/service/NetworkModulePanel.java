@@ -320,6 +320,13 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         return null;
     }
     
+    /**
+     * Return the table showing detailed content.
+     * @return
+     */
+    public JTable getContentTable() {
+        return contentTable;
+    }
     
     /**
      * Default implementation to export the whole table.
