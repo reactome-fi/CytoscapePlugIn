@@ -40,7 +40,7 @@ public class ClusterFINetworkTask extends AbstractTask {
         taskMonitor.setTitle("Cluster FI Network");
         taskMonitor.setProgress(0.0d);
         taskMonitor.setStatusMessage("Clustering network...");
-        clusterFINetwork(frame, view);
+        clusterFINetwork();
         taskMonitor.setProgress(1.0d);
     }
     
@@ -53,7 +53,7 @@ public class ClusterFINetworkTask extends AbstractTask {
     /**
      * The actual place for doing network clustering.
      */
-    private void clusterFINetwork(JFrame frame, CyNetworkView view) {
+    public void clusterFINetwork() {
         ProgressPane progPane = new ProgressPane();
         progPane.setIndeterminate(true);
         progPane.setText("Clustering FI network...");

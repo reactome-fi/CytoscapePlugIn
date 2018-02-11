@@ -9,13 +9,16 @@ import javax.ws.rs.core.Response;
 
 import org.cytoscape.ci.model.CIResponse;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
-import org.reactome.cytoscape.rest.tasks.ClusterFINetworkTaskObserver;
 import org.reactome.cytoscape.rest.tasks.FINetworkBuildTask;
 import org.reactome.cytoscape.rest.tasks.FINetworkBuildTaskObserver;
+import org.reactome.cytoscape.rest.tasks.ObservableAnnotateModulesTask;
+import org.reactome.cytoscape.rest.tasks.ObservableAnnotateNetworkTask;
 import org.reactome.cytoscape.rest.tasks.ObservableClusterFINetworkTask;
 import org.reactome.cytoscape.rest.tasks.ReactomeFIVizTable;
+import org.reactome.cytoscape.rest.tasks.RestTaskObserver;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape3.GeneSetMutationAnalysisDialog;
@@ -72,12 +75,31 @@ public class ReactomeFIVizResourceImp implements ReactomeFIVizResource {
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
         ObservableClusterFINetworkTask task = new ObservableClusterFINetworkTask(view, frame);
-        ClusterFINetworkTaskObserver observer = new ClusterFINetworkTaskObserver();
+        return exectuteRestTask(task);
+    }
+
+    protected Response exectuteRestTask(ObservableTask task) {
+        RestTaskObserver observer = new RestTaskObserver();
         SynchronousTaskManager taskManager = PlugInObjectManager.getManager().getSyncTaskManager();
         TaskIterator taskIterator = new TaskIterator(task);
         taskManager.execute(taskIterator, observer);
         CIResponse<ReactomeFIVizTable> response = observer.getResponse();
         return generateResponse(response);
+    }
+    
+    @Override
+    public Response performEnrichmentAnalysis(String type) {
+        CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
+        ObservableAnnotateNetworkTask task = new ObservableAnnotateNetworkTask(view, type);
+        return exectuteRestTask(task);
+    }
+    
+    @Override
+    public Response performModuleEnrichmentAnalysis(String type) {
+        CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
+        ObservableAnnotateModulesTask task = new ObservableAnnotateModulesTask(view, type);
+        task.setAvoidGUIs(true);
+        return exectuteRestTask(task);
     }
     
 }

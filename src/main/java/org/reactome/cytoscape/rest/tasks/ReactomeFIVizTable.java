@@ -3,6 +3,9 @@ package org.reactome.cytoscape.rest.tasks;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JTable;
+import javax.swing.table.TableModel;
+
 import org.cytoscape.ci.model.CIResponse;
 
 import io.swagger.annotations.ApiModel;
@@ -42,6 +45,28 @@ public class ReactomeFIVizTable {
         if (tableContent == null)
             tableContent = new ArrayList<>();
         tableContent.add(row);
+    }
+    
+    /**
+     * Copy contents from the passed table to this object.
+     * @param table
+     */
+    public void fill(JTable table) {
+        TableModel tableModel = table.getModel();
+        List<String> headers = new ArrayList<>();
+        for (int i = 0; i < tableModel.getColumnCount(); i++) {
+            String header = tableModel.getColumnName(i);
+            headers.add(header);
+        }
+        setTableHeaders(headers);
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            List<String> row = new ArrayList<>();
+            for (int j = 0; j < tableModel.getColumnCount(); j++) {
+                Object value = tableModel.getValueAt(i, j);
+                row.add(value + "");
+            }
+            addRow(row);
+        }
     }
     
     @ApiModel(value="Table Model", description="Results generated from FIReactomeFIViz in a table model", parent=CIResponse.class)

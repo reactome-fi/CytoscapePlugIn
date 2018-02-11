@@ -2,8 +2,6 @@ package org.reactome.cytoscape3;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,8 +25,6 @@ import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.work.ServiceProperties;
-import org.cytoscape.work.TaskIterator;
-import org.cytoscape.work.TaskManager;
 import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -49,7 +45,6 @@ import org.reactome.cytoscape3.NodeActionCollection.CosmicMenu;
 import org.reactome.cytoscape3.NodeActionCollection.FetchFIsMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GeneCardMenu;
 import org.reactome.cytoscape3.NodeActionCollection.GoogleMenu;
-import org.reactome.r3.util.InteractionUtilities;
 
 /**
  * This class is used to generate popup menus for a FI network.
@@ -713,7 +708,8 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
     }
     
     private void doModuleSurvivalAnalysis(CyNetworkView view) {
-        Map<String, Integer> nodeToModule = extractNodeToModule(view);
+        NetworkModuleHelper helper = new NetworkModuleHelper();
+        Map<String, Integer> nodeToModule = helper.extractNodeToModule(view);
         if (nodeToModule == null || nodeToModule.isEmpty())
             return; // There is no data for analysis
             
@@ -783,11 +779,16 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
     /**
      * The actual place for doing network clustering.
      */
-    @SuppressWarnings("rawtypes")
     private void clusterFINetwork(JFrame frame, CyNetworkView view) {
-        TaskManager manager = PlugInObjectManager.getManager().getTaskManager();
-        ClusterFINetworkTask task = new ClusterFINetworkTask(view, frame);
-        manager.execute(new TaskIterator(task));
+        // Since the implementation of task has its GUI handling, we cannot use
+        // TaskManager to avoid thread and GUI issue
+        final ClusterFINetworkTask task = new ClusterFINetworkTask(view, frame);
+        Thread t = new Thread() {
+            public void run() {
+                task.clusterFINetwork();
+            }
+        };
+        t.start();
     }
     
     /**
@@ -863,114 +864,16 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         t.start();
     }
     
-    private void annotateNetworkModules(final CyNetworkView view, final String type) {
-        final Map<String, Integer> nodeToModule = extractNodeToModule(view);
-        if (nodeToModule == null || nodeToModule.isEmpty())
-            return;
+    private void annotateNetworkModules(CyNetworkView view, String type) {
+        // Since the task handles its GUIs by itself, we should not use TaskManager
+        // to avoid GUI confilcts for now. But this may be change soon to use Cytoscape
+        // native TaskManager.
+        AnnotateNetworkModuleTask task = new AnnotateNetworkModuleTask(view, type);
         Thread t = new Thread() {
-            @Override
             public void run() {
-                ProgressPane progPane = new ProgressPane();
-                progPane.setIndeterminate(true);
-                progPane.setText("Annotating modules...");
-                PlugInObjectManager.getManager().getCytoscapeDesktop().setGlassPane(progPane);
-                PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(true);
-                try {
-                    RESTFulFIService fiService = new RESTFulFIService(view);
-                    List<ModuleGeneSetAnnotation> annotations = fiService.annotateNetworkModules(nodeToModule, type);
-                    ResultDisplayHelper.getHelper().displayModuleAnnotations(annotations, view, type, true);
-                }
-                catch (Exception e) {
-                    PlugInUtilities.showErrorMessage("Error in Annotating Modules", "Please see the logs for details.");
-                    e.printStackTrace();
-                }
-                progPane.setIndeterminate(false);
-                PlugInObjectManager.getManager().getCytoscapeDesktop().getGlassPane().setVisible(false);
+                task.annotateNetworkModules();
             }
         };
         t.start();
-    }
-    
-    private Map<String, Integer> extractNodeToModule(CyNetworkView view) {
-        CyTable nodeTable = view.getModel().getDefaultNodeTable();
-        CyTable netTable = view.getModel().getDefaultNetworkTable();
-        Long netSUID = view.getModel().getSUID();
-        // Check if the network has been clustered
-        if (netTable.getRow(netSUID).get("clustering_Type", String.class) == null) {
-            PlugInUtilities.showErrorMessage("Error in Annotating Modules",
-                                             "Please cluster the FI network before annotating modules.");
-            return null;
-        }
-        final Map<String, Integer> nodeToModule = new HashMap<String, Integer>();
-        Set<String> linkers = new HashSet<String>();
-        for (CyNode node : view.getModel().getNodeList()) {
-            Long nodeSUID = node.getSUID();
-            String nodeName = nodeTable.getRow(nodeSUID).get("name", String.class);
-            Integer module = nodeTable.getRow(nodeSUID).get("module", Integer.class);
-            // Since nodes which are unlinked will have null value for module
-            // (as may some other nodes),
-            // only use those nodes with value for module.
-            if (module != null) {
-                nodeToModule.put(nodeName, module);
-                Boolean isLinker = nodeTable.getRow(nodeSUID).get("isLinker", Boolean.class);
-                if (isLinker != null && isLinker) {
-                    linkers.add(nodeName);
-                }
-            }
-        }
-        Integer cutoff = applyModuleSizeFiler(nodeToModule);
-        if (cutoff == null)
-            return null; // Equivalent to canceling the task.
-        if (!linkers.isEmpty()) {
-            CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-            int reply = JOptionPane.showConfirmDialog(desktopApp.getJFrame(),
-                                                      "Linkers have been used in network construction."
-                                                              + " Including linkers\n will bias results. Would you like to exclude them from analysis?",
-                                                      "Exclude Linkers?", JOptionPane.YES_NO_CANCEL_OPTION);
-            if (reply == JOptionPane.CANCEL_OPTION)
-                
-                return null;
-            if (reply == JOptionPane.YES_OPTION) {
-                nodeToModule.keySet().removeAll(linkers);
-                if (nodeToModule.isEmpty()) {
-                    JOptionPane.showMessageDialog(desktopApp.getJFrame(),
-                                                  "No genes remain after removing linkers. Annotation cannot be performed.",
-                                                  "Cannot Annotate Modules", JOptionPane.INFORMATION_MESSAGE);
-                    return null;
-                }
-            }
-        }
-        return nodeToModule;
-    }
-    
-    private Integer applyModuleSizeFiler(Map<String, Integer> nodeToModule) {
-        Map<Integer, Set<String>> clusterToGenes = new HashMap<Integer, Set<String>>();
-        for (String node : nodeToModule.keySet()) {
-            Integer module = nodeToModule.get(node);
-            InteractionUtilities.addElementToSet(clusterToGenes, module, node);
-        }
-        Set<Integer> values = new HashSet<Integer>();
-        for (Set<String> set : clusterToGenes.values()) {
-            values.add(set.size());
-        }
-        List<Integer> sizeList = new ArrayList<Integer>(values);
-        Collections.sort(sizeList);
-        Integer input = (Integer) JOptionPane.showInputDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                                              "Please choose a size cutoff for modules. Modules with sizes equal\n"
-                                                                      + "or more than the cutoff will be used for analysis:",
-                                                              "Choose Module Size", JOptionPane.QUESTION_MESSAGE, null,
-                                                              sizeList.toArray(), sizeList.get(0));
-        if (input == null)
-            return null; // Cancel has been pressed.
-        // Do a filtering based on size
-        Set<String> filtered = new HashSet<String>();
-        for (Set<String> set : clusterToGenes.values()) {
-            if (set.size() < input) {
-                filtered.addAll(set);
-            }
-        }
-        nodeToModule.keySet().removeAll(filtered);
-        return input;
-    }
-    
+    }   
 }

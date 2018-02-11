@@ -6,6 +6,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -56,6 +57,37 @@ public interface ReactomeFIVizResource {
             @ApiResponse(code = 404, message = "Cannot perform the FI network cluster. Check the Cytoscape logging for errors.", response = CIResponse.class)
     })
     public Response clusterFINetwork();
+    
+    /**
+     * Perform pathway or GO enrichment analysis.
+     * @return
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("enrichment/{type}")
+    @ApiOperation(value = "Perform Enrichment Analysis",
+                  notes = "Perform pathway or GO enrichment analysis for the current displayed network.",
+                  response = ReactomeFIVizTableResponse.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Cannot perform enrichment analysis. Check the Cytoscape logging for errors.", response = CIResponse.class)
+    })
+    public Response performEnrichmentAnalysis(@ApiParam(value = "Enrichment type", allowableValues = "Pathway, BP, CC, MF", example = "Pathway") @PathParam(value = "type") String type);
+    
+    /**
+     * Perform pathway or GO enrichment analysis for network modules.
+     * @return
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("moduleEnrichment/{type}")
+    @ApiOperation(value = "Perform Enrichment Analysis for Network Modules",
+                  notes = "Perform pathway or GO enrichment analysis for the network modules in the current displayed network.",
+                  response = ReactomeFIVizTableResponse.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Cannot perform enrichment analysis. Check the Cytoscape logging for errors.", response = CIResponse.class)
+    })
+    public Response performModuleEnrichmentAnalysis(@ApiParam(value = "Enrichment type", allowableValues = "Pathway, BP, CC, MF", example = "Pathway") @PathParam(value = "type") String type);
+    
     
     /**
      * Build a FI sub-network for a set of genes submitted via a HTTP POST.
