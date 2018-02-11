@@ -16,7 +16,6 @@ import org.cytoscape.work.TaskMonitor;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
-import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.slf4j.Logger;
@@ -55,7 +54,6 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
             panel.setSelectedIndex(index);
             return;
         }
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         PathwayControlPanel controlPane = PathwayControlPanel.getInstance();
         if (panel.getCytoPanelComponentCount() > 0 && panel.getComponentAt(0) != null) {
             Component comp = panel.getComponentAt(0);

@@ -10,30 +10,32 @@ import org.cytoscape.work.FinishStatus;
 import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.TaskObserver;
 
-public class RestTaskObserver implements TaskObserver {
+public class RestTaskObserver<T> implements TaskObserver {
 
-    private ReactomeFIVizTable table;
-    private CIResponse<ReactomeFIVizTable> response;
+    private Class<T> classType;
+    private T results;
+    private CIResponse<T> response;
     
-    public RestTaskObserver() {
+    public RestTaskObserver(Class<T> cls) {
+        this.classType = cls;
     }
 
     @Override
     public void taskFinished(ObservableTask task) {
         List<Class<?>> resultClasses = task.getResultClasses();
-        if (resultClasses.contains(ReactomeFIVizTable.class))
-            table = task.getResults(ReactomeFIVizTable.class);
+        if (resultClasses.contains(classType))
+            results = task.getResults(classType);
     }
 
     @Override
     public void allFinished(FinishStatus finishStatus) {
         response = new CIResponse<>();
         if (finishStatus.getType() == FinishStatus.Type.SUCCEEDED || finishStatus.getType() == FinishStatus.Type.CANCELLED) {
-            if (table == null) {
+            if (results == null) {
                 createError();
             }
             else {
-                response.data = table;
+                response.data = results;
                 response.errors = new ArrayList<>();
             }
         }
@@ -48,7 +50,7 @@ public class RestTaskObserver implements TaskObserver {
         response.errors = Collections.singletonList(error);
     }
 
-    public CIResponse<ReactomeFIVizTable> getResponse() {
+    public CIResponse<T> getResponse() {
         return this.response;
     }
     

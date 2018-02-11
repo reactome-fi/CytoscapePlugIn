@@ -74,6 +74,9 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape.util.SearchDialog;
 import org.reactome.r3.util.FileUtility;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
  * A customized JPanel that is used to display an event tree loaded via RESTful API.
  * @author gwu
@@ -818,6 +821,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         firePropertyChange("showPathwayEnrichments", true, false);
     }
     
+    public JTree getEventTree() {
+        return eventTree;
+    }
+    
     /**
      * Display pathway enrichment analysis in the pathway tree.
      * @param annotations
@@ -1045,15 +1052,65 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         return event;
     }
     
-    class EventObject {
+    @ApiModel(value = "Reactome Event", description = "An event may be a pathway or reaction.")
+    public static class EventObject {
         String name;
+        @ApiModelProperty(value = "Reactome internal Id")
         Long dbId;
         boolean isPathway;
         boolean hasDiagram;
+        @ApiModelProperty(value = "Contained Events")
+        private List<EventObject> children;
         
         @Override
         public String toString() {
             return name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Long getDbId() {
+            return dbId;
+        }
+
+        public void setDbId(Long dbId) {
+            this.dbId = dbId;
+        }
+
+        public boolean isPathway() {
+            return isPathway;
+        }
+
+        public void setPathway(boolean isPathway) {
+            this.isPathway = isPathway;
+        }
+
+        public boolean isHasDiagram() {
+            return hasDiagram;
+        }
+
+        public void setHasDiagram(boolean hasDiagram) {
+            this.hasDiagram = hasDiagram;
+        }
+
+        public List<EventObject> getChildren() {
+            return children;
+        }
+
+        public void setChildren(List<EventObject> children) {
+            this.children = children;
+        }
+        
+        public void addChild(EventObject child) {
+            if (children == null)
+                children = new ArrayList<>();
+            children.add(child);
         }
     }
     

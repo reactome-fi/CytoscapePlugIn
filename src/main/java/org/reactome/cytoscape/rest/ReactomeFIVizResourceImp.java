@@ -12,11 +12,13 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
+import org.reactome.cytoscape.pathway.EventTreePane.EventObject;
 import org.reactome.cytoscape.rest.tasks.FINetworkBuildTask;
 import org.reactome.cytoscape.rest.tasks.FINetworkBuildTaskObserver;
 import org.reactome.cytoscape.rest.tasks.ObservableAnnotateModulesTask;
 import org.reactome.cytoscape.rest.tasks.ObservableAnnotateNetworkTask;
 import org.reactome.cytoscape.rest.tasks.ObservableClusterFINetworkTask;
+import org.reactome.cytoscape.rest.tasks.ObservablePathwayHierarchyLoadTask;
 import org.reactome.cytoscape.rest.tasks.ReactomeFIVizTable;
 import org.reactome.cytoscape.rest.tasks.RestTaskObserver;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -24,8 +26,6 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape3.GeneSetMutationAnalysisDialog;
 import org.reactome.cytoscape3.GeneSetMutationAnalysisOptions;
 import org.reactome.cytoscape3.GeneSetMutationAnalysisTask;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class collects all ReactomeFIViz client-side REST functions to support Cytoscape automation.
@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
  */
 @SuppressWarnings("rawtypes")
 public class ReactomeFIVizResourceImp implements ReactomeFIVizResource {
-    private static final Logger logger = LoggerFactory.getLogger(ReactomeFIVizResourceImp.class);
     
     public ReactomeFIVizResourceImp() {
     }
@@ -75,15 +74,15 @@ public class ReactomeFIVizResourceImp implements ReactomeFIVizResource {
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
         ObservableClusterFINetworkTask task = new ObservableClusterFINetworkTask(view, frame);
-        return exectuteRestTask(task);
+        return exectuteRestTask(task, ReactomeFIVizTable.class);
     }
 
-    protected Response exectuteRestTask(ObservableTask task) {
-        RestTaskObserver observer = new RestTaskObserver();
+    protected <T> Response exectuteRestTask(ObservableTask task, Class<T> cls) {
+        RestTaskObserver<T> observer = new RestTaskObserver<>(cls);
         SynchronousTaskManager taskManager = PlugInObjectManager.getManager().getSyncTaskManager();
         TaskIterator taskIterator = new TaskIterator(task);
         taskManager.execute(taskIterator, observer);
-        CIResponse<ReactomeFIVizTable> response = observer.getResponse();
+        CIResponse<T> response = observer.getResponse();
         return generateResponse(response);
     }
     
@@ -91,7 +90,7 @@ public class ReactomeFIVizResourceImp implements ReactomeFIVizResource {
     public Response performEnrichmentAnalysis(String type) {
         CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
         ObservableAnnotateNetworkTask task = new ObservableAnnotateNetworkTask(view, type);
-        return exectuteRestTask(task);
+        return exectuteRestTask(task, ReactomeFIVizTable.class);
     }
     
     @Override
@@ -99,7 +98,13 @@ public class ReactomeFIVizResourceImp implements ReactomeFIVizResource {
         CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
         ObservableAnnotateModulesTask task = new ObservableAnnotateModulesTask(view, type);
         task.setAvoidGUIs(true);
-        return exectuteRestTask(task);
+        return exectuteRestTask(task, ReactomeFIVizTable.class);
+    }
+
+    @Override
+    public Response loadPathwayHierarchy() {
+        ObservablePathwayHierarchyLoadTask task = new ObservablePathwayHierarchyLoadTask();
+        return exectuteRestTask(task, EventObject.class);
     }
     
 }

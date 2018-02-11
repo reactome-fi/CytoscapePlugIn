@@ -12,6 +12,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.cytoscape.ci.model.CIResponse;
+import org.reactome.cytoscape.pathway.EventTreePane.EventObject;
 import org.reactome.cytoscape.rest.tasks.ReactomeFIVizTable.ReactomeFIVizTableResponse;
 import org.reactome.cytoscape3.GeneSetMutationAnalysisOptions;
 
@@ -104,4 +105,18 @@ public interface ReactomeFIVizResource {
     })
     public Response buildFISubNetwork(@ApiParam(value = "Parameters for Gene Set Analysis", required = true) GeneSetMutationAnalysisOptions parameters);
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("pathwayTree")
+    @ApiOperation(value = "Load the Reactome pathway tree",
+                  notes = "Load the Reactome pathway hierarchical tree. The root is a virual container and should be skipped.",
+                  response = PathwayTreeResponse.class)
+    @ApiResponses(value = {
+            @ApiResponse(code = 404, message = "Cannot load the Reactome tree. Check the Cytoscape logging for errors.", response = CIResponse.class)
+    })
+    public Response loadPathwayHierarchy();
+    
+    public static class PathwayTreeResponse extends CIResponse<EventObject> {
+        
+    }
 }

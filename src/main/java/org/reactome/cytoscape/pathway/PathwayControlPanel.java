@@ -133,6 +133,10 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         eventPane.setAllPathwaysInElement(root);
     }
     
+    public EventTreePane getEventTreePane() {
+        return eventPane;
+    }
+    
     private void installListeners() {
         InternalFrameListener listener = new InternalFrameAdapter() {
 
