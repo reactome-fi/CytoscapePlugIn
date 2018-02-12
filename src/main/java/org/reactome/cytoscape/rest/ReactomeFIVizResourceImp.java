@@ -13,11 +13,13 @@ import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
 import org.reactome.cytoscape.pathway.EventTreePane.EventObject;
+import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.cytoscape.rest.tasks.FINetworkBuildTask;
 import org.reactome.cytoscape.rest.tasks.FINetworkBuildTaskObserver;
 import org.reactome.cytoscape.rest.tasks.ObservableAnnotateModulesTask;
 import org.reactome.cytoscape.rest.tasks.ObservableAnnotateNetworkTask;
 import org.reactome.cytoscape.rest.tasks.ObservableClusterFINetworkTask;
+import org.reactome.cytoscape.rest.tasks.ObservablePathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.rest.tasks.ObservablePathwayHierarchyLoadTask;
 import org.reactome.cytoscape.rest.tasks.ReactomeFIVizTable;
 import org.reactome.cytoscape.rest.tasks.RestTaskObserver;
@@ -106,5 +108,13 @@ public class ReactomeFIVizResourceImp implements ReactomeFIVizResource {
         ObservablePathwayHierarchyLoadTask task = new ObservablePathwayHierarchyLoadTask();
         return exectuteRestTask(task, EventObject.class);
     }
-    
+
+    @Override
+    public Response performPathwayEnrichmentAnalysis(String genes) {
+        ObservablePathwayEnrichmentAnalysisTask task = new ObservablePathwayEnrichmentAnalysisTask();
+        task.setEventPane(PathwayControlPanel.getInstance().getEventTreePane());
+        genes = genes.replaceAll(",", "\n");
+        task.setGeneList(genes);
+        return exectuteRestTask(task, ReactomeFIVizTable.class);
+    }
 }

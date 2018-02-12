@@ -117,6 +117,20 @@ public interface ReactomeFIVizResource {
     public Response loadPathwayHierarchy();
     
     public static class PathwayTreeResponse extends CIResponse<EventObject> {
-        
     }
+    
+    /**
+     * Perform pathway enrichment analysis for a set of genes.
+     */
+    @POST
+    @Produces("application/json")
+    @Consumes("application/json")
+    @Path("ReactomePathwayEnrichment")
+    @ApiOperation(value = "Perform Reactome pathway enrichment analysis",
+                  notes = "Perform pathway enrichment analysis using Reactome pathways. The pathway tree should be loaded first. Genes should be sent as one gene per line.",
+                  response = ReactomeFIVizTableResponse.class)
+    @ApiResponses(value = { 
+            @ApiResponse(code = 404, message = "Cannot perform Reactome pathway enrichment analysis. Check the Cytoscape logging for errors.", response = CIResponse.class)
+    })
+    public Response performPathwayEnrichmentAnalysis(@ApiParam(value = "List of genes delimited by \",\"", required = true) String geneList);
 }

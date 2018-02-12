@@ -4,13 +4,10 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JFrame;
-import javax.swing.JTable;
 
-import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.TaskMonitor;
-import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape3.ClusterFINetworkTask;
 import org.reactome.cytoscape3.NetworkModuleBrowser;
 
@@ -31,15 +28,8 @@ public class ObservableClusterFINetworkTask extends ClusterFINetworkTask impleme
     @Override
     public void run(TaskMonitor taskMonitor) throws Exception {
         super.run(taskMonitor);
-        // Need to get the results displayed in the table
-        NetworkModuleBrowser browser = PlugInUtilities.getCytoPanelComponent(NetworkModuleBrowser.class,
-                                              CytoPanelName.SOUTH,
-                                              "Network Module Browser");
-        if (browser == null)
-            return; // Cannot get anything
-        JTable table = browser.getContentTable();
         result = new ReactomeFIVizTable();
-        result.fill(table);
+        result.fillTableFromResults(NetworkModuleBrowser.class, "Network Module Browser");
     }
 
     @Override

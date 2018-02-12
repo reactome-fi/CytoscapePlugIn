@@ -6,9 +6,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.swing.JFrame;
-import javax.swing.JTable;
 
-import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
@@ -23,7 +21,6 @@ import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cytoscape.service.GeneSetAnnotationPanel;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape3.ResultDisplayHelper;
 
 /**
@@ -88,15 +85,8 @@ public class ObservableAnnotateNetworkTask extends AbstractTask implements Obser
     
     private void extractResults() {
         String title = (type.equals(AnnotationType.Pathway.toString())) ? "Pathways in Network" : "GO " + type + " in Network";
-        // Need to get the results displayed in the table
-        GeneSetAnnotationPanel browser = PlugInUtilities.getCytoPanelComponent(GeneSetAnnotationPanel.class,
-                                                                               CytoPanelName.SOUTH,
-                                                                               title);
-        if (browser == null)
-            return; // Cannot get anything
-        JTable table = browser.getContentTable();
         result = new ReactomeFIVizTable();
-        result.fill(table);
+        result.fillTableFromResults(GeneSetAnnotationPanel.class, title);
     }
 
     @Override
