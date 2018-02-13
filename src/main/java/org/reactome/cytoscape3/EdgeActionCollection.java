@@ -11,6 +11,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
+import org.apache.logging.log4j.core.config.plugins.util.PluginManager;
 import org.cytoscape.application.swing.CyEdgeViewContextMenuFactory;
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CySwingApplication;
@@ -188,6 +189,8 @@ public class EdgeActionCollection {
 
         @Override
         public CyMenuItem createMenuItem(CyNetworkView networkView, View<CyEdge> edgeView) {
+            if (!PlugInObjectManager.getManager().isMechismoEnabled())
+                return null;
             JMenuItem item = new JMenuItem("Fetch Mechismo Results");
             CyTable table = networkView.getModel().getDefaultEdgeTable();
             String name = table.getRow(edgeView.getModel().getSUID()).get("name", String.class);

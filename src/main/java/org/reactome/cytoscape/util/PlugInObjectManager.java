@@ -557,7 +557,6 @@ public class PlugInObjectManager {
     public String getReactomeRESTfulURL() {
         Properties prop = getProperties();
         String url = prop.getProperty("ReactomeRESTfulAPI");
-        System.out.println("Reactome restful url: " + url);
         return url;
     }
     
