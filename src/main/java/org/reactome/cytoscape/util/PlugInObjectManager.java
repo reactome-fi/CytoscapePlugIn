@@ -62,6 +62,8 @@ public class PlugInObjectManager {
     private BundleContext context;
     // System-wide properties
     private Properties properties;
+    // To hold customized properties
+    private Properties customizedProps;
     private static PlugInObjectManager manager;
     // Record cached ServiceReference so that they can be unget when this bundle (aka) is stopped
     private List<ServiceReference> serviceReferences;
@@ -532,8 +534,17 @@ public class PlugInObjectManager {
         return this.properties;
     }
     
-    public void setProperties(Properties prop) {
-        this.properties = prop;
+    public void setCustomizedProps(Properties prop) {
+        this.customizedProps = prop;
+    }
+    
+    public String getMechismoWSURL() {
+        String url = null;
+        if (customizedProps != null)
+            url = customizedProps.getProperty("MechismoWSURL");
+        if (url == null)
+            url = getProperties().getProperty("MechismoWSURL");
+        return url;
     }
     
     /**
@@ -557,6 +568,7 @@ public class PlugInObjectManager {
     public String getReactomeRESTfulURL() {
         Properties prop = getProperties();
         String url = prop.getProperty("ReactomeRESTfulAPI");
+        url = updatePort(url);
         return url;
     }
     
@@ -571,6 +583,18 @@ public class PlugInObjectManager {
         String key = fiVersion + "_restfulURL";
         Properties prop = getProperties();
         String url = prop.getProperty(key);
+        url = updatePort(url);
+        return url;
+    }
+    
+    private String updatePort(String url) {
+        if (customizedProps == null)
+            return url;
+        String newPort = customizedProps.getProperty("WebServicePort");
+        if (newPort != null && newPort.length() > 0) {
+            url = url.replaceAll(":\\d+/", ":" + newPort + "/");
+            return url;
+        }
         return url;
     }
 
@@ -580,7 +604,7 @@ public class PlugInObjectManager {
     
     public String getHostURL() {
         String serviceUrl = getRestfulURL();
-     // Get the host URL name
+        // Get the host URL name
         int index = serviceUrl.lastIndexOf("/", serviceUrl.length() - 2);
         return serviceUrl.substring(0, index + 1);
     }

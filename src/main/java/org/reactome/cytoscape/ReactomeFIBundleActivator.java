@@ -47,7 +47,7 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         Properties props = new Properties();
         props.setProperty("cyPropertyName", "ReactomeFIViz.props");
         registerAllServices(context, propReader, props);
-        PlugInObjectManager.getManager().setProperties(propReader.getProperties());
+        PlugInObjectManager.getManager().setCustomizedProps(propReader.getProperties());
         
         // Register FI network visualization mapping as OSGi services
         //Initialize and register the FI VIsual Style with the framework,
