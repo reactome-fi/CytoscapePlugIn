@@ -17,6 +17,8 @@ import org.reactome.cytoscape.rest.tasks.ReactomeFIVizTable.ReactomeFIVizTableRe
 import org.reactome.cytoscape3.GeneSetMutationAnalysisOptions;
 
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
@@ -116,8 +118,7 @@ public interface ReactomeFIVizResource {
     })
     public Response loadPathwayHierarchy();
     
-    public static class PathwayTreeResponse extends CIResponse<EventObject> {
-    }
+    public static class PathwayTreeResponse extends CIResponse<EventObject> {}
     
     /**
      * Perform pathway enrichment analysis for a set of genes.
@@ -133,4 +134,57 @@ public interface ReactomeFIVizResource {
             @ApiResponse(code = 404, message = "Cannot perform Reactome pathway enrichment analysis. Check the Cytoscape logging for errors.", response = CIResponse.class)
     })
     public Response performPathwayEnrichmentAnalysis(@ApiParam(value = "List of genes delimited by \",\"", required = true) String geneList);
+
+    /**
+     * Load and export pathway diagram.
+     */
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("exportPathwayDiagram")
+    @ApiOperation(value = "Export pathway diagram in PDF",
+                  notes = "Export pathway diagram from the database in PDF. Diagrams only for pathways labeled with hasDiagram = true in the tree can be exported. "
+                          + "The client is required to check if an Event listed in the tree has diagram first before calling this method. If a pathway enrichment "
+                          + "analysis has been performed before exporting, entities having hit genes will be highlighted.",
+                  response = StringResponse.class)
+    public Response exportPathwayDiagram(@ApiParam(value = "Option for exporting pathway diagram", required = true) PathwayDiagramOption diagramOption);
+    
+    @ApiModel(value = "Pathway Digram Option", description = "Configuration to export pathway diagram")
+    public static class PathwayDiagramOption {
+        @ApiModelProperty(value = "DB_ID", notes = "Reactome internal DB_ID", example = "69620")
+        private Long dbId;
+        @ApiModelProperty(value = "Pathway Name", notes = "Name for pathway having diagram", example = "Cell Cycle Checkpoints")
+        private String pathwayName;
+        @ApiModelProperty(value = "Destination PDF File", notes = "PDF file for holding the exported diagram", example = "Cell Cycle Checkpoints.pdf")
+        private String fileName;
+        
+        public PathwayDiagramOption() {
+        }
+
+        public Long getDbId() {
+            return dbId;
+        }
+
+        public void setDbId(Long dbId) {
+            this.dbId = dbId;
+        }
+
+        public String getPathwayName() {
+            return pathwayName;
+        }
+
+        public void setPathwayName(String pathwayName) {
+            this.pathwayName = pathwayName;
+        }
+
+        public String getFileName() {
+            return fileName;
+        }
+
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
+        }
+    }
+    
+    @ApiModel(value = "PDF file name for pathway diagram")
+    public static class StringResponse extends CIResponse<String> {}
 }

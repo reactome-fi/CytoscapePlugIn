@@ -19,6 +19,7 @@ import org.reactome.cytoscape.rest.tasks.FINetworkBuildTaskObserver;
 import org.reactome.cytoscape.rest.tasks.ObservableAnnotateModulesTask;
 import org.reactome.cytoscape.rest.tasks.ObservableAnnotateNetworkTask;
 import org.reactome.cytoscape.rest.tasks.ObservableClusterFINetworkTask;
+import org.reactome.cytoscape.rest.tasks.ObservablePathwayDiagramExportTask;
 import org.reactome.cytoscape.rest.tasks.ObservablePathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.rest.tasks.ObservablePathwayHierarchyLoadTask;
 import org.reactome.cytoscape.rest.tasks.ReactomeFIVizTable;
@@ -117,4 +118,13 @@ public class ReactomeFIVizResourceImp implements ReactomeFIVizResource {
         task.setGeneList(genes);
         return exectuteRestTask(task, ReactomeFIVizTable.class);
     }
+
+    @Override
+    public Response exportPathwayDiagram(PathwayDiagramOption diagramOption) {
+        ObservablePathwayDiagramExportTask task = new ObservablePathwayDiagramExportTask(diagramOption.getDbId(),
+                diagramOption.getPathwayName(),
+                diagramOption.getFileName());
+        return exectuteRestTask(task, String.class);
+    }
 }
+    

@@ -68,7 +68,7 @@ public class CyPathwayDiagramHelper {
                 diagramFrame.setGlassPane(progressPane);
                 progressPane.setText("Highlighting proteins...");
                 diagramFrame.getGlassPane().setVisible(true);
-                if (highlightPathwayDiagram(pathwayEditor, highlightNodes)) {
+                if (highlightPathwayDiagram(pathwayEditor.getPathwayEditor(), highlightNodes)) {
                     pathwayEditor.getPathwayEditor().repaint(pathwayEditor.getPathwayEditor().getVisibleRect());
                     overviewPane.repaint();
                 }
@@ -78,13 +78,13 @@ public class CyPathwayDiagramHelper {
         t.start();
     }
     
-    public boolean highlightPathwayDiagram(ZoomablePathwayEditor pathwayEditor,
+    public boolean highlightPathwayDiagram(PathwayEditor pathwayEditor,
                                            String genes) {
         try {
             // Get the list of reactome ids from the display diagrams
             List<Long> dbIds = new ArrayList<Long>();
             @SuppressWarnings("unchecked")
-            List<Renderable> renderables = pathwayEditor.getPathwayEditor().getDisplayedObjects();
+            List<Renderable> renderables = pathwayEditor.getDisplayedObjects();
             for (Renderable r : renderables) {
                 if (r.getReactomeId() == null)
                     continue;
@@ -115,10 +115,11 @@ public class CyPathwayDiagramHelper {
             return true;
         }
         catch(Exception e) {
-            JOptionPane.showMessageDialog(pathwayEditor,
-                                          "Cannot highlight nodes: please see log for errors.", 
-                                          "Error in Highlighting",
-                                          JOptionPane.ERROR_MESSAGE);
+            if (pathwayEditor.isVisible()) // In case it is used in the background for REST calling
+                JOptionPane.showMessageDialog(pathwayEditor,
+                                              "Cannot highlight nodes: please see log for errors.", 
+                                              "Error in Highlighting",
+                                              JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
             return false;
         }

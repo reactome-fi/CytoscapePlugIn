@@ -123,9 +123,10 @@ public class PathwayEnrichmentHighlighter {
             public void run(TaskMonitor taskMonitor) throws Exception {
                 taskMonitor.setTitle("Pathway Highlighting");
                 taskMonitor.setStatusMessage("Highlight pathway...");
+                taskMonitor.setProgress(0.0d);
                 CyPathwayDiagramHelper helper = CyPathwayDiagramHelper.getHelper();
                 String genes = StringUtils.join(",", hitGenes);
-                helper.highlightPathwayDiagram(pathwayEditor, 
+                helper.highlightPathwayDiagram(pathwayEditor.getPathwayEditor(), 
                                                genes);
                 PathwayEditor editor = pathwayEditor.getPathwayEditor();
                 editor.repaint(editor.getVisibleRect());

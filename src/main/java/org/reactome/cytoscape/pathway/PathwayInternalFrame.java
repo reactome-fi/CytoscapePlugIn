@@ -7,9 +7,6 @@ package org.reactome.cytoscape.pathway;
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.Dictionary;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -31,9 +28,7 @@ import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
-import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.Renderable;
-import org.gk.render.RenderableCompartment;
 import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -236,48 +231,8 @@ public class PathwayInternalFrame extends JInternalFrame implements Selectable {
      * Set the pathway diagram in XML to be displayed
      */
     public void setPathwayDiagramInXML(String xml) throws Exception {
-        DiagramGKBReader reader = new DiagramGKBReader();
-        RenderablePathway pathway = reader.openDiagram(xml);
-        // Hide disease objects
-        Set<Integer> normalIds = getNormalIds(xml);
-        if (normalIds != null) {
-            for (Object obj : pathway.getComponents()) {
-                if (obj instanceof RenderableCompartment)
-                    continue; // Show the above objects always
-                Renderable r = (Renderable) obj;
-                if (!normalIds.contains(r.getID()))
-                    r.setIsVisible(false);
-            }
-        }
-        pathwayEditor.getPathwayEditor().setRenderable(pathway);
+        PlugInUtilities.setPathwayDiagramInXML(pathwayEditor.getPathwayEditor(), xml);
         pathwayEditor.recordColors();
-    }
-    
-    private Set<Integer> getNormalIds(String xml) throws IOException {
-        StringReader reader = new StringReader(xml);
-        BufferedReader br = new BufferedReader(reader);
-        String line = null;
-        Set<Integer> normalIds = null;
-        while ((line = br.readLine()) != null) {
-            if (line.trim().startsWith("<normal")) {
-                if (normalIds == null)
-                    normalIds = new HashSet<>();
-                parseNormalIds(line, normalIds);
-            }
-        }
-        br.close();
-        reader.close();
-        return normalIds;
-    }
-    
-    private void parseNormalIds(String line,
-                                Set<Integer> normalIds) {
-        int index1 = line.indexOf(">");
-        int index2 = line.indexOf("<", index1);
-        line = line.substring(index1 + 1, index2);
-        String[] tokens = line.split(",");
-        for (String token : tokens)
-            normalIds.add(new Integer(token));
     }
     
     /**

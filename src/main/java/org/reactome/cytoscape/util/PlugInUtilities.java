@@ -65,7 +65,10 @@ import org.cytoscape.work.ServiceProperties;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.Renderable;
+import org.gk.render.RenderableCompartment;
+import org.gk.render.RenderablePathway;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
@@ -98,6 +101,53 @@ public class PlugInUtilities {
     public final static Color DRUG_COLOR = new Color(255, 153, 153);
 
     public PlugInUtilities() {
+    }
+    
+    /**
+     * Set the pathway diagram in XML to be displayed
+     */
+    public static void setPathwayDiagramInXML(PathwayEditor editor, String xml) throws Exception {
+        DiagramGKBReader reader = new DiagramGKBReader();
+        RenderablePathway pathway = reader.openDiagram(xml);
+        // Hide disease objects
+        Set<Integer> normalIds = getNormalIds(xml);
+        if (normalIds != null) {
+            for (Object obj : pathway.getComponents()) {
+                if (obj instanceof RenderableCompartment)
+                    continue; // Show the above objects always
+                Renderable r = (Renderable) obj;
+                if (!normalIds.contains(r.getID()))
+                    r.setIsVisible(false);
+            }
+        }
+        editor.setRenderable(pathway);
+    }
+    
+    private static Set<Integer> getNormalIds(String xml) throws IOException {
+        StringReader reader = new StringReader(xml);
+        BufferedReader br = new BufferedReader(reader);
+        String line = null;
+        Set<Integer> normalIds = null;
+        while ((line = br.readLine()) != null) {
+            if (line.trim().startsWith("<normal")) {
+                if (normalIds == null)
+                    normalIds = new HashSet<>();
+                parseNormalIds(line, normalIds);
+            }
+        }
+        br.close();
+        reader.close();
+        return normalIds;
+    }
+    
+    private static void parseNormalIds(String line,
+                                Set<Integer> normalIds) {
+        int index1 = line.indexOf(">");
+        int index2 = line.indexOf("<", index1);
+        line = line.substring(index1 + 1, index2);
+        String[] tokens = line.split(",");
+        for (String token : tokens)
+            normalIds.add(new Integer(token));
     }
     
     public static CyNetworkView getCurrentNetworkView() {
