@@ -532,6 +532,10 @@ public class PlugInObjectManager {
         return this.properties;
     }
     
+    public void setProperties(Properties prop) {
+        this.properties = prop;
+    }
+    
     /**
      * Create an ImageIcon using images in this package (org.reactome.cytoscape.util).
      * @param imgFileName
@@ -550,18 +554,25 @@ public class PlugInObjectManager {
         return icon;
     }
     
+    public String getReactomeRESTfulURL() {
+        Properties prop = getProperties();
+        String url = prop.getProperty("ReactomeRESTfulAPI");
+        System.out.println("Reactome restful url: " + url);
+        return url;
+    }
+    
     /**
      * Get the RESTful URL
      * 
      * @param fiVersion
      * @return
      */
-    public String getRestfulURL(String fiVersion)
-    {
+    public String getRestfulURL(String fiVersion) {
         fiVersion = fiVersion.replaceAll(" ", "_");
         String key = fiVersion + "_restfulURL";
         Properties prop = getProperties();
-        return prop.getProperty(key);
+        String url = prop.getProperty(key);
+        return url;
     }
 
     public String getRestfulURL() {
@@ -569,7 +580,7 @@ public class PlugInObjectManager {
     }
     
     public String getHostURL() {
-        String serviceUrl = PlugInObjectManager.getManager().getRestfulURL();
+        String serviceUrl = getRestfulURL();
      // Get the host URL name
         int index = serviceUrl.lastIndexOf("/", serviceUrl.length() - 2);
         return serviceUrl.substring(0, index + 1);

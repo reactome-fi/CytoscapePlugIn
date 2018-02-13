@@ -27,13 +27,20 @@
           			<include>Config.prop</include>
                     <include>*.gif</include>
                     <include>*.xml</include>
-        		</includes>
+        			</includes>
 			</resource>
             <resource>
                 <directory>${project.basedir}/src/main/java/org/reactome/cytoscape/pathway</directory>
                 <targetPath>org/reactome/cytoscape/pathway</targetPath>
                 <includes>
                     <include>*.gif</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/src/main/resources</directory>
+                <targetPath>resources</targetPath>
+                <includes>
+                    <include>ReactomeFIViz.props</include>
                 </includes>
             </resource>
 		</resources>
@@ -297,7 +304,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>RELEASE</version>
+			<version>4.12</version>
 		</dependency>
 		
 		<dependency>

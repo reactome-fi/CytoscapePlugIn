@@ -18,19 +18,21 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  */
 public class ReactomeRESTfulService {
     private String restfulAPIUrl;
-    private static ReactomeRESTfulService service;
+//    private static ReactomeRESTfulService service;
     
     /**
      * Default constructor
      */
     private ReactomeRESTfulService() {
-        restfulAPIUrl = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeRESTfulAPI");
+        restfulAPIUrl = PlugInObjectManager.getManager().getReactomeRESTfulURL();
     }
     
     public static ReactomeRESTfulService getService() {
-        if (service == null)
-            service = new ReactomeRESTfulService();
-        return service;
+//        if (service == null)
+//            service = new ReactomeRESTfulService();
+//        return service;
+        // As of Feb 13, 2018, use new service for each call in case port is reset
+        return new ReactomeRESTfulService();
     }
     
     /**

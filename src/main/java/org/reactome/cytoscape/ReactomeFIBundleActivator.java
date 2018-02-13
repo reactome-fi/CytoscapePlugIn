@@ -18,6 +18,7 @@ import org.reactome.cytoscape.rest.ReactomeFIVizResourceImp;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.FIVisualStyleImpl;
 import org.reactome.cytoscape.service.PopupMenuManager;
+import org.reactome.cytoscape.service.ReactomeFIVizPropsReader;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -40,6 +41,13 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
     @Override
     public void start(BundleContext context) throws Exception {
         PlugInObjectManager.getManager().setBundleContext(context);
+        
+        // Register properties: Make sure ReactomeFIViz.props is in the resources folder in the bundled app where resources is .in the top
+        ReactomeFIVizPropsReader propReader = new ReactomeFIVizPropsReader("ReactomeFIViz", "/resources/ReactomeFIViz.props");
+        Properties props = new Properties();
+        props.setProperty("cyPropertyName", "ReactomeFIViz.props");
+        registerAllServices(context, propReader, props);
+        PlugInObjectManager.getManager().setProperties(propReader.getProperties());
         
         // Register FI network visualization mapping as OSGi services
         //Initialize and register the FI VIsual Style with the framework,

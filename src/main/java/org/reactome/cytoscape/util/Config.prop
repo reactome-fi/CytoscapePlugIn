@@ -8,31 +8,16 @@ userGuideURL=http://wiki.reactome.org/index.php/ReactomeFIViz
 # A list of FI network versions available for selection
 FINetworkVersions=2016,2015,2014
 # For local test
-#2009_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
-#2012_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
-#2013_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 2014_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 2015_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
 2016_restfulURL=http://localhost:8080/caBigR3WebApp/FIService/
-#2014_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2014/FIService/
-#2015_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2015/FIService/
-#2016_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2016_Stage/FIService/
 # For Production site
-#2009_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp/FIService/
-#2012_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2012/FIService/
-#2013_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2013/FIService/
 #2014_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2014/FIService/
 #2015_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2015/FIService/
 #2016_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2016/FIService/
 # In order to query Reactome pathway diagrams: most likely this should be delegated via the FI service WS?
 #ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2016/FIService/ReactomeRestful/
 ReactomeRESTfulAPI=http://localhost:8080/caBigR3WebApp/FIService/ReactomeRestful/
-#ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2016_Stage/FIService/ReactomeRestful/
-# Source data bases
-#2009_sourceDb=test_reactome_28_plus_i_myisam
-#2012_sourceDb=test_reactome_41_plus_i
-#2013_sourceDb=test_reactome_47_plus_i
-#2013_sourceDb=test_reactome_51_plus_i
 # A list of evidences and their labels
 evidenceProperties=humanInteraction,scePPI,dmePPI,celPPI,mousePPI,genewaysPPI,pavlidisGeneExp,carlosGeneExp,pfamDomainInt,goBPSharing,probability
 evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interaction,Mouse Interaction,Geneways Interaction,Pavlidis Gene Exp,Carlos Gene Exp,PfamDomain Interaction,GO BP Sharing,Score
@@ -46,3 +31,7 @@ factorGraphFiles=PathwayDiagramsFactorGraphs.xml.zip
 fgEscapeNames=ATP, ADP, Pi, H2O, GTP, GDP, CO2, H+
 # A flag to control if cancer targetome should be enabled. This flag will be removed so that enabling is the default after the manuscript is accepted
 enableCancerTargetome=true
+# A flag to control if mechismo data visualization should be enabled
+enableMechismo=false
+# Serve contents via WS
+MechismoWSURL=http://localhost:8070/
