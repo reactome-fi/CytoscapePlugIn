@@ -7,7 +7,6 @@ package org.reactome.cytoscape3;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -41,7 +40,6 @@ import javax.swing.text.StyledDocument;
 import javax.swing.text.TabSet;
 import javax.swing.text.TabStop;
 
-import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.session.events.SessionLoadedEvent;
@@ -61,22 +59,19 @@ import org.reactome.r3.util.FileUtility;
  *
  */
 public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelComponent {
+    public static final String TITLE = "Survival Analysis";
     // A hard-coded cutoff to display links for module based survival analysis
     private final double P_VALUE_CUTOFF_FOR_MODULE = 0.05d;
     // Customized constants for links
     private final String SINGLE_MODULE_LINK = "singleModuleLink";
     private final String FILE_LINK = "fileLink";
     private JTextPane contentPane;
-    // The CytoPanel container used to hold this Panel.
-    protected CytoPanel container;
     // This map is used to map file name to the full path for opening
     private Map<String, String> nameToPath;
-    // Used to do single module surival analysis calling back
+    // Used to do single module survival analysis calling back
     private SingleModuleSurvivalActionListener singleModuleAction;
-    private String title;
     
-    public SurvivalAnalysisResultPane(String title) {
-        setTitle(title);
+    public SurvivalAnalysisResultPane() {
         init();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         SessionLoadedListener sessionListener = new SessionLoadedListener() {
@@ -141,8 +136,7 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
         closeBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (container != null)
-                    close();
+                close();
             }
         });
         nameToPath = new HashMap<String, String>();
@@ -274,10 +268,6 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
                                           "Error in Exporting", 
                                           JOptionPane.ERROR_MESSAGE);
         }
-    }
-    
-    public void setContainer(CytoPanel container) {
-        this.container = container;
     }
     
     /**
@@ -420,18 +410,13 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
     @Override
     public String getTitle()
     {
-        return this.title;
+        return TITLE;
     }
-    public void setTitle(String title)
-    {
-        this.title = title;
-    }
-
+    
     private void close()
     {
-        if (container == null)
-            return;
-        ((Container) container).remove(SurvivalAnalysisResultPane.this);
+        if (getParent() != null)
+            getParent().remove(this);
     }
     
 }

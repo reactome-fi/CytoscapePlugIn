@@ -1,9 +1,6 @@
 package org.reactome.cytoscape3;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -14,16 +11,33 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.text.BadLocationException;
 
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
-import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
-import org.cytoscape.application.swing.CytoPanelState;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.model.CyNetworkView;
@@ -290,47 +304,19 @@ public class ModuleBasedSurvivalAnalysisHelper
                                 String output,
                                 String error,
                                 File plotFile) throws IOException, BadLocationException {
-        String tabTitle = "Survival Analysis";
+        String tabTitle = SurvivalAnalysisResultPane.TITLE;
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel tabbedPane = desktopApp.getCytoPanel(CytoPanelName.EAST);
-        CytoPanelState currentState = tabbedPane.getState();
-        if (currentState == CytoPanelState.HIDE || currentState == CytoPanelState.FLOAT)
-            tabbedPane.setState(CytoPanelState.DOCK);
-        int numComps = tabbedPane.getCytoPanelComponentCount();
-        int componentIndex = -1;
-        for (int i = 0; i < numComps; i++)
-        {
-            Component aComp = (Component) tabbedPane.getComponentAt(i);
-            if ( (aComp instanceof CytoPanelComponent) && ((CytoPanelComponent) aComp).getTitle().equalsIgnoreCase(tabTitle))
-            {
-                componentIndex = i;
-//                break;
-            }
-            // There are some annoying behavior related to this tabbed panel. Just remove all
-            // other tabs, and hope it helps.
-            else
-            {
-                ((Container) tabbedPane).remove(aComp);
-            }
-        }
+        // Check if it is there
+        int componentIndex = PlugInUtilities.getCytoPanelComponent(tabbedPane, tabTitle);
+        // This will guaranteer to create resultPane
+        SurvivalAnalysisResultPane resultPane = PlugInUtilities.getCytoPanelComponent(SurvivalAnalysisResultPane.class,
+                                                                                      CytoPanelName.EAST,
+                                                                                      tabTitle);
         if (componentIndex == -1) {
-            SurvivalAnalysisResultPane resultPane = new SurvivalAnalysisResultPane("Survival Analysis");
-            resultPane.setPreferredSize(new Dimension(400, 235));
-            // Initializing a SurvivalAnalysisResultPane should add it automatically
-            // into the tabbedPane since it is implemented as a CytoPanelComponent.
-            int index = tabbedPane.indexOfComponent(resultPane);
-            if (index == -1) 
-                return; // Most likely there is something wrong if index == -1. This should not occur.
-            componentIndex = index;
+            // Add result
             addSingleModuleAnalysisAction(resultPane);
         }
-        SurvivalAnalysisResultPane resultPane = (SurvivalAnalysisResultPane) tabbedPane.getComponentAt(componentIndex);
-//      It seems that doing a selection will resize the tabbed panel. Since right now,
-        // only one tab should be displayed. Don't select it to avoid annoying resizing
-        // problem.
-//        tabbedPane.setSelectedIndex(componentIndex);
-        resultPane.setContainer(tabbedPane);
-//        resultPane.setSize(400, 235);
         String[] results = new String[3];
         results[0] = output;
         results[1] = error;
