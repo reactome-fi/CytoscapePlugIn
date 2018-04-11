@@ -150,11 +150,11 @@ public interface ReactomeFIVizResource {
     
     @ApiModel(value = "Pathway Digram Option", description = "Configuration to export pathway diagram")
     public static class PathwayDiagramOption {
-        @ApiModelProperty(value = "DB_ID", notes = "Reactome internal DB_ID", example = "69620")
+        @ApiModelProperty(value = "DB_ID", notes = "Reactome internal DB_ID", required = true, example = "69620")
         private Long dbId;
-        @ApiModelProperty(value = "Pathway Name", notes = "Name for pathway having diagram", example = "Cell Cycle Checkpoints")
+        @ApiModelProperty(value = "Pathway Name", notes = "Name for pathway having diagram", required = true, example = "Cell Cycle Checkpoints")
         private String pathwayName;
-        @ApiModelProperty(value = "Destination PDF File", notes = "PDF file for holding the exported diagram", example = "Cell Cycle Checkpoints.pdf")
+        @ApiModelProperty(value = "Destination PDF File", notes = "PDF file for holding the exported diagram",  required = true, example = "Cell Cycle Checkpoints.pdf")
         private String fileName;
         
         public PathwayDiagramOption() {

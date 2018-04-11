@@ -18,6 +18,7 @@ public class ObservablePathwayEnrichmentAnalysisTask extends PathwayEnrichmentAn
     private boolean isResultsDisplayed = false;
     
     public ObservablePathwayEnrichmentAnalysisTask() {
+        showEmptyResultDialog = false;
     }
     
     @Override

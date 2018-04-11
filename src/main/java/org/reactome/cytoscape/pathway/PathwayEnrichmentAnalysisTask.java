@@ -13,6 +13,7 @@ import javax.swing.SwingUtilities;
 
 import org.cytoscape.work.TaskMonitor;
 import org.gk.util.ProgressPane;
+import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cytoscape.service.AbstractPathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.service.RESTFulFIService;
@@ -28,6 +29,8 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
     private static Logger logger = LoggerFactory.getLogger(PathwayEnrichmentAnalysisTask.class);
     private String geneList;
     private EventTreePane eventPane;
+    // A flag to control is an empty result dialog should be shown
+    protected boolean showEmptyResultDialog = true;
     
     /**
      * Default constructor.
@@ -107,6 +110,13 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
         taskMonitor.setProgress(0.75d);
         taskMonitor.setStatusMessage("Show enrichment results...");
         final ModuleGeneSetAnnotation annotation = annotations.get(0); // There should be only one annotation here
+        List<GeneSetAnnotation> results = annotation.getAnnotations();
+        if (results == null || results.size() == 0) { // Empty result
+            if (!showEmptyResultDialog) {
+                taskMonitor.setProgress(1.0d);
+                return; // Just return
+            }
+        }
         // Need to use a new thread to make sure all text in the tree can be displayed without truncation.
         SwingUtilities.invokeLater(new Runnable() {
             

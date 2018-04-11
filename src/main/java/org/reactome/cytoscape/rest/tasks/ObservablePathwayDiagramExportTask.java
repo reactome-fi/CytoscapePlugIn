@@ -9,16 +9,11 @@ import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.TaskMonitor;
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
-import org.gk.render.RenderablePathway;
 import org.gk.util.StringUtils;
 import org.gk.util.SwingImageCreator;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.cytoscape.pathway.PathwayEnrichmentHighlighter;
-import org.reactome.cytoscape.pathway.PathwayInternalFrame;
 import org.reactome.cytoscape.pathway.ReactomeRESTfulService;
-import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
-import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.service.CyPathwayDiagramHelper;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
