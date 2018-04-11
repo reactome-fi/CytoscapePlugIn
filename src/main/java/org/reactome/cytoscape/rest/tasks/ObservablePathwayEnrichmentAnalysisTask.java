@@ -38,7 +38,7 @@ public class ObservablePathwayEnrichmentAnalysisTask extends PathwayEnrichmentAn
         // to break the execution
         long time0 = System.currentTimeMillis();
         while (true) {
-            if (isResultsDisplayed)
+            if (isResultsDisplayed || resultIsEmpty)
                 break;
             try {
                 Thread.sleep(100); // Wait for 0.1 second
@@ -49,8 +49,10 @@ public class ObservablePathwayEnrichmentAnalysisTask extends PathwayEnrichmentAn
             if (duration > 3000)
                 break; // If more than 3 seconds, break the loop!
         }
-        String title = "Reactome Pathway Enrichment";
         result = new ReactomeFIVizTable();
+        if (resultIsEmpty)
+            return;
+        String title = "Reactome Pathway Enrichment";
         result.fillTableFromResults(PathwayEnrichmentResultPane.class, title);
     }
 

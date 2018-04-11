@@ -31,6 +31,7 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
     private EventTreePane eventPane;
     // A flag to control is an empty result dialog should be shown
     protected boolean showEmptyResultDialog = true;
+    protected boolean resultIsEmpty;
     
     /**
      * Default constructor.
@@ -114,6 +115,7 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
         if (results == null || results.size() == 0) { // Empty result
             if (!showEmptyResultDialog) {
                 taskMonitor.setProgress(1.0d);
+                resultIsEmpty = true;
                 return; // Just return
             }
         }
