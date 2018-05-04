@@ -257,7 +257,7 @@ public class InteractionMutationView extends JDialog {
             MutationTableModel model = (MutationTableModel) mutationTable.getModel();
             int[] selectedRows = mutationTable.getSelectedRows();
             if (selectedRows == null || selectedRows.length == 0)
-                return null;
+                return new HashMap<>(); // Don't return null to avoid null exception
             List<Integer> rowList = new ArrayList<>();
             for (int i = 0; i < selectedRows.length; i++) {
                 int rowInModel = mutationTable.convertRowIndexToModel(selectedRows[i]);
