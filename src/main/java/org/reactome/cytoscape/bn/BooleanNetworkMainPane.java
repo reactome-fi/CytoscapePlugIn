@@ -14,6 +14,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.RowSorter;
 import javax.swing.RowSorter.SortKey;
@@ -60,6 +62,7 @@ import org.osgi.framework.BundleContext;
 import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
 import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
+import org.reactome.cytoscape.drug.DrugDataSource;
 import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
 import org.reactome.cytoscape.drug.InteractionListTableModel;
 import org.reactome.cytoscape.drug.InteractionListView;
@@ -515,18 +518,21 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         private JComboBox<ANDGateMode> andGateBox;
         private Set<String> usedNames;
         private JTextField drugBox;
-        // Cache drug selection dialog for easy handling
-        private DrugSelectionDialog drugList;
+        // Cache drug selection dialog for easy handling: to keep the original
+        // selection (not for performance).
+        private Map<DrugDataSource, DrugSelectionDialog> srcToDrugList;
         // Cache values from the drug list: We should not get these values
         // from drugList dialog since new selections may be discarded
         private Map<String, Double> inhibition;
         private Map<String, Double> activation;
         private JCheckBox filterMembersToTargetsBox;
         private JTextField targetBox;
+        private JComboBox<DrugDataSource> sourceBox;
         
         public NewSimulationDialog() {
             super(PlugInObjectManager.getManager().getCytoscapeDesktop());
             init();
+            srcToDrugList = new HashMap<>();
         }
         
         public boolean isDrugSelected() {
@@ -604,7 +610,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             });
             getContentPane().add(controlPane, BorderLayout.SOUTH);
             
-            setSize(465, 350);
+            setSize(465, 375);
             setLocationRelativeTo(this.getOwner());
             
             getRootPane().setDefaultButton(controlPane.getOKBtn());
@@ -647,9 +653,25 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             
             GridBagConstraints constraints = new GridBagConstraints();
             constraints.anchor = GridBagConstraints.WEST;
+            constraints.insets = new Insets(1, 1, 1, 1);
             
-            JLabel label = GKApplicationUtilities.createTitleLabel("Apply cancer drugs:");
+            JLabel label = GKApplicationUtilities.createTitleLabel("Apply drugs:");
             panel.add(label, constraints);
+            
+            // Add a JComBox for choosing data source
+            JPanel sourcePane = new JPanel();
+            sourcePane.setLayout(new FlowLayout(FlowLayout.LEFT));
+            JLabel sourceLabel = new JLabel("Choose source: ");
+            sourcePane.add(sourceLabel);
+            sourceBox = new JComboBox<>();
+            Arrays.asList(DrugDataSource.values()).forEach(s -> sourceBox.addItem(s));
+            sourceBox.setEditable(false);
+            sourceBox.setSelectedIndex(0); // Use the first as default
+            sourcePane.add(sourceBox);
+            constraints.gridy = 1;
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            panel.add(sourcePane, constraints);
+            
             JPanel drugPane = new JPanel();
             drugPane.setLayout(new FlowLayout(FlowLayout.LEFT));
             drugBox = new JTextField();
@@ -684,6 +706,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         }
         
         private void showDrugsForPathway() {
+            DrugSelectionDialog drugList = srcToDrugList.get(sourceBox.getSelectedItem());
             if (drugList != null) {
                 drugList.isOKClicked = false;
                 drugList.setModal(true);
@@ -697,7 +720,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             Thread t = new Thread() {
                 public void run() {
                     DrugTargetInteractionManager manager = DrugTargetInteractionManager.getManager();
-                    Set<Interaction> interactions = manager.fetchCancerDrugsInteractions(pathwayEditor);
+                    Set<Interaction> interactions = manager.fetchDrugsInteractions(pathwayEditor,
+                                                                                   (DrugDataSource)sourceBox.getSelectedItem());
                     if (interactions.size() == 0)
                         return;
                     DrugSelectionDialog drugList = new DrugSelectionDialog(NewSimulationDialog.this);
@@ -707,7 +731,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                     if (!drugList.isOKClicked)
                         return;
                     extractDrugSelectionInfo(drugList);
-                    NewSimulationDialog.this.drugList = drugList;
+                    srcToDrugList.put((DrugDataSource)sourceBox.getSelectedItem(),
+                                      drugList);
                 }
             };
             t.start();
@@ -800,29 +825,39 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         
         public DrugSelectionTableModel() {
             super();
-            colNames = new String[] {
-                    "ID",
-                    "Drug",
-                    "Target",
-                    "KD (nM)",
-                    "IC50 (nM)",
-                    "Ki (nM)",
-                    "EC50 (nM)",
-                    "Modification",
-                    "Strength"
-            };
+//            String[] labels = new String[] {
+//                    "ID",
+//                    "Drug",
+//                    "Target",
+//                    "KD (nM)",
+//                    "IC50 (nM)",
+//                    "Ki (nM)",
+//                    "EC50 (nM)",
+//                    "Modification",
+//                    "Strength"
+//            };
             affinityToModificationMap = new DefaultAffinityToModificationMap();
+        }
+        
+        @Override
+        protected void resetColumns(List<Interaction> interactions) {
+            super.resetColumns(interactions);
+            // Need to add the following extra columns
+//          "Modification",
+//          "Strength"
+            colNames.add("Modification");
+            colNames.add("Strength");
         }
 
         @Override
         protected void initRow(Interaction interaction, Object[] row) {
             super.initRow(interaction, row);
-            row[7] = ModificationType.Inhibition;
+            row[colNames.size() - 2] = ModificationType.Inhibition;
             Double minValue = getMinValue(row);
             if (minValue == null)
-                row[8] = null;
+                row[colNames.size() - 1] = null;
             else {
-                row[8] = getModificationStrenth(minValue);
+                row[colNames.size() - 1] = getModificationStrenth(minValue);
             }
         }
         
@@ -835,16 +870,16 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            if (columnIndex == 7 || columnIndex == 8)
+            if (columnIndex >= colNames.size() - 2)
                 return true;
             return false;
         }
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {
-            if (columnIndex == 7)
+            if (columnIndex == colNames.size() - 2)
                 return ModificationType.class;
-            else if (columnIndex == 8)
+            else if (columnIndex == colNames.size() - 1)
                 return Double.class;
             else
                 return super.getColumnClass(columnIndex);
@@ -874,7 +909,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         
         private Double getMinValue(Object[] row) {
             Double rtn = null;
-            for (int i = 3; i < 7; i++) {
+            for (int i = 3; i < colNames.size() - 2; i++) {
                 Double value = (Double) row[i];
                 if (value == null)
                     continue;
@@ -895,6 +930,12 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             super(owner);
         }
         
+        @Override
+        public void setInteractions(List<Interaction> interactions) {
+            super.setInteractions(interactions);
+            modifyTable();
+        }
+
         @Override
         protected TableListInteractionFilter createInteractionFilter() {
             TableListInteractionFilter filter = super.createInteractionFilter();
@@ -924,12 +965,12 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         @Override
         protected void init() {
             super.init();
-            setTitle("Cancer Drug Selection");
+            setTitle("Drug Selection");
             titleLabel = GKApplicationUtilities.createTitleLabel("Choose drugs by selecting:");
             titleLabel.setToolTipText("Note: Selecting one row will select all rows for the selected drug.");
             getContentPane().add(titleLabel, BorderLayout.NORTH);
-            
-            modifyTable();
+            // Since the column is dynamically generated, we need to call this later on.
+//            modifyTable();
         }
         
         public Map<String, Double> getInhibition() {
@@ -946,14 +987,15 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                 return new HashMap<>();
             Map<String, Double> targetToValue = new HashMap<>();
             DrugSelectionTableModel model = (DrugSelectionTableModel) interactionTable.getModel();
+            int col = model.getColumnCount();
             for (int i = 0; i < model.getRowCount(); i++) {
                 String drug = (String) model.getValueAt(i, 1);
                 if (!drugs.contains(drug))
                     continue;
-                ModificationType type1 = (ModificationType) model.getValueAt(i, 7);
+                ModificationType type1 = (ModificationType) model.getValueAt(i, col - 2);
                 if (type1 != type)
                     continue;
-                Double value = (Double) model.getValueAt(i, 8);
+                Double value = (Double) model.getValueAt(i, col - 1);
                 if (value == null)
                     continue; // Don't want to have null
                 String target = (String) model.getValueAt(i, 2);
@@ -978,14 +1020,14 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         private void modifyTable() {
             // Handle table editing
             DefaultTableCellRenderer defaultCellRenderer = new DefaultTableCellRenderer();
-            
-           TableColumn modificationCol = interactionTable.getColumnModel().getColumn(7);
+            int col = interactionTable.getColumnCount();
+            TableColumn modificationCol = interactionTable.getColumnModel().getColumn(col - 2);
             JComboBox<ModificationType> modificationEditor = new JComboBox<>();
             for (ModificationType type : ModificationType.values())
                 modificationEditor.addItem(type);
             modificationCol.setCellEditor(new DefaultCellEditor(modificationEditor));
             modificationCol.setCellRenderer(defaultCellRenderer);
-            
+
             DefaultCellEditor numberEditor = new DefaultCellEditor(new JTextField()) {
                 @Override
                 public Object getCellEditorValue() {
@@ -993,11 +1035,11 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                     return new Double(text);
                 }
             };
-            
-            TableColumn initCol = interactionTable.getColumnModel().getColumn(8);
+
+            TableColumn initCol = interactionTable.getColumnModel().getColumn(col - 1);
             initCol.setCellEditor(numberEditor);
             initCol.setCellRenderer(defaultCellRenderer);
-            
+
             // Sort based on the drug name
             List<SortKey> sortedKeys = new ArrayList<>();
             sortedKeys.add(new RowSorter.SortKey(1, SortOrder.ASCENDING));

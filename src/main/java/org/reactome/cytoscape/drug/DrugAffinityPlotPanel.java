@@ -69,15 +69,13 @@ public class DrugAffinityPlotPanel extends JPanel {
             String drug = interaction.getIntDrug().getDrugName();
             drugs.add(drug);
             if (interaction.getExpEvidenceSet() != null) {
-                if (interaction.getExpEvidenceSet() != null) {
-                    for (ExpEvidence evidence : interaction.getExpEvidenceSet()) {
-                        String relation = evidence.getAssayRelation();
-                        if (relation == null)
-                            continue;
-                        if (relation.equals("=") || relation.equals("<")) { // Since we can get the largest value
-                            targetSet.add(interaction.getIntTarget().getTargetName());
-                            break;
-                        }
+                for (ExpEvidence evidence : interaction.getExpEvidenceSet()) {
+                    String relation = evidence.getAssayRelation();
+                    if (relation == null)
+                        continue;
+                    if (relation.equals("=")) { // Use "=" value only
+                        targetSet.add(interaction.getIntTarget().getTargetName());
+                        break;
                     }
                 }
             }
@@ -112,11 +110,11 @@ public class DrugAffinityPlotPanel extends JPanel {
         }
         
         if (targets.size() == 0) {
-            showEmptyMessage("Cannot find any target for plotting!");
+            showEmptyMessage("Cannot find any target having exact value for plotting!");
             return;
         }
         
-        String[] types = {"KD", "IC50", "Ki", "EC50"};
+        List<String> types = DrugTargetInteractionManager.getAssayTypes(interactions);
         NumberAxis xAxis = createAxis("Binding Assay Value (nM)");
         xAxis.setRange(0, 100); // Default range between 0 and 100 nM
         CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(xAxis);
@@ -238,7 +236,7 @@ public class DrugAffinityPlotPanel extends JPanel {
     public static void main(String[] args) throws Exception {
         RESTFulFIService restfulService = new RESTFulFIService();
         List<String> drugs = Collections.singletonList("Imatinib Mesylate");
-        Element rootElm = restfulService.queryInteractionsForDrugs(drugs);
+        Element rootElm = restfulService.queryInteractionsForDrugs(drugs, DrugDataSource.Targetome.toString());
         DrugTargetInteractionParser parser = new DrugTargetInteractionParser();
         parser.parse(rootElm);
         List<Interaction> interactions = parser.getInteractions();

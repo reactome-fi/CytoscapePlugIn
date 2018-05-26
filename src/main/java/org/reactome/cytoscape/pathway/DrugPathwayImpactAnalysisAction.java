@@ -8,6 +8,7 @@ import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.drug.DrugDataSource;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
@@ -43,7 +44,7 @@ public class DrugPathwayImpactAnalysisAction implements ActionListener {
             progressPane.setVisible(true);
             progressPane.setText("Run impact analysis...");
             RESTFulFIService restfulService = new RESTFulFIService();
-            String results = restfulService.runDrugImpactAnalysis(drug).trim();
+            String results = restfulService.runDrugImpactAnalysis(drug, DrugDataSource.Targetome.toString()).trim();
             frame.getGlassPane().setVisible(false);
             if (results.length() == 0) {
                 JOptionPane.showMessageDialog(frame,

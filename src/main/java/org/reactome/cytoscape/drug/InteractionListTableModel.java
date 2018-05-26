@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.swing.RowFilter;
 import javax.swing.table.AbstractTableModel;
@@ -17,17 +18,22 @@ import edu.ohsu.bcb.druggability.dataModel.ExpEvidence;
 import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 public class InteractionListTableModel extends AbstractTableModel {
-    protected String[] colNames = new String[] {
-            "ID",
-            "Drug",
-            "Target",
-            "KD (nM)",
-            "IC50 (nM)",
-            "Ki (nM)",
-            "EC50 (nM)"
-    };
+    protected List<String> colNames;
     private Map<String, Interaction> idToInteraction;
     protected List<Object[]> data;
+    
+    public InteractionListTableModel() {
+//        String[] labels = new String[] {
+//                "ID",
+//                "Drug",
+//                "Target",
+//                "KD (nM)",
+//                "IC50 (nM)",
+//                "Ki (nM)",
+//                "EC50 (nM)"
+//        };
+        colNames = new ArrayList<>();
+    }
     
     public RowFilter<TableModel, Object> createFilter(final InteractionFilter filter) {
         RowFilter<TableModel, Object> rowFilter = new RowFilter<TableModel, Object>() {
@@ -45,7 +51,16 @@ public class InteractionListTableModel extends AbstractTableModel {
         idToInteraction = new HashMap<>();
         for (Interaction interaction : interactions)
             idToInteraction.put(interaction.getId(), interaction);
+        resetColumns(interactions);
         initData(interactions);
+    }
+    
+    protected void resetColumns(List<Interaction> interactions) {
+        List<String> types = DrugTargetInteractionManager.getAssayTypes(interactions);
+        colNames.add("ID");
+        colNames.add("Drug");
+        colNames.add("Target");
+        colNames.addAll(types);
     }
     
     public Interaction getInteraction(String id) {
@@ -58,11 +73,11 @@ public class InteractionListTableModel extends AbstractTableModel {
         else
             data.clear();
         for (Interaction interaction : interactions) {
-            Object[] row = new Object[colNames.length];
+            Object[] row = new Object[colNames.size()];
             initRow(interaction, row);
             data.add(row);
         }
-        fireTableDataChanged();
+        fireTableStructureChanged();
     }
 
     protected void initRow(Interaction interaction, Object[] row) {
@@ -70,10 +85,13 @@ public class InteractionListTableModel extends AbstractTableModel {
         row[1] = interaction.getIntDrug().getDrugName();
         row[2] = interaction.getIntTarget().getTargetName();
         Map<String, Double> typeToValue = getMinValues(interaction);
-        row[3] = typeToValue.get("KD");
-        row[4] = typeToValue.get("IC50");
-        row[5] = typeToValue.get("Ki");
-        row[6] = typeToValue.get("EC50");
+        for (int i = 3; i < colNames.size(); i++) {
+            row[i] = typeToValue.get(colNames.get(i));
+        }
+//        row[3] = typeToValue.get("KD");
+//        row[4] = typeToValue.get("IC50");
+//        row[5] = typeToValue.get("Ki");
+//        row[6] = typeToValue.get("EC50");
     }
     
     private Map<String, Double> getMinValues(Interaction interaction) {
@@ -104,7 +122,7 @@ public class InteractionListTableModel extends AbstractTableModel {
 
     @Override
     public int getColumnCount() {
-        return colNames.length;
+        return colNames.size();
     }
 
     @Override
@@ -116,7 +134,10 @@ public class InteractionListTableModel extends AbstractTableModel {
 
     @Override
     public String getColumnName(int column) {
-        return colNames[column];
+        String name = colNames.get(column);
+        if (column >= 3)
+            name += " (nM)";
+        return name;
     }
 
     @Override

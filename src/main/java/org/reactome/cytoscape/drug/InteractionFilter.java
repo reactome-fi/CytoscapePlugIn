@@ -46,7 +46,7 @@ import edu.ohsu.bcb.druggability.dataModel.Source;
  */
 public class InteractionFilter {
     // Use 1000 nM as the default
-    private final Double DEFAULT_MAX_VALUE = 1000d; // 100 nM
+    private final Double DEFAULT_MAX_VALUE = 1000d; // 1000 nM
     
     private List<DataSource> dataSources; // Databases and pubmed
     private List<AffinityFilter> affinityFilters;
@@ -74,8 +74,9 @@ public class InteractionFilter {
     private void init() {
         // Choose all
         dataSources = new ArrayList<>();
-        for (DataSource source : DataSource.values())
-            dataSources.add(source);
+        // Disable pre-select pubmed
+//        for (DataSource source : DataSource.values())
+//            dataSources.add(source);
         affinityFilters = new ArrayList<>();
         for (AssayType type : AssayType.values()) {
             AffinityFilter filter = new AffinityFilter();
@@ -493,7 +494,10 @@ public class InteractionFilter {
                 constraints.gridy ++;
                 JCheckBox sourceBox = new JCheckBox(source.toString());
                 sourceBox.addActionListener(okBtnEnabled);
-                sourceBox.setSelected(true);
+                // So far only one: pubmed.
+                // The majority of interactions from DrugCentral don't have pubmed.
+                // Turn this off as the default
+                sourceBox.setSelected(false);
                 pane.add(sourceBox,
                          constraints);
                 sourceToBox.put(source, sourceBox);

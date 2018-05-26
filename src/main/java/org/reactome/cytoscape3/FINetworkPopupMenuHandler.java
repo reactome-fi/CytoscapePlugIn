@@ -30,6 +30,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cancerindex.model.DiseaseData;
+import org.reactome.cytoscape.drug.DrugDataSource;
 import org.reactome.cytoscape.drug.NetworkDrugManager;
 import org.reactome.cytoscape.service.AbstractPopupMenuHandler;
 import org.reactome.cytoscape.service.RESTFulFIService;
@@ -173,21 +174,25 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
         // Cancer drugs overlay feature
         if (PlugInObjectManager.getManager().isCancerTargetEnabled()) {
             FetchCancerDrugMenu fetchCancerDrugMenu = new FetchCancerDrugMenu();
+            fetchCancerDrugMenu.dataSource = DrugDataSource.Targetome;
             Properties cancerProperties = new Properties();
-            preferredMenuText = PREFERRED_MENU + ".Overlay Cancer Drugs[50]";
-            cancerProperties.setProperty(ServiceProperties.TITLE, "Overlay Cancer Drugs");
+            preferredMenuText = PREFERRED_MENU + ".Overlay Drugs[50]";
             cancerProperties.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
             addPopupMenu(context, fetchCancerDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
             
+            FetchCancerDrugMenu fetchDrugMenu = new FetchCancerDrugMenu();
+            fetchDrugMenu.dataSource = DrugDataSource.DrugCentral;
+            cancerProperties = new Properties();
+            cancerProperties.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
+            addPopupMenu(context, fetchDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
+            
             FilterCancerDrugMenu filterCancerDrugMenu = new FilterCancerDrugMenu();
             cancerProperties = new Properties();
-            cancerProperties.setProperty(ServiceProperties.TITLE, "Filter Cancer Drugs");
             cancerProperties.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
             addPopupMenu(context, filterCancerDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
             
             RemoveCancerDrugMenu removeCancerDrugMenu = new RemoveCancerDrugMenu();
             cancerProperties = new Properties();
-            cancerProperties.setProperty(ServiceProperties.TITLE, "Remove Cancer Drugs");
             cancerProperties.setProperty(ServiceProperties.PREFERRED_MENU, preferredMenuText);
             addPopupMenu(context, removeCancerDrugMenu, CyNetworkViewContextMenuFactory.class, cancerProperties);
         }
@@ -565,10 +570,19 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
     }
     
     private class FetchCancerDrugMenu implements CyNetworkViewContextMenuFactory {
+        DrugDataSource dataSource;
 
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView) {
-            JMenuItem fetchCancerDrugMenuItem = new JMenuItem("Fetch Cancer Drugs");
+            String title = null;
+            float weight = 1.0f;
+            if (dataSource == DrugDataSource.Targetome)
+                title = "Fetch Cancer Drugs";
+            else {
+                title = "Fetch DrugCentral Drugs";
+                weight = 2.0f;
+            }
+            JMenuItem fetchCancerDrugMenuItem = new JMenuItem(title);
             fetchCancerDrugMenuItem.addActionListener(new ActionListener() {
                 
                 @Override
@@ -576,7 +590,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
                     fetchCancerDrugs(netView);
                 }
             });
-            return new CyMenuItem(fetchCancerDrugMenuItem, 1.0f);
+            return new CyMenuItem(fetchCancerDrugMenuItem, weight);
         }
         
         private void fetchCancerDrugs(final CyNetworkView networkView) {
@@ -585,16 +599,16 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
                 public void run() {
                     ProgressPane progPane = new ProgressPane();
                     progPane.setIndeterminate(true);
-                    progPane.setText("Fetching cancer drugs...");
+                    progPane.setText("Fetching drugs...");
                     JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
                     frame.setGlassPane(progPane);
                     frame.getGlassPane().setVisible(true);
                     try {
-                        NetworkDrugManager.getManager().fetchCancerDrugs(networkView);
+                        NetworkDrugManager.getManager().fetchCancerDrugs(networkView, dataSource);
                     }
                     catch (Exception e) {
-                        PlugInUtilities.showErrorMessage("Error in Fetching Cancer Drugs",
-                                                         "Cannot fetch cancer drugs:\n" + e.getMessage());
+                        PlugInUtilities.showErrorMessage("Error in Fetching Drugs",
+                                                         "Cannot fetch drugs:\n" + e.getMessage());
                     }
                     progPane.setIndeterminate(false);
                     frame.getGlassPane().setVisible(false);
@@ -609,7 +623,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
 
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView) {
-            JMenuItem filterCancerDrugMenuItem = new JMenuItem("Filter Cancer Drugs");
+            JMenuItem filterCancerDrugMenuItem = new JMenuItem("Filter Drugs");
             filterCancerDrugMenuItem.addActionListener(new ActionListener() {
                 
                 @Override
@@ -626,7 +640,7 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
 
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView netView) {
-            JMenuItem removeCancerDrugMenuItem = new JMenuItem("Remove Cancer Drugs");
+            JMenuItem removeCancerDrugMenuItem = new JMenuItem("Remove Drugs");
             removeCancerDrugMenuItem.addActionListener(new ActionListener() {
                 
                 @Override

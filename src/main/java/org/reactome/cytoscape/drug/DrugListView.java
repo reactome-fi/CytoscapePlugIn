@@ -41,10 +41,12 @@ import edu.ohsu.bcb.druggability.dataModel.Drug;
  *
  */
 public class DrugListView extends JDialog {
-    private JTable drugTable;
+    protected JTable drugTable;
     private JButton viewTargets;
     private JButton googleBtn;
     private JButton runImpactBtn;
+    // Keep the value of the source
+    protected DrugDataSource dataSource;
     
     /**
      * Default constructor.
@@ -55,7 +57,7 @@ public class DrugListView extends JDialog {
     }
     
     private void init() {
-        setTitle("Cancer Drugs");
+        setTitle("Cancer Drugs in Targetome");
         drugTable = new JTable();
         drugTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             
@@ -69,7 +71,7 @@ public class DrugListView extends JDialog {
             }
         });
         
-        DrugListTableModel tableModel = new DrugListTableModel();
+        DrugListTableModel tableModel = createTableModel();
         drugTable.setModel(tableModel);
         drugTable.setRowSorter(new TableRowSorter<>(tableModel));
         getContentPane().add(new JScrollPane(drugTable), BorderLayout.CENTER);
@@ -83,6 +85,18 @@ public class DrugListView extends JDialog {
         setLocationRelativeTo(getOwner());
 //        GKApplicationUtilities.center(this);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+    }
+
+    public DrugDataSource getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(DrugDataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    protected DrugListTableModel createTableModel() {
+        return new DrugListTableModel();
     }
     
     private void addPopupMenu() {
@@ -102,7 +116,7 @@ public class DrugListView extends JDialog {
         });
     }
     
-    private void doDrugTablePopup(MouseEvent e) {
+    protected void doDrugTablePopup(MouseEvent e) {
         final Point point = e.getPoint();
         int tableCol = drugTable.columnAtPoint(point);
         final int modelCol = drugTable.convertColumnIndexToModel(tableCol);
@@ -253,8 +267,8 @@ public class DrugListView extends JDialog {
         tableModel.setDrugs(drugs);
     }
     
-    private class DrugListTableModel extends AbstractTableModel {
-        private final String[] tableHeaders = new String[] {
+    protected class DrugListTableModel extends AbstractTableModel {
+        protected String[] tableHeaders = new String[] {
                 "DrugName",
                 "ApprovalDate",
                 "ATC_Class_ID",
@@ -263,21 +277,13 @@ public class DrugListView extends JDialog {
                 "EPC_Class_Name",
                 "Synonyms"
         };
-        private List<String[]> data;
+        protected List<Object[]> data;
 
         public DrugListTableModel() {
         }
         
         public void setDrugs(List<Drug> drugs) {
-            if (data == null)
-                data = new ArrayList<>();
-            else
-                data.clear();
-            Collections.sort(drugs, new Comparator<Drug>() {
-                public int compare(Drug drug1, Drug drug2) {
-                    return drug1.getDrugName().compareTo(drug2.getDrugName());
-                }
-            });
+            prepareDrugs(drugs);
             for (Drug drug : drugs) {
                 String[] row = new String[tableHeaders.length];
                 row[0] = drug.getDrugName();
@@ -295,6 +301,18 @@ public class DrugListView extends JDialog {
                 data.add(row);
             }
             fireTableDataChanged();
+        }
+
+        protected void prepareDrugs(List<Drug> drugs) {
+            if (data == null)
+                data = new ArrayList<>();
+            else
+                data.clear();
+            Collections.sort(drugs, new Comparator<Drug>() {
+                public int compare(Drug drug1, Drug drug2) {
+                    return drug1.getDrugName().compareTo(drug2.getDrugName());
+                }
+            });
         }
         
         @Override

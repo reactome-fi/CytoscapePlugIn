@@ -95,7 +95,7 @@ public class NetworkDrugManager extends DrugTargetInteractionManager {
         return null;
     }
     
-    public void fetchCancerDrugs(CyNetworkView view) throws Exception {
+    public void fetchCancerDrugs(CyNetworkView view, DrugDataSource dataSource) throws Exception {
         if (handledNetworks.contains(view.getModel().getSUID())) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cancer drugs have been fetched for the displayed network.\n" + 
@@ -117,7 +117,7 @@ public class NetworkDrugManager extends DrugTargetInteractionManager {
         if (genes.size() == 0)
             return; // Nothing to be displayed
         RESTFulFIService service = new RESTFulFIService();
-        Element element = service.queryDrugTargetInteractionsForGenes(genes);
+        Element element = service.queryDrugTargetInteractionsForGenes(genes, dataSource.toString());
         DrugTargetInteractionParser parser = new DrugTargetInteractionParser();
         parser.parse(element);
         List<Interaction> interactions = parser.getInteractions();

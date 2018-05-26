@@ -659,57 +659,58 @@ public class RESTFulFIService implements FINetworkService {
     }
     
     public Element queryDrugTargetInteractionsInDiagram(Long pdId,
-                                                        Long peId) throws Exception {
+                                                        Long peId, 
+                                                        String dataSource) throws Exception {
         String url = null;
         if (peId == null)
-            url = restfulURL + "cancerDruggability/queryInteractionsForDiagram/" + pdId;
+            url = restfulURL + "drug/queryInteractionsForDiagram/" + dataSource.toLowerCase() + "/" + pdId;
         else
-            url = restfulURL + "cancerDruggability/queryInteractionsForPEInDiagram/" + pdId + "/" + peId;
+            url = restfulURL + "drug/queryInteractionsForPEInDiagram/" + dataSource.toLowerCase() + "/" + pdId + "/" + peId;
         Element elm = PlugInUtilities.callHttpInXML(url,
                                                     HTTP_GET,
                                                     null);
         return elm;
     }
     
-    public Element queryDrugTargetInteractionsForGenes(Set<String> genes) throws Exception {
+    public Element queryDrugTargetInteractionsForGenes(Set<String> genes, String dataSource) throws Exception {
         StringBuilder query = new StringBuilder();
         for (String gene : genes)
             query.append(gene).append("\n");
         query.deleteCharAt(query.length() - 1);
-        String url = restfulURL + "cancerDruggability/queryDrugTargetInteractions";
+        String url = restfulURL + "drug/queryDrugTargetInteractions/" + dataSource.toLowerCase();
         Element element = PlugInUtilities.callHttpInXML(url,
                                                         HTTP_POST,
                                                         query.toString());
         return element;
     }
     
-    public Element queryDrugTargetInteractions(Set<Long> peIds) throws Exception {
+    public Element queryDrugTargetInteractions(Set<Long> peIds, String dataSource) throws Exception {
         if (peIds == null || peIds.size() == 0)
             throw new IllegalArgumentException("Empty DB_IDs in the parameter set!");
         StringBuilder query = new StringBuilder();
         for (Long dbId : peIds)
             query.append(dbId).append("\n");
         query.deleteCharAt(query.length() - 1);
-        String url = restfulURL + "cancerDruggability/queryInteractionsForPEs";
+        String url = restfulURL + "drug/queryInteractionsForPEs/" + dataSource.toLowerCase();
         Element elm = PlugInUtilities.callHttpInXML(url, HTTP_POST, query.toString());
         return elm;
     }
     
-    public Element listDrugs() throws Exception {
-        String url = restfulURL + "cancerDruggability/listDrugs";
+    public Element listDrugs(String dataSource) throws Exception {
+        String url = restfulURL + "drug/listDrugs/" + dataSource.toLowerCase();
         Element elm = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
         return elm;
     }
     
-    public Element queryInteractionsForDrugs(List<String> drugNames) throws Exception {
-        String url = restfulURL + "cancerDruggability/queryInteractionsForDrugs";
+    public Element queryInteractionsForDrugs(List<String> drugNames, String dataSource) throws Exception {
+        String url = restfulURL + "drug/queryInteractionsForDrugs/" + dataSource.toLowerCase();
         String query = StringUtils.join("\n", drugNames);
         Element elm = PlugInUtilities.callHttpInXML(url, HTTP_POST, query);
         return elm;
     }
     
-    public String runDrugImpactAnalysis(String drug) throws Exception {
-        String url = restfulURL + "cancerDruggability/performImpactAnalysis";
+    public String runDrugImpactAnalysis(String drug, String dataSource) throws Exception {
+        String url = restfulURL + "drug/performImpactAnalysis/" + dataSource.toLowerCase();
         String rtn = PlugInUtilities.callHttpInText(url, HTTP_POST, drug);
         return rtn;
     }

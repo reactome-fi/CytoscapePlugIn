@@ -66,6 +66,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.bn.BooleanNetworkAnalyzer;
+import org.reactome.cytoscape.drug.DrugDataSource;
 import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
 import org.reactome.cytoscape.mechismo.MechismoDataFetcher;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
@@ -456,22 +457,15 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                 popup.addSeparator();
             // Fetch cancer drugs for the whole pathway diagram
             JMenuItem fetchDrugs = new JMenuItem("Fetch Cancer Drugs");
-            fetchDrugs.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    fetchCancerDrugs(null);
-                }
-            });
+            fetchDrugs.addActionListener(ac -> fetchDrugs(null, DrugDataSource.Targetome));
             popup.add(fetchDrugs);
-            JMenuItem filterDrugs = new JMenuItem("Filter Cancer Drugs");
-            filterDrugs.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    filterCancerDrugs();
-                }
-            });
+            
+            JMenuItem fetchDrugCentralDrugs = new JMenuItem("Fetch DrugCentral Drugs");
+            fetchDrugCentralDrugs.addActionListener(ac -> fetchDrugs(null, DrugDataSource.DrugCentral));
+            popup.add(fetchDrugCentralDrugs);
+            
+            JMenuItem filterDrugs = new JMenuItem("Filter Drugs");
+            filterDrugs.addActionListener(ac -> filterDrugs());
             popup.add(filterDrugs);
         }
                 
@@ -838,19 +832,25 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
                     
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        fetchCancerDrugs(dbId);
+                        fetchDrugs(dbId, DrugDataSource.Targetome);
                     }
                 });
                 popup.add(fetchCancerDrugs);
-                JMenuItem filterCancerDrugs = new JMenuItem("Filter Cancer Drugs");
+                
+                JMenuItem fetchDrugCentralDrugs = new JMenuItem("Fetch DrugCentral Drugs");
+                fetchDrugCentralDrugs.addActionListener(ac -> fetchDrugs(dbId, DrugDataSource.DrugCentral));
+                popup.add(fetchDrugCentralDrugs);
+                
+                JMenuItem filterCancerDrugs = new JMenuItem("Filter Drugs");
                 filterCancerDrugs.addActionListener(new ActionListener() {
                     
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        filterCancerDrugs();
+                        filterDrugs();
                     }
                 });
                 popup.add(filterCancerDrugs);
+                popup.addSeparator();
             }
             
             // Fetch FIs
@@ -937,17 +937,19 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         dialog.setVisible(true);
     }
     
-    private void filterCancerDrugs() {
+    private void filterDrugs() {
         DrugTargetInteractionManager manager = DrugTargetInteractionManager.getManager();
-        manager.filterCancerDrugs((CyPathwayEditor)getPathwayEditor());
+        manager.filterDrugs((CyPathwayEditor)getPathwayEditor());
     }
 
-    private void fetchCancerDrugs(final Long dbId) {
+    private void fetchDrugs(Long dbId, DrugDataSource dataSource) {
         Thread t = new Thread() {
             public void run() {
                 DrugTargetInteractionManager manager = DrugTargetInteractionManager.getManager();
-                manager.fetchCancerDrugsForDisplay(dbId,
-                                                   getPathwayEditor());
+                manager.setCurrentDataSource(dataSource);
+                manager.fetchDrugsForDisplay(dbId,
+                                             getPathwayEditor(),
+                                             dataSource);
             }
         };
         t.start();

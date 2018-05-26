@@ -106,7 +106,8 @@ public class InteractionListView extends JDialog {
                 }
             }
         });
-        
+        // Since column is hard-coded, don't allow to reorder columns
+        interactionTable.getTableHeader().setReorderingAllowed(false);
         setSize(750, 500);
         setLocationRelativeTo(getOwner());
     }

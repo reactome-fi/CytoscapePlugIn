@@ -6,6 +6,7 @@ package org.reactome.cytoscape.drug;
 
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +33,7 @@ import edu.ohsu.bcb.druggability.dataModel.Interaction;
  */
 public class DrugListManager {
     private static DrugListManager manager;
-    private List<Drug> drugs;
+    private Map<DrugDataSource, List<Drug>> sourceToDrugs;
     private AbstractPathwayEnrichmentAnalysisTask enrichmentTask;
     private ActionListener runImpactAnalysisAction;
     
@@ -41,6 +42,7 @@ public class DrugListManager {
      * can be used in the application.
      */
     private DrugListManager() {
+        sourceToDrugs = new HashMap<>();
     }
     
     public static DrugListManager getManager() {
@@ -74,19 +76,20 @@ public class DrugListManager {
         taskManager.execute(new TaskIterator(enrichmentTask));
     }
     
-    public void showDrugTargetInteractions(List<String> drugNames, JDialog parent) {
+    public void showDrugTargetInteractions(List<String> drugNames, DrugListView listView) {
         if (drugNames == null || drugNames.size() == 0)
             return;
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         try {
             setProgressPane(frame, "Fetch Drug Targets");
             RESTFulFIService restfulService = new RESTFulFIService();
-            Element rootElm = restfulService.queryInteractionsForDrugs(drugNames);
+            Element rootElm = restfulService.queryInteractionsForDrugs(drugNames, 
+                                                                       listView.getDataSource() + "");
             DrugTargetInteractionParser parser = new DrugTargetInteractionParser();
             parser.parse(rootElm);
             List<Interaction> interactions = parser.getInteractions();
             frame.getGlassPane().setVisible(false);
-            showInteractions(interactions, parent);
+            showInteractions(interactions, listView);
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -112,23 +115,25 @@ public class DrugListManager {
         view.setVisible(true);
     }
     
-    public void listDrugs() {
+    public void listDrugs(DrugDataSource dataSource) {
+        List<Drug> drugs = sourceToDrugs.get(dataSource);
         if (drugs != null && drugs.size() > 0) {
-            showDrugs();
+            showDrugs(drugs, dataSource);
             return;
         }
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         try {
             setProgressPane(frame,
-                            "Fetch Cancer Drugs");
+                            "Fetch Drugs");
             RESTFulFIService restfulService = new RESTFulFIService();
-            Element rootElm = restfulService.listDrugs();
+            Element rootElm = restfulService.listDrugs(dataSource.toString());
             DrugTargetInteractionParser parser = new DrugTargetInteractionParser();
             parser.parse(rootElm);
             Map<String, Drug> idToDrug = parser.getIdToDrug();
             drugs = new ArrayList<Drug>(idToDrug.values());
+            sourceToDrugs.put(dataSource, drugs);
             frame.getGlassPane().setVisible(false);
-            showDrugs();
+            showDrugs(drugs, dataSource);
         }
         catch(Exception e) {
             e.printStackTrace();
@@ -152,7 +157,7 @@ public class DrugListManager {
         progressPane.setText("Querying the server...");
     }
     
-    private void showDrugs() {
+    private void showDrugs(List<Drug> drugs, DrugDataSource dataSource) {
         if (drugs == null || drugs.size() == 0) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cannot fetch any drug from the database.",
@@ -160,7 +165,12 @@ public class DrugListManager {
                                           JOptionPane.ERROR_MESSAGE);
             return;
         }
-        DrugListView listView = new DrugListView();
+        DrugListView listView = null;
+        if (dataSource == DrugDataSource.Targetome)
+            listView = new DrugListView();
+        else if (dataSource == DrugDataSource.DrugCentral)
+            listView = new DrugCentralDrugListView();
+        listView.setDataSource(dataSource);
         listView.setDrugs(drugs);
         listView.setModal(true);
         listView.setVisible(true);

@@ -63,9 +63,11 @@ import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.TreeUtilities;
 import org.jdom.Element;
+import org.jmol.script.T;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.GeneSetAnnotation;
+import org.reactome.cytoscape.drug.DrugDataSource;
 import org.reactome.cytoscape.drug.DrugListManager;
 import org.reactome.cytoscape.pgm.PathwayResultSummary;
 import org.reactome.cytoscape.service.ReactomeSourceView;
@@ -526,15 +528,13 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         
         // For cancer drugs
         if (PlugInObjectManager.getManager().isCancerTargetEnabled()) {
+            popup.addSeparator();
             JMenuItem viewCancerDrugs = new JMenuItem("View Cancer Drugs");
-            viewCancerDrugs.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    viewCancerDrugs();
-                }
-            });
+            viewCancerDrugs.addActionListener(ae -> viewDrugs(DrugDataSource.Targetome));
             popup.add(viewCancerDrugs);
+            JMenuItem viewDrugCentralDrugs = new JMenuItem("View DrugCentral Drugs");
+            viewDrugCentralDrugs.addActionListener(ae -> viewDrugs(DrugDataSource.DrugCentral));
+            popup.add(viewDrugCentralDrugs);
         }
         
         // Add two new items for expanding/closing nodes
@@ -638,7 +638,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         analyzer.startAnalysis();
     }
     
-    private void viewCancerDrugs() {
+    private void viewDrugs(final DrugDataSource dataSource) {
         Thread t = new Thread() {
             public void run() {
                 PathwayEnrichmentAnalysisTask enrichmentTask = new PathwayEnrichmentAnalysisTask();
@@ -647,7 +647,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 DrugPathwayImpactAnalysisAction impactAnlysisAction = new DrugPathwayImpactAnalysisAction();
                 impactAnlysisAction.setEventPane(EventTreePane.this);
                 DrugListManager.getManager().setRunImpactAnalysisAction(impactAnlysisAction);
-                DrugListManager.getManager().listDrugs();
+                DrugListManager.getManager().listDrugs(dataSource);
             }
         };
         t.start();
