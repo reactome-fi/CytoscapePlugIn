@@ -5,6 +5,7 @@
 package org.reactome.cytoscape.drug;
 
 import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,12 +19,15 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.RowFilter;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -40,6 +44,7 @@ import edu.ohsu.bcb.druggability.dataModel.Drug;
  * @author gwu
  *
  */
+@SuppressWarnings("serial")
 public class DrugListView extends JDialog {
     protected JTable drugTable;
     private JButton viewTargets;
@@ -214,9 +219,28 @@ public class DrugListView extends JDialog {
         return drugs;
     }
     
+    private void filterTable(String text) {
+        TableRowSorter sorter = (TableRowSorter) drugTable.getRowSorter();
+        sorter.setRowFilter(RowFilter.regexFilter(text));
+    }
+    
     private JPanel createControlPane() {
         JPanel controlPane = new JPanel();
+        controlPane.setLayout(new GridLayout(2, 1));
         controlPane.setBorder(BorderFactory.createEtchedBorder());
+        
+        JPanel filterPanel = new JPanel();
+        filterPanel.setBorder(BorderFactory.createEtchedBorder());
+        JLabel filterLabel = new JLabel("Filter Drugs: ");
+        JTextField filterTF = new JTextField();
+        filterTF.setColumns(20);
+        filterTF.addActionListener(ac -> filterTable(filterTF.getText().trim()));
+        filterPanel.add(filterLabel);
+        filterPanel.add(filterTF);
+        controlPane.add(filterPanel);
+        
+        JPanel btnPanel = new JPanel();
+        btnPanel.setBorder(BorderFactory.createEtchedBorder());
         
         googleBtn = new JButton("Google");
         googleBtn.setEnabled(false);
@@ -248,16 +272,17 @@ public class DrugListView extends JDialog {
             }
         });
         
-        controlPane.add(googleBtn);
-        controlPane.add(viewTargets);
-        controlPane.add(runImpactBtn);
+        btnPanel.add(googleBtn);
+        btnPanel.add(viewTargets);
+        btnPanel.add(runImpactBtn);
         JButton closeBtn = new JButton("Close");
         closeBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
         });
-        controlPane.add(closeBtn);
+        btnPanel.add(closeBtn);
+        controlPane.add(btnPanel);
         
         return controlPane;
     }
