@@ -60,6 +60,7 @@ public class InteractionListTableModel extends AbstractTableModel {
         colNames.add("ID");
         colNames.add("Drug");
         colNames.add("Target");
+        colNames.add("InteractionType");
         colNames.addAll(types);
     }
     
@@ -84,8 +85,9 @@ public class InteractionListTableModel extends AbstractTableModel {
         row[0] = interaction.getId();
         row[1] = interaction.getIntDrug().getDrugName();
         row[2] = interaction.getIntTarget().getTargetName();
+        row[3] = interaction.getInteractionType();
         Map<String, Double> typeToValue = getMinValues(interaction);
-        for (int i = 3; i < colNames.size(); i++) {
+        for (int i = 4; i < colNames.size(); i++) {
             row[i] = typeToValue.get(colNames.get(i));
         }
 //        row[3] = typeToValue.get("KD");
@@ -135,14 +137,14 @@ public class InteractionListTableModel extends AbstractTableModel {
     @Override
     public String getColumnName(int column) {
         String name = colNames.get(column);
-        if (column >= 3)
+        if (column >= 4)
             name += " (nM)";
         return name;
     }
 
     @Override
     public Class<?> getColumnClass(int columnIndex) {
-        if (columnIndex < 3)
+        if (columnIndex < 4)
             return String.class;
         else
             return Double.class;

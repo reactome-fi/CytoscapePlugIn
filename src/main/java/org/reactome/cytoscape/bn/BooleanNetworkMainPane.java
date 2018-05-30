@@ -38,7 +38,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.RowSorter;
 import javax.swing.RowSorter.SortKey;
@@ -722,8 +721,13 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                     DrugTargetInteractionManager manager = DrugTargetInteractionManager.getManager();
                     Set<Interaction> interactions = manager.fetchDrugsInteractions(pathwayEditor,
                                                                                    (DrugDataSource)sourceBox.getSelectedItem());
-                    if (interactions.size() == 0)
+                    if (interactions.size() == 0) {
+                        JOptionPane.showMessageDialog(NewSimulationDialog.this,
+                                "Cannot find a drug that interacts with any component in the pathway.", 
+                                "No Drug Found",
+                                JOptionPane.INFORMATION_MESSAGE);
                         return;
+                    }
                     DrugSelectionDialog drugList = new DrugSelectionDialog(NewSimulationDialog.this);
                     drugList.setInteractions(new ArrayList<>(interactions));
                     drugList.setModal(true);
@@ -822,6 +826,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
     private class DrugSelectionTableModel extends InteractionListTableModel {
         // Used to map from affinity to modification strength
         private AffinityToModificationMap affinityToModificationMap;
+        private Map<String, ModificationType> intTypeToModType;
         
         public DrugSelectionTableModel() {
             super();
@@ -839,6 +844,44 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             affinityToModificationMap = new DefaultAffinityToModificationMap();
         }
         
+        private ModificationType getModificationType(Interaction interaction) {
+            if (interaction.getInteractionType() == null)
+                return ModificationType.Inhibition;
+            if (intTypeToModType == null)
+                intTypeToModType = loadTypeMap();
+            ModificationType type = intTypeToModType.get(interaction.getInteractionType().toUpperCase());
+            if (type == null)
+                type = ModificationType.Inhibition; //This is always default
+            return type;
+        }
+        
+        private Map<String, ModificationType> loadTypeMap() {
+            // Now this is hard coded
+            String text = "ACTIVATOR,Activation\n" + 
+                    "AGONIST,Activation\n" + 
+                    "ALLOSTERIC ANTAGONIST,Inhibition\n" + 
+                    "ANTAGONIST,Inhibition\n" + 
+                    "BLOCKER,Inhibition\n" + 
+                    "FULL AGONIST,Activation\n" + 
+                    "INHIBITION,Inhibition\n" + 
+                    "INHIBITOR,Inhibition\n" + 
+                    "INVERSE AGONIST,Inhibition\n" + 
+                    "NEGATIVE,Inhibition\n" + 
+                    "NEGATIVE ALLOSTERIC MODULATOR,Inhibition\n" + 
+                    "NEGATIVE MODULATOR,Inhibition\n" + 
+                    "PARTIAL AGONIST,Activation\n" + 
+                    "POSITIVE ALLOSTERIC MODULATOR,Activation\n" + 
+                    "POSITIVE MODULATOR,Activation\n" + 
+                    "SUBSTRATE,Activation";
+            String[] lines = text.split("\n");
+            Map<String, ModificationType> map = new HashMap<>();
+            for (String line : lines) {
+                String[] tokens = line.split(",");
+                map.put(tokens[0], ModificationType.valueOf(tokens[1]));
+            }
+            return map;
+        }
+        
         @Override
         protected void resetColumns(List<Interaction> interactions) {
             super.resetColumns(interactions);
@@ -852,7 +895,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         @Override
         protected void initRow(Interaction interaction, Object[] row) {
             super.initRow(interaction, row);
-            row[colNames.size() - 2] = ModificationType.Inhibition;
+            row[colNames.size() - 2] = getModificationType(interaction);
             Double minValue = getMinValue(row);
             if (minValue == null)
                 row[colNames.size() - 1] = null;
@@ -884,6 +927,13 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             else
                 return super.getColumnClass(columnIndex);
         }
+        
+        @Override
+        public String getColumnName(int column) {
+            if (column >= colNames.size() - 2)
+                return colNames.get(column);
+            return super.getColumnName(column);
+        }
 
         /**
          * The following map is hard-coded and should be improved in the future.
@@ -909,7 +959,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         
         private Double getMinValue(Object[] row) {
             Double rtn = null;
-            for (int i = 3; i < colNames.size() - 2; i++) {
+            for (int i = 4; i < colNames.size() - 2; i++) {
                 Double value = (Double) row[i];
                 if (value == null)
                     continue;
