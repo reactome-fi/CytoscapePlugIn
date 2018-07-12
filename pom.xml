@@ -188,6 +188,12 @@
 	</repositories>
 	<!-- Dependencies needed to compile this project. -->
 	<dependencies>
+        <!-- For GSEA analysis results -->
+        <dependency>
+            <groupId>org.reactome.gsea</groupId>
+            <artifactId>gsea-model</artifactId>
+            <version>1.0.1</version>
+        </dependency>
 		<!-- https://mvnrepository.com/artifact/org.hibernate.javax.persistence/hibernate-jpa-2.1-api -->
 		<dependency>
 			<groupId>org.hibernate.javax.persistence</groupId>

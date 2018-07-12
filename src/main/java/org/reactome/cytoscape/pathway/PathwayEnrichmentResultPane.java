@@ -40,7 +40,7 @@ public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
         fdrFilter.setSelectedItem(1.0d); // Default
         this.eventTreePane = eventTreePane;
         hideOtherNodesBox.setVisible(false);
-        // To syncrhonization selection
+        // To synchronization selection
         contentTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             
             @Override

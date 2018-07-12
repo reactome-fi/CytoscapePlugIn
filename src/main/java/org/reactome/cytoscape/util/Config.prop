@@ -32,6 +32,8 @@ fgEscapeNames=ATP, ADP, Pi, H2O, GTP, GDP, CO2, H+
 # A flag to control if cancer targetome should be enabled. This flag will be removed so that enabling is the default after the manuscript is accepted
 enableCancerTargetome=true
 # A flag to control if mechismo data visualization should be enabled
-enableMechismo=false
+enableMechismo=true
 # Serve contents via WS
-MechismoWSURL=http://localhost:8070/
+MechismoWSURL=http://reactomews.oicr.on.ca:8080/mechismows/
+#MechismoWSURL=http://localhost:8080/mechismows/
+gseaWSURL=http://localhost:8282/

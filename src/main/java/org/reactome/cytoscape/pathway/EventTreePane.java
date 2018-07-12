@@ -7,6 +7,7 @@ package org.reactome.cytoscape.pathway;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -39,10 +41,12 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -63,7 +67,6 @@ import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.TreeUtilities;
 import org.jdom.Element;
-import org.jmol.script.T;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.GeneSetAnnotation;
@@ -493,6 +496,12 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             }
         });
         popup.add(enrichmentAnalysis);
+        
+        // Perform GSEA analysis
+        JMenuItem gseaAnalysis = new JMenuItem("Perform GSEA Analysis");
+        gseaAnalysis.addActionListener(ae -> performGSEAAnalysis());
+        popup.add(gseaAnalysis);
+        
         // If there is any annotation
         if (pathwayToAnnotation.size() > 0 || annotationPanel != null) {
             JMenuItem removeEnrichmentAnalysis = new JMenuItem("Remove Enrichment Results");
@@ -653,6 +662,22 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         t.start();
     }
     
+    private void performGSEAAnalysis() {
+        GeneScoreLoadingPane loadingPane = new GeneScoreLoadingPane();
+        if (!loadingPane.isOkClicked() || loadingPane.getSelectedFile() == null)
+            return; // Cancelled or nothing is input
+        String fileName = loadingPane.getSelectedFile();
+        int minSize = Integer.parseInt(loadingPane.minTF.getText().trim());
+        int maxSize = Integer.parseInt(loadingPane.maxTF.getText().trim());
+        int permutation = Integer.parseInt(loadingPane.permutationTF.getText().trim());
+        GSEAPathwayAnalyzer analyzer = new GSEAPathwayAnalyzer();
+        analyzer.performGSEAAnalysis(fileName,
+                                     minSize,
+                                     maxSize, 
+                                     permutation,
+                                     this);
+    }
+    
     /**
      * A helper method for performing pathway enrichment analysis.
      */
@@ -716,7 +741,6 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         if (eventTree.getSelectionCount() == 0)
             return;
         TreePath path = eventTree.getSelectionPath();
-        PathwayInternalFrame pathwayFrame = null;
         EventObject event = null;
         // Find the pathway with its hasDiagram true
         for (int i = path.getPathCount(); i > 0; i--) {
@@ -825,11 +849,15 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         return eventTree;
     }
     
+    public void showPathwayEnrichments(List<GeneSetAnnotation> annotations) {
+        showPathwayEnrichments(annotations, true);
+    }
+    
     /**
      * Display pathway enrichment analysis in the pathway tree.
      * @param annotations
      */
-    public void showPathwayEnrichments(List<GeneSetAnnotation> annotations) {      
+    public void showPathwayEnrichments(List<GeneSetAnnotation> annotations, boolean needEnrichmentPane) {      
         if (annotations == null || annotations.size() == 0) {
             // Show a message
             JOptionPane.showMessageDialog(this,
@@ -853,6 +881,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             searchPathway(root, pathway, model, paths);
         }
         showSearchResults(paths, true);
+        
+        if (!needEnrichmentPane)
+            return;
         
         // Show annotations in a list
         if (annotationPanel == null) {
@@ -1185,6 +1216,130 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     }
     
     /**
+     * A customized JPanel for loading a gene score file.
+     * @author wug
+     *
+     */
+    private class GeneScoreLoadingPane extends GeneSetLoadingPane {
+        private JTextField minTF;
+        private JTextField maxTF;
+        private JTextField permutationTF;
+
+        public GeneScoreLoadingPane() {
+        }
+        
+        @Override
+        protected JPanel createFilePane() {
+            JPanel filePane = super.createFilePane();
+            JPanel container = new JPanel();
+            Border border = BorderFactory.createTitledBorder("Data");
+            container.setBorder(border);
+            container.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            constraints.anchor = GridBagConstraints.WEST;
+            container.add(filePane);
+            constraints.gridy = 1;
+            JTextArea noteTF = createNoteTF();
+            container.add(noteTF, constraints);
+            return container;
+        }
+        
+        @Override
+        protected void init() {
+            this.setBorder(BorderFactory.createEtchedBorder());
+            this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));;
+            
+            JPanel filePanel = createFilePane();
+            this.add(filePanel);
+            
+            JPanel configPane = createConfigPane();
+            this.add(configPane);
+
+            showInDialog();
+        }
+        
+        @Override
+        protected void setDialogSize() {
+            parentDialog.setSize(490, 340);
+        }
+        
+        @Override
+        protected String getTitle() {
+            return "Reactome GSEA Analysis";
+        }
+        
+        @Override
+        protected JLabel createFileLabel() {
+            return new JLabel("Choose a gene score file:");
+        }
+        
+        private JPanel createConfigPane() {
+            JPanel panel = new JPanel();
+            Border border = BorderFactory.createTitledBorder("Configuration");
+            panel.setBorder(border);
+            panel.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(0, 0, 0, 0);
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            constraints.anchor = GridBagConstraints.WEST;
+            
+            JLabel label = new JLabel("Choose pathways having sizes: ");
+            JLabel minLabel = new JLabel("Minimum: ");
+            JLabel maxLabel = new JLabel("Maximum: ");
+            minTF = new JTextField();
+            minTF.setColumns(4);
+            minTF.setText(5 + "");
+            maxTF = new JTextField();
+            maxTF.setColumns(4);
+            maxTF.setText(500 + "");
+            
+            constraints.gridx = 0;
+            constraints.gridy = 0;
+            panel.add(label, constraints);
+            constraints.gridx = 1;
+            panel.add(minLabel, constraints);
+            constraints.gridx = 2;
+            panel.add(minTF, constraints);
+            constraints.gridy ++;
+            constraints.gridx = 1;
+            panel.add(maxLabel, constraints);
+            constraints.gridx ++;
+            panel.add(maxTF, constraints);
+            
+            label = new JLabel("Set number of permutations: ");
+            permutationTF = new JTextField();
+            permutationTF.setColumns(4);
+            permutationTF.setText(100 + "");
+            
+            constraints.gridy ++;
+            constraints.gridx = 0;
+            constraints.gridwidth = 2;
+            panel.add(label, constraints);
+            constraints.gridx = 2;
+            panel.add(permutationTF, constraints);
+            
+            return panel;
+        }
+        
+        private JTextArea createNoteTF() {
+            JTextArea noteTF = new JTextArea();
+            noteTF.setEditable(false);
+            noteTF.setBackground(getBackground());
+            noteTF.setLineWrap(true);
+            noteTF.setWrapStyleWord(true);
+            Font font = noteTF.getFont();
+            noteTF.setFont(font.deriveFont(Font.ITALIC, font.getSize() - 1));
+            String note = "Note: The gene score file should contain at least two tab-delimited "
+                    + "columns, first for human gene symbols and second for scores. The first row "
+                    + "should be for column headers.";
+            noteTF.setText(note);
+            return noteTF;
+        }
+        
+    }
+    
+    /**
      * A customized JPanel for loading a gene set from a file.
      * @author gwu
      *
@@ -1204,6 +1359,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         
         public boolean isOkClicked() {
             return this.isOkClicked;
+        }
+        
+        protected String getTitle() {
+            return "Reactome Pathway Enrichment Analysis";
         }
         
         public String getSelectedFile() {
@@ -1244,20 +1403,66 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 fileNameTF.setText("");
             else
                 fileNameTF.setText(dataFile.getAbsolutePath());
+            fileNameTF.setToolTipText(fileNameTF.getText());
             context.ungetService(fileUtilRef);
         }
         
-        private void init() {
+        protected void init() {
             this.setBorder(BorderFactory.createEtchedBorder());
             this.setLayout(new GridBagLayout());;
             GridBagConstraints constraints = new GridBagConstraints();
             constraints.insets = new Insets(4, 4, 8, 4);
-            JLabel label = new JLabel("<html><b><u>Gene Set Loading</u></b></html>");
+            JLabel label = createTitleLabel();
             this.add(label, constraints);
             constraints.insets = new Insets(0, 0, 0, 0);
+            JPanel filePanel = createFilePane();
+            constraints.gridy = 1;
+            constraints.anchor = GridBagConstraints.CENTER;
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            this.add(filePanel, constraints);
+            JPanel formatPane = createFormatPane();
+            constraints.gridy ++;
+            this.add(formatPane, constraints);
+            
+            showInDialog();
+        }
+
+        protected void showInDialog() {
+            parentDialog = GKApplicationUtilities.createDialog(EventTreePane.this, getTitle());
+            parentDialog.getContentPane().add(this, BorderLayout.CENTER);
+            controlPane = new DialogControlPane();
+            controlPane.getOKBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    isOkClicked = true;
+                    parentDialog.dispose();
+                }
+            });
+            controlPane.getCancelBtn().addActionListener(new ActionListener() {
+                
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    parentDialog.dispose();
+                }
+            });
+            validateOkButton();
+            parentDialog.getContentPane().add(controlPane, BorderLayout.SOUTH);
+            parentDialog.setLocationRelativeTo(EventTreePane.this);
+            setDialogSize();
+            parentDialog.setModal(true);
+            parentDialog.setVisible(true);
+        }
+        
+        protected void setDialogSize() {
+            parentDialog.setSize(480, 280);
+        }
+
+        protected JPanel createFilePane() {
+            JLabel label;
             JPanel filePanel = new JPanel();
             filePanel.setAlignmentX(JPanel.LEFT_ALIGNMENT);
-            label = new JLabel("Choose a gene set file:");
+            label = createFileLabel();
             filePanel.add(label);
             fileNameTF = new JTextField();
             fileNameTF.setEnabled(false);
@@ -1289,15 +1494,19 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 }
             });
             filePanel.add(browseFileBtn);
-            constraints.gridy = 1;
-            constraints.anchor = GridBagConstraints.CENTER;
-            this.add(filePanel, constraints);
+            return filePanel;
+        }
+
+        protected JPanel createFormatPane() {
+            JLabel label;
             JPanel formatPane = new JPanel();
             formatPane.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
             label = new JLabel("Specify file format:");
             constraints.gridx = 0;
             constraints.gridy = 0;
             constraints.anchor = GridBagConstraints.WEST;
+            constraints.insets = new Insets(0, 0, 0, 0);
             formatPane.add(label, constraints);
             commaDelimitedBtn = new JRadioButton("Comma delimited (e.g. TP53, EGFR)");
             tabDelimitedBtn = new JRadioButton("Tab delimited (e.g. TP53   EGFR)");
@@ -1315,33 +1524,15 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             formatPane.add(tabDelimitedBtn, constraints);
             constraints.gridx = 0;
             constraints.anchor = GridBagConstraints.CENTER;
-            this.add(formatPane, constraints);
-            
-            parentDialog = GKApplicationUtilities.createDialog(EventTreePane.this,
-                                                                 "Reactome Pathway Enrichment Analysis");
-            parentDialog.getContentPane().add(this, BorderLayout.CENTER);
-            controlPane = new DialogControlPane();
-            controlPane.getOKBtn().addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    isOkClicked = true;
-                    parentDialog.dispose();
-                }
-            });
-            controlPane.getCancelBtn().addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    parentDialog.dispose();
-                }
-            });
-            validateOkButton();
-            parentDialog.getContentPane().add(controlPane, BorderLayout.SOUTH);
-            parentDialog.setLocationRelativeTo(EventTreePane.this);
-            parentDialog.setSize(480, 280);
-            parentDialog.setModal(true);
-            parentDialog.setVisible(true);
+            return formatPane;
+        }
+
+        protected JLabel createFileLabel() {
+            return new JLabel("Choose a gene set file:");
+        }
+
+        protected JLabel createTitleLabel() {
+            return new JLabel("<html><b><u>Gene Set Loading</u></b></html>");
         }
     }
 }

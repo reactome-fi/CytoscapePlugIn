@@ -78,7 +78,8 @@ public class PathwayEnrichmentHighlighter {
         if (pathwayToAnnotation != null) {
             for (String pathway : pathwayToAnnotation.keySet()) {
                 GeneSetAnnotation annotation = pathwayToAnnotation.get(pathway);
-                set.addAll(annotation.getHitIds());
+                if (annotation.getHitIds() != null)
+                    set.addAll(annotation.getHitIds());
             }
         }
         return set;
