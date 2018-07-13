@@ -68,6 +68,7 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.bn.BooleanNetworkAnalyzer;
 import org.reactome.cytoscape.drug.DrugDataSource;
 import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
+import org.reactome.cytoscape.genescore.GeneScoreOverlayHelper;
 import org.reactome.cytoscape.mechismo.MechismoDataFetcher;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
 import org.reactome.cytoscape.pgm.FactorGraphInferenceResultsIO;
@@ -452,6 +453,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     }
 
     protected void addPathwayViewPopupMenus(JPopupMenu popup) {
+        if (popup.getComponentCount() > 0)
+            popup.addSeparator();
+        // To support overlay gene scores
+        JMenuItem overlayGeneScore = new JMenuItem("Overlay Gene Scores");
+        overlayGeneScore.addActionListener(e -> overlayGeneScores());
+        popup.add(overlayGeneScore);
+        JMenuItem removeGeneScore = new JMenuItem("Remove Gene Scores");
+        removeGeneScore.addActionListener(e -> removeGeneScores());
+        popup.add(removeGeneScore);
+        
         if (PlugInObjectManager.getManager().isCancerTargetEnabled()) {
             if (popup.getComponentCount() > 0)
                 popup.addSeparator();
@@ -885,6 +896,16 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         popup.show(getPathwayEditor(), 
                    event.getX(),
                    event.getY());
+    }
+    
+    private void overlayGeneScores() {
+        GeneScoreOverlayHelper analyzer = new GeneScoreOverlayHelper();
+        analyzer.overlayGeneScores(pathwayEditor, hiliteControlPane);
+    }
+    
+    private void removeGeneScores() {
+        GeneScoreOverlayHelper analyzer = new GeneScoreOverlayHelper();
+        analyzer.removeGeneScores(hiliteControlPane);
     }
 
     protected void addDataAnalysisMenusForObject(final Long dbId, final String name, JPopupMenu popup) {

@@ -22,7 +22,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -1274,6 +1273,11 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             return new JLabel("Choose a gene score file:");
         }
         
+        @Override
+        protected void browseFile() {
+            PlugInUtilities.browseFileForLoad(fileNameTF, "Gene Score File", new String[] {"txt", "rnk"});
+        }
+        
         private JPanel createConfigPane() {
             JPanel panel = new JPanel();
             Border border = BorderFactory.createTitledBorder("Configuration");
@@ -1387,24 +1391,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 controlPane.getOKBtn().setEnabled(false);
         }
         
-        private void browseFile() {
-            Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
-            FileChooserFilter mafFilter = new FileChooserFilter("Gene Set File", "txt");
-            filters.add(mafFilter);
-            
-            BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-            ServiceReference fileUtilRef = context.getServiceReference(FileUtil.class.getName());
-            FileUtil fileUtil = (FileUtil) context.getService(fileUtilRef);
-            File dataFile = fileUtil.getFile(parentDialog,
-                                             "Select a Gene Set File", 
-                                             FileUtil.LOAD, 
-                                             filters);
-            if (dataFile == null)
-                fileNameTF.setText("");
-            else
-                fileNameTF.setText(dataFile.getAbsolutePath());
-            fileNameTF.setToolTipText(fileNameTF.getText());
-            context.ungetService(fileUtilRef);
+        protected void browseFile() {
+            PlugInUtilities.browseFileForLoad(fileNameTF, "Gene Set File", new String[] {"txt"});
         }
         
         protected void init() {
@@ -1486,13 +1474,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             });
             filePanel.add(fileNameTF);
             JButton browseFileBtn = new JButton("Browse");
-            browseFileBtn.addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    browseFile();
-                }
-            });
+            browseFileBtn.addActionListener(e -> browseFile());
             filePanel.add(browseFileBtn);
             return filePanel;
         }

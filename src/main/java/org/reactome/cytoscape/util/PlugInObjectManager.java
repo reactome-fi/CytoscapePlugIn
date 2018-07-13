@@ -88,7 +88,7 @@ public class PlugInObjectManager {
     private Map<String, ButtonGroup> btnNameToGroup;
     // To synchronize selection of Reactome objects based on DB_IDs.
     private SelectionMediator dbIdSelectionMediator;
-    // To syncrhonize observation variable selection
+    // To synchronize observation variable selection
     private SelectionMediator observationSelectionMediator;
     // Cached JDesktop for doing something for pathway view
     private JDesktopPane pathwayDesktop;

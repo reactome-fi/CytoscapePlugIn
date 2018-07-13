@@ -8,6 +8,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Window;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.RowSorter;
 import javax.swing.RowSorter.SortKey;
 import javax.swing.SortOrder;
@@ -590,7 +592,26 @@ public class PlugInUtilities {
         }
         return -1;
     }
-    
+
+    /**
+     * Get an existing CytoPanelComponent
+     * @param name
+     * @param title
+     * @return
+     */
+    public static CytoPanelComponent getCytoPanelComponent(CytoPanelName name,
+                                                           String title) {
+        CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(name);
+        int index = PlugInUtilities.getCytoPanelComponent(cytoPanel, 
+                                                          title);
+        // The class should return itself in method getComponent() to make this work
+        if (index > -1) {
+            CytoPanelComponent component = (CytoPanelComponent) cytoPanel.getComponentAt(index); 
+            return component;
+        }
+        return null;
+    }
+
     /**
      * Get the index of a CytoPanelComponent. If this CytoPanelComponent doesn't exit,
      * this method will initialize it.
@@ -849,6 +870,30 @@ public class PlugInUtilities {
                                       message, 
                                       title,
                                       JOptionPane.ERROR_MESSAGE);
+    }
+    
+    public static void browseFileForLoad(JTextField fileNameTF, 
+            String dialogTitle,
+            String[] fileExtensions) {
+        Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
+        FileChooserFilter mafFilter = new FileChooserFilter(dialogTitle, fileExtensions);
+        filters.add(mafFilter);
+        
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference fileUtilRef = context.getServiceReference(FileUtil.class.getName());
+        FileUtil fileUtil = (FileUtil) context.getService(fileUtilRef);
+        // JTextField is not supported here. Have to do explicitly
+        Window window = (Window) SwingUtilities.getAncestorOfClass(Window.class, fileNameTF);
+        File dataFile = fileUtil.getFile(window,
+                                         dialogTitle, 
+                                         FileUtil.LOAD, 
+                                         filters);
+        if (dataFile == null)
+            fileNameTF.setText("");
+        else
+            fileNameTF.setText(dataFile.getAbsolutePath());
+        fileNameTF.setToolTipText(fileNameTF.getText());
+        context.ungetService(fileUtilRef);
     }
     
     /**

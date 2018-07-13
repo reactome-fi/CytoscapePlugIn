@@ -93,10 +93,10 @@ public class BooleanNetworkAnalyzer {
         hiliteControlPane.setVisible(false);
         // Remove tabs related to BNs
         try {
-            BooleanNetworkMainPane mainPane = (BooleanNetworkMainPane) PlugInUtilities.getCytoPanelComponent(BooleanNetworkMainPane.class,
-                                                                                                             CytoPanelName.EAST,
+            BooleanNetworkMainPane mainPane = (BooleanNetworkMainPane) PlugInUtilities.getCytoPanelComponent(CytoPanelName.EAST,
                                                                                                              BooleanNetworkMainPane.TITLE);
-            mainPane.close();
+            if (mainPane != null)
+                mainPane.close();
             // Remove tabs for showing BN results
             CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(CytoPanelName.SOUTH);
             List<VariableCytoPaneComponent> toBeClosed = new ArrayList<>();
