@@ -46,7 +46,7 @@ import edu.ohsu.bcb.druggability.dataModel.Interaction;
  */
 @SuppressWarnings("serial")
 public class DrugAffinityPlotPanel extends JPanel {
-    // Cache this so that only one renderer is used to get the same colors for same targest
+    // Cache this so that only one renderer is used to get the same colors for same target.
     private StackedXYBarRenderer renderer;
     
     public DrugAffinityPlotPanel() {

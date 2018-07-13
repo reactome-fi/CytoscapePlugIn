@@ -170,6 +170,7 @@ public class GeneScoreOverlayHelper {
             geneScorePane.setGeneToScore(geneToScore);
             geneScorePane.setDBIDToGenes(dbIdToGenes);
             geneScorePane.setGeneToDBIDs(geneToDBIDs);
+            geneScorePane.setGeneToScore(geneToScore, geneToDBIDs.keySet());
             geneScorePane.setPathwayGenes(geneToDBIDs.keySet());
         }
         
