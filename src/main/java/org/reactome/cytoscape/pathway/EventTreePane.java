@@ -896,6 +896,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         // Fire a property change action
         firePropertyChange("showPathwayEnrichments", false, true);
     }
+    
+    public void setAnnotationPane(PathwayEnrichmentResultPane pane) {
+        this.annotationPanel = pane;
+    }
 
     private void showSearchResults(List<TreePath> paths,
                                    boolean keepOriginalSelectPath) {
@@ -1296,7 +1300,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             minTF.setText(5 + "");
             maxTF = new JTextField();
             maxTF.setColumns(4);
-            maxTF.setText(500 + "");
+            maxTF.setText(1000 + "");
             
             constraints.gridx = 0;
             constraints.gridy = 0;
