@@ -120,6 +120,7 @@ public abstract class FICytoscapeAction extends AbstractCyAction {
             SynchronousTaskManager<?> tm = (SynchronousTaskManager) context.getService(tmSf);
             tm.execute(tasks);
             ungetServices(context, newSessionSf, tmSf, managerSf);
+            PlugInObjectManager.getManager().prepareNewSession();
             CySession newSession = manager.getCurrentSession();
             return newSession != oldSession;
         }

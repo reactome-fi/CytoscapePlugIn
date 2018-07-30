@@ -241,6 +241,10 @@ public class PlugInObjectManager {
         pathwayDesktop = null; // Have to null it to show network views as of Cytoscape 3.6.0.
     }
     
+    public void prepareNewSession() {
+        removePathwayDesktop();
+    }
+    
     /**
      * Use a JFrame to hold a JDesktopPane.
      * @return
