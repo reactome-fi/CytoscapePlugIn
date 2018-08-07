@@ -276,6 +276,9 @@ public class DrugTargetInteractionParser {
             };
         }
         parseSimpleObject(elm, exp, sourceSetHandler);
+        // To fix a bug in Cancer Targetome: Make sure only KD is used
+        if (exp.getAssayType().equals("Kd"))
+            exp.setAssayType("KD");
     }
     
     private void parseLiterature(Element elm) {

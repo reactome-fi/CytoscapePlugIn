@@ -159,29 +159,20 @@ public class MechismoDataFetcher {
         return InteractionUtilities.generateFIFromGene(tokens[0], tokens[2]);
     }
     
-    public void loadMechismoReactions(PathwayEditor pathwayEditor) {
+    public void loadMechismoReactions(PathwayEditor pathwayEditor) throws Exception {
         Set<String> dbIds = grepReactionIds(pathwayEditor);
         String text = String.join(",", dbIds);
         String url = restfulHost + "reactions";
-        try {
-            String output = PlugInUtilities.callHttpInJson(url,
-                    PlugInUtilities.HTTP_POST,
-                    text);
-            ObjectMapper mapper = new ObjectMapper();
-            List<Reaction> reactions = mapper.readValue(output,
-                                                        new TypeReference<List<Reaction>>() {
-                                                        });
-            // Remove null
-            reactions = reactions.stream().filter(rxt -> rxt != null).collect(Collectors.toList());
-            displayReactions(reactions);
-        }
-        catch(Exception e) {
-            logger.error(e.getMessage(), e);
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Error in fetching Mechismo analysis results:\n" + e.getMessage(),
-                                          "Error in Fetching Mechismo Results",
-                                          JOptionPane.ERROR_MESSAGE);
-        }
+        String output = PlugInUtilities.callHttpInJson(url,
+                PlugInUtilities.HTTP_POST,
+                text);
+        ObjectMapper mapper = new ObjectMapper();
+        List<Reaction> reactions = mapper.readValue(output,
+                new TypeReference<List<Reaction>>() {
+        });
+        // Remove null
+        reactions = reactions.stream().filter(rxt -> rxt != null).collect(Collectors.toList());
+        displayReactions(reactions);
     }
     
     private void displayReactions(List<Reaction> reactions) {
