@@ -19,6 +19,7 @@ import java.util.Set;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.table.DefaultTableCellRenderer;
 
 import org.cytoscape.view.model.CyNetworkView;
 import org.gk.util.ProgressPane;
@@ -207,6 +208,11 @@ public class FISourceQueryHelper {
         });
         sourceTable.setToolTipText("Double click or right clik to use popup menu for details");
         ReactomeSourceTableModel sourceModel = new ReactomeSourceTableModel();
+        sourceTable.setAutoCreateRowSorter(true);
+        // Make sure Long is rendered as the string.
+        DefaultTableCellRenderer longRenderer = new DefaultTableCellRenderer();
+        longRenderer.setHorizontalAlignment(JLabel.LEFT);
+        sourceTable.setDefaultRenderer(Long.class, longRenderer);
         sourceModel.setReactomeSources(sources);
         sourceTable.setModel(sourceModel);
         supportTabbedPane.addTab("Reactome Sources",
@@ -234,7 +240,8 @@ public class FISourceQueryHelper {
         if (table.getSelectedRowCount() != 1)
             return;
         ReactomeSourceTableModel tableModel = (ReactomeSourceTableModel) table.getModel();
-        Long id = (Long) tableModel.getValueAt(table.getSelectedRow(),
+        int modelRow = table.convertRowIndexToModel(table.getSelectedRow());
+        Long id = (Long) tableModel.getValueAt(modelRow,
                                                0);
         ReactomeSourceView sourceView = new ReactomeSourceView();
         sourceView.viewReactomeSource(id, table);

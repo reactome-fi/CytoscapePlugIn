@@ -73,37 +73,25 @@ public class MechismoDataFetcher {
         toBeClosed.stream().forEach(p -> p.close());
     }
 
-    public void loadMechismoInteraction(String name) {
-        try {
-            // Required by the WS
-            String[] tokens = name.split(" ");
-            // Need to encode it
-            String tmpName = InteractionUtilities.generateFIFromGene(tokens[0], tokens[2]);
-            tmpName = URLEncoder.encode(tmpName, "UTF-8");
-            String url = restfulHost + "interaction/" + tmpName;
-            String output = PlugInUtilities.callHttpInJson(url,
-                                                          PlugInUtilities.HTTP_GET,
-                                                          null);
-            if (output == null || output.trim().length() == 0) {
-                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "No mechismo analysis result is available for this interaction.",
-                                          "No Result",
-                                          JOptionPane.INFORMATION_MESSAGE);
-                return;
-            }
-            ObjectMapper mapper = new ObjectMapper();
-            Interaction interaction = mapper.readValue(output,
-                                                        new TypeReference<Interaction>() {
-                                                        });
-            displayInteraction(interaction);
+    public Interaction loadMechismoInteraction(String name) throws Exception {
+        // Required by the WS
+        String[] tokens = name.split(" ");
+        // Need to encode it
+        String tmpName = InteractionUtilities.generateFIFromGene(tokens[0], tokens[2]);
+        tmpName = URLEncoder.encode(tmpName, "UTF-8");
+        String url = restfulHost + "interaction/" + tmpName;
+        String output = PlugInUtilities.callHttpInJson(url,
+                PlugInUtilities.HTTP_GET,
+                null);
+        if (output == null || output.trim().length() == 0) {
+            return null; // Avoid to show a dialog here to lock the user interface
         }
-        catch(Exception e) {
-            logger.error(e.getMessage(), e);
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Error in fetching Mechismo analysis results:\n" + e.getMessage(),
-                                          "Error in Fetching Mechismo Results",
-                                          JOptionPane.ERROR_MESSAGE);
-        }
+        ObjectMapper mapper = new ObjectMapper();
+        Interaction interaction = mapper.readValue(output,
+                new TypeReference<Interaction>() {
+        });
+        displayInteraction(interaction);
+        return interaction;
     }
     
     private void displayInteraction(Interaction interaction) {
@@ -134,7 +122,7 @@ public class MechismoDataFetcher {
     }
     
     private void displayInteractions(List<Interaction> interactions,
-                                     CyNetworkView networkView) {
+                                    CyNetworkView networkView) {
         MechismoInteractionPane pane = PlugInUtilities.getCytoPanelComponent(MechismoInteractionPane.class,
                 CytoPanelName.SOUTH, 
                 MechismoInteractionPane.TITLE);

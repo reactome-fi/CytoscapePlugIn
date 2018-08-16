@@ -9,39 +9,28 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JDialog;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 
-import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.service.FIActionDialog;
 import org.reactome.cytoscape.service.FIVersionSelectionPanel;
+import org.reactome.cytoscape.service.GeneSetEnterDialog;
 
 /**
  * @author gwu
@@ -211,6 +200,8 @@ public class GeneSetMutationAnalysisDialog extends FIActionDialog {
         constraints.anchor = GridBagConstraints.CENTER;
         constraints.weightx = 0.0d;
         fetchFIAnnotations = new JCheckBox("Fetch FI annotations");
+        // As of August 15, 2018, Default should be checked since this is a very fast step 
+        fetchFIAnnotations.setSelected(true);
         JLabel label = new JLabel("* Annotations may be fetched later.");
         label.setFont(font2.deriveFont(Font.ITALIC, font2.getSize2D() - 1.0f));
         constructPanel.add(fetchFIAnnotations, constraints);
@@ -274,15 +265,15 @@ public class GeneSetMutationAnalysisDialog extends FIActionDialog {
      * Paste a set of genes.
      */
     private void enterGenes() {
-        GeneSetEnterDialog dialog = new GeneSetEnterDialog();
+        NetworkGeneSetEnterDialog dialog = new NetworkGeneSetEnterDialog();
         if (enteredGenes != null) 
-            dialog.geneTA.setText(enteredGenes);
-        dialog.controlPane.getOKBtn().setEnabled(false); // Have to reset it as disabled in case the original text is placed.
+            dialog.getGeneTA().setText(enteredGenes);
+        dialog.getControlPane().getOKBtn().setEnabled(false); // Have to reset it as disabled in case the original text is placed.
         dialog.setModal(true);
         dialog.setVisible(true);
-        if (!dialog.isOKClicked)
+        if (!dialog.isOKClicked())
             return;
-        String text = dialog.geneTA.getText().trim();
+        String text = dialog.getGeneTA().getText().trim();
         if (text.length() == 0) {
             enterGeneBtn.setText("Enter");
             enteredGenes = null;
@@ -376,146 +367,19 @@ public class GeneSetMutationAnalysisDialog extends FIActionDialog {
      * @author gwu
      *
      */
-    private class GeneSetEnterDialog extends JDialog {
-        private boolean isOKClicked = false;
-        private DialogControlPane controlPane;
-        private JTextArea geneTA;
+    private class NetworkGeneSetEnterDialog extends GeneSetEnterDialog {
         
-        public GeneSetEnterDialog() {
-            super(GeneSetMutationAnalysisDialog.this);
-            init();
+        public NetworkGeneSetEnterDialog() {
+            super(GeneSetMutationAnalysisDialog.this, fileTF);
         }
         
-        private void init() {
-            setTitle("Gene Set Input");
-            JPanel contentPane = new JPanel();
-            contentPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4), 
-                                                                     BorderFactory.createEtchedBorder()));
-            contentPane.setLayout(new BorderLayout());
-            JLabel label = new JLabel("Enter or paste genes below (one line per gene):");
-            contentPane.add(label, BorderLayout.NORTH);
-            geneTA = new JTextArea();
-            contentPane.add(new JScrollPane(geneTA), BorderLayout.CENTER);
-            controlPane = new DialogControlPane();
-            contentPane.add(controlPane, BorderLayout.SOUTH);
-            controlPane.getOKBtn().addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    dispose();
-                    isOKClicked = true;
-                }
-            });
-            controlPane.getCancelBtn().addActionListener(new ActionListener() {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    dispose();
-                    isOKClicked = false;
-                }
-            });
-            controlPane.getOKBtn().setEnabled(false);
-            
-            synchronizeGUIs();
-            
-            getContentPane().add(contentPane, BorderLayout.CENTER);
-            
-            setLocationRelativeTo(getOwner());
-            setSize(360, 325);
-        }
-        
-        /**
-         * Make sure all GUIs are in a consistent states.
-         */
-        private void synchronizeGUIs() {
-            geneTA.getDocument().addDocumentListener(new DocumentListener() {
-                
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    controlPane.getOKBtn().setEnabled(true);
-                    controlPane.getOKBtn().setEnabled(true);
-                }
-                
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    controlPane.getOKBtn().setEnabled(true);
-                    controlPane.getOKBtn().setEnabled(true);
-                }
-                
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                }
-            });
-            
-            geneTA.addMouseListener(new MouseAdapter() {
-                
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    if (e.isPopupTrigger())
-                        doGeneTAPopup(e.getPoint());
-                }
-                
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    if (e.isPopupTrigger())
-                        doGeneTAPopup(e.getPoint());
-                }
-                
-            });
-            
-            // Related to the container GUIs. Adding these actions here makes
-            // this dialog tied with this class only.
-            fileTF.getDocument().addDocumentListener(new DocumentListener() {
-                
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    if (fileTF.getText().trim().length() > 0) {
-                        resetEnterGeneGUIs();
-                    }
-                }
-                
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    if (fileTF.getText().trim().length() > 0) {
-                        resetEnterGeneGUIs();
-                    }
-                }
-                
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                }
-            });
-            
-        }
-        
-        private void resetEnterGeneGUIs() {
+        @Override
+        protected void resetEnterGeneGUIs() {
             enterGeneBtn.setText("Enter");
             enteredGenes = null;
             geneSampleBtn.setEnabled(true);
             mafBtn.setEnabled(true);
         }
-        
-        private void doGeneTAPopup(Point position) {
-            JPopupMenu popup = new JPopupMenu();
-            Action paste = new AbstractAction("Paste") {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    geneTA.paste();
-                }
-            };
-            popup.add(paste);
-            Action selectAll = new AbstractAction("Select All") {
-                
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    geneTA.selectAll();
-                }
-            };
-            popup.add(selectAll);
-            popup.show(geneTA, position.x, position.y);
-        }
-       
     }
     
 }

@@ -36,7 +36,10 @@ public class ReactomeSourceTableModel extends AbstractTableModel {
     
     @Override
     public Class<?> getColumnClass(int columnIndex) {
-        return String.class;
+        if (columnIndex == 0)
+            return Long.class;
+        else
+            return String.class;
     }
 
     @Override

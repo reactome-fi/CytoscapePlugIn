@@ -10,8 +10,8 @@ import java.util.Map;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
-import org.apache.logging.log4j.core.config.plugins.util.PluginManager;
 import org.cytoscape.application.swing.CyEdgeViewContextMenuFactory;
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CySwingApplication;
@@ -200,14 +200,32 @@ public class EdgeActionCollection {
         
         private void queryMechismoResults(String name) {
             Task task = new AbstractTask() {
-                
                 @Override
                 public void run(TaskMonitor monitor) throws Exception {
                     monitor.setTitle("Mechismo Results");
                     monitor.setStatusMessage("Loading Mechismo mutation results...");
                     monitor.setProgress(0.0d);
                     MechismoDataFetcher fetcher = new MechismoDataFetcher();
-                    fetcher.loadMechismoInteraction(name);
+                    try {
+                        org.reactome.mechismo.model.Interaction interaction = fetcher.loadMechismoInteraction(name);
+                        if (interaction == null) {
+                            monitor.setProgress(1.0d);
+                            // Use a new thread to avoid being locked by the Cytoscape task thread.
+                            SwingUtilities.invokeLater(new Thread() {
+                                public void run() {
+                                    JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                            "No mechismo analysis result is available for this interaction.",
+                                            "No Result",
+                                            JOptionPane.INFORMATION_MESSAGE);
+                                    return;
+                                }
+                            });
+                        }
+                    }
+                    catch(Exception e) {
+                        monitor.setProgress(1.0d);
+                        throw e;
+                    }
                     monitor.setProgress(1.0d);
                 }
             };
