@@ -265,9 +265,9 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
 
         private String[] geneSetHeaders = new String[] {
                 "GeneSet",
-                "RatioOfProteinInGeneSet",
-                "NumberOfProteinInGeneSet",
-                "ProteinFromNetwork",
+                "RatioOfProteinsInGeneSet",
+                "NumberOfProteinsInGeneSet",
+                "ProteinsFromNetwork",
                 "P-value",
                 "FDR",
                 "Nodes"

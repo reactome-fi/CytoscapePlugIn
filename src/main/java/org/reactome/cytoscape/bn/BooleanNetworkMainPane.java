@@ -6,6 +6,7 @@ package org.reactome.cytoscape.bn;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -13,10 +14,13 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,9 +28,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.InflaterOutputStream;
 
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.DefaultCellEditor;
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -37,6 +44,7 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.RowSorter;
@@ -44,6 +52,8 @@ import javax.swing.RowSorter.SortKey;
 import javax.swing.SortOrder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
@@ -60,6 +70,9 @@ import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
 import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
+import org.reactome.booleannetwork.HillFunction;
+import org.reactome.booleannetwork.IdentityFunction;
+import org.reactome.booleannetwork.TransferFunction;
 import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
 import org.reactome.cytoscape.drug.DrugDataSource;
 import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
@@ -266,6 +279,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             if (dialog.isFilterMemebrsToTargets())
                 targets = dialog.getSelectedTargets();
         }
+        samplePane.setTransferFunction(dialog.getTransferFunction());
         BooleanNetwork network = getBooleanNetwork(targets);
         samplePane.setBooleanNetwork(network,
                                      dialog.isDrugSelected() ? dialog.getSelectedDrugs() : null);
@@ -527,6 +541,9 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         private JCheckBox filterMembersToTargetsBox;
         private JTextField targetBox;
         private JComboBox<DrugDataSource> sourceBox;
+        private Map<String, JTextField> hillParaToBox;
+        // For function selection
+        private ButtonGroup functionBtnGroup;
         
         public NewSimulationDialog() {
             super(PlugInObjectManager.getManager().getCytoscapeDesktop());
@@ -576,16 +593,18 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         }
         
         private void init() {
-            setTitle("New Simulation");
+            setTitle("New Logic Model Simulation");
             
             JPanel setupPane = createSetUpPanel();
+            JPanel functionPane = createFunctionPane();
             JPanel drugPane = createDrugPane();
             
-            JPanel contentPane = new JPanel();
-            contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.Y_AXIS));
-            contentPane.add(setupPane);
-            contentPane.add(drugPane);
-            getContentPane().add(contentPane, BorderLayout.CENTER);
+            JTabbedPane tabbedPane = new JTabbedPane();
+            tabbedPane.add("General", setupPane);
+            tabbedPane.add("Transfer Function", functionPane);
+            tabbedPane.addTab("Drug Application", drugPane);
+            
+            getContentPane().add(tabbedPane, BorderLayout.CENTER);
             
             DialogControlPane controlPane = new DialogControlPane();
             controlPane.setBorder(BorderFactory.createEtchedBorder());
@@ -609,7 +628,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             });
             getContentPane().add(controlPane, BorderLayout.SOUTH);
             
-            setSize(465, 375);
+            setSize(500, 375);
             setLocationRelativeTo(this.getOwner());
             
             getRootPane().setDefaultButton(controlPane.getOKBtn());
@@ -628,6 +647,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             contentPane.add(label, constraints);
             nameTF = new JTextField();
             nameTF.setColumns(20);
+            // Just give it a name for easy test
+            nameTF.setText("Untitled");
             constraints.gridy = 1;
             contentPane.add(nameTF, constraints);
             label = GKApplicationUtilities.createTitleLabel("Enter default input value between 0 and 1:");
@@ -644,6 +665,113 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             contentPane.add(pane, constraints);
             return contentPane;
         }
+        
+        private JPanel createFunctionPane() {
+            JPanel panel = new JPanel();
+            panel.setBorder(BorderFactory.createEtchedBorder());
+            panel.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.anchor = GridBagConstraints.WEST;
+            constraints.insets = new Insets(1, 1, 1, 1);
+            
+            JLabel label = GKApplicationUtilities.createTitleLabel("Choose a transfer function:");
+            constraints.gridy = 0;
+            panel.add(label, constraints);
+            
+            JRadioButton identityBtn = new JRadioButton("Identity Function");
+            JRadioButton hillBtn = new JRadioButton("Hill Function");
+            functionBtnGroup = new ButtonGroup();
+            functionBtnGroup.add(identityBtn);
+            functionBtnGroup.add(hillBtn);
+            identityBtn.setSelected(true); // Use as the default
+            constraints.gridy ++;
+            panel.add(identityBtn, constraints);
+            constraints.gridy ++;
+            panel.add(hillBtn, constraints);
+            
+            // Create parameters for hill function
+            constraints.anchor = GridBagConstraints.CENTER;
+            JPanel hillParameterPane = createHillParameterPane();
+            constraints.gridy ++;
+            panel.add(hillParameterPane, constraints);
+            
+            JLabel infoLabel = new JLabel("<html><i>*Click to view the information about <br />the transfer function and parameters.<i><html>");
+            infoLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            infoLabel.addMouseListener(new MouseAdapter() {
+
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    String url = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3292705/figure/fig01/";
+                    PlugInUtilities.openURL(url);
+                }
+                
+            });
+            constraints.gridy ++;
+            constraints.anchor = GridBagConstraints.WEST;
+            panel.add(infoLabel, constraints);
+            
+            return panel;
+        }
+        
+        private JPanel createHillParameterPane() {
+            JPanel pane = new JPanel();
+            pane.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(1, 1, 1, 1);
+
+            // Want to get the default values from an Hill function
+            HillFunction function = new HillFunction();
+            Map<String, Number> nameToValue = function.getParameters();
+            hillParaToBox = new HashMap<>();
+            nameToValue.keySet().stream()
+            .sorted()
+            .forEach(name -> {
+                JLabel pLabel = new JLabel(name + ": ");
+                JTextField tf = new JTextField();
+                tf.getDocument().addDocumentListener(new DocumentListener() {
+
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+                        validateTF(name.equals("n") ? Integer.class : Double.class, tf);
+                    }
+
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+                        validateTF(name.equals("n") ? Integer.class : Double.class, tf);
+                    }
+
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+                    }
+                });
+                // Record for later use
+                hillParaToBox.put(name, tf);
+                tf.setColumns(4);
+                tf.setText(nameToValue.get(name) + "");
+                constraints.gridy ++;
+                constraints.gridx = 0;
+                pane.add(pLabel, constraints);
+                constraints.gridx = 1;
+                pane.add(tf, constraints);
+            });
+
+            return pane;
+        }
+        
+        private void validateTF(Class<?> cls, JTextField tf) {
+            try {
+                if (cls == Integer.class)
+                    Integer.parseInt(tf.getText().trim());
+                else if (cls == Double.class)
+                    Double.parseDouble(tf.getText().trim());
+            }
+            catch(NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                                              "The input should be an " + (cls == Integer.class ? "integer" : "double!"),
+                                              "Parameter Input Error", 
+                                              JOptionPane.ERROR_MESSAGE);
+            }
+        }
 
         private JPanel createDrugPane() {
             JPanel panel = new JPanel();
@@ -654,29 +782,29 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             constraints.anchor = GridBagConstraints.WEST;
             constraints.insets = new Insets(1, 1, 1, 1);
             
-            JLabel label = GKApplicationUtilities.createTitleLabel("Apply drugs:");
-            panel.add(label, constraints);
-            
             // Add a JComBox for choosing data source
             JPanel sourcePane = new JPanel();
-            sourcePane.setLayout(new FlowLayout(FlowLayout.LEFT));
-            JLabel sourceLabel = new JLabel("Choose source: ");
+            // 5 is the default value
+            sourcePane.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 5));
+            JLabel sourceLabel = new JLabel("Choose data source: ");
             sourcePane.add(sourceLabel);
             sourceBox = new JComboBox<>();
             Arrays.asList(DrugDataSource.values()).forEach(s -> sourceBox.addItem(s));
             sourceBox.setEditable(false);
             sourceBox.setSelectedIndex(0); // Use the first as default
             sourcePane.add(sourceBox);
-            constraints.gridy = 1;
+            constraints.gridy = 0;
             constraints.fill = GridBagConstraints.HORIZONTAL;
             panel.add(sourcePane, constraints);
             
             JPanel drugPane = new JPanel();
-            drugPane.setLayout(new FlowLayout(FlowLayout.LEFT));
+            drugPane.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 5));
+            JLabel chooseDrugLabel = new JLabel("Select drugs: ");
             drugBox = new JTextField();
             drugBox.setColumns(20);
             drugBox.setEditable(false);
             JButton drugBtn = new JButton("...");
+            drugBtn.setToolTipText("Click to choose drugs");
             drugBtn.setPreferredSize(new Dimension(20, 20));
             drugBtn.addActionListener(new ActionListener() {
                 
@@ -685,21 +813,26 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                     showDrugsForPathway();
                 }
             });
+            drugPane.add(chooseDrugLabel);
             drugPane.add(drugBox);
             drugPane.add(drugBtn);
-            constraints.gridy = 2;
+            constraints.gridy ++;
             constraints.fill = GridBagConstraints.HORIZONTAL;
             panel.add(drugPane, constraints);
-            // Add another checkbox
-            filterMembersToTargetsBox = new JCheckBox("Filter members in sets to drug targets");
-            constraints.gridy = 3;
-            panel.add(filterMembersToTargetsBox, constraints);
+            
+            JLabel targetLabel = new JLabel("Selected targets (you may edit below):");
+            constraints.gridy ++;
+            panel.add(targetLabel, constraints);
             
             targetBox = new JTextField();
             targetBox.setColumns(20);
-            targetBox.setToolTipText("You may edit targets in this box.");
-            constraints.gridy = 4;
+            constraints.gridy ++;
             panel.add(targetBox, constraints);
+            
+            // Add another checkbox
+            filterMembersToTargetsBox = new JCheckBox("Filter members in sets to drug targets only");
+            constraints.gridy ++;
+            panel.add(filterMembersToTargetsBox, constraints);
             
             return panel;
         }
@@ -821,6 +954,31 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         public double getDefaultValue() {
             return new Double(defaultValueTF.getText().trim());
         }
+        
+        public TransferFunction getTransferFunction() {
+            TransferFunction function = null;
+            Enumeration<AbstractButton> buttons = functionBtnGroup.getElements();
+            while (buttons.hasMoreElements()) {
+                AbstractButton button = buttons.nextElement();
+                if (button.isSelected()) {
+                    if (button.getText().startsWith("Identity"))
+                        return new IdentityFunction();
+                    else if (button.getText().startsWith("Hill"))
+                        return createHillFunction();
+                }
+            }
+            return new IdentityFunction(); // Default
+        }
+        
+        private HillFunction createHillFunction() {
+            HillFunction function = new HillFunction();
+            int n = Integer.parseInt(hillParaToBox.get("n").getText().trim());
+            double k = Double.parseDouble(hillParaToBox.get("h").getText().trim());
+            double g = Double.parseDouble(hillParaToBox.get("g").getText().trim());
+            function.setParameters(n, k, g);
+            return function;
+        }
+        
     }
     
     private class DrugSelectionTableModel extends InteractionListTableModel {

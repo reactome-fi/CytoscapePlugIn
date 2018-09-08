@@ -56,6 +56,7 @@ import org.reactome.booleannetwork.FuzzyLogicSimulator;
 import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
 import org.reactome.booleannetwork.SimulationConfiguration;
 import org.reactome.booleannetwork.SimulationResults;
+import org.reactome.booleannetwork.TransferFunction;
 import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
 import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
@@ -87,12 +88,22 @@ public class BooleanNetworkSamplePane extends JPanel {
     // Extra information
     private Map<String, Double> proteinInhibtion;
     private Map<String, Double> proteinActivation;
+    // Transfer function
+    private TransferFunction transferFunction;
    
     /**
      * Default constructor.
      */
     public BooleanNetworkSamplePane() {
         init();
+    }
+
+    public TransferFunction getTransferFunction() {
+        return transferFunction;
+    }
+
+    public void setTransferFunction(TransferFunction transferFunction) {
+        this.transferFunction = transferFunction;
     }
 
     public void setProteinInhibtion(Map<String, Double> preInhibtion) {
@@ -349,8 +360,19 @@ public class BooleanNetworkSamplePane extends JPanel {
                                 defaultValue,
                                 proteinInhibtion,
                                 proteinActivation);
-        noteTF.setText("*: Simulation for " + network.getName() + 
-                       (drugs == null ? "" : " (" + drugs + ")"));
+        showNotes(network, drugs);
+    }
+    
+    private void showNotes(BooleanNetwork network, String drugs) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("*: Simuation for ");
+        builder.append(network.getName());
+        if (transferFunction != null) 
+            builder.append(" using ").append(transferFunction);
+        if (drugs != null)
+            builder.append(" (").append(drugs + ")");
+        builder.append(".");
+        noteTF.setText(builder.toString());
     }
     
     private Set<String> getDisplayedIds() {
@@ -378,7 +400,7 @@ public class BooleanNetworkSamplePane extends JPanel {
             JOptionPane.showMessageDialog(this,
                                           "Simulation has been performed for this sample.\n" + 
                                            "Create another sample for new simulation.",
-                                           "New Simulation",
+                                           "New Logic Model Simulation",
                                            JOptionPane.INFORMATION_MESSAGE);
             return;
         }
@@ -387,6 +409,7 @@ public class BooleanNetworkSamplePane extends JPanel {
         mergeWithOtherConfig(configuration);
         
         FuzzyLogicSimulator simulator = new FuzzyLogicSimulator();
+        simulator.setTransferFunction(getTransferFunction());
         simulator.setAndGateMode(this.andGateMode);
         simulator.simulate(network, configuration);
         

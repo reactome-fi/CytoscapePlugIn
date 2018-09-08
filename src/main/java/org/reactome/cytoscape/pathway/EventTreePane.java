@@ -1384,6 +1384,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                         builder.append(token).append("\n");
                 }
                 fu.close();
+                rtn = builder.toString();
             }
             else if (enteredGenes != null) {
                 if (format.equals("line"))

@@ -354,7 +354,7 @@ public class DrugTargetInteractionManager {
             progressPane.setMinimum(0);
             progressPane.setMaximum(100);
             progressPane.setIndeterminate(true);
-            progressPane.setTitle("Fetch Cancer Drugs");
+            progressPane.setTitle("Fetch Drugs");
             progressPane.setVisible(true);
             progressPane.setText("Querying the server...");
             RESTFulFIService restfulService = new RESTFulFIService();

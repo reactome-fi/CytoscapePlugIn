@@ -336,7 +336,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         });
         popup.add(convertToFINetwork);
         
-        JMenuItem runBNAnalysis = new JMenuItem("Run Boolean Network Analysis");
+        JMenuItem runBNAnalysis = new JMenuItem("Run Logic Model Analysis");
         runBNAnalysis.addActionListener(new ActionListener() {
             
             @Override

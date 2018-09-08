@@ -147,9 +147,9 @@ public class GeneSetAnnotationPanelForModules extends GeneSetAnnotationPanel {
         private String[] moduleHeaders = new String[] {
                 "Module",
                 "GeneSet",
-                "RatioOfProteinInGeneSet",
-                "NumberOfProteinInGeneSet",
-                "ProteinFromModule",
+                "RatioOfProteinsInGeneSet",
+                "NumberOfProteinsInGeneSet",
+                "ProteinsFromModule",
                 "P-value",
                 "FDR",
                 "Nodes" 
