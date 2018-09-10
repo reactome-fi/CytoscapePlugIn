@@ -58,10 +58,10 @@ import org.reactome.booleannetwork.SimulationConfiguration;
 import org.reactome.booleannetwork.SimulationResults;
 import org.reactome.booleannetwork.TransferFunction;
 import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
-import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.pathway.booleannetwork.BNPerturbationAnalyzer;
+import org.reactome.pathway.booleannetwork.ModificationType;
 
 /**
  * This customized JPanel is used to set up initial values and then list simulation results.

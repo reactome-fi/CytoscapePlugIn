@@ -13,7 +13,7 @@ import javax.swing.JLabel;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.SimulationComparator;
 import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
-import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
+import org.reactome.pathway.booleannetwork.ModificationType;
 
 /**
  * This customized JPanel is used to show comparison results between two simulation.

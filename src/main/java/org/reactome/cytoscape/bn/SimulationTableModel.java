@@ -19,6 +19,7 @@ import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.SimulationConfiguration;
 import org.reactome.booleannetwork.SimulationResults;
 import org.reactome.pathway.booleannetwork.BNPerturbationAnalyzer;
+import org.reactome.pathway.booleannetwork.ModificationType;
 
 public class SimulationTableModel extends AbstractTableModel implements VariableTableModelInterface {
     private List<String> tableHeaders;
@@ -263,9 +264,4 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
         Respondent
     }
     
-    enum ModificationType {
-        Inhibition,
-        Activation,
-        None
-    }
 }

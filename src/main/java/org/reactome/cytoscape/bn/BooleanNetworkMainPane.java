@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.InflaterOutputStream;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -73,7 +71,6 @@ import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
 import org.reactome.booleannetwork.HillFunction;
 import org.reactome.booleannetwork.IdentityFunction;
 import org.reactome.booleannetwork.TransferFunction;
-import org.reactome.cytoscape.bn.SimulationTableModel.ModificationType;
 import org.reactome.cytoscape.drug.DrugDataSource;
 import org.reactome.cytoscape.drug.DrugTargetInteractionManager;
 import org.reactome.cytoscape.drug.InteractionListTableModel;
@@ -84,6 +81,8 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.pathway.booleannetwork.AffinityToModificationMap;
 import org.reactome.pathway.booleannetwork.DefaultAffinityToModificationMap;
+import org.reactome.pathway.booleannetwork.DrugTargetInteractionTypeMapper;
+import org.reactome.pathway.booleannetwork.ModificationType;
 
 import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
@@ -984,7 +983,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
     private class DrugSelectionTableModel extends InteractionListTableModel {
         // Used to map from affinity to modification strength
         private AffinityToModificationMap affinityToModificationMap;
-        private Map<String, ModificationType> intTypeToModType;
+        private DrugTargetInteractionTypeMapper typeManager;
         
         public DrugSelectionTableModel() {
             super();
@@ -1000,44 +999,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
 //                    "Strength"
 //            };
             affinityToModificationMap = new DefaultAffinityToModificationMap();
-        }
-        
-        private ModificationType getModificationType(Interaction interaction) {
-            if (interaction.getInteractionType() == null)
-                return ModificationType.Inhibition;
-            if (intTypeToModType == null)
-                intTypeToModType = loadTypeMap();
-            ModificationType type = intTypeToModType.get(interaction.getInteractionType().toUpperCase());
-            if (type == null)
-                type = ModificationType.Inhibition; //This is always default
-            return type;
-        }
-        
-        private Map<String, ModificationType> loadTypeMap() {
-            // Now this is hard coded
-            String text = "ACTIVATOR,Activation\n" + 
-                    "AGONIST,Activation\n" + 
-                    "ALLOSTERIC ANTAGONIST,Inhibition\n" + 
-                    "ANTAGONIST,Inhibition\n" + 
-                    "BLOCKER,Inhibition\n" + 
-                    "FULL AGONIST,Activation\n" + 
-                    "INHIBITION,Inhibition\n" + 
-                    "INHIBITOR,Inhibition\n" + 
-                    "INVERSE AGONIST,Inhibition\n" + 
-                    "NEGATIVE,Inhibition\n" + 
-                    "NEGATIVE ALLOSTERIC MODULATOR,Inhibition\n" + 
-                    "NEGATIVE MODULATOR,Inhibition\n" + 
-                    "PARTIAL AGONIST,Activation\n" + 
-                    "POSITIVE ALLOSTERIC MODULATOR,Activation\n" + 
-                    "POSITIVE MODULATOR,Activation\n" + 
-                    "SUBSTRATE,Activation";
-            String[] lines = text.split("\n");
-            Map<String, ModificationType> map = new HashMap<>();
-            for (String line : lines) {
-                String[] tokens = line.split(",");
-                map.put(tokens[0], ModificationType.valueOf(tokens[1]));
-            }
-            return map;
+            typeManager = new DrugTargetInteractionTypeMapper();
         }
         
         @Override
@@ -1053,7 +1015,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         @Override
         protected void initRow(Interaction interaction, Object[] row) {
             super.initRow(interaction, row);
-            row[colNames.size() - 2] = getModificationType(interaction);
+            row[colNames.size() - 2] = typeManager.getModificationType(interaction.getInteractionType());
             Double minValue = getMinValue(row);
             if (minValue == null)
                 row[colNames.size() - 1] = null;
