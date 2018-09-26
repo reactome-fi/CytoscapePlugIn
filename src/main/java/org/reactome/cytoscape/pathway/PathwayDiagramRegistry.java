@@ -29,6 +29,7 @@ import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.Selectable;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.persistence.DiagramGKBReader;
 import org.gk.persistence.DiagramGKBWriter;
@@ -50,7 +51,7 @@ import org.slf4j.LoggerFactory;
  * @author gwu
  *
  */
-public class PathwayDiagramRegistry {
+public class PathwayDiagramRegistry implements Selectable {
     private final Logger logger = LoggerFactory.getLogger(PathwayDiagramRegistry.class);
     private static PathwayDiagramRegistry registry;
     // Register PathwayDiagram id to PathwayInternalFrame
@@ -68,6 +69,8 @@ public class PathwayDiagramRegistry {
     // This map is used to map a converted FI network to its original PathwayDiagram
     // Diagrams are saved in XML String to avoid node colors change (e.g. highlighting)
     private Map<CyNetwork, String> networkToDiagram;
+    // For DBID selection event firing
+    private CyZoomablePathwayEditor currentEditor;
     
     /**
      * Default private constructor.
@@ -78,6 +81,7 @@ public class PathwayDiagramRegistry {
         networkToDiagram = new HashMap<CyNetwork, String>();
         selectionMediator = new EventSelectionMediator();
         propertyChangeSupport = new PropertyChangeSupport(this);
+        PlugInObjectManager.getManager().getDBIdSelectionMediator().addSelectable(this);
     }
     
     public static PathwayDiagramRegistry getRegistry() {
@@ -263,7 +267,7 @@ public class PathwayDiagramRegistry {
         fetchPathwaysForDiagram(frame,
                                 diagramId);
     }
-    
+
     private void fetchPathwaysForDiagram(PathwayInternalFrame frame,
                                          Long diagramId) {
         try {
@@ -520,5 +524,32 @@ public class PathwayDiagramRegistry {
             visStyler.setVisualStyle(view, false);
         }
         context.ungetService(servRef);
-    }    
+    }
+
+    @Override
+    public void setSelection(List selection) {
+        for (PathwayInternalFrame frame : diagramIdToFrame.values()) {
+            CyZoomablePathwayEditor cyEditor = frame.getZoomablePathwayEditor();
+            cyEditor.setSelectionHandlingEnabled(false);
+            cyEditor.setSelection(selection);
+            cyEditor.setSelectionHandlingEnabled(true);
+        }
+    }
+
+    /**
+     * This method should never be called.
+     */
+    @Override
+    public List getSelection() {
+        if (currentEditor != null)
+            return currentEditor.getSelection();
+        else
+            return null;
+    }   
+    
+    public void fireDBIDSelectionEvent(CyZoomablePathwayEditor cyEditor) {
+        this.currentEditor = cyEditor;
+        PlugInObjectManager.getManager().getDBIdSelectionMediator().fireSelectionEvent(this);
+    }
+    
 }

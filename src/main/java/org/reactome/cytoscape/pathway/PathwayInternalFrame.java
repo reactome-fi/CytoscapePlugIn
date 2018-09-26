@@ -23,11 +23,7 @@ import javax.swing.table.TableModel;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
-import org.gk.graphEditor.GraphEditorActionEvent;
-import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
-import org.gk.graphEditor.Selectable;
-import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
@@ -48,7 +44,7 @@ import org.slf4j.LoggerFactory;
  * @author gwu
  *
  */
-public class PathwayInternalFrame extends JInternalFrame implements Selectable {
+public class PathwayInternalFrame extends JInternalFrame {
     private final Logger logger = LoggerFactory.getLogger(PathwayInternalFrame.class);
     private CyZoomablePathwayEditor pathwayEditor;
     // To be unregsiter
@@ -64,17 +60,6 @@ public class PathwayInternalFrame extends JInternalFrame implements Selectable {
     private void init() {
         pathwayEditor = new CyZoomablePathwayEditor();
         getContentPane().add(pathwayEditor, BorderLayout.CENTER);
-        final SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
-        mediator.addSelectable(this);
-        PathwayEditor editor = pathwayEditor.getPathwayEditor();
-        editor.getSelectionModel().addGraphEditorActionListener(new GraphEditorActionListener() {
-            
-            @Override
-            public void graphEditorAction(GraphEditorActionEvent e) {
-                if (e.getID() == GraphEditorActionEvent.SELECTION)
-                    mediator.fireSelectionEvent(PathwayInternalFrame.this);
-            }
-        });
         // Fire an event selection
         addInternalFrameListener(new InternalFrameAdapter() {
             
@@ -115,7 +100,7 @@ public class PathwayInternalFrame extends JInternalFrame implements Selectable {
             public void internalFrameClosed(InternalFrameEvent e) {
                 if (tableSelectionRegistration != null)
                     tableSelectionRegistration.unregister();
-                mediator.getSelectables().remove(PathwayInternalFrame.this);
+                PlugInObjectManager.getManager().getDBIdSelectionMediator().getSelectables().remove(pathwayEditor);
             }
             
             /**
@@ -125,7 +110,7 @@ public class PathwayInternalFrame extends JInternalFrame implements Selectable {
             @Override
             public void internalFrameClosing(InternalFrameEvent e) {
                 FactorGraphRegistry.getRegistry().cleanUpCache((RenderablePathway)pathwayEditor.getPathwayEditor().getRenderable());
-                mediator.getSelectables().remove(PathwayInternalFrame.this);
+                PlugInObjectManager.getManager().getDBIdSelectionMediator().getSelectables().remove(pathwayEditor);
             }
             
         });
@@ -301,19 +286,4 @@ public class PathwayInternalFrame extends JInternalFrame implements Selectable {
         }
     }
 
-    /**
-     * The passed selection should be a collection of Long objects for Reactome
-     * DB_IDs. Otherwise, an exception will be thrown.
-     */
-    @Override
-    public void setSelection(List selection) {
-        PlugInUtilities.selectByDbIds(getPathwayEditor(),
-                                      selection);
-    }
-
-    @Override
-    public List getSelection() {
-        return PlugInUtilities.getSelectedDBIDs(getPathwayEditor());
-    }
-    
 }

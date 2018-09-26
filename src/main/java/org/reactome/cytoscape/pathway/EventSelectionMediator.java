@@ -19,7 +19,7 @@ public class EventSelectionMediator {
     
     public EventSelectionMediator() {
     }
-    
+
     /**
      * Register an EventSelectionListener.
      * @param l
@@ -51,8 +51,10 @@ public class EventSelectionMediator {
         if (lock)
             return;
         lock = true;
-        if (listeners == null)
+        if (listeners == null) {
+            lock = false;
             return;
+        }
         for (EventSelectionListener listener : listeners) {
             if (listener == l)
                 continue;

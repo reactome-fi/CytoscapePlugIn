@@ -49,6 +49,8 @@ import org.gk.graphEditor.GraphEditorActionEvent;
 import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.Selectable;
+import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
 import org.gk.render.ProcessNode;
@@ -94,7 +96,8 @@ import org.slf4j.LoggerFactory;
  * @author gwu
  *
  */
-public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements EventSelectionListener {
+@SuppressWarnings("rawtypes")
+public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements EventSelectionListener, Selectable {
     private final Logger logger = LoggerFactory.getLogger(CyZoomablePathwayEditor.class);
     // A PathwayDiagram may be used by multile pathways (e.g. a disease pathway and a 
     // normal pathway may share a same PathwayDiagram)
@@ -104,6 +107,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     private Map<Renderable, Color> rToBg;
     // To control pathway highlight
     private PathwayHighlightControlPanel hiliteControlPane;
+    // A flag to turn off graph selection handling
+    private boolean isSelectionHandlingEnabled;
 
     public CyZoomablePathwayEditor() {
         // Don't need the title
@@ -111,7 +116,17 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         init();
     }
     
+    public boolean isSelectionHandlingEnabled() {
+        return isSelectionHandlingEnabled;
+    }
+
+    public void setSelectionHandlingEnabled(boolean isSelectionHanlingEnabled) {
+        this.isSelectionHandlingEnabled = isSelectionHanlingEnabled;
+    }
+
     private void init() {
+        isSelectionHandlingEnabled = true;
+
         getPathwayEditor().getSelectionModel().addGraphEditorActionListener(new GraphEditorActionListener() {
             @Override
             public void graphEditorAction(GraphEditorActionEvent e) {
@@ -178,6 +193,21 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     
     public void setHighlightDataType(PathwayHighlightDataType dataType) {
         hiliteControlPane.setDataType(dataType);
+    }
+    
+    /**
+     * The passed selection should be a collection of Long objects for Reactome
+     * DB_IDs. Otherwise, an exception will be thrown.
+     */
+    @Override
+    public void setSelection(List selection) {
+        PlugInUtilities.selectByDbIds(getPathwayEditor(),
+                                      selection);
+    }
+    
+    @Override
+    public List getSelection() {
+        return PlugInUtilities.getSelectedDBIDs(getPathwayEditor());
     }
     
     @Override
@@ -1324,6 +1354,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     }
     
     private void handleGraphSelectionEvent(GraphEditorActionEvent event) {
+        if (!isSelectionHandlingEnabled)
+            return;
         // Delegate this event to other registered listeners
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         try {
@@ -1369,6 +1401,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         }
         PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().propageEventSelectionEvent(CyZoomablePathwayEditor.this,
                                                                                                     selectionEvent);
+        PathwayDiagramRegistry.getRegistry().fireDBIDSelectionEvent(this);
     }
     
 }

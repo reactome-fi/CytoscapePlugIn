@@ -26,6 +26,7 @@ import org.reactome.cytoscape3.FactorGraphImportAction;
 import org.reactome.cytoscape3.GeneSetFINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.GeneSetMutationAnalysisAction;
 import org.reactome.cytoscape3.HotNetAnalysisAction;
+import org.reactome.cytoscape3.MechismoFINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.MicroarrayAnalysisAction;
 import org.reactome.cytoscape3.PGMFINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.PathwayFINetworkPopupMenuHandler;
@@ -119,6 +120,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
                                          new PGMFINetworkPopupMenuHandler());
         popupManager.registerMenuHandler(ReactomeNetworkType.ReactionNetwork,
                                          new ReactionNetworkPopupMenuHandler());
+        popupManager.registerMenuHandler(ReactomeNetworkType.MechismoNetwork,
+                                         new MechismoFINetworkPopupMenuHandler());
         
         // Used as the default PopupMenuHandler. Most likely, this is not needed.
         // But keep it here for the time being.

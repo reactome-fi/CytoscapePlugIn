@@ -21,6 +21,7 @@ import org.reactome.cytoscape.bn.VariableCytoPaneComponent;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.mechismo.model.CancerType;
 import org.reactome.mechismo.model.Interaction;
 import org.reactome.mechismo.model.Reaction;
 import org.reactome.r3.util.InteractionUtilities;
@@ -97,6 +98,28 @@ public class MechismoDataFetcher {
     private void displayInteraction(Interaction interaction) {
         InteractionMutationView view = new InteractionMutationView();
         view.setInteraction(interaction);
+    }
+    
+    public List<CancerType> loadCancerTypes() {
+        String url = restfulHost + "cancerTypes";
+        try {
+            String output = PlugInUtilities.callHttpInJson(url,
+                    PlugInUtilities.HTTP_GET,
+                    null);
+            ObjectMapper mapper = new ObjectMapper();
+            List<CancerType> cancerTypes = mapper.readValue(output,
+                    new TypeReference<List<CancerType>>() {
+            });
+            return cancerTypes;
+        }
+        catch(Exception e) {
+            logger.error(e.getMessage(), e);
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                    "Error in fetching cancer types:\n" + e.getMessage(),
+                    "Error in Fetching Cancer Types",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+        return new ArrayList<>();
     }
     
     public void loadMechismoInteractions(CyNetworkView networkView) {
