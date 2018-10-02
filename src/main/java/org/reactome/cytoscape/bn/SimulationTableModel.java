@@ -18,7 +18,9 @@ import org.reactome.booleannetwork.BooleanNetworkUtilities;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.SimulationConfiguration;
 import org.reactome.booleannetwork.SimulationResults;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.pathway.booleannetwork.BNPerturbationAnalyzer;
+import org.reactome.pathway.booleannetwork.BNPerturbationInjector;
 import org.reactome.pathway.booleannetwork.ModificationType;
 
 public class SimulationTableModel extends AbstractTableModel implements VariableTableModelInterface {
@@ -159,6 +161,14 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
         Map<BooleanVariable, Number> varToInit1 = helper.createInitials(network, defaultValue);
         Map<BooleanVariable, Number> varToInit = varToInit1;
         values.clear();
+        BNPerturbationInjector injectors = new BNPerturbationInjector();
+        Map<BooleanVariable, Double> varToInhibition = new HashMap<>();
+        Map<BooleanVariable, Double> varToActivation = new HashMap<>();
+        injectors.inject(network,
+                        proteinInhibition,
+                        proteinActivation, 
+                        varToInhibition, 
+                        varToActivation);
         for (BooleanVariable var : variables) {
             String reactomeId = var.getProperty("reactomeId");
             if (reactomeId == null || !displayedIds.contains(reactomeId))
@@ -173,17 +183,14 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
             else
                 rowValues.add(init);
             ModificationType mType = ModificationType.None;
-            Double mValue = 0.0d;
-            String gene = var.getProperty("gene");
-            if (gene != null) {
-                if (proteinInhibition != null && proteinInhibition.containsKey(gene)) {
-                    mType = ModificationType.Inhibition;
-                    mValue = proteinInhibition.get(gene);
-                }
-                else if (proteinActivation != null && proteinActivation.containsKey(gene)) {
-                    mType = ModificationType.Activation;
-                    mValue = proteinActivation.get(gene);
-                }
+            Double mValue = 0.0d; // Default
+            if (varToInhibition.containsKey(var)) {
+                mType = ModificationType.Inhibition;
+                mValue = varToInhibition.get(var);
+            }
+            else if (varToActivation.containsKey(var)) { // If a var has both values, we will pick inhibition
+                mType = ModificationType.Activation;
+                mValue = varToActivation.get(var);
             }
             rowValues.add(mType);
             rowValues.add(mValue);

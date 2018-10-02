@@ -367,15 +367,18 @@ public class DrugTargetInteractionManager {
             parser.parse(rootElm);
             
             Map<Long, List<Interaction>> dbIdToInteractions = parser.getDbIdToInteractions();
+            // Need to do a filter for visible nodes only
+            List<Renderable> list = pathway.getComponents();
+            Set<Long> displayIds = list.stream()
+                                       .filter(r -> r instanceof Node)
+                                       .filter(r -> r.isVisible())
+                                       .filter(r -> r.getReactomeId() != null)
+                                       .map(r -> r.getReactomeId())
+                                       .collect(Collectors.toSet());
             if (dbIdToInteractions == null) {
                 if (peId == null) {
                     Map<Long, List<Interaction>> dbIdToInteractions1 = new HashMap<>();
-                    // Mark all ids
-                    List<Renderable> list = pathway.getComponents();
-                    list.stream()
-                        .filter(r -> r instanceof Node)
-                        .filter(r -> r.getReactomeId() != null)
-                        .forEach(r -> dbIdToInteractions1.put(r.getReactomeId(), EMPTY_LIST));
+                    displayIds.forEach(dbId -> dbIdToInteractions1.put(dbId, EMPTY_LIST));
                     dbIdToInteractions = dbIdToInteractions1;
                 }
                 else {
@@ -383,6 +386,10 @@ public class DrugTargetInteractionManager {
                     // The interactions may not be marked for this PEID.
                     dbIdToInteractions.put(peId, parser.getInteractions());
                 }
+            }
+            else { // Need to do a filter for visible nodes only
+                if (peId == null)
+                    dbIdToInteractions.keySet().retainAll(displayIds);
             }
             frame.getGlassPane().setVisible(false);
             return dbIdToInteractions;

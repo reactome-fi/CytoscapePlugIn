@@ -275,9 +275,15 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         if (dialog.isDrugSelected()) {
             samplePane.setProteinActivation(dialog.getActivation());
             samplePane.setProteinInhibtion(dialog.getInhibition());
-            if (dialog.isFilterMemebrsToTargets())
-                targets = dialog.getSelectedTargets();
+//            if (dialog.isFilterMemebrsToTargets())
+//                targets = dialog.getSelectedTargets();
         }
+        // Even if there is no drug assigned, however, when the user provides
+        // a target lists and select filterMemberToTargets, we will use a targeted
+        // network. This is in order to create the same background network for perturbation
+        // analysis. (G.W. on Oct 2, 2018)
+        if (dialog.isFilterMemebrsToTargets())
+            targets = dialog.getSelectedTargets();
         samplePane.setTransferFunction(dialog.getTransferFunction());
         BooleanNetwork network = getBooleanNetwork(targets);
         samplePane.setBooleanNetwork(network,

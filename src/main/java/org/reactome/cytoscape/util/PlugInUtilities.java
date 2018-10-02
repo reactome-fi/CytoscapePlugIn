@@ -80,6 +80,7 @@ import org.osgi.framework.BundleEvent;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
+import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
@@ -474,6 +475,8 @@ public class PlugInUtilities {
         List<Renderable> selection = new ArrayList<Renderable>();
         for (Object o : pathwayEditor.getDisplayedObjects()) {
             Renderable r = (Renderable) o;
+            if (!r.isVisible())
+                continue;
             if (sourceIds.contains(r.getReactomeId()))
                 selection.add(r);
         }

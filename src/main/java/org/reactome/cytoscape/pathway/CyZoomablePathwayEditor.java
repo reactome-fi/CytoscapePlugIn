@@ -634,7 +634,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         boolean isWholeNameNeeded = dialog.isWholeNameNeeded();
         for (Object obj : getPathwayEditor().getDisplayedObjects()) {
             Renderable r = (Renderable) obj;
-            if (!(r instanceof HyperEdge) || r.getDisplayName() == null) {
+            if (!(r instanceof HyperEdge) || r.getDisplayName() == null || !r.isVisible()) {
                 continue;
             }
             String name = r.getDisplayName();
@@ -678,7 +678,8 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         for (Object obj : getPathwayEditor().getDisplayedObjects()) {
             Renderable r = (Renderable) obj;
             if (r instanceof RenderableCompartment ||
-                r instanceof HyperEdge)
+                r instanceof HyperEdge ||
+                !r.isVisible())
                 continue; // Escape compartments and reactions
             String name = r.getDisplayName();
             if (name == null || name.length() == 0)

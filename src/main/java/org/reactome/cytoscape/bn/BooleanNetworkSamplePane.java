@@ -61,6 +61,7 @@ import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.pathway.booleannetwork.BNPerturbationAnalyzer;
+import org.reactome.pathway.booleannetwork.BNPerturbationInjector;
 import org.reactome.pathway.booleannetwork.ModificationType;
 
 /**
@@ -448,33 +449,14 @@ public class BooleanNetworkSamplePane extends JPanel {
                 varToValue.put(var, init);
             }
         }
-        if (proteinInhibtion != null) {
-            Map<BooleanVariable, Double> inhibition = configuration.getInhibition();
-            mergeProteinModification(inhibition, proteinInhibtion);
-        }
-        if (proteinActivation != null) {
-            Map<BooleanVariable, Double> activation = configuration.getActivation();
-            mergeProteinModification(activation, proteinActivation);
-        }
+        BNPerturbationInjector injector = new BNPerturbationInjector();
+        injector.inject(network,
+                proteinInhibtion,
+                proteinActivation,
+                configuration.getInhibition(),
+                configuration.getActivation());
     }
 
-    protected void mergeProteinModification(Map<BooleanVariable, Double> varToModification,
-                                            Map<String, Double> proteinToModification) {
-        for (BooleanVariable var : network.getVariables()) {
-            if (varToModification.containsKey(var))
-                continue; // Always use the current setting
-            // Only merge into variables without inputs
-            if (var.getInRelations() != null && var.getInRelations().size() > 0)
-                continue;
-            String gene = (String) var.getProperty("gene");
-            if (gene == null)
-                continue;
-            Double preInhibit = proteinToModification.get(gene);
-            if (preInhibit != null)
-                varToModification.put(var, preInhibit);
-        }
-    }
-    
     private void displayTimeCourse(List<BooleanVariable> variables) {
         TimeCoursePane timeCoursePane = new TimeCoursePane("BN: " + sampleName);
         CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(timeCoursePane.getCytoPanelName());
