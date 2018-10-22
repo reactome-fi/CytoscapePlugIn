@@ -4,7 +4,9 @@
  */
 package org.reactome.scripts;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +34,8 @@ public class DrugImpactSystematicAnalyzer {
     
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            System.out.println("java -Xmx8G DrugImpactSystematicAnalyzer {Targetome|DrugCentral} {output_dir} (optional)");
+            // Add the configuration related to logging to avoid weird logging from apache http component.
+            System.out.println("java -Xmx8G -Dorg.ops4j.pax.logging.DefaultServiceLog.level=WARN DrugImpactSystematicAnalyzer {Targetome|DrugCentral} {output_dir} (optional)");
             System.exit(1);
         }
         DrugDataSource dataSource = DrugDataSource.valueOf(args[0]);
@@ -47,7 +50,9 @@ public class DrugImpactSystematicAnalyzer {
         FileUtility fu = new FileUtility();
         if (dirName == null)
             dirName = DIR;
-        String fileName = dirName + dataSource + "_Impact_091918.txt";
+        String now = new SimpleDateFormat("MMddyy").format(new Date());
+        String fileName = dirName + dataSource + "_Impact_" + now + ".txt";
+//        String fileName = dirName + dataSource + "_Impact_091918.txt";
         fu.setOutput(fileName);
         fu.printLine("Drug\tDB_ID\tPathway\tSum\tOutputAverage\tTargets");
         int c = 0;
