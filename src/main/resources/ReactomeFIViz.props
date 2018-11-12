@@ -1,0 +1,4 @@
+# Customized configuration to modify the default configuration
+WebServicePort=8080
+# Serve contents via WS
+MechismoWSURL=http://localhost:8070/

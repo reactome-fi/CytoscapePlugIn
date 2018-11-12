@@ -12,6 +12,8 @@ package org.reactome.cytoscape3;
 import java.awt.event.ActionEvent;
 
 import org.cytoscape.application.swing.AbstractCyAction;
+import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 public class UserGuideAction extends AbstractCyAction
 {
@@ -20,6 +22,7 @@ public class UserGuideAction extends AbstractCyAction
         // Add the 'User Guide' item to the ReactomeFI menu
         super("User Guide");
         setPreferredMenu("Apps.Reactome FI");
+        setMenuGravity(100.0f); // Give it a very large weight, so that it is always at the bottom.
     }
 
     @Override
@@ -27,7 +30,7 @@ public class UserGuideAction extends AbstractCyAction
     {
         // Pop open a browser window pointing to the
         // online Reactome FI app user guide.
-        String url = PlugInScopeObjectManager.getManager().getProperties()
+        String url = PlugInObjectManager.getManager().getProperties()
                 .getProperty("userGuideURL");
         if (url == null)
         {

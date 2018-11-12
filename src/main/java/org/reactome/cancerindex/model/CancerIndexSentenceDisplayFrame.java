@@ -25,19 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JEditorPane;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -45,7 +33,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import org.gk.util.DialogControlPane;
-import org.reactome.cytoscape3.PlugInScopeObjectManager;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
  * This customized JPanel is used to display a list of Sentence objects.
@@ -526,26 +514,30 @@ public class CancerIndexSentenceDisplayFrame extends JFrame
             JPanel controlPane = new JPanel();
             FlowLayout layout = new FlowLayout(FlowLayout.RIGHT, 2, 2);
             controlPane.setLayout(layout);
-            firstBtn = new JButton("First");
-            ImageIcon icon = PlugInScopeObjectManager.getManager()
-                    .createImageIcon("First16.gif");
+//            firstBtn = new JButton("First");
+            firstBtn = new JButton();
+            firstBtn.setToolTipText("Go to first page");
+            ImageIcon icon = PlugInObjectManager.getManager().createImageIcon("First16.gif");
             firstBtn.setIcon(icon);
             controlPane.add(firstBtn);
-            prevBtn = new JButton("Prev");
-            icon = PlugInScopeObjectManager.getManager().createImageIcon(
-                    "Back16.gif");
+//            prevBtn = new JButton("Prev");
+            prevBtn = new JButton();
+            prevBtn.setToolTipText("Go to previous page");
+            icon = PlugInObjectManager.getManager().createImageIcon("Back16.gif");
             prevBtn.setIcon(icon);
             controlPane.add(prevBtn);
             pageLabel = new JLabel("Page 1");
             controlPane.add(pageLabel);
-            nextBtn = new JButton("Next");
-            icon = PlugInScopeObjectManager.getManager().createImageIcon(
-                    "Forward16.gif");
+//            nextBtn = new JButton("Next");
+            nextBtn = new JButton();
+            nextBtn.setToolTipText("Go to next page");
+            icon = PlugInObjectManager.getManager().createImageIcon("Forward16.gif");
             nextBtn.setIcon(icon);
             controlPane.add(nextBtn);
-            lastBtn = new JButton("Last");
-            icon = PlugInScopeObjectManager.getManager().createImageIcon(
-                    "Last16.gif");
+//            lastBtn = new JButton("Last");
+            lastBtn = new JButton();
+            lastBtn.setToolTipText("Go to last page");
+            icon = PlugInObjectManager.getManager().createImageIcon("Last16.gif");
             lastBtn.setIcon(icon);
             controlPane.add(lastBtn);
             add(controlPane, BorderLayout.EAST);

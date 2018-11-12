@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This is the configuration for the PGM Reactome Pathway model -->
+<pgm_config>
+    <!-- Threshold values used to discretize continuous values -->
+    <thresholds>
+        <threshold type="CNV" value="-0.95 0.95" />
+        <threshold type="mRNA_EXP" value="-1.64 1.64" />
+    </thresholds>
+    <!-- values learned from the training data for observation factors -->
+    <factorValues>
+        <!-- The following values are pre-assigned to be used without learning for some experimental test -->
+        <factorValue type="CNV" value="0.9 0.075 0.025 0.005 0.9 0.05 0.025 0.075 0.9" />
+        <factorValue type="mRNA_EXP" value="0.9 0.075 0.025 0.005 0.9 0.05 0.025 0.075 0.9" />
+    </factorValues>
+    <!-- currently we don't need to learn parameters -->
+    <learnParameters needTolearn="false" class="org.reactome.factorgraph.ExpectationMaximization">
+        <maxIteration>50</maxIteration>
+        <tolerance>1.0e-5</tolerance>
+        <debug>true</debug>
+        <!-- The following inference algorithm configuration should be used. -->
+    </learnParameters>
+    <!-- Currently only LBP is supported in Java -->
+    <LoopyBeliefPropagation>
+        <debug>false</debug>
+        <maxIteration>200</maxIteration>
+        <tolerance>1.0e-5</tolerance>
+        <!-- Some pathways are pretty big. It will be better to use logSpace to avoid numeric underflow! -->
+        <logSpace>true</logSpace>
+        <updateViaFactors>false</updateViaFactors>
+        <!-- A little dumping to help some models to converge -->
+        <!-- It seems that there is a little problem with the current implementation, which cause the inference not
+        converging. So use 0.0.-->
+        <dumping>0.0</dumping>
+    </LoopyBeliefPropagation>
+    <GibbsSampling>
+        <debug>false</debug>
+        <maxIteration>1000</maxIteration>
+        <burnin>1000</burnin>
+        <restart>5</restart>
+    </GibbsSampling>
+</pgm_config>
+
