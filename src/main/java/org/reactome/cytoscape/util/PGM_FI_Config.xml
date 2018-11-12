@@ -4,6 +4,13 @@
     <!-- This element should be listed as the first one always so that some of configuration values
     here can be used in other places -->
     <properties>
+        <!-- To control how many letters we want to extract from sample barcode in a MAF file: -1 is the same as all, which
+        will be used as null. -->
+        <sampleNameLength>-1</sampleNameLength>
+        <!-- For TCGA: we want to use sample id so that all data types can be used in a unified way -->
+<!--         <sampleNameLength>12</sampleNameLength> -->
+        <!-- May use different functional impact method -->
+        <FIScoreColumnName>MA_FI.score</FIScoreColumnName>
     </properties>
     <!-- Threshold values used to discretize continuous values -->
     <thresholds>
@@ -109,7 +116,7 @@
         <factorValue type="CNV" value="0.99 0.01 0.01 0.99" />
         <factorValue type="Methylation" value="0.25 0.75 0.75 0.25" />
     </factorValues>
-        <LoopyBeliefPropagation>
+    <LoopyBeliefPropagation>
         <debug>false</debug>
         <maxIteration>200</maxIteration>
         <tolerance>1.0e-5</tolerance>

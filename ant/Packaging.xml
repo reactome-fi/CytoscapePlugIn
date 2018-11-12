@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project reactomeFI-app with Jar-in-Jar Loader">
+    <!--this file was created by Eclipse Runnable JAR file Export Wizard-->
+    <!--ANT 1.7 is required-->
+    <!--define folder properties-->
+    <property name="dir.buildfile" value="."/>
+    <property name="dir.workspace" value="/Users/wug/Documents/eclipse_workspace"/>
+    <property name="dir.jarfile" value="/Users/wug/git/CytoscapeDev"/>
+    <target name="create_run_jar">
+        <jar destfile="${dir.jarfile}/PathwayDrugImpactAnalyzer.jar">
+            <manifest>
+                <attribute name="Main-Class" value="org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader"/>
+                <attribute name="Rsrc-Main-Class" value="org.reactome.scripts.DrugImpactSystematicAnalyzer"/>
+                <attribute name="Class-Path" value="."/>
+                <attribute name="Rsrc-Class-Path" value="./ gsea-model-1.0.1.jar hibernate-jpa-2.1-api-1.0.0.Final.jar jackson-databind-2.8.7.jar jackson-core-2.8.7.jar jackson-annotations-2.8.7.jar org.osgi.core-4.2.0.jar pax-logging-api-1.5.2.jar slf4j-api-1.7.25.jar log4j-slf4j-impl-2.10.0.jar log4j-api-2.10.0.jar log4j-core-2.10.0.jar slf4j-log4j12-1.7.25.jar log4j-1.2.17.jar service-api-3.6.0.jar io-api-3.6.0.jar application-api-3.6.0.jar work-api-3.6.0.jar presentation-api-3.6.0.jar filter-api-3.6.0.jar swing-application-api-3.6.0.jar work-swing-api-3.6.0.jar session-api-3.6.0.jar model-api-3.6.0.jar vizmap-api-3.6.0.jar swing-util-api-3.6.0.jar core-task-api-3.6.0.jar viewmodel-api-3.6.0.jar event-api-3.6.0.jar layout-api-3.6.0.jar junit-4.12.jar hamcrest-core-1.3.jar property-api-3.6.0.jar app-api-3.6.0.jar group-api-3.6.0.jar jobs-api-3.6.0.jar equations-api-3.6.0.jar webservice-api-3.6.0.jar datasource-api-3.6.0.jar command-executor-api-3.6.0.jar jiggle-1.0.0.jar caBIGR3-minimal-3.0.jar reactome-minimal-1.5.jar FINetworkBuild-minimal-1.3.jar mechismo-1.0.jar druggability-1.0.jar colt-1.0.3.jar jfreechart-1.0.17.jar jcommon-1.0.21.jar xml-apis-1.3.04.jar com.springsource.org.apache.commons.httpclient-3.1.0.jar com.springsource.org.apache.commons.codec-1.3.0.jar com.springsource.org.apache.commons.logging-1.1.1.jar com.springsource.org.hamcrest.core-1.1.0.jar commons-math-2.2.jar commons-math3-3.5.jar jgrapht-core-0.9.0.jar keggapi-1.0.0.jar jaxrpc-api-osgi-1.1-b01.jar jdom-1.1.3.jar biojava-structure-4.2.8.jar biojava-structure-gui-4.2.8.jar biojava-core-4.2.8.jar biojava-alignment-4.2.8.jar biojava-phylo-4.2.8.jar forester-1.038.jar jcolorbrewer-5.2.jar jmol-14.6.2_2016.08.28.jar vecmath-1.3.1.jar javax.ws.rs-api-2.0.jar swagger-annotations-1.5.7.jar ci-api-3.6.0.jar"/>
+            </manifest>
+            <zipfileset src="jar-in-jar-loader.zip"/>
+            <fileset dir="${dir.jarfile}/target/classes"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/reactome/gsea/gsea-model/1.0.1" includes="gsea-model-1.0.1.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/hibernate/javax/persistence/hibernate-jpa-2.1-api/1.0.0.Final" includes="hibernate-jpa-2.1-api-1.0.0.Final.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.8.7" includes="jackson-databind-2.8.7.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.8.7" includes="jackson-core-2.8.7.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.8.7" includes="jackson-annotations-2.8.7.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/osgi/org.osgi.core/4.2.0" includes="org.osgi.core-4.2.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/ops4j/pax/logging/pax-logging-api/1.5.2" includes="pax-logging-api-1.5.2.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/slf4j/slf4j-api/1.7.25" includes="slf4j-api-1.7.25.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/apache/logging/log4j/log4j-slf4j-impl/2.10.0" includes="log4j-slf4j-impl-2.10.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/apache/logging/log4j/log4j-api/2.10.0" includes="log4j-api-2.10.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/apache/logging/log4j/log4j-core/2.10.0" includes="log4j-core-2.10.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/slf4j/slf4j-log4j12/1.7.25" includes="slf4j-log4j12-1.7.25.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/log4j/log4j/1.2.17" includes="log4j-1.2.17.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/service-api/3.6.0" includes="service-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/io-api/3.6.0" includes="io-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/application-api/3.6.0" includes="application-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/work-api/3.6.0" includes="work-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/presentation-api/3.6.0" includes="presentation-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/filter-api/3.6.0" includes="filter-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/swing-application-api/3.6.0" includes="swing-application-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/work-swing-api/3.6.0" includes="work-swing-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/session-api/3.6.0" includes="session-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/model-api/3.6.0" includes="model-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/vizmap-api/3.6.0" includes="vizmap-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/swing-util-api/3.6.0" includes="swing-util-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/core-task-api/3.6.0" includes="core-task-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/viewmodel-api/3.6.0" includes="viewmodel-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/event-api/3.6.0" includes="event-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/layout-api/3.6.0" includes="layout-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/junit/junit/4.12" includes="junit-4.12.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/hamcrest/hamcrest-core/1.3" includes="hamcrest-core-1.3.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/property-api/3.6.0" includes="property-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/app-api/3.6.0" includes="app-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/group-api/3.6.0" includes="group-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/jobs-api/3.6.0" includes="jobs-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/equations-api/3.6.0" includes="equations-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/webservice-api/3.6.0" includes="webservice-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/datasource-api/3.6.0" includes="datasource-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/command-executor-api/3.6.0" includes="command-executor-api-3.6.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/jiggle/jiggle/1.0.0" includes="jiggle-1.0.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/reactome/caBIGR3-minimal/3.0" includes="caBIGR3-minimal-3.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/reactome/reactome-minimal/1.5" includes="reactome-minimal-1.5.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/reactome/FINetworkBuild-minimal/1.3" includes="FINetworkBuild-minimal-1.3.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/reactome/mechismo/1.0" includes="mechismo-1.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/edu/ohsu/bcb/druggability/1.0" includes="druggability-1.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/colt/colt/1.0.3" includes="colt-1.0.3.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/jfree/jfreechart/1.0.17" includes="jfreechart-1.0.17.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/jfree/jcommon/1.0.21" includes="jcommon-1.0.21.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/xml-apis/xml-apis/1.3.04" includes="xml-apis-1.3.04.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.httpclient/3.1.0" includes="com.springsource.org.apache.commons.httpclient-3.1.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.codec/1.3.0" includes="com.springsource.org.apache.commons.codec-1.3.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.logging/1.1.1" includes="com.springsource.org.apache.commons.logging-1.1.1.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/hamcrest/com.springsource.org.hamcrest.core/1.1.0" includes="com.springsource.org.hamcrest.core-1.1.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/apache/commons/commons-math/2.2" includes="commons-math-2.2.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/apache/commons/commons-math3/3.5" includes="commons-math3-3.5.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/jgrapht/jgrapht-core/0.9.0" includes="jgrapht-core-0.9.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/kegg/keggapi/1.0.0" includes="keggapi-1.0.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/javax/xml/jaxrpc-api-osgi/1.1-b01" includes="jaxrpc-api-osgi-1.1-b01.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/jdom/jdom/1.1.3" includes="jdom-1.1.3.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/biojava/biojava-structure/4.2.8" includes="biojava-structure-4.2.8.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/biojava/biojava-structure-gui/4.2.8" includes="biojava-structure-gui-4.2.8.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/biojava/biojava-core/4.2.8" includes="biojava-core-4.2.8.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/biojava/biojava-alignment/4.2.8" includes="biojava-alignment-4.2.8.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/biojava/biojava-phylo/4.2.8" includes="biojava-phylo-4.2.8.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/biojava/thirdparty/forester/1.038" includes="forester-1.038.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/biojava/jcolorbrewer/5.2" includes="jcolorbrewer-5.2.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/net/sourceforge/jmol/jmol/14.6.2_2016.08.28" includes="jmol-14.6.2_2016.08.28.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/java3d/vecmath/1.3.1" includes="vecmath-1.3.1.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/javax/ws/rs/javax.ws.rs-api/2.0" includes="javax.ws.rs-api-2.0.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/io/swagger/swagger-annotations/1.5.7" includes="swagger-annotations-1.5.7.jar"/>
+            <zipfileset dir="/Users/wug/.m2/repository/org/cytoscape/ci-api/3.6.0" includes="ci-api-3.6.0.jar"/>
+        </jar>
+    </target>
+</project>
