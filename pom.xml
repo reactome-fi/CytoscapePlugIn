@@ -8,13 +8,13 @@
         <!-- Prevent Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
         See: https://maven.apache.org/general.html -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <cytoscape.api.version>3.6.0</cytoscape.api.version>
+        <cytoscape.api.version>3.7.0</cytoscape.api.version>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome</groupId>
 	<artifactId>reactomeFI-app</artifactId>
-	<version>7.1.0</version>
+	<version>7.2.0</version>
 	<name>${bundle.symbolicName}</name>
 	<packaging>bundle</packaging>
 	
@@ -329,7 +329,7 @@
                 used for all Cytoscape jar files. -->
                 <!-- Try to use the older version for backward compatibility. Otherwise, the built app will not work for
                 older Cytoscape 3.0 -->
-                <version>3.6.0</version>
+                <version>3.7.0</version>
         </dependency>
 		
 		<dependency>
@@ -378,7 +378,7 @@
         <dependency>
             <groupId>org.jfree</groupId>
             <artifactId>jfreechart</artifactId>
-            <version>1.0.17</version>
+            <version>1.0.19</version>
         </dependency>
             
 		<dependency>

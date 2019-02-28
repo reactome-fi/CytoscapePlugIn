@@ -165,6 +165,8 @@ public class DrugAffinityPlotPanel extends JPanel {
             renderer = new StackedXYBarRenderer();
         renderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator());
         renderer.setDrawBarOutline(false);
+        // Fix width for weird display 
+        dataset.setIntervalWidth(1.0d);
         XYPlot plot = new XYPlot(dataset,
                 xAxis,
                 yAxis, 

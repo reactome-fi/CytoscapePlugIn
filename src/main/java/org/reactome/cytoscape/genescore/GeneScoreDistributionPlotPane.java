@@ -70,7 +70,7 @@ public class GeneScoreDistributionPlotPane extends JPanel {
         pathwayGenes.stream()
                     .filter(gene -> geneToScore.get(gene) != null)
                     .sorted((g1, g2) -> geneToScore.get(g2).compareTo(geneToScore.get(g1)))
-                    .forEach(gene -> dataset.addValue(geneToScore.get(gene), "Pathway", gene));
+                    .forEach(gene -> dataset.addValue(geneToScore.get(gene), "Pathway Genes", gene));
         
         // Fire the data change event
         DatasetChangeEvent event = new DatasetChangeEvent(this, dataset);
@@ -282,7 +282,7 @@ public class GeneScoreDistributionPlotPane extends JPanel {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        String fileName = "/Users/wug/Documents/eclipse_workspace/ohsu/results/beataml/Trametinib_Corr_Gene_Auc_101918.txt";
+        String fileName = "/Users/wug/Documents/eclipse_workspace/ohsu/results/beataml/trametinib/Trametinib_Corr_Gene_Auc_101918.txt";
         Map<String, Double> geneToScore = new HashMap<>();
         Files.lines(Paths.get(fileName))
              .skip(1)
