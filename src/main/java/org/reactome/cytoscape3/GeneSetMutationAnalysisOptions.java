@@ -16,7 +16,7 @@ public class GeneSetMutationAnalysisOptions {
     @ApiModelProperty(value = "Data File", example = "null", notes = "Need the full path pointing to a file containing gene set information.")
     private String file;
     // For manually entered genes
-    @ApiModelProperty(value = "Gene List", example = "EGF,EGFR,KRAS,TP53", notes = "Provide nothing if a file is specified. Genes should be delimited by \",\".")
+    @ApiModelProperty(value = "Gene List", example = "EGF\nEGFR\nKRAS\nTP53\nIGHE", notes = "Provide nothing if a file is specified. Genes should be delimited by \"n\".")
     private String enteredGenes;
     @ApiModelProperty(value = "Choose Homo Genes", example = "false")
     private boolean chooseHomoGenes;

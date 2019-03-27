@@ -167,7 +167,7 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
                 return BooleanVariable.class;
             else if (columnIndex < 3)
                 return EntityType.class;
-            else if (columnIndex < 5)
+            else if (columnIndex == 5 || columnIndex == 6)
                 return ModificationType.class;
             else 
                 return Number.class;

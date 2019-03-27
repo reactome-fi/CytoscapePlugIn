@@ -10,7 +10,7 @@ import java.util.List;
 import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.ChiSquaredDistribution;
 import org.apache.commons.math.distribution.ChiSquaredDistributionImpl;
-import org.apache.commons.math.stat.correlation.PearsonsCorrelation;
+import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.reactome.r3.util.MathUtilities;
 
 /**

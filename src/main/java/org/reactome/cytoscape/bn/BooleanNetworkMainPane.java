@@ -5,6 +5,7 @@
 package org.reactome.cytoscape.bn;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
@@ -702,6 +703,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             
             JLabel infoLabel = new JLabel("<html><i>*Click to view the information about <br />the transfer function and parameters.<i><html>");
             infoLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            infoLabel.setForeground(Color.BLUE);
             infoLabel.addMouseListener(new MouseAdapter() {
 
                 @Override
@@ -869,6 +871,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                     DrugSelectionDialog drugList = new DrugSelectionDialog(NewSimulationDialog.this);
                     drugList.setInteractions(new ArrayList<>(interactions));
                     drugList.setModal(true);
+                    drugList.setLocationRelativeTo(drugList.getOwner());
                     drugList.setVisible(true);
                     if (!drugList.isOKClicked)
                         return;
@@ -978,7 +981,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         private HillFunction createHillFunction() {
             HillFunction function = new HillFunction();
             int n = Integer.parseInt(hillParaToBox.get("n").getText().trim());
-            double k = Double.parseDouble(hillParaToBox.get("h").getText().trim());
+            double k = Double.parseDouble(hillParaToBox.get("k").getText().trim());
             double g = Double.parseDouble(hillParaToBox.get("g").getText().trim());
             function.setParameters(n, k, g);
             return function;

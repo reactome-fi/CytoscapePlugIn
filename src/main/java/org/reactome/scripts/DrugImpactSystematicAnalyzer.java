@@ -40,10 +40,13 @@ public class DrugImpactSystematicAnalyzer {
         }
         DrugDataSource dataSource = DrugDataSource.valueOf(args[0]);
         DrugImpactSystematicAnalyzer analyzer = new DrugImpactSystematicAnalyzer();
-        analyzer.performImpactAnalysis(dataSource, (args.length > 1 ? args[1] : null));
+        analyzer.performImpactAnalysis(dataSource, 
+                                       false,
+                                       (args.length > 1 ? args[1] : null));
     }
     
     public void performImpactAnalysis(DrugDataSource dataSource,
+                                      boolean isForHit,
                                       String dirName) throws Exception {
         List<Drug> drugs = getDrugs(dataSource.name());
         RESTFulFIService service = new RESTFulFIService();
@@ -51,16 +54,34 @@ public class DrugImpactSystematicAnalyzer {
         if (dirName == null)
             dirName = DIR;
         String now = new SimpleDateFormat("MMddyy").format(new Date());
-        String fileName = dirName + dataSource + "_Impact_" + now + ".txt";
+        
+        String fileName = null;
+        if (isForHit)
+            fileName = dirName + dataSource + "_Hit_" + now + "_3.txt";
+        else
+            fileName = dirName + dataSource + "_Impact_" + now + "_3.txt";
+        
+//        String fileName = dirName + dataSource + "_Impact_" + now + "_1.txt";
 //        String fileName = dirName + dataSource + "_Impact_091918.txt";
         fu.setOutput(fileName);
-        fu.printLine("Drug\tDB_ID\tPathway\tSum\tOutputAverage\tTargets");
+        if (isForHit)
+            fu.printLine("Drug\tDB_ID\tPathway\tTargets");
+        else
+            fu.printLine("Drug\tDB_ID\tPathway\tSum\tOutputAverage\tTargets");
         int c = 0;
         for (Drug drug : drugs) {
-            String results = service.runDrugImpactAnalysis(drug.getDrugName(), dataSource.name());
+//            if (!drug.getDrugName().equals("Bortezomib"))
+//                continue;
+            String results = null;
+            if (isForHit)
+                results = service.runDrugHitAnalysis(drug.getDrugName(), dataSource.name());
+            else
+                results = service.runDrugImpactAnalysis(drug.getDrugName(), dataSource.name());
             String[] lines = results.split("\n");
-            for (String line : lines)
+            for (String line : lines) {
+//                System.out.println(drug.getDrugName() + "\t" + line);
                 fu.printLine(drug.getDrugName() + "\t" + line);
+            }
             c ++;
 //            if (c == 5)
 //                break;

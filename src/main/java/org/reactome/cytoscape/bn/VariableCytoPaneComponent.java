@@ -7,14 +7,15 @@ package org.reactome.cytoscape.bn;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.swing.JRadioButton;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableRowSorter;
 
 import org.gk.graphEditor.SelectionMediator;
 import org.reactome.booleannetwork.BooleanVariable;
@@ -122,6 +123,33 @@ public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
         // Use 0 and 1 as default
         double[] minMaxValues = hiliteControlPane.calculateMinMaxValues(idToValue.values());
         hiliteControlPane.resetMinMaxValues(minMaxValues);
+    }
+    
+    /**
+     * Number class is used as a type in the customized NetworkModuleTableModel. However, Number
+     * doesn't implement Comparable. Therefore, its sorting is based on String, which is not what
+     * we want. Here, all numbers are converted into Double and then perform comparsion.
+     */
+    @Override
+    protected TableRowSorter<NetworkModuleTableModel> createTableRowSorter(NetworkModuleTableModel model) {
+        TableRowSorter<NetworkModuleTableModel> sorter = new TableRowSorter<NetworkModuleTableModel>(model) {
+            @Override
+            public Comparator<?> getComparator(int column) {
+                Class<?> cls = model.getColumnClass(column);
+                if (cls != Number.class)
+                    return super.getComparator(column);
+                // Compare based on Double values. Though the actual model class is number,
+                // however, the passed values to be used for comparator are String since they
+                // have been converted into String from Number. See the Java doc for TableRowSorter.
+                Comparator<String> comparator = (String n1, String n2) -> {
+                    Double d1 = new Double(n1);
+                    Double d2 = new Double(n2);
+                    return d1.compareTo(d2);
+                };
+                return comparator;
+            }
+        };
+        return sorter;
     }
 
     protected abstract class VariableTableModel extends NetworkModuleTableModel implements VariableTableModelInterface {

@@ -524,6 +524,7 @@ public class InteractionFilter {
             drugNameTF.getDocument().addDocumentListener(tfOkBtnEnabled);
             drugNameTF.setColumns(20);
             wholeNameBox = new JCheckBox("Match whole name only");
+            wholeNameBox.addActionListener(okBtnEnabled);
             
             panel.add(label, constraints);
             constraints.gridy = 1;
