@@ -263,10 +263,6 @@ public class InteractionFilter {
     public void setPathwayEditor(CyPathwayEditor pathwayEditor) {
         this.pathwayEditor = pathwayEditor;
     }
-    
-    public void showDialog() {
-        showDialog(null);
-    }
 
     public void showDialog(Window owner) {
         if (this.dialog != null) {
@@ -609,15 +605,16 @@ public class InteractionFilter {
         }
 
         /**
-         * Return true if the name IS matched.
+         * Return true if the name IS matched. Cases are ignored for
+         * easy match.
          * @param name
          * @return
          */
         public boolean filter(String name) {
             if (matchWholeNameOnly)
-                return name.equals(namePattern);
+                return name.equalsIgnoreCase(namePattern);
             else
-                return name.contains(namePattern);
+                return name.toLowerCase().contains(namePattern.toLowerCase());
         }
 
         public String getNamePattern() {

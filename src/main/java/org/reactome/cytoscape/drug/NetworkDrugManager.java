@@ -196,7 +196,7 @@ public class NetworkDrugManager extends DrugTargetInteractionManager {
             return;
         }
         interactionFilter.setNetworkView(networkView);
-        interactionFilter.showDialog();
+        interactionFilter.showDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
     }
     
     public void applyFilter(CyNetworkView networkView) {

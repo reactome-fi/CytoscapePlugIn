@@ -135,7 +135,7 @@ public class DrugTargetInteractionManager {
             return;
         }
         interactionFilter.setPathwayEditor(pathwayEditor);
-        interactionFilter.showDialog();
+        interactionFilter.showDialog(PlugInObjectManager.getManager().getCytoscapeDesktop());
     }
     
     public void applyFilter(CyPathwayEditor pathwayEditor) {
