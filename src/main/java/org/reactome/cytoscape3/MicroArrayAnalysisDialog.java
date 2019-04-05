@@ -160,7 +160,7 @@ public class MicroArrayAnalysisDialog extends FIActionDialog {
      */
     @Override
     protected String getTabTitle() {
-        return "Microarray Data Analysis";
+        return "Gene Expression Data Analysis";
     }
     
     /**

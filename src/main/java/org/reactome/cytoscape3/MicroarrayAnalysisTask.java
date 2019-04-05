@@ -55,14 +55,14 @@ public class MicroarrayAnalysisTask extends FIAnalysisTask {
     @Override
     protected void doAnalysis() {
         ProgressPane progPane = new ProgressPane();
-        progPane.setTitle("Microarray Data Analysis");
+        progPane.setTitle("Gene Expression Data Analysis");
         progPane.setMinimum(1);
         progPane.setMaximum(100);
         JFrame parentFrame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         parentFrame.setGlassPane(progPane);
         progPane.setVisible(true);
         progPane.setValue(25);
-        progPane.setText("Loading microarray file...");
+        progPane.setText("Loading gene expression file...");
         progPane.setIndeterminate(true);
         CancerGeneExpressionCommon arrayHelper = new CancerGeneExpressionCommon();
         try {

@@ -368,7 +368,7 @@ public class TimeCoursePane extends VariableCytoPaneComponent {
     private class TimeCoursePlotPane extends PlotTablePanel {
         
         public TimeCoursePlotPane() {
-            super("Time Step", "Boolean Fuzzy Value");
+            super("Time Step", "Logic Fuzzy Value");
         }
         
         @Override
