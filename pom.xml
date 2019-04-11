@@ -27,7 +27,7 @@
           			<include>Config.prop</include>
                     <include>*.gif</include>
                     <include>*.xml</include>
-        			</includes>
+        		</includes>
 			</resource>
             <resource>
                 <directory>${project.basedir}/src/main/java/org/reactome/cytoscape/pathway</directory>
