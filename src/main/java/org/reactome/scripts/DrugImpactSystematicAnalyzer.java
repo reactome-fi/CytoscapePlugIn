@@ -27,7 +27,7 @@ import edu.ohsu.bcb.druggability.dataModel.Drug;
  *
  */
 public class DrugImpactSystematicAnalyzer {
-    private final String DIR = "/Users/wug/Documents/eclipse_workspace/caBIGR3/results/BooleanNetwork/drugs/";
+    private final String DIR = "/Users/wug/git/pathway_modeling/results/BooleanNetwork/drugs/";
     
     public DrugImpactSystematicAnalyzer() {
     }
@@ -59,7 +59,7 @@ public class DrugImpactSystematicAnalyzer {
         if (isForHit)
             fileName = dirName + dataSource + "_Hit_" + now + "_3.txt";
         else
-            fileName = dirName + dataSource + "_Impact_" + now + "_3.txt";
+            fileName = dirName + dataSource + "_Impact_" + now + ".txt";
         
 //        String fileName = dirName + dataSource + "_Impact_" + now + "_1.txt";
 //        String fileName = dirName + dataSource + "_Impact_091918.txt";
@@ -70,8 +70,8 @@ public class DrugImpactSystematicAnalyzer {
             fu.printLine("Drug\tDB_ID\tPathway\tSum\tOutputAverage\tTargets");
         int c = 0;
         for (Drug drug : drugs) {
-//            if (!drug.getDrugName().equals("Bortezomib"))
-//                continue;
+            if (!drug.getDrugName().equals("Trametinib"))
+                continue;
             String results = null;
             if (isForHit)
                 results = service.runDrugHitAnalysis(drug.getDrugName(), dataSource.name());

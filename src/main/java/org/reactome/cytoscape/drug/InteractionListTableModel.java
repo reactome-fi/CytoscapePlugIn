@@ -86,7 +86,8 @@ public class InteractionListTableModel extends AbstractTableModel {
         row[1] = interaction.getIntDrug().getDrugName();
         row[2] = interaction.getIntTarget().getTargetName();
         row[3] = interaction.getInteractionType();
-        Map<String, Double> typeToValue = getMinValues(interaction);
+        Map<String, Double> typeToValue1 = interaction.getMinValues();
+        Map<String, Double> typeToValue = typeToValue1;
         for (int i = 4; i < colNames.size(); i++) {
             row[i] = typeToValue.get(colNames.get(i));
         }
@@ -96,25 +97,6 @@ public class InteractionListTableModel extends AbstractTableModel {
 //        row[6] = typeToValue.get("EC50");
     }
     
-    private Map<String, Double> getMinValues(Interaction interaction) {
-        Map<String, Double> typeToValue = new HashMap<>();
-        if (interaction.getExpEvidenceSet() != null) {
-            for (ExpEvidence evidence : interaction.getExpEvidenceSet()) {
-                if (DrugTargetInteractionManager.getManager().shouldFilterOut(evidence))
-                    continue;
-                String type = evidence.getAssayType();
-                if (type == null)
-                    continue;
-                if (type.equals("KI"))
-                    type = "Ki";
-                double value = DrugTargetInteractionManager.getManager().getExpEvidenceValue(evidence).doubleValue();
-                if (!typeToValue.containsKey(type) || value < typeToValue.get(type))
-                    typeToValue.put(type, value);
-            }
-        }
-        return typeToValue;
-    }
-
     @Override
     public int getRowCount() {
         if (data == null)

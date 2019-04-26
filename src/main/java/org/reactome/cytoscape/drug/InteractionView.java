@@ -158,9 +158,10 @@ public class InteractionView extends JDialog {
             text.append("?");
         else
             text.append(relation);
-        if (evidence.getAssayValueMedian() != null)
-            text.append(DrugTargetInteractionManager.getManager().getExpEvidenceValue(evidence)); // Want to use double to avoid weird many zero
-        else // We should get low and high value
+        if (evidence.getAssayValueMedian() != null) {
+            DrugTargetInteractionManager r = DrugTargetInteractionManager.getManager();
+            text.append(evidence.getAssayValue());
+        } else // We should get low and high value
             text.append(" [").append(evidence.getAssayValueLow()).append(", ").append(evidence.getAssayValueHigh()).append("]");
         return text.toString();
     }
@@ -203,8 +204,10 @@ public class InteractionView extends JDialog {
                 int rtn = exp1.getAssayType().toUpperCase().compareTo(exp2.getAssayType().toUpperCase());
                 if (rtn != 0)
                     return rtn;
-                Number value1 = DrugTargetInteractionManager.getManager().getExpEvidenceValue(exp1);
-                Number value2 = DrugTargetInteractionManager.getManager().getExpEvidenceValue(exp2);
+                DrugTargetInteractionManager r = DrugTargetInteractionManager.getManager();
+                Number value1 = exp1.getAssayValue();
+                DrugTargetInteractionManager r1 = DrugTargetInteractionManager.getManager();
+                Number value2 = exp2.getAssayValue();
                 return new Double(value1.doubleValue()).compareTo(new Double(value2.doubleValue()));
             }
         });

@@ -190,7 +190,7 @@ public class InteractionFilter {
             // Since there are multiple values for the same assay type, we should not return
             // when the type is found. All values should be checked.
             for (ExpEvidence evidence : interaction.getExpEvidenceSet()) {
-                if (manager.shouldFilterOut(evidence))
+                if (evidence.shouldFilterOut())
                     continue;
                 String assayType = evidence.getAssayType().toUpperCase();
                 if (!assayType.equals(filter.getAssayType().toString().toUpperCase()))
@@ -198,7 +198,7 @@ public class InteractionFilter {
                 Double refValue = filter.getValue();
                 if (refValue == null)
                     return true; // Use all values
-                Number value = manager.getExpEvidenceValue(evidence);
+                Number value = evidence.getAssayValue();
                 rtn = AffinityRelation.compare(value.doubleValue(),
                                                 refValue,
                                                 filter.getRelation());

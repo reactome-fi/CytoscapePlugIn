@@ -28,7 +28,6 @@ import org.reactome.cytoscape.service.FIRenderableInteraction;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
-import edu.ohsu.bcb.druggability.dataModel.ExpEvidence;
 import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 /**
@@ -403,45 +402,6 @@ public class DrugTargetInteractionManager {
             frame.getGlassPane().setVisible(false);
         }
         return new HashMap<>(); 
-    }
-    
-    /**
-     * Check if an ExpEvidence should not be used to get assay value.
-     * @param evidence
-     * @return
-     */
-    public boolean shouldFilterOut(ExpEvidence evidence) {
-        if (evidence.getAssayType() == null)
-            return true; // This happens
-        if (evidence.getAssayRelation() != null && evidence.getAssayRelation().equals(">"))
-            return true; // Don't want to use ">" values.
-        return false;
-    }
-    
-    /**
-     * A utility method kept it here in appropriately.
-     * @param exp
-     * @return
-     */
-    public Number getExpEvidenceValue(ExpEvidence exp) {
-        Number rtn = Double.MAX_VALUE;
-        if (exp.getAssayValueMedian() != null) {
-            try {
-                // Try to use Integer first
-                if (!exp.getAssayValueMedian().contains("."))
-                    rtn = Integer.parseInt(exp.getAssayValueMedian());
-                else
-                    rtn = Double.parseDouble(exp.getAssayValueMedian());
-            }
-            catch(NumberFormatException e) {}
-        }
-        else if (exp.getAssayValueLow() != null) {
-            try {
-                rtn = Double.parseDouble(exp.getAssayValueLow());
-            }
-            catch(NumberFormatException e) {}
-        }
-        return rtn;
     }
     
 }
