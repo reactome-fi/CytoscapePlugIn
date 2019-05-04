@@ -285,6 +285,9 @@ public class PlugInUtilities {
      */
     public static double calculateCombinedPValue(List<Double> pvalues,
                                          List<List<Double>> values) throws MathException {
+        if (pvalues.size() == 0) {
+            return Double.MAX_VALUE; // Nothing to do. Mark this as the largest pvalue.
+        }
         // Have to make sure no 0 in the pvalues list in order to make the implementation in MathUtility work
         List<Double> pvalueCopy = new ArrayList<Double>();
         for (Double pvalue : pvalues) {

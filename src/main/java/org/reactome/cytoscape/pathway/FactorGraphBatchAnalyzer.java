@@ -88,6 +88,9 @@ public class FactorGraphBatchAnalyzer extends FactorGraphAnalyzer {
             List<FactorGraph> failedFGs = new ArrayList<FactorGraph>();
             boolean isAborted = false;
             for (FactorGraph fg : factorGraphs) {
+//                if (!fg.getName().contains("71737"))
+//                    continue;
+                System.out.println("Handling " + fg.getName() + " (" + count + "/" + factorGraphs.size() + ")");
                 progressPane.setText("Analyzing " + fg.getName() + 
                                      " (" + count + "/" + factorGraphs.size() + ")");
                 // Since progressPane is used by other process, show the progress in the title
