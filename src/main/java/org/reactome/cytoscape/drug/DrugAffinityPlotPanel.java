@@ -200,7 +200,6 @@ public class DrugAffinityPlotPanel extends JPanel {
                         type = "Ki";
                     if (!neededType.equals(type))
                         continue;
-                    DrugTargetInteractionManager r = DrugTargetInteractionManager.getManager();
                     double value = evidence.getAssayValue().doubleValue();
                     String currentKey = target + "\t" + (int) value;
                     keyToCount.compute(currentKey, (key, count) -> {

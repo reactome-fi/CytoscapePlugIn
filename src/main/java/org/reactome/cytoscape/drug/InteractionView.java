@@ -159,7 +159,6 @@ public class InteractionView extends JDialog {
         else
             text.append(relation);
         if (evidence.getAssayValueMedian() != null) {
-            DrugTargetInteractionManager r = DrugTargetInteractionManager.getManager();
             text.append(evidence.getAssayValue());
         } else // We should get low and high value
             text.append(" [").append(evidence.getAssayValueLow()).append(", ").append(evidence.getAssayValueHigh()).append("]");
@@ -204,9 +203,7 @@ public class InteractionView extends JDialog {
                 int rtn = exp1.getAssayType().toUpperCase().compareTo(exp2.getAssayType().toUpperCase());
                 if (rtn != 0)
                     return rtn;
-                DrugTargetInteractionManager r = DrugTargetInteractionManager.getManager();
                 Number value1 = exp1.getAssayValue();
-                DrugTargetInteractionManager r1 = DrugTargetInteractionManager.getManager();
                 Number value2 = exp2.getAssayValue();
                 return new Double(value1.doubleValue()).compareTo(new Double(value2.doubleValue()));
             }

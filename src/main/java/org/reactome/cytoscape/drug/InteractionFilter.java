@@ -186,7 +186,6 @@ public class InteractionFilter {
                                         Interaction interaction) {
         boolean rtn = false;
         if (interaction.getExpEvidenceSet() != null) {
-            DrugTargetInteractionManager manager = DrugTargetInteractionManager.getManager();
             // Since there are multiple values for the same assay type, we should not return
             // when the type is found. All values should be checked.
             for (ExpEvidence evidence : interaction.getExpEvidenceSet()) {

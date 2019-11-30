@@ -296,7 +296,6 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
     
     private CyNetwork constructFINetwork(Set<String> selectedGenes) throws Exception {
         // Check if a local service should be used
-        FIPlugInHelper r = FIPlugInHelper.getHelper();
         FINetworkService fiService = new FINetworkServiceFactory().getFINetworkService();
         Set<String> fis = fiService.buildFINetwork(selectedGenes, useLinkers);
         CyNetwork network = null;

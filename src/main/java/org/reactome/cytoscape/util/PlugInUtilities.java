@@ -430,7 +430,7 @@ public class PlugInUtilities {
      */
     public static Set<Variable> getOutputVariables(FactorGraph fg) {
         Set<Variable> outputVar = new HashSet<Variable>();
-        // If a variable's reactome id is in this list, it should be a output
+        // If a variable's reactome id is in this list, it should be an output
         for (Variable var : fg.getVariables()) {
             String roles = var.getProperty("role");
             if (roles == null || roles.length() == 0)

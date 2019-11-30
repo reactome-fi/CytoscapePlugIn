@@ -8,13 +8,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.swing.RowFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 
-import edu.ohsu.bcb.druggability.dataModel.ExpEvidence;
 import edu.ohsu.bcb.druggability.dataModel.Interaction;
 
 public class InteractionListTableModel extends AbstractTableModel {
@@ -86,8 +84,7 @@ public class InteractionListTableModel extends AbstractTableModel {
         row[1] = interaction.getIntDrug().getDrugName();
         row[2] = interaction.getIntTarget().getTargetName();
         row[3] = interaction.getInteractionType();
-        Map<String, Double> typeToValue1 = interaction.getMinValues();
-        Map<String, Double> typeToValue = typeToValue1;
+        Map<String, Double> typeToValue = interaction.getMinValues();
         for (int i = 4; i < colNames.size(); i++) {
             row[i] = typeToValue.get(colNames.get(i));
         }

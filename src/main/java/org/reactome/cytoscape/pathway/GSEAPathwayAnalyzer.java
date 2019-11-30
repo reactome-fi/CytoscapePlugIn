@@ -142,8 +142,8 @@ public class GSEAPathwayAnalyzer {
             StringBuilder builder = new StringBuilder();
             builder.append(url).append("/analyse?");
             builder.append("nperms=").append(permutation);
-            builder.append("&dataSetSizeMin").append(minPathwaySize);
-            builder.append("&dataSizeSizeMax").append(maxPathwaySize);
+            builder.append("&dataSetSizeMin=").append(minPathwaySize);
+            builder.append("&dataSetSizeMax=").append(maxPathwaySize);
             String rtn = PlugInUtilities.callHttpInJson(builder.toString(),
                                                         PlugInUtilities.HTTP_POST,
                                                         geneToScore);
