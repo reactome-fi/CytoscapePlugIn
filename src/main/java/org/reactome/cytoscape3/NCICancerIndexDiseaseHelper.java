@@ -202,6 +202,7 @@ public class NCICancerIndexDiseaseHelper
             return;
         JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         SearchDialog dialog = new SearchDialog(frame);
+        dialog.setTitle("Search Diseases");
         dialog.setLabel("Search diseases:");
         dialog.setModal(true);
         dialog.setVisible(true);

@@ -977,6 +977,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     private void searchTree() {
         JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         SearchDialog dialog = new SearchDialog(parentFrame);
+        dialog.setTitle("Search Events");
         dialog.setLabel("Search pathways and reactions:");
         dialog.setModal(true);
         dialog.setVisible(true);
