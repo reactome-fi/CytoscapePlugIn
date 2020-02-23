@@ -76,7 +76,7 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
                          e);
             e.printStackTrace();
         }
-        PlugInUtilities.registerCytoPanelComponent(controlPane);
+        controlPane.setServiceRegistration(PlugInUtilities.registerCytoPanelComponent(controlPane));
         // Make sure if a new Reactome control panel can be selected
         // Note: This may not work if the above call is asynchronous!
         index = getIndexOfPathwayControlPane(panel);

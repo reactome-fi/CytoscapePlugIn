@@ -15,6 +15,7 @@ import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.session.events.SessionLoadedEvent;
 import org.cytoscape.session.events.SessionLoadedListener;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -23,6 +24,7 @@ public class GeneScorePane extends JPanel implements CytoPanelComponent {
     
     private GeneScoreTablePane tablePane;
     private GeneScoreDistributionPlotPane plotPane;
+    private ServiceRegistration serviceRegistration;
     
     public GeneScorePane() {
         init();
@@ -47,12 +49,17 @@ public class GeneScorePane extends JPanel implements CytoPanelComponent {
         add(tabbedPane, BorderLayout.CENTER);
         
         // Need to register. Otherwise, it cannot be displayed.
-        PlugInUtilities.registerCytoPanelComponent(this);
+        serviceRegistration = PlugInUtilities.registerCytoPanelComponent(this);
         SessionLoadedListener sessionListener = new SessionLoadedListener() {
             
             @Override
             public void handleEvent(SessionLoadedEvent e) {
-                getParent().remove(GeneScorePane.this);
+                if (serviceRegistration != null) {
+                    serviceRegistration.unregister();
+                    serviceRegistration = null;
+                }
+                else if (getParent() != null)
+                    getParent().remove(GeneScorePane.this);
             }
         };
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();

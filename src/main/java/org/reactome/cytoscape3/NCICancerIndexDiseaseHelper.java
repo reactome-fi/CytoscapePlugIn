@@ -272,22 +272,29 @@ public class NCICancerIndexDiseaseHelper
     private class DiseaseDisplayPane extends JPanel implements CytoPanelComponent {
         private JTree diseaseTree;
         private JTextArea definitionTA;
+        private ServiceRegistration registration;
 
         public DiseaseDisplayPane() {
             init();
             BundleContext context = PlugInObjectManager.getManager().getBundleContext();
             SessionLoadedListener sessionListener = new SessionLoadedListener() {
-                
+
                 @Override
                 public void handleEvent(SessionLoadedEvent e) {
-                    if (getParent() != null)
-                        getParent().remove(DiseaseDisplayPane.this);
+                    if (registration != null) {
+                        registration.unregister();
+                        registration = null;
+                    }
+                    else {
+                        if (getParent() != null)
+                            getParent().remove(DiseaseDisplayPane.this);
+                    }
                 }
             };
             context.registerService(SessionLoadedListener.class.getName(),
                                     sessionListener,
                                     null);
-            PlugInUtilities.registerCytoPanelComponent(this);
+            registration = PlugInUtilities.registerCytoPanelComponent(this);
         }
         
         private List<DiseaseData> searchTopDiseases(Map<String, DiseaseData> codeToDisease) {

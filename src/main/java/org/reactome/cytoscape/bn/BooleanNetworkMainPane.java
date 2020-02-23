@@ -67,6 +67,7 @@ import org.gk.util.DialogControlPane;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.StringUtils;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.FuzzyLogicSimulator.ANDGateMode;
 import org.reactome.booleannetwork.HillFunction;
@@ -108,6 +109,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
     private boolean duringDeletion;
     // Cached BooleanNetwork to increase the performance
     private Map<String, BooleanNetwork> keyToBN;
+    private ServiceRegistration serviceRegistration;
     
     /**
      * Default constructor.
@@ -143,7 +145,12 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                 bnPane.remove();
             }
         }
-        getParent().remove(this);
+        if (serviceRegistration != null) {
+            serviceRegistration.unregister();
+            serviceRegistration = null;
+        }
+        else if (getParent() != null)
+            getParent().remove(this);
     }
     
     private JPanel createControlPane() {
@@ -373,13 +380,13 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
     
     private void init() {
         initGUI();
-        PlugInUtilities.registerCytoPanelComponent(this);
+        serviceRegistration = PlugInUtilities.registerCytoPanelComponent(this);
         // Most likely SessionAboutToBeLoadedListener should be used in 3.1.0.
         SessionLoadedListener sessionListener = new SessionLoadedListener() {
             
             @Override
             public void handleEvent(SessionLoadedEvent e) {
-                getParent().remove(BooleanNetworkMainPane.this);
+                close();
             }
         };
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();

@@ -79,6 +79,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.factorgraph.FactorGraph;
@@ -803,17 +804,19 @@ public class PlugInUtilities {
         return network;
     }
     
-    public static void registerCytoPanelComponent(final CytoPanelComponent comp) {
+    public static ServiceRegistration registerCytoPanelComponent(final CytoPanelComponent comp) {
         // As of Dec 5, 2015, manual insert tab to control close during Quit.
         // Otherwise, index exception thrown for tabs used for PGMs.
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel cytoPane = desktopApp.getCytoPanel(comp.getCytoPanelName());
         JTabbedPane tabbedPane = getTabbedPane(cytoPane);
-        if (tabbedPane == null)
-            context.registerService(CytoPanelComponent.class.getName(), 
-                                    comp, 
-                                    new Properties());
+//        System.out.println("TabbedPane: " + tabbedPane);
+        if (tabbedPane == null) {
+            return context.registerService(CytoPanelComponent.class.getName(), 
+                                           comp, 
+                                           new Properties());
+        }
         else { // Control self to avoid bug related to thread issues
             tabbedPane.add(comp.getTitle(), 
                            comp.getComponent());
@@ -836,8 +839,8 @@ public class PlugInUtilities {
                         catch(Exception e) {e.printStackTrace();} 
                     }
                 }
-                
             });
+            return null;
         }
     }
     

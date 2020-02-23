@@ -6,6 +6,7 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Font;
 import java.awt.Point;
 import java.awt.event.ComponentAdapter;
@@ -47,6 +48,8 @@ import org.cytoscape.model.events.NetworkDestroyedEvent;
 import org.cytoscape.model.events.NetworkDestroyedListener;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
+import org.cytoscape.session.events.SessionAboutToBeLoadedEvent;
+import org.cytoscape.session.events.SessionAboutToBeLoadedListener;
 import org.cytoscape.session.events.SessionLoadedEvent;
 import org.cytoscape.session.events.SessionLoadedListener;
 import org.cytoscape.view.model.CyNetworkView;
@@ -63,6 +66,7 @@ import org.gk.render.RenderablePathway;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
+import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -90,6 +94,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     // selection in two views
     private boolean selectFromPathway;
     private boolean selectFromNetwork;
+    private ServiceRegistration serviceRegistration;
     
     private static PathwayControlPanel instance;
     
@@ -104,6 +109,10 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         if (instance == null)
             instance = new PathwayControlPanel();
         return instance;
+    }
+    
+    public void setServiceRegistration(ServiceRegistration registration) {
+        this.serviceRegistration = registration;
     }
     
     private void init() {
@@ -268,18 +277,29 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             
             @Override
             public void handleEvent(SessionLoadedEvent e) {
-                resetOverviewPane(); // Do this first so that the overviewcontainer can keep correct size
-                if (getParent() != null)
-                    getParent().remove(PathwayControlPanel.this);
-                // Since we are using a singleton, don't want to keep any enrichment results
-                eventPane.removeEnrichmentResults();
-                eventPane.resetTree();
+                cleanUp();
             }
         };
+        
         context.registerService(SessionLoadedListener.class.getName(),
                                 sessionListener,
                                 null);
-        
+    }
+    
+    private void cleanUp() {
+        resetOverviewPane(); // Do this first so that the overviewcontainer can keep correct size
+        if (serviceRegistration != null) {
+            serviceRegistration.unregister();
+            serviceRegistration = null; // For GC
+        }
+        else { // Try this
+            if (getParent() != null) {
+                getParent().remove(PathwayControlPanel.this);
+            }
+        }
+        // Since we are using a singleton, don't want to keep any enrichment results
+        eventPane.removeEnrichmentResults();
+        eventPane.resetTree();
     }
     
     private void showPathwayEnrichments(Boolean isShown) {
@@ -482,7 +502,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             return;
         // Check if this is a PathwayDiagram view
         String dataSetType = tableHelper.getDataSetType(networkView);
-        if (!dataSetType.equals("PathwayDiagram"))
+        if (dataSetType!= null && !dataSetType.equals("PathwayDiagram"))
             return;
         // Choose Pathway
         CyNetwork network = networkView.getModel();

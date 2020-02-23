@@ -49,6 +49,7 @@ import org.cytoscape.util.swing.FileUtil;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
@@ -70,6 +71,7 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
     private Map<String, String> nameToPath;
     // Used to do single module survival analysis calling back
     private SingleModuleSurvivalActionListener singleModuleAction;
+    private ServiceRegistration serviceRegistration;
     
     public SurvivalAnalysisResultPane() {
         init();
@@ -84,7 +86,7 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
         context.registerService(SessionLoadedListener.class.getName(),
                                 sessionListener,
                                 null);
-        PlugInUtilities.registerCytoPanelComponent(this);
+        serviceRegistration = PlugInUtilities.registerCytoPanelComponent(this);
     }
     
     private void init() {
@@ -413,9 +415,12 @@ public class SurvivalAnalysisResultPane extends JPanel implements CytoPanelCompo
         return TITLE;
     }
     
-    private void close()
-    {
-        if (getParent() != null)
+    private void close() {
+        if (serviceRegistration != null) {
+            serviceRegistration.unregister();
+            serviceRegistration = null;
+        }
+        else if (getParent() != null)
             getParent().remove(this);
     }
     

@@ -52,6 +52,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
@@ -77,6 +78,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     // To control node selection
     private Thread nodeSelectionThread;
     private RowsSetEvent rowsSelectionEvent;
+    private ServiceRegistration serviceRegistration;
     
     protected NetworkModulePanel() {
         this(null);
@@ -98,7 +100,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
                                 sessionListener, 
                                 null);
         
-        PlugInUtilities.registerCytoPanelComponent(this);
+        serviceRegistration = PlugInUtilities.registerCytoPanelComponent(this);
     }
     
     public void setNetworkView(CyNetworkView view)
@@ -282,6 +284,11 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
      * Need to synchronize this method to avoid multiple threading issue.
      */
     public void close() {
+        if (serviceRegistration != null) {
+            serviceRegistration.unregister();
+            serviceRegistration = null;
+            return;
+        }
         if (getParent() == null)
             return;
         //To have the rest of the network reappear after

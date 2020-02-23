@@ -36,6 +36,7 @@ import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
 import org.gk.model.ReactomeJavaConstants;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.service.AnimationPlayer;
 import org.reactome.cytoscape.service.AnimationPlayerControl;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
@@ -75,6 +76,7 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
     private double maxIPA;
     // A flag to block row selection sync
     protected boolean blockRowSelectionSync;
+    private ServiceRegistration serviceRegistration;
     
     public SampleListComponent() {
         init();
@@ -82,13 +84,18 @@ public class SampleListComponent extends JPanel implements CytoPanelComponent, S
     
     private void init() {
         initGUIs();
-        PlugInUtilities.registerCytoPanelComponent(this);
+        serviceRegistration = PlugInUtilities.registerCytoPanelComponent(this);
         // Most likely SessionAboutToBeLoadedListener should be used in 3.1.0.
         SessionLoadedListener sessionListener = new SessionLoadedListener() {
             
             @Override
             public void handleEvent(SessionLoadedEvent e) {
-                getParent().remove(SampleListComponent.this);
+                if (serviceRegistration != null) {
+                    serviceRegistration.unregister();
+                    serviceRegistration = null;
+                }
+                else if (getParent() != null)
+                    getParent().remove(SampleListComponent.this);
             }
         };
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();

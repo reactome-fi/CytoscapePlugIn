@@ -43,6 +43,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
+import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.fi.pgm.FIPGMConfiguration;
 import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 import org.slf4j.Logger;
@@ -264,10 +265,16 @@ public class PlugInObjectManager {
     }
     
     private JPanel searchPanelWithCardLayout() {
-        JFrame frame = getCytoscapeDesktop();
+        // Limit the search to the certain to avoid get a wrong JPanel having Cardlayout
+        CySwingApplication application = getCySwingApplication();
+        Component eastComp = application.getCytoPanel(CytoPanelName.EAST).getThisComponent();
+        // Expect two components in this container: the center and the results panel.
+        Container topContainer = eastComp.getParent();
+        
+//        Container topContainer = getCytoscapeDesktop();
         // Use this loop to find JDesktopPane
         Set<Component> children = new HashSet<Component>();
-        for (Component comp : frame.getComponents())
+        for (Component comp : topContainer.getComponents())
             children.add(comp);
         Set<Component> next = new HashSet<Component>();
         while (children.size() > 0) {
@@ -412,7 +419,6 @@ public class PlugInObjectManager {
             @Override
             public void bundleChanged(BundleEvent event) {
                 if (event.getType() == BundleEvent.STOPPING) {
-//                    System.out.println("Bundle is stopping!");
                     if (serviceReferences.size() > 0) {
                         for (ServiceReference reference : serviceReferences) {
                             if (reference != null)
