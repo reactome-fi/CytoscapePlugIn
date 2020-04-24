@@ -583,6 +583,19 @@ public class PlugInObjectManager {
     }
     
     /**
+     * Return the servlet URL without ending with "/".
+     * @return
+     */
+    public String getReactomeRESTfulAppURL() {
+        String reactomeURL = PlugInObjectManager.getManager().getReactomeRESTfulURL();
+        int index = reactomeURL.indexOf("FIService"); // This is fixed across all applications
+        String rtn = reactomeURL.substring(0, index - 1); 
+        if (rtn.endsWith("/"))
+            rtn = rtn.substring(0, rtn.length() - 1);
+        return rtn;
+    }
+    
+    /**
      * Get the RESTful URL
      * 
      * @param fiVersion

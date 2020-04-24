@@ -7,29 +7,24 @@ moduleColors=0,0,153;51,153,0;153,0,153;102,102,0;0,102,102;204,153,0;204,0,102;
 # As of July, 2018, changed to the main Reactome web site.
 userGuideURL=https://www.reactome.org/tools/reactome-fiviz
 # A list of FI network versions available for selection
-FINetworkVersions=2018,2017,2016
+FINetworkVersions=2019,2018,2017
 # For local test
-#2017_restfulURL=http://localhost:8080/FIService/
-#2018_restfulURL=http://localhost:8080/FIService/
-#2016_restfulURL=http://localhost:8080/FIService/
+#2017_restfulURL=http://localhost:8080/corews/FIService/
+#2018_restfulURL=http://localhost:8080/corews/FIService/
+#2019_restfulURL=http://localhost:8080/corews/FIService/
 # For new cpws at Amazon AWS
 2017_restfulURL=http://cpws.reactome.org/caBigR3WebApp2017/FIService/
 2018_restfulURL=http://cpws.reactome.org/caBigR3WebApp2018/FIService/
-2016_restfulURL=http://cpws.reactome.org/caBigR3WebApp2016/FIService/
-# For Production site
-#2017_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2017/FIService/
-#2015_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2015/FIService/
-#2016_restfulURL=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2016/FIService/
+2019_restfulURL=http://cpws.reactome.org/caBigR3WebApp2019/FIService/
 # Reactome stuff
-#ReactomeRESTfulAPI=http://reactomews.oicr.on.ca:8080/caBigR3WebApp2017/FIService/ReactomeRestful/
-#ReactomeRESTfulAPI=http://localhost:8080/FIService/ReactomeRestful/
-ReactomeRESTfulAPI=http://cpws.reactome.org/caBigR3WebApp2018/FIService/ReactomeRestful/
+#ReactomeRESTfulAPI=http://localhost:8080/corews/FIService/ReactomeRestful/
+ReactomeRESTfulAPI=http://cpws.reactome.org/caBigR3WebApp2019/FIService/ReactomeRestful/
 # A list of evidences and their labels
 evidenceProperties=humanInteraction,scePPI,dmePPI,celPPI,mousePPI,genewaysPPI,pavlidisGeneExp,carlosGeneExp,pfamDomainInt,goBPSharing,probability
 evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interaction,Mouse Interaction,Geneways Interaction,Pavlidis Gene Exp,Carlos Gene Exp,PfamDomain Interaction,GO BP Sharing,Score
 #ReactomeURL=http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&ID=
-# As of April 25, 2017, use this new content RESTful API based URL
-ReactomeURL=http://www.reactome.org/content/detail/
+# As of April 21, 2020, use this pathway browser URL for better view
+ReactomeURL=https://reactome.org/PathwayBrowser/#/
 # Use to control the debug model for PGM analysis
 PGMDebug=false
 # The file has pre-generated factor graph objects in a zipped XML file

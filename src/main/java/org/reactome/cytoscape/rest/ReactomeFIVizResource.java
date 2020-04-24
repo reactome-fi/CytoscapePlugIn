@@ -5,6 +5,7 @@ import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -13,6 +14,7 @@ import javax.ws.rs.core.Response;
 
 import org.cytoscape.ci.model.CIResponse;
 import org.reactome.cytoscape.pathway.EventTreePane.EventObject;
+import org.reactome.cytoscape.rest.tasks.PathwayEnrichmentResults;
 import org.reactome.cytoscape.rest.tasks.ReactomeFIVizTable.ReactomeFIVizTableResponse;
 import org.reactome.cytoscape3.GeneSetMutationAnalysisOptions;
 
@@ -34,7 +36,7 @@ import io.swagger.annotations.ApiResponses;
 @Api(tags = {"Apps: ReactomeFIViz"})
 @Path("/reactomefiviz/v1/")
 public interface ReactomeFIVizResource {
-
+    
     /**
      * Return the list of FIs suported by ReactomeFIViz
      * @return
@@ -134,6 +136,29 @@ public interface ReactomeFIVizResource {
             @ApiResponse(code = 404, message = "Cannot perform Reactome pathway enrichment analysis. Check the Cytoscape logging for errors.", response = CIResponse.class)
     })
     public Response performPathwayEnrichmentAnalysis(@ApiParam(value = "List of genes delimited by \",\"", required = true) String geneList);
+    
+    /**
+     * Provide the data for the Reactome reacfoam web application.
+     */
+    @GET
+    @Produces("application/json")
+    @Path("reacfoam/enrichment")
+    @ApiOperation(value = "Provide the data for the Reactome reacfoam web application",
+                  response = PathwayEnrichmentResults.class)
+    @ApiResponses(value = { 
+            @ApiResponse(code = 404, message = "Cannot provide the enrichment analysis results. Check the Cytoscape logging for errors.", response = CIResponse.class)
+    })
+    public PathwayEnrichmentResults fetchEnrichmentResults();
+    
+    /**
+     * Provide an interface so that the displayed Event inside ReactomeFIVIz can be selected.
+     */
+    @PUT
+    @Path("event/{eventId}")
+    @ApiOperation(value = "An interface for an external app to select an displayed event.")
+    public void selectEvent(@ApiParam(value = "Event stable id or internal id", 
+                                      example = "R-HSA-400253") 
+                            @PathParam(value = "eventId") String eventId);
 
     /**
      * Load and export pathway diagram.

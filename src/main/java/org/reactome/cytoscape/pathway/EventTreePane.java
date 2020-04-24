@@ -22,8 +22,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -568,7 +570,21 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             }
         });
         popup.add(collapseNode);
+        popup.addSeparator();
+        JMenuItem openReacfoam = new JMenuItem("Open Reactome Reacfoam");
+        openReacfoam.setToolTipText("Visualize pathways in Reacfoam");
+        openReacfoam.addActionListener(evt -> openReacfoam());
+        popup.add(openReacfoam);
         popup.show(eventTree, e.getX(), e.getY());
+    }
+    
+    private void openReacfoam() {
+        String reacfoamUrl = "http://localhost:" + 
+                              PlugInObjectManager.getManager().getProperties().getProperty("reacfoam_port") + 
+                              "/reacfoam/index.html";
+        if (pathwayToAnnotation != null && pathwayToAnnotation.size() > 0)
+            reacfoamUrl += "?analysis=reactomefiviz";
+        PlugInUtilities.openURL(reacfoamUrl);
     }
     
     private void loadPGMResults() {
@@ -868,8 +884,39 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         firePropertyChange("showPathwayEnrichments", false, true);
     }
     
+    public Map<String, GeneSetAnnotation> getPathwayToAnnotation() {
+        return this.pathwayToAnnotation;
+    }
+    
     public void setAnnotationPane(PathwayEnrichmentResultPane pane) {
         this.annotationPanel = pane;
+    }
+    
+    public Map<Long, String> grepEventIdToName() {
+        Map<Long, String> idToName = new HashMap<>();
+        DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+        Set<DefaultMutableTreeNode> current = new HashSet<>();
+        for (int i = 0; i < root.getChildCount(); i++) {
+            current.add((DefaultMutableTreeNode)root.getChildAt(i));
+        }
+        Set<DefaultMutableTreeNode> next = new HashSet<>();
+        while (current.size() > 0) {
+            for (DefaultMutableTreeNode node : current) {
+                if (node.getUserObject() instanceof EventObject) {
+                    EventObject eventObject = (EventObject) node.getUserObject();
+                    idToName.put(eventObject.getDbId(), eventObject.getName());
+                    if (node.getChildCount() > 0) {
+                        for (int i = 0; i < node.getChildCount(); i++)
+                            next.add((DefaultMutableTreeNode)node.getChildAt(i));
+                    }
+                }
+            }
+            current.clear();
+            current.addAll(next);
+            next.clear();
+        }
+        return idToName;
     }
 
     private void showSearchResults(List<TreePath> paths,
@@ -985,6 +1032,15 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             return;
         String key = dialog.getSearchKey();
         boolean needWholeName = dialog.isWholeNameNeeded();
+        searchPathway(key, needWholeName);
+    }
+
+    /**
+     * Search pathways for a string key.
+     * @param key
+     * @param needWholeName
+     */
+    public void searchPathway(String key, boolean needWholeName) {
         List<TreePath> results = new ArrayList<TreePath>();
         DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
         DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();

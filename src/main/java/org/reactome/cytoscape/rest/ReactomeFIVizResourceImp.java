@@ -1,9 +1,12 @@
 package org.reactome.cytoscape.rest;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -12,6 +15,8 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
+import org.reactome.annotate.GeneSetAnnotation;
+import org.reactome.cytoscape.pathway.EventTreePane;
 import org.reactome.cytoscape.pathway.EventTreePane.EventObject;
 import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.cytoscape.rest.tasks.FINetworkBuildTask;
@@ -22,6 +27,7 @@ import org.reactome.cytoscape.rest.tasks.ObservableClusterFINetworkTask;
 import org.reactome.cytoscape.rest.tasks.ObservablePathwayDiagramExportTask;
 import org.reactome.cytoscape.rest.tasks.ObservablePathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.rest.tasks.ObservablePathwayHierarchyLoadTask;
+import org.reactome.cytoscape.rest.tasks.PathwayEnrichmentResults;
 import org.reactome.cytoscape.rest.tasks.ReactomeFIVizTable;
 import org.reactome.cytoscape.rest.tasks.RestTaskObserver;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -39,8 +45,79 @@ import org.reactome.cytoscape3.GeneSetMutationAnalysisTask;
 public class ReactomeFIVizResourceImp implements ReactomeFIVizResource {
     
     public ReactomeFIVizResourceImp() {
+        Thread t = new Thread() {
+            public void run() {
+                try {
+                    new ReacfoamServer().start();
+                }
+                catch(IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        t.start();
     }
     
+    public void selectEvent(String id) {
+        if (id.contains("&")) {
+            // Passed from reacfoam
+            String[] tokens = id.split("&");
+            for (String token : tokens) {
+                if (token.startsWith("R-")) {
+                    id = token;
+                    break;
+                }
+            }
+        }
+        Long dbId = null;
+        if (id.startsWith("R-HSA-")) {
+            // This is a stable id
+            int index = id.lastIndexOf("-");
+            dbId = new Long(id.substring(index + 1));
+        }
+        else if (id.matches("\\d+"))
+            dbId = new Long(id);
+        if (dbId == null)
+            return; // Do nothing
+        EventTreePane treePane = PathwayControlPanel.getInstance().getEventTreePane();
+        Map<Long, String> idToName = treePane.grepEventIdToName();
+        String name = idToName.get(dbId);
+        if (name == null) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Cannot find an event for " + id + "\n*: Disease events are not supported.",
+                                          "No Event",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return; // Cannot find a pathway
+        }
+        treePane.searchPathway(name, true);
+        JFrame frame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+        frame.toFront();
+        frame.requestFocus();
+        frame.repaint();
+    }
+    
+    public PathwayEnrichmentResults fetchEnrichmentResults() {
+        PathwayEnrichmentResults results = new PathwayEnrichmentResults();
+        EventTreePane treePane = PathwayControlPanel.getInstance().getEventTreePane();
+        Map<Long, String> idToName = treePane.grepEventIdToName();
+        Map<String, GeneSetAnnotation> nameToAnnotation = treePane.getPathwayToAnnotation();
+        for (Long id : idToName.keySet()) {
+            String name = idToName.get(id);
+            GeneSetAnnotation annotation = nameToAnnotation.get(name);
+            if (name == null || annotation == null)
+                continue;
+            results.addPathway("R-HSA-" + id,
+                               name, 
+                               annotation.getFdr(), // We want to use FDR for all annotation 
+                               annotation.getNumberInTopic() + "",
+                               annotation.getHitNumber() + "");
+        }
+//        results.addPathway("R-HSA-418597",
+//                           "G alpha (z) signalling events", "0.0012616811274",
+//                           "62", "7");
+        return results;
+    }
+
     @Override
     public List<String> getFIVersions() {
         String versions = PlugInObjectManager.getManager().getProperties()
