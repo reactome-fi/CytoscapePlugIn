@@ -56,6 +56,8 @@ import org.cytoscape.model.CyNetworkFactory;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableUtil;
+import org.cytoscape.property.CyProperty;
+import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.task.NetworkTaskFactory;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
@@ -81,7 +83,6 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
-import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
@@ -935,8 +936,22 @@ public class PlugInUtilities {
      * 
      * @param url
      */
+    @SuppressWarnings("unchecked")
     public static void openURL(String url) {
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        // In Cytoscape 3.8.0, the default CyBrowser is used. However, it is not good enough to support
+        // some of HTML page (e.g. reactfoam). Therefore, we want to use the desktop browser by doing this.
+        CyServiceRegistrar serviceRegistrar = PlugInObjectManager.getManager().getServiceRegistra();
+        CyProperty<Properties> cyProps = serviceRegistrar.getService(CyProperty.class,
+                                                                     "(cyPropertyName=cytoscape3.props)");
+        Properties props = cyProps.getProperties();
+        String propKey = "useCyBrowser";
+        String oldValue = props.getProperty(propKey); // The key is defined in 3.8.0 only. Therefore, we hard-coded this
+        if (oldValue == null || Boolean.parseBoolean(oldValue)) {
+            // Default is true. But we want to set it false
+            props.setProperty(propKey, Boolean.FALSE + "");
+        }
+        // We want to use the desktop version of browser
         ServiceReference serviceReference = context.getServiceReference(OpenBrowser.class.getName());
         boolean isOpened = false;
         if (serviceReference != null)
@@ -955,6 +970,11 @@ public class PlugInUtilities {
             showErrorMessage("Error in Opening URL",
                     "Error in opening URL: cannot find a configured browser in Cytoscape!");
         }
+        // Reset values
+        if (oldValue == null)
+            props.remove(propKey);
+        else if (Boolean.parseBoolean(oldValue))
+            props.setProperty(propKey, oldValue);
     }
     
     /**

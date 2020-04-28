@@ -36,6 +36,7 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.SelectionMediator;
@@ -78,6 +79,7 @@ public class PlugInObjectManager {
     private TaskManager taskManager;
     // Sometimes we may need to use synchronized version of TaskManager
     private SynchronousTaskManager syncTaskManager;
+    private CyServiceRegistrar serviceRegistra;
     // Currently selected FI network version
     private String fiNetworkVersion;
     // Used for setting colors for pathway diagram highlighting
@@ -138,6 +140,14 @@ public class PlugInObjectManager {
         return pathwayPGMConfig;
     }
     
+    public CyServiceRegistrar getServiceRegistra() {
+        return serviceRegistra;
+    }
+
+    public void setServiceRegistra(CyServiceRegistrar serviceRegistra) {
+        this.serviceRegistra = serviceRegistra;
+    }
+
     public SelectionMediator getObservationVarSelectionMediator() {
         if (observationSelectionMediator == null)
             observationSelectionMediator = new SelectionMediator();

@@ -584,6 +584,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                               "/reacfoam/index.html";
         if (pathwayToAnnotation != null && pathwayToAnnotation.size() > 0)
             reacfoamUrl += "?analysis=reactomefiviz";
+        // TODO: Don't forget to add a new entry useCyBrowser=false for the preference to avoid using the low functional CyBrowser.
         PlugInUtilities.openURL(reacfoamUrl);
     }
     

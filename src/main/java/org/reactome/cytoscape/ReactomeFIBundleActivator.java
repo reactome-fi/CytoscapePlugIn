@@ -7,6 +7,7 @@ import org.cytoscape.model.CyNetworkTableManager;
 import org.cytoscape.model.CyTableFactory;
 import org.cytoscape.model.CyTableManager;
 import org.cytoscape.service.util.AbstractCyActivator;
+import org.cytoscape.service.util.CyServiceRegistrar;
 import org.cytoscape.task.edit.MapTableToNetworkTablesTaskFactory;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.fipgm.PGMImpactAnalysisAction;
@@ -50,6 +51,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         registerAllServices(context, propReader, props);
         PlugInObjectManager.getManager().setCustomizedProps(propReader.getProperties());
         
+        PlugInObjectManager.getManager().setServiceRegistra(getService(context, CyServiceRegistrar.class));
+
         // Register FI network visualization mapping as OSGi services
         //Initialize and register the FI VIsual Style with the framework,
         //allowing it to be used by all Reactome FI classes.
