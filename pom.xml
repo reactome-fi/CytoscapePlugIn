@@ -231,33 +231,43 @@
 			<version>4.2.0</version>
 		</dependency>
 
-		<!-- The following logging is required by osgi for some reason! -->
+		<!-- The following is based on http://wikiold.cytoscape.org/Cytoscape_3/
+		AppDeveloper/Cytoscape_3_App_Cookbook#Logging. However, the output in the code
+		is still not seen. -->
 		<dependency>
 			<groupId>org.ops4j.pax.logging</groupId>
 			<artifactId>pax-logging-api</artifactId>
-			<version>1.5.2</version>
+			<version>1.5.3</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.ops4j.pax.logging</groupId>
+			<artifactId>pax-logging-service</artifactId>
+			<version>1.5.3</version>
+			<scope>provided</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.7.25</version>
-		</dependency>
+
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.slf4j</groupId> -->
+<!-- 			<artifactId>slf4j-api</artifactId> -->
+<!-- 			<version>1.7.25</version> -->
+<!-- 		</dependency> -->
 		
 		<!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j-impl -->
-		<dependency>
-    			<groupId>org.apache.logging.log4j</groupId>
-    			<artifactId>log4j-slf4j-impl</artifactId>
-    			<version>2.10.0</version>
-		</dependency>
+<!-- 		<dependency> -->
+<!--     			<groupId>org.apache.logging.log4j</groupId> -->
+<!--     			<artifactId>log4j-slf4j-impl</artifactId> -->
+<!--     			<version>2.10.0</version> -->
+<!-- 		</dependency> -->
 		
 		<!-- Add this to get rid of the annoying SLF4J warning -->
 		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
-		<dependency>
-    			<groupId>org.slf4j</groupId>
-    			<artifactId>slf4j-log4j12</artifactId>
-    			<version>1.7.25</version>
-		</dependency>
+<!-- 		<dependency> -->
+<!--     			<groupId>org.slf4j</groupId> -->
+<!--     			<artifactId>slf4j-log4j12</artifactId> -->
+<!--     			<version>1.7.25</version> -->
+<!-- 		</dependency> -->
 
 		<dependency>
 			<groupId>org.cytoscape</groupId>
