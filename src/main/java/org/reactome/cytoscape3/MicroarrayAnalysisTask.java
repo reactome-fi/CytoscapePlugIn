@@ -87,8 +87,7 @@ public class MicroarrayAnalysisTask extends FIAnalysisTask {
             filterSmallClusters(clusters);
             List<Double> correlations = calculateAverageCorrelations(clusters,
                                                                      fis, fisWithCorrs);
-            final Map<Set<String>, Double> selectedClusterToCorr = displayClusters(
-                                                                                   clusters, correlations);
+            final Map<Set<String>, Double> selectedClusterToCorr = displayClusters(clusters, correlations);
             if (selectedClusterToCorr != null) {
                 List<Set<String>> selectedClusters = new ArrayList<Set<String>>(
                         selectedClusterToCorr.keySet());

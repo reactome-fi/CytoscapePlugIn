@@ -50,6 +50,17 @@ public class FINetworkGenerator implements NetworkGenerator {
      * the generated CyNetwork.
      */
     public CyNetwork constructFINetwork(Set<String> nodes, Set<String> fis) {
+        return constructFINetwork(nodes, fis, "FI");
+    }
+    
+    /**
+     * Create a CyNetwork object based on the passed interaction set, fis. If nodes is provided
+     * and some nodes are not used in the fis set, they will be displayed as un-linked nodes in
+     * the generated CyNetwork.
+     */
+    public CyNetwork constructFINetwork(Set<String> nodes, 
+                                        Set<String> fis,
+                                        String edgeType) {
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         // Construct an empty network.
         CyNetwork network = PlugInUtilities.createNetwork();
@@ -67,7 +78,7 @@ public class FINetworkGenerator implements NetworkGenerator {
             String name2 = fi.substring(index + 1);
             CyNode node1 = getNode(name1, name2Node, network);
             CyNode node2 = getNode(name2, name2Node, network);
-            createEdge(network, node1, node2, "FI");
+            createEdge(network, node1, node2, edgeType);
         }
         // Put nodes that are not linked to other genes in the network.
         if (nodes != null) {

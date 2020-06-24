@@ -36,7 +36,10 @@ import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.service.util.CyServiceRegistrar;
+import org.cytoscape.view.model.CyNetworkViewFactory;
+import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.SelectionMediator;
@@ -79,6 +82,9 @@ public class PlugInObjectManager {
     private TaskManager taskManager;
     // Sometimes we may need to use synchronized version of TaskManager
     private SynchronousTaskManager syncTaskManager;
+    private CyNetworkManager networkManager;
+    private CyNetworkViewManager networkViewManager;
+    private CyNetworkViewFactory networkViewFactory;
     private CyServiceRegistrar serviceRegistra;
     // Currently selected FI network version
     private String fiNetworkVersion;
@@ -498,6 +504,42 @@ public class PlugInObjectManager {
         if (syncTaskManager != null)
             serviceReferences.add(ref);
         return syncTaskManager;
+    }
+    
+    public CyNetworkManager getNetworkManager() {
+        if (networkManager != null)
+            return networkManager;
+        ServiceReference ref = context.getServiceReference(CyNetworkManager.class.getName());
+        if (ref == null)
+            return null;
+        networkManager = (CyNetworkManager) context.getService(ref);
+        if (networkManager != null)
+            serviceReferences.add(ref);
+        return networkManager;
+    }
+    
+    public CyNetworkViewManager getNetworkViewManager() {
+        if (networkViewManager != null)
+            return networkViewManager;
+        ServiceReference ref = context.getServiceReference(CyNetworkViewManager.class.getName());
+        if (ref == null)
+            return null;
+        networkViewManager = (CyNetworkViewManager) context.getService(ref);
+        if (networkViewManager != null)
+            serviceReferences.add(ref);
+        return networkViewManager;
+    }
+    
+    public CyNetworkViewFactory getNetworkViewFactory() {
+        if (networkViewFactory != null)
+            return networkViewFactory;
+        ServiceReference ref = context.getServiceReference(CyNetworkViewFactory.class.getName());
+        if (ref == null)
+            return null;
+        networkViewFactory = (CyNetworkViewFactory) context.getService(ref);
+        if (networkViewFactory != null)
+            serviceReferences.add(ref);
+        return networkViewFactory;
     }
     
     /**

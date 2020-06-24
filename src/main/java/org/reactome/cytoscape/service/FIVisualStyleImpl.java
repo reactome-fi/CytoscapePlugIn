@@ -42,7 +42,7 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class FIVisualStyleImpl implements FIVisualStyle {
-    private final String FI_VISUAL_STYLE = "FI Network";
+    protected String styleName = "FI Network";
 
     public FIVisualStyleImpl() {
     }
@@ -67,7 +67,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         Iterator it = visMapManager.getAllVisualStyles().iterator();
         while (it.hasNext()) {
             VisualStyle current = (VisualStyle) it.next();
-            if (current.getTitle().equalsIgnoreCase(FI_VISUAL_STYLE)) {
+            if (current.getTitle().equalsIgnoreCase(styleName)) {
                 if (createStyle)
                     visMapManager.removeVisualStyle(current);
                 else
@@ -109,7 +109,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         ServiceReference reference = context.getServiceReference(VisualStyleFactory.class.getName());
         VisualStyleFactory visStyleFactory = (VisualStyleFactory) context.getService(reference);
         // Create a fresh visual style
-        VisualStyle fiVisualStyle = visStyleFactory.createVisualStyle(FI_VISUAL_STYLE);
+        VisualStyle fiVisualStyle = visStyleFactory.createVisualStyle(styleName);
         visStyleFactory = null;
         context.ungetService(reference);
         
@@ -139,7 +139,8 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         // Handle edge styles
         setDefaultEdgeStyle(fiVisualStyle);
         setEdgeStyleOnAnnotations(fiVisualStyle, 
-                                  visMapFuncFactoryD);
+                                  visMapFuncFactoryD,
+                                  visMapFuncFactoryC);
         setEdgeStyleOnEdgeType(fiVisualStyle, 
                                visMapFuncFactoryD);
 
@@ -149,8 +150,8 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         return fiVisualStyle;
     }
     
-    private void displayNodeType(VisualStyle style,
-                                 VisualMappingFunctionFactory visMapFuncFactoryD) {
+    protected void displayNodeType(VisualStyle style,
+                                   VisualMappingFunctionFactory visMapFuncFactoryD) {
         // Set the node color based on module
         DiscreteMapping colorToModuleFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
                 "module", Integer.class, BasicVisualLexicon.NODE_FILL_COLOR);
@@ -179,8 +180,9 @@ public class FIVisualStyleImpl implements FIVisualStyle {
     }
                                  
 
-    protected void setNodeSizes(CyNetworkView view, VisualStyle fiVisualStyle,
-                              VisualMappingFunctionFactory visMapFuncFactoryC) {
+    protected void setNodeSizes(CyNetworkView view, 
+                                VisualStyle fiVisualStyle,
+                                VisualMappingFunctionFactory visMapFuncFactoryC) {
         // Set the node size based on sample number
         int[] sampleNumberRange = getSampleNumberRange(view);
         if (sampleNumberRange != null)
@@ -201,7 +203,9 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         }
     }
     
-    private void setEdgeStyleOnAnnotations(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryD) {
+    protected void setEdgeStyleOnAnnotations(VisualStyle fiVisualStyle, 
+                                             VisualMappingFunctionFactory visMapFuncFactoryD,
+                                             VisualMappingFunctionFactory visMapFuncFactoryC) {
         // Set the edge target arrow shape based on FI Direction
         DiscreteMapping arrowMapping = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction(
                 "FI Direction", String.class,
@@ -293,7 +297,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         fiVisualStyle.addVisualMappingFunction(colorToModuleFunction);
     }
 
-    private void setDefaultNodeStyle(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryP) {
+    protected void setDefaultNodeStyle(VisualStyle fiVisualStyle, VisualMappingFunctionFactory visMapFuncFactoryP) {
         // Set the default node shape and color
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_SHAPE,
                 NodeShapeVisualProperty.ELLIPSE);

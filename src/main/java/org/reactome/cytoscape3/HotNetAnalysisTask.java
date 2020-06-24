@@ -169,7 +169,6 @@ public class HotNetAnalysisTask extends FIAnalysisTask {
         Set<String> allGenes = new HashSet<String>();
         for (HotNetModule module : modules)
             allGenes.addAll(module.genes);
-        FIPlugInHelper r = FIPlugInHelper.getHelper(); 
         FINetworkService fiService = new FINetworkServiceFactory().getFINetworkService();
         Set<String> fis = fiService.buildFINetwork(allGenes, false);
         FINetworkGenerator generator = new FINetworkGenerator();

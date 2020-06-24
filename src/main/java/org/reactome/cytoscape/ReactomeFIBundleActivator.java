@@ -16,6 +16,7 @@ import org.reactome.cytoscape.pathway.FactorGraphPopupMenuHandler;
 import org.reactome.cytoscape.pathway.ReactomePathwayAction;
 import org.reactome.cytoscape.rest.ReactomeFIVizResource;
 import org.reactome.cytoscape.rest.ReactomeFIVizResourceImp;
+import org.reactome.cytoscape.sc.SingleCellAnalysisAction;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.FIVisualStyleImpl;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -97,13 +98,18 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         PGMImpactAnalysisAction pgmImpactAction = new PGMImpactAnalysisAction();
         PGMImpactAnalysisResultLoadAction pgmLoadAction = new PGMImpactAnalysisResultLoadAction();
         
+        // This is test code
+        SingleCellAnalysisAction scAction = new SingleCellAnalysisAction();
+        
         // Register said Reactome FI Services with the OSGi framework.
         // An empty property
         Properties prop = new Properties();
         registerAllServices(context, gsma, prop);
         registerAllServices(context, pgmImpactAction, prop);
         registerAllServices(context, pgmLoadAction, prop);
-        registerAllServices(context, hna, prop);
+        // As of June 19, 2020, HotNet Mutation Analysis is retired.
+//        registerAllServices(context, hna, prop);
+        registerAllServices(context, scAction, prop);
         registerAllServices(context, maa, prop);
         registerAllServices(context, pathwayLoadAction, prop);
         registerAllServices(context, uga, prop);

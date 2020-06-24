@@ -15,6 +15,7 @@ public enum ReactomeNetworkType {
     FactorGraph, // A network showing a factor graph
     PGMFINetwork, // FI generated based on FI PGM
     ReactionNetwork, // Networks generated based on preceding/following relationships or shared inputs among reactions
-    MechismoNetwork // Used to perform mechismo network visualization
+    MechismoNetwork, // Used to perform mechismo network visualization
+    SingleCellNetwork // for single cell data analysis
     
 }
