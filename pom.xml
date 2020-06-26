@@ -14,7 +14,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome</groupId>
 	<artifactId>reactomeFI-app</artifactId>
-	<version>7.2.3</version>
+	<version>8.0.0</version>
 	<name>${bundle.symbolicName}</name>
 	<packaging>bundle</packaging>
 	
@@ -188,6 +188,31 @@
 	</repositories>
 	<!-- Dependencies needed to compile this project. -->
 	<dependencies>
+	
+		<!-- For scRNA-seq data analysis and visualization -->
+		<dependency>
+			<groupId>com.github.haifengl</groupId>
+			<artifactId>smile-core</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.haifengl</groupId>
+			<artifactId>smile-plot</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<!-- Need to list there so that it can be bundled into plugin jar even though it is referred in other place. -->
+		<dependency>
+			<groupId>com.github.haifengl</groupId>
+			<artifactId>smile-math</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.github.haifengl/smile-io -->
+		<dependency>
+			<groupId>com.github.haifengl</groupId>
+			<artifactId>smile-io</artifactId>
+			<version>2.4.0</version>
+		</dependency>
+	
         <!-- For GSEA analysis results -->
         <dependency>
             <groupId>org.reactome.gsea</groupId>
@@ -522,6 +547,5 @@
   			<version>${cytoscape.api.version}</version>
   			<scope>provided</scope>
 		</dependency>
-        
 	 </dependencies>     
 </project>

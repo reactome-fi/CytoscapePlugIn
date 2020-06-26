@@ -68,6 +68,36 @@ public class JSONServerCaller {
         return list;
     }
     
+    public List<Double> performDPT(String rootCell) throws JsonEOFException, IOException {
+        Object result = callJSONServer("dpt", rootCell);
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        List<Double> list = (List<Double>) result;
+        return list;
+    }
+    
+    @Test
+    public void testPerformDPA() throws Exception {
+        String rootCell = "GAAGTAAAGGCCCAAA-1";
+        List<Double> result = performDPT(rootCell);
+        System.out.println("Result: " + result.size());
+        result.subList(0, 10).forEach(System.out::println);
+    }
+    
+    @Test
+    public void testGeneGeneExp() throws Exception {
+        String gene = "Cps1";
+        List<Double> values = getGeneExp(gene);
+        System.out.println(values.size() + ": " + values);
+    }
+    
+    public List<Double> getGeneExp(String gene) throws JsonEOFException, IOException {
+        Object result = callJSONServer("get_gene_exp", gene);
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        return (List<Double>) result;
+    }
+    
     public Map<String, List<List<Double>>> getPAGA() throws JsonEOFException, IOException {
         Object result = callJSONServer("get_paga");
         if (result instanceof String)
@@ -81,6 +111,27 @@ public class JSONServerCaller {
             throw new IllegalStateException(result.toString());
         // Return as a list of String.
         return ((List<String>)result).stream().map(Integer::parseInt).collect(Collectors.toList());
+    }
+    
+    public List<String> getCellFeatureNames() throws JsonEOFException, IOException {
+        Object result = callJSONServer("get_obs_names");
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        return (List<String>)result;
+    }
+    
+    /**
+     * May return String, Double, Integer.
+     * @param featureName
+     * @return
+     * @throws JsonEOFException
+     * @throws IOException
+     */
+    public List<Object> getCellFeature(String featureName) throws JsonEOFException, IOException {
+        Object result = callJSONServer("get_obs", featureName);
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        return (List<Object>) result;
     }
     
     public List<String> getCellIds() throws JsonEOFException, IOException {
@@ -157,6 +208,16 @@ public class JSONServerCaller {
         JFrame frame = canvas.window();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Thread.sleep(Integer.MAX_VALUE);
+    }
+    
+    @Test
+    public void testGetCellFeature() throws Exception {
+        String[] features = {"n_genes", "pct_counts_mt"};
+        for (String feature : features) {
+            List<Object> result = getCellFeature(feature);
+            System.out.println(feature + ": " + result.size());
+            result.subList(0, 10).forEach(System.out::println);
+        }
     }
     
     @Test

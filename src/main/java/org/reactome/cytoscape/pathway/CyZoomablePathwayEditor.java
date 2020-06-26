@@ -50,7 +50,6 @@ import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.GraphEditorActionListener;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.graphEditor.Selectable;
-import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.HyperEdge;
 import org.gk.render.Node;
 import org.gk.render.ProcessNode;

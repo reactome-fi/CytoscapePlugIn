@@ -21,8 +21,11 @@ import org.gk.render.RenderablePathway;
 public class PathwayDiagramHighlighter {
     private int[] colors;
     // Default colors
-    private Color minColor = Color.GREEN;
-    private Color maxColor = Color.RED;
+//    private Color minColor = Color.GREEN;
+//    private Color maxColor = Color.RED;
+    // Change the default color to yellow and blue as of June 2020
+    private Color minColor = Color.YELLOW;
+    private Color maxColor = Color.BLUE;
     // A flag to indicate if this is for reaction
     private boolean isForReaction;
     

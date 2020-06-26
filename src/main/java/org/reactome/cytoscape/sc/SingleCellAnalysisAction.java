@@ -3,6 +3,8 @@ package org.reactome.cytoscape.sc;
 import static org.reactome.cytoscape.sc.SCNetworkVisualStyle.CELL_NUMBER_NAME;
 import static org.reactome.cytoscape.sc.SCNetworkVisualStyle.CLUSTER_NAME;
 import static org.reactome.cytoscape.sc.SCNetworkVisualStyle.CONNECTIVITY_NAME;
+import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellClusterNetwork;
+import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellNetwork;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,6 +16,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
@@ -21,6 +26,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.work.swing.undo.SwingUndoSupport;
 import org.reactome.cytoscape.service.FICytoscapeAction;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
@@ -37,7 +43,7 @@ import com.fasterxml.jackson.core.io.JsonEOFException;
 public class SingleCellAnalysisAction extends FICytoscapeAction {
     private static final Logger logger = LoggerFactory.getLogger(SingleCellAnalysisAction.class);
     //TODO: To be selected by the user
-    private final double EDGE_WEIGHT_CUTOFF = 0.25d;
+    private final double EDGE_WEIGHT_CUTOFF = 0.05d;
 
     public SingleCellAnalysisAction() {
         super("Single Cell Analysis");
@@ -50,11 +56,15 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
         try {
             // TODO: Following the code in PGMImpactAnalyzerTask.
             // The following is all test code.
-            JSONServerCaller caller = new JSONServerCaller();
-            buildCellNetwork(caller);
+            JSONServerCaller caller = ScNetworkManager.getManager().getServerCaller();
             buildClusterNetwork(caller);
+            buildCellNetwork(caller);
         }
         catch(Exception e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Error in action: " + e.getMessage(),
+                                          "Error in Action",
+                                          JOptionPane.ERROR_MESSAGE);
             logger.error(e.getMessage(), e);
         }
     }
@@ -88,14 +98,16 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
             String edgeName = pair.replace("\t", " (" + nameDelimit + ") ");
             edgeNameToWeight.put(edgeName, weight);
         }
-        constructNetwork(cellIds,
-                         idToUmap,
-                         idToCluster, 
-                         null,
-                         edgeNameToWeight,
-                         edges, 
-                         nameDelimit,
-                         new SCNetworkVisualStyle());
+        CyNetworkView view = constructNetwork(cellIds,
+                                              idToUmap,
+                                              idToCluster, 
+                                              null,
+                                              edgeNameToWeight,
+                                              edges, 
+                                              nameDelimit,
+                                              SingleCellNetwork);
+        // Turn off edges as the default
+        SwingUtilities.invokeLater(() -> ScNetworkManager.getManager().setEdgesVisible(false, view));
     }
 
     private void buildClusterNetwork(JSONServerCaller caller) throws Exception {
@@ -116,7 +128,7 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
 
         // Handle nodes
         for (int i = 0; i < positions.size(); i++) {
-            String nodeId = "cluster" + i;
+            String nodeId = SCNetworkVisualStyle.CLUSTER_NODE_PREFIX + i;
             nodeIds.add(nodeId);
             idToPos.put(nodeId, positions.get(i));
             idToCluster.put(nodeId, i);
@@ -145,22 +157,22 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
                          edgeNameToWeight,
                          edges, 
                          edgeType,
-                         new CellClusterVisualStyle());
+                         SingleCellClusterNetwork);
     }
 
-    private void constructNetwork(List<String> nodeIds,
-                                  Map<String, List<Double>> idToPos,
-                                  Map<String, Integer> idToCluster,
-                                  Map<String, Integer> idToCellNumber,
-                                  Map<String, Double> edgeNameToWeight,
-                                  Set<String> edges,
-                                  String edgeType,
-                                  FIVisualStyle style) {
+    private CyNetworkView constructNetwork(List<String> nodeIds,
+                                           Map<String, List<Double>> idToPos,
+                                           Map<String, Integer> idToCluster,
+                                           Map<String, Integer> idToCellNumber,
+                                           Map<String, Double> edgeNameToWeight,
+                                           Set<String> edges,
+                                           String edgeType,
+                                           ReactomeNetworkType type) {
         CyNetwork network = new FINetworkGenerator().constructFINetwork(new HashSet<>(nodeIds), 
                                                                         edges,
                                                                         edgeType);
         network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", 
-                "Single Cell Network");
+                                                                       type.toString());
         // Register and display the network
         PlugInObjectManager manager = PlugInObjectManager.getManager();
         CyNetworkManager netManager = manager.getNetworkManager();
@@ -172,7 +184,7 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
         //                                                  geneToScore);
         // Mark this network before creating a view so that the popup menu can be created correctly
         tableHelper.markAsReactomeNetwork(network, 
-                                          ReactomeNetworkType.SingleCellNetwork);
+                                          type);
         CyNetworkViewFactory viewFactory = manager.getNetworkViewFactory();
         CyNetworkView view = viewFactory.createNetworkView(network);
         CyNetworkViewManager viewManager = manager.getNetworkViewManager();
@@ -189,9 +201,15 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
         if (idToCellNumber != null)
             tableHelper.storeNodeAttributesByName(network, CELL_NUMBER_NAME, idToCellNumber);
         tableHelper.storeEdgeAttributesByName(network, CONNECTIVITY_NAME, edgeNameToWeight);
+        FIVisualStyle style = null;
+        if (type == ReactomeNetworkType.SingleCellClusterNetwork)
+            style = ScNetworkManager.getManager().getClusterStyle();
+        else
+            style = ScNetworkManager.getManager().getScStyle();
         style.setVisualStyle(view, false);
         view.updateView();
         view.fitContent();
+        return view;
     }
 
 }

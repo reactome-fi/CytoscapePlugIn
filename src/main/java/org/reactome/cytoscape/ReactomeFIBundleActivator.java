@@ -1,5 +1,7 @@
 package org.reactome.cytoscape;
 
+import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellNetwork;
+
 import java.util.Properties;
 
 import org.cytoscape.application.swing.CySwingApplication;
@@ -33,6 +35,7 @@ import org.reactome.cytoscape3.MicroarrayAnalysisAction;
 import org.reactome.cytoscape3.PGMFINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.PathwayFINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.ReactionNetworkPopupMenuHandler;
+import org.reactome.cytoscape3.ScNetworkPopupMenuHandler;
 import org.reactome.cytoscape3.UserGuideAction;
 
 public class ReactomeFIBundleActivator extends AbstractCyActivator {
@@ -131,6 +134,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
                                          new ReactionNetworkPopupMenuHandler());
         popupManager.registerMenuHandler(ReactomeNetworkType.MechismoNetwork,
                                          new MechismoFINetworkPopupMenuHandler());
+        popupManager.registerMenuHandler(SingleCellNetwork, 
+                                         new ScNetworkPopupMenuHandler());
         
         // Used as the default PopupMenuHandler. Most likely, this is not needed.
         // But keep it here for the time being.
