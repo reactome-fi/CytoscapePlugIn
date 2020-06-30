@@ -1,6 +1,7 @@
 package org.reactome.cytoscape.sc;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -229,6 +230,52 @@ public class JSONServerCaller {
         // Note: cell ids and umap sizes are not the same!
         if (cellIds.size() != umap.size())
             throw new IllegalStateException("CellIds and umap have different sizes!");
+    }
+    
+    //TODO: Add a parameter for top genes, which should be passed to the Python server to control
+    // the size of text between processes.
+    public Map<String, List<List<Double>>> findGroupMarkers(int topGenes) throws JsonEOFException, IOException {
+        Object result = callJSONServer("rank_genes_groups"); // This is more like to find markers for individual clusters
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        return (Map<String, List<List<Double>>>) result;
+    }
+    
+    public DifferentialExpressionResult doDiffGeneExpAnalysis(String group,
+                                                              String reference) throws JsonEOFException, IOException {
+        Object result = callJSONServer("rank_genes_groups", group, reference);
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        // Map to a model object
+        Map<String, List<?>> keyToList = (Map<String, List<?>>) result;
+        DifferentialExpressionResult rtn = new DifferentialExpressionResult();
+        for (String key : keyToList.keySet()) {
+            List<?> list = keyToList.get(key);
+            if (key.equals("names")) {
+                List<String> names = new ArrayList<>(list.size());
+                list.forEach(o -> {
+                    List<String> tmp = (List<String>) o;
+                    names.add(tmp.get(0));
+                });
+                rtn.setNames(names);
+            }
+            else {
+                List<Double> valueList = new ArrayList<>();
+                list.forEach(o -> {
+                    List<Double> tmp = (List<Double>) o;
+                    valueList.add(tmp.get(0));
+                });
+                if (key.equals("scores"))
+                    rtn.setScores(valueList);
+                else if (key.equals("logfoldchanges"))
+                    rtn.setLogFoldChanges(valueList);
+                else if (key.equals("pvals"))
+                    rtn.setPvals(valueList);
+                else if (key.equals("pvals_adj"))
+                    rtn.setPvalsAdj(valueList);
+            }
+        }
+        return rtn;
     }
     
     @Test

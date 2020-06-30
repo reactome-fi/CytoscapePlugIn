@@ -55,12 +55,22 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         
         props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, new DPTAnalysis(), CyNetworkViewContextMenuFactory.class, props);
+        addPopupMenu(context, new DifferentialExpressionAnalysisMenu(), CyNetworkViewContextMenuFactory.class, props);
         
         addPopupMenu(context, 
                      new ToggleEdgesDisplay(),
                      CyNetworkViewContextMenuFactory.class,
                      props);
         
+    }
+    
+    private class DifferentialExpressionAnalysisMenu implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(CyNetworkView view) {
+            JMenuItem menuItem = new JMenuItem("Differential Expression Analysis");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().doDiffExpAnalysis());
+            return new CyMenuItem(menuItem, 10.0f);
+        }
     }
     
     private class GeneExpressionMenu implements CyNetworkViewContextMenuFactory {

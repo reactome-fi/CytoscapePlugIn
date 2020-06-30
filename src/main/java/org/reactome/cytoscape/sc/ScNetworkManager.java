@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 
 import javax.swing.JOptionPane;
 
+import org.apache.commons.math3.util.Pair;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
@@ -215,6 +216,29 @@ public class ScNetworkManager {
         if (clusterStyle == null)
             clusterStyle = new CellClusterVisualStyle();
         return clusterStyle;
+    }
+    
+    public void doDiffExpAnalysis() {
+        try {
+            List<Integer> clusters = serverCaller.getCluster();
+            List<Integer> distClusters = clusters.stream().distinct().sorted().collect(Collectors.toList());
+            DifferentialExpressionAnalyzer helper = new DifferentialExpressionAnalyzer();
+            Pair<String, String> selected = helper.getSelectedClusters(distClusters);
+            if (selected == null)
+                return;
+            DifferentialExpressionResult result = serverCaller.doDiffGeneExpAnalysis(selected.getFirst(),
+                                                                                     selected.getSecond());
+            if (result == null)
+                return; // Just in case.
+            helper.displayResult(result, selected);
+        }
+        catch(IOException e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          e.getMessage(),
+                                          "Error in Differential Expression Analysis",
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error(e.getMessage(), e);
+        }
     }
 
 }
