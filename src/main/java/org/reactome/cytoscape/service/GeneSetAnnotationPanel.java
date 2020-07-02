@@ -57,7 +57,7 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
         fdrFilter = new JComboBox(fdrValues);
         fdrFilter.setEditable(true); // Enable editable for customized data.
         fdrFilter.setFont(font);
-        fdrFilter.setSelectedItem(0.25d); // Default
+        fdrFilter.setSelectedItem(0.05); // Default
         JLabel fdrLabel = new JLabel(" FDR");
         fdrLabel.setFont(font);
         controlToolBar.add(fdrLabel);

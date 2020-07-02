@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
@@ -295,6 +296,24 @@ public class RESTFulFIService implements FINetworkService {
         String url = restfulURL + "network/getGeneToIdsInPathwayDiagram/" + pathwayDiagramId;
         Element root = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
         return getGeneToDbIds(root);
+    }
+    
+    public Map<String, Set<String>> getMouseToHumanGeneMap() throws Exception {
+        String url = restfulURL + "network/mouse2HumanGeneMap";
+        String text = PlugInUtilities.callHttpInText(url, HTTP_GET, null);
+        Map<String, Set<String>> mouse2human = new HashMap<>();
+        String[] lines = text.split("\n");
+        Stream.of(lines)
+              .map(line -> line.split("\t"))
+              .forEach(tokens -> {
+                  mouse2human.compute(tokens[0], (key, set) -> {
+                      if (set == null)
+                          set = new HashSet<>();
+                      set.add(tokens[1]);
+                      return set;
+                  });
+              });
+        return mouse2human;
     }
 
     @SuppressWarnings("unchecked")

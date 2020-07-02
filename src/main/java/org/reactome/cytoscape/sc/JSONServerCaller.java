@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import javax.swing.JFrame;
 
 import org.junit.Test;
+import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.slf4j.Logger;
 
@@ -241,14 +242,14 @@ public class JSONServerCaller {
         return (Map<String, List<List<Double>>>) result;
     }
     
-    public DifferentialExpressionResult doDiffGeneExpAnalysis(String group,
+    public DiffExpResult doDiffGeneExpAnalysis(String group,
                                                               String reference) throws JsonEOFException, IOException {
         Object result = callJSONServer("rank_genes_groups", group, reference);
         if (result instanceof String)
             throw new IllegalStateException(result.toString());
         // Map to a model object
         Map<String, List<?>> keyToList = (Map<String, List<?>>) result;
-        DifferentialExpressionResult rtn = new DifferentialExpressionResult();
+        DiffExpResult rtn = new DiffExpResult();
         for (String key : keyToList.keySet()) {
             List<?> list = keyToList.get(key);
             if (key.equals("names")) {

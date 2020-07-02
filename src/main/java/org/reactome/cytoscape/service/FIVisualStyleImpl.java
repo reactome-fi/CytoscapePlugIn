@@ -2,12 +2,14 @@ package org.reactome.cytoscape.service;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Paint;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.swing.JMenu;
@@ -15,6 +17,7 @@ import javax.swing.JMenuItem;
 
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.VisualProperty;
 import org.cytoscape.view.presentation.property.ArrowShapeVisualProperty;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.presentation.property.LineTypeVisualProperty;
@@ -43,6 +46,9 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class FIVisualStyleImpl implements FIVisualStyle {
     protected String styleName = "FI Network";
+    // From yellow to blue
+    private final Color MIN_VALUE_COLOR = Color.YELLOW;
+    private final Color MAX_VALUE_COLOR = Color.BLUE;
 
     public FIVisualStyleImpl() {
     }
@@ -179,28 +185,28 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         style.addVisualMappingFunction(nodeTypeShape);
     }
                                  
-
     protected void setNodeSizes(CyNetworkView view, 
                                 VisualStyle fiVisualStyle,
                                 VisualMappingFunctionFactory visMapFuncFactoryC) {
         // Set the node size based on sample number
-        int[] sampleNumberRange = getSampleNumberRange(view);
-        if (sampleNumberRange != null)
-        {
-            ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) visMapFuncFactoryC.createVisualMappingFunction(
-                    "sampleNumber", Integer.class, BasicVisualLexicon.NODE_SIZE);
-            Integer lowerSampleNumberBound = sampleNumberRange[0];
-            BoundaryRangeValues<Double> lowerBoundary = new BoundaryRangeValues<Double>(
-                    30.0, 30.0, 30.0);
-            Integer upperSampleNumberBound = sampleNumberRange[1];
-            BoundaryRangeValues<Double> upperBoundary = new BoundaryRangeValues<Double>(
-                    100.0, 100.0, 100.0);
-            sampleNumberToSizeFunction.addPoint(lowerSampleNumberBound,
-                    lowerBoundary);
-            sampleNumberToSizeFunction.addPoint(upperSampleNumberBound,
-                    upperBoundary);
-            fiVisualStyle.addVisualMappingFunction(sampleNumberToSizeFunction);
-        }
+        String attName = "sampleNumber";
+        Number[] range = getValueRange(view, attName);
+        if (range == null)
+            return;
+        ContinuousMapping sampleNumberToSizeFunction = (ContinuousMapping) visMapFuncFactoryC.createVisualMappingFunction(attName,
+                                                                                                                          Number.class,
+                                                                                                                          BasicVisualLexicon.NODE_SIZE);
+        Number lowerSampleNumberBound = range[0];
+        BoundaryRangeValues<Double> lowerBoundary = new BoundaryRangeValues<Double>(
+                30.0, 30.0, 30.0);
+        Number upperSampleNumberBound = range[1];
+        BoundaryRangeValues<Double> upperBoundary = new BoundaryRangeValues<Double>(
+                100.0, 100.0, 100.0);
+        sampleNumberToSizeFunction.addPoint(lowerSampleNumberBound,
+                lowerBoundary);
+        sampleNumberToSizeFunction.addPoint(upperSampleNumberBound,
+                upperBoundary);
+        fiVisualStyle.addVisualMappingFunction(sampleNumberToSizeFunction);
     }
     
     protected void setEdgeStyleOnAnnotations(VisualStyle fiVisualStyle, 
@@ -336,21 +342,26 @@ public class FIVisualStyleImpl implements FIVisualStyle {
     }
 
     private int[] getSampleNumberRange(CyNetworkView view) {
-        Map<Long, Object> idToSampleNumber = new TableHelper().getNodeTableValuesBySUID(view.getModel(), 
-                                                                                        "sampleNumber", 
-                                                                                        Integer.class);
-        if (idToSampleNumber == null || idToSampleNumber.isEmpty())
+        Number[] numberRange = getValueRange(view, "sampleNumber");
+        return new int[] {numberRange[0].intValue(), numberRange[1].intValue()};
+    }
+    
+    protected Number[] getValueRange(CyNetworkView view,
+                                   String attributeName) {
+        Map<Long, Object> idToValue = new TableHelper().getNodeTableValuesBySUID(view.getModel(), 
+                                                                                 attributeName, 
+                                                                                 Number.class);
+        if (idToValue == null || idToValue.isEmpty())
             return null;
-        Set<Object> set = new HashSet<Object>(idToSampleNumber.values());
-        List<Integer> list = new ArrayList<Integer>();
+        Set<Object> set = new HashSet<Object>(idToValue.values());
+        List<Double> list = new ArrayList<>();
         for (Object obj : set) {
-            list.add((Integer) obj);
+            list.add(((Number)obj).doubleValue()); // Regardless we should be able to use double
         }
         Collections.sort(list);
-        Integer min = list.get(0);
-        Integer max = list.get(list.size() - 1);
-        return new int[]{min, max};
+        return new Number[]{list.get(0), list.get(list.size() - 1)};
     }
+
 
     protected JMenuItem getLayoutMenu(String layout) {
         JMenu yFilesMenu = null;
@@ -405,6 +416,45 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         JMenuItem layout = getPreferredLayout();
         if (layout != null)
             layout.doClick();
+    }
+
+    public void updateNodeColorsForNumbers(CyNetworkView view, String attributeName, VisualProperty<Paint> nodePropName) {
+        Number[] range = getValueRange(view, attributeName);
+        if (range == null)
+            return; // Do nothing
+        VisualStyle style = getVisualStyle();
+        if (style == null)
+            return;
+        ServiceReference referenceC = getVisualMappingFunctionFactorServiceReference("(mapping.type=continuous)");
+        if (referenceC == null) {
+            return ;
+        }
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        VisualMappingFunctionFactory visMapFuncFactoryC = (VisualMappingFunctionFactory) context.getService(referenceC);
+        ContinuousMapping<Number, Paint> colorFunc = (ContinuousMapping<Number, Paint>) visMapFuncFactoryC.createVisualMappingFunction(attributeName,
+                                                                                                                                       Number.class,
+                                                                                                                                       nodePropName);
+        BoundaryRangeValues<Paint> lowerBoundary = new BoundaryRangeValues<Paint>(
+                MIN_VALUE_COLOR, MIN_VALUE_COLOR, MIN_VALUE_COLOR);
+        BoundaryRangeValues<Paint> upperBoundary = new BoundaryRangeValues<Paint>(
+                MAX_VALUE_COLOR, MAX_VALUE_COLOR, MAX_VALUE_COLOR);
+        colorFunc.addPoint(range[0], lowerBoundary);
+        colorFunc.addPoint(range[1], upperBoundary);
+        style.addVisualMappingFunction(colorFunc);
+        context.ungetService(referenceC);
+        view.updateView();
+    }
+
+    public VisualStyle getVisualStyle() {
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        ServiceReference reference = context.getServiceReference(VisualMappingManager.class.getName());
+        VisualMappingManager visMapManager = (VisualMappingManager) context.getService(reference);
+        Optional<VisualStyle> found = visMapManager.getAllVisualStyles()
+                                                   .stream()
+                                                   .filter(v -> v.getTitle().equals(styleName))
+                                                   .findAny();
+        context.ungetService(reference);
+        return found.isPresent() ? found.get() : null;
     }
 
 }

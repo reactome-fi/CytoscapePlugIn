@@ -1,4 +1,4 @@
-package org.reactome.cytoscape.sc;
+package org.reactome.cytoscape.sc.diff;
 
 import java.awt.Component;
 import java.awt.Container;
@@ -54,13 +54,15 @@ public class DiffExpResultTableFilterPane extends JPanel {
         colNameBox = new JComboBox<>();
         for (int i = 0; i < table.getColumnCount(); i++)
             colNameBox.addItem(table.getColumnName(i));
-        colNameBox.setSelectedIndex(0);
+        // Default is FDR
+        colNameBox.setSelectedIndex(table.getColumnCount() - 1);
         // Operators
         operatorBox = new JComboBox<>();
         DefaultComboBoxModel<String> boxModel = new DefaultComboBoxModel<>();
         // Initialize the box first in case it cannot be displayed in GUI
-        Stream.of(STRING_OPERATORS).forEach(boxModel::addElement);
+        Stream.of(DOUBLE_OPERATORS).forEach(boxModel::addElement);
         operatorBox.setModel(boxModel);
+        operatorBox.setSelectedItem("<=");
         filterTextField = new JTextField(8);
         addBtn = new JButton("Add"); 
         addBtn.addActionListener(e -> updateFilter());

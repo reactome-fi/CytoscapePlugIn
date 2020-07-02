@@ -2,14 +2,9 @@ package org.reactome.cytoscape.sc;
 
 import java.awt.Color;
 import java.awt.Paint;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -17,7 +12,6 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.view.presentation.property.NodeShapeVisualProperty;
 import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
-import org.cytoscape.view.vizmap.VisualMappingManager;
 import org.cytoscape.view.vizmap.VisualStyle;
 import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
@@ -45,9 +39,6 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
     private final double DEFAULT_NODE_SIZE = 0.10d;
     private final double MIN_EDGE_WIDTH = DEFAULT_NODE_SIZE / 100.0d;
     private final double MAX_EDGE_WIDTH = DEFAULT_NODE_SIZE / 10.0d;
-    // From yellow to blue
-    private final Color MIN_VALUE_COLOR = Color.YELLOW;
-    private final Color MAX_VALUE_COLOR = Color.BLUE;
     
     public SCNetworkVisualStyle() {
         styleName = "Single Cell Style";
@@ -63,8 +54,8 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
         // Set the default node shape and color
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_SHAPE,
                                       NodeShapeVisualProperty.ELLIPSE);
-        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_BORDER_PAINT,
-                                      Color.LIGHT_GRAY);
+        fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_BORDER_WIDTH,
+                                      0.0d); // Don't want any border for cells
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_FILL_COLOR, Color.black);
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_PAINT, Color.cyan);
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_TRANSPARENCY, 100);
@@ -77,6 +68,13 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
         fiVisualStyle.addVisualMappingFunction(toolTipFunction);
         // Really small nodes
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_SIZE, DEFAULT_NODE_SIZE);
+    }
+    
+    @Override
+    protected void handleNodeHighlight(VisualStyle fiVisualStyle,
+                                       VisualMappingFunctionFactory visMapFuncFactoryD,
+                                       VisualMappingFunctionFactory visMapFuncFactoryC) {
+        // Turn hit gene display off.
     }
     
     @Override
@@ -146,60 +144,9 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
     }
 
     private void updateNodeColorsForNumbers(CyNetworkView view, String attributeName) {
-        Number[] range = getValueRange(view, attributeName);
-        if (range == null)
-            return; // Do nothing
-        VisualStyle style = getVisualStyle();
-        if (style == null)
-            return;
-        ServiceReference referenceC = getVisualMappingFunctionFactorServiceReference("(mapping.type=continuous)");
-        if (referenceC == null) {
-            return ;
-        }
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        VisualMappingFunctionFactory visMapFuncFactoryC = (VisualMappingFunctionFactory) context.getService(referenceC);
-        ContinuousMapping<Number, Paint> colorFunc = (ContinuousMapping<Number, Paint>) visMapFuncFactoryC.createVisualMappingFunction(attributeName,
-                                                                                                                                       Number.class,
-                                                                                                                                       BasicVisualLexicon.NODE_FILL_COLOR);
-        BoundaryRangeValues<Paint> lowerBoundary = new BoundaryRangeValues<Paint>(
-                MIN_VALUE_COLOR, MIN_VALUE_COLOR, MIN_VALUE_COLOR);
-        BoundaryRangeValues<Paint> upperBoundary = new BoundaryRangeValues<Paint>(
-                MAX_VALUE_COLOR, MAX_VALUE_COLOR, MAX_VALUE_COLOR);
-        colorFunc.addPoint(range[0], lowerBoundary);
-        colorFunc.addPoint(range[1], upperBoundary);
-        style.addVisualMappingFunction(colorFunc);
-        context.ungetService(referenceC);
-        view.updateView();
+        updateNodeColorsForNumbers(view, attributeName, BasicVisualLexicon.NODE_FILL_COLOR);
     }
     
-    private VisualStyle getVisualStyle() {
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceReference reference = context.getServiceReference(VisualMappingManager.class.getName());
-        VisualMappingManager visMapManager = (VisualMappingManager) context.getService(reference);
-        Optional<VisualStyle> found = visMapManager.getAllVisualStyles()
-                                                   .stream()
-                                                   .filter(v -> v.getTitle().equals(styleName))
-                                                   .findAny();
-        context.ungetService(reference);
-        return found.isPresent() ? found.get() : null;
-    }
-    
-    private Number[] getValueRange(CyNetworkView view,
-                                   String attributeName) {
-        Map<Long, Object> idToValue = new TableHelper().getNodeTableValuesBySUID(view.getModel(), 
-                                                                                 attributeName, 
-                                                                                 Number.class);
-        if (idToValue == null || idToValue.isEmpty())
-            return null;
-        Set<Object> set = new HashSet<Object>(idToValue.values());
-        List<Double> list = new ArrayList<>();
-        for (Object obj : set) {
-            list.add(((Number)obj).doubleValue()); // Regardless we should be able to use double
-        }
-        Collections.sort(list);
-        return new Number[]{list.get(0), list.get(list.size() - 1)};
-    }
-
     @Override
     protected void setEdgeStyleOnAnnotations(VisualStyle fiVisualStyle,
                                              VisualMappingFunctionFactory visMapFuncFactoryD,

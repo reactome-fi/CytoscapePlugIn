@@ -29,7 +29,7 @@ public class CellClusterVisualStyle extends SCNetworkVisualStyle {
     public CellClusterVisualStyle() {
         styleName = "Cell Cluster Style";
     }
-
+    
     @Override
     protected void setEdgeStyleOnAnnotations(VisualStyle fiVisualStyle,
                                              VisualMappingFunctionFactory visMapFuncFactoryD,

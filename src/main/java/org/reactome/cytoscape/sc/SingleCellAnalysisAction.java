@@ -26,7 +26,6 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
-import org.cytoscape.work.swing.undo.SwingUndoSupport;
 import org.reactome.cytoscape.service.FICytoscapeAction;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
@@ -207,8 +206,8 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
         else
             style = ScNetworkManager.getManager().getScStyle();
         style.setVisualStyle(view, false);
-        view.updateView();
         view.fitContent();
+        view.updateView();
         return view;
     }
 

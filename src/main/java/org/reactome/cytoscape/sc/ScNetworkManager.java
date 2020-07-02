@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -18,6 +19,10 @@ import org.cytoscape.model.CyEdge;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.reactome.cytoscape.sc.diff.DiffExpResult;
+import org.reactome.cytoscape.sc.diff.DiffGeneNetworkBuilder;
+import org.reactome.cytoscape.sc.diff.DiffGeneNetworkStyle;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -40,8 +45,11 @@ public class ScNetworkManager {
     private static ScNetworkManager manager;
     private SCNetworkVisualStyle scStyle;
     private CellClusterVisualStyle clusterStyle;
+    private DiffGeneNetworkStyle diffGeneStyle;
     private JSONServerCaller serverCaller;
     private TableHelper tableHelper;
+    // Cached map for quick performance
+    private Map<String, Set<String>> mouse2humanMap;
 
     private ScNetworkManager() {
         serverCaller = new JSONServerCaller();
@@ -144,6 +152,7 @@ public class ScNetworkManager {
         for (Integer cluster : clusterToValues.keySet()) {
             String id = SCNetworkVisualStyle.CLUSTER_NODE_PREFIX + cluster;
             List<Comparable> clusterValues = clusterToValues.get(cluster);
+            @SuppressWarnings("unchecked")
             Comparable median = MathEx.median(clusterValues.toArray(new Comparable[] {}));
             idToValue.put(id, median);
         }
@@ -218,6 +227,12 @@ public class ScNetworkManager {
         return clusterStyle;
     }
     
+    public DiffGeneNetworkStyle getDiffGeneNetworkStyle() {
+        if (diffGeneStyle == null)
+            diffGeneStyle = new DiffGeneNetworkStyle();
+        return diffGeneStyle;
+    }
+    
     public void doDiffExpAnalysis() {
         try {
             List<Integer> clusters = serverCaller.getCluster();
@@ -226,11 +241,12 @@ public class ScNetworkManager {
             Pair<String, String> selected = helper.getSelectedClusters(distClusters);
             if (selected == null)
                 return;
-            DifferentialExpressionResult result = serverCaller.doDiffGeneExpAnalysis(selected.getFirst(),
-                                                                                     selected.getSecond());
+            DiffExpResult result = serverCaller.doDiffGeneExpAnalysis(selected.getFirst(),
+                                                                      selected.getSecond());
             if (result == null)
                 return; // Just in case.
-            helper.displayResult(result, selected);
+            result.setResultName(selected.getFirst() + " vs " + selected.getSecond());
+            helper.displayResult(result);
         }
         catch(IOException e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
@@ -240,5 +256,25 @@ public class ScNetworkManager {
             logger.error(e.getMessage(), e);
         }
     }
-
+    
+    public void buildFINetwork(DiffExpResult result) {
+        if (result == null || result.getNames() == null || result.getNames().size() == 0)
+            return; // Nothing to do
+        try {
+            if (mouse2humanMap == null)
+                mouse2humanMap = new RESTFulFIService().getMouseToHumanGeneMap();
+            DiffGeneNetworkBuilder networkBuilder = new DiffGeneNetworkBuilder();
+            networkBuilder.setMouse2humanMap(mouse2humanMap);
+            networkBuilder.setStyle(getDiffGeneNetworkStyle());
+            networkBuilder.buildNetwork(result);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          e.getMessage(),
+                                          "Error in Network Construction",
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error(e.getMessage(), e);
+        }
+    }
+    
 }

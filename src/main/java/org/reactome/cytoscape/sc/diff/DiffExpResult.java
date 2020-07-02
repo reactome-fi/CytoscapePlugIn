@@ -1,4 +1,4 @@
-package org.reactome.cytoscape.sc;
+package org.reactome.cytoscape.sc.diff;
 
 import java.util.List;
 
@@ -7,14 +7,23 @@ import java.util.List;
  * @author wug
  *
  */
-public class DifferentialExpressionResult {
+public class DiffExpResult {
     private List<Double> scores;
     private List<String> names;
     private List<Double> logFoldChanges;
     private List<Double> pvals;
     private List<Double> pvalsAdj;
+    private String resultName;
     
-    public DifferentialExpressionResult() {
+    public DiffExpResult() {
+    }
+
+    public String getResultName() {
+        return resultName;
+    }
+
+    public void setResultName(String resultName) {
+        this.resultName = resultName;
     }
 
     public List<Double> getScores() {
