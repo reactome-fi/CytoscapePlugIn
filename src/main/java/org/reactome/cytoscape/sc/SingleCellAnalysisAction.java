@@ -29,6 +29,7 @@ import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.reactome.cytoscape.service.FICytoscapeAction;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -53,11 +54,11 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
     @Override
     protected void doAction() {
         try {
-            // TODO: Following the code in PGMImpactAnalyzerTask.
             // The following is all test code.
             JSONServerCaller caller = ScNetworkManager.getManager().getServerCaller();
             buildClusterNetwork(caller);
             buildCellNetwork(caller);
+            ScNetworkManager.getManager().setSpecies(PathwaySpecies.Mus_musculus);
         }
         catch(Exception e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),

@@ -1,5 +1,8 @@
 package org.reactome.cytoscape.sc;
 
+import static org.reactome.cytoscape.service.PathwayEnrichmentApproach.Binomial_Test;
+import static org.reactome.cytoscape.service.PathwayEnrichmentApproach.GSEA;
+
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -29,7 +32,6 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 public class DifferentialExpressionAnalyzer {
     
     public DifferentialExpressionAnalyzer() {
-        
     }
     
     /**
@@ -59,6 +61,17 @@ public class DifferentialExpressionAnalyzer {
         dialog.getFINetworkBtn().addActionListener(e -> {
             DiffExpResult displayedResult = dialog.getDisplayedResult();
             ScNetworkManager.getManager().buildFINetwork(displayedResult);
+        });
+        dialog.getPathwayAnalyzeBtn().addActionListener(e -> {
+            JComboBox<String> box = dialog.getPathwayMethodBox();
+            if (box.getSelectedItem().equals("GSEA"))
+                ScNetworkManager.getManager().doPathwayAnalysis(result,
+                                                                GSEA);
+            else if (box.getSelectedItem().equals("binomial test")) {
+                DiffExpResult displayedResult = dialog.getDisplayedResult();
+                ScNetworkManager.getManager().doPathwayAnalysis(displayedResult,
+                                                                Binomial_Test);
+            }
         });
         dialog.setVisible(true);
     }

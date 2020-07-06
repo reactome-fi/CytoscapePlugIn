@@ -37,7 +37,7 @@ public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
     public PathwayEnrichmentResultPane(EventTreePane eventTreePane, String title) {
         super(title);
         // Want to use the maximum fdr value for easy synchronization
-        fdrFilter.setSelectedItem(1.0d); // Default
+        fdrFilter.setSelectedItem(0.05d); // Default
         this.eventTreePane = eventTreePane;
         hideOtherNodesBox.setVisible(false);
         // To synchronization selection

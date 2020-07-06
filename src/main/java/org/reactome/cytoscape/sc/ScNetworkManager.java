@@ -1,5 +1,6 @@
 package org.reactome.cytoscape.sc;
 
+import static org.reactome.cytoscape.service.PathwaySpecies.Homo_sapiens;
 import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellClusterNetwork;
 
 import java.io.IOException;
@@ -19,9 +20,16 @@ import org.cytoscape.model.CyEdge;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
+import org.reactome.cytoscape.pathway.PathwayControlPanel;
+import org.reactome.cytoscape.pathway.PathwayEnrichmentAnalysisTask;
+import org.reactome.cytoscape.pathway.PathwayHierarchyLoadTask;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.sc.diff.DiffGeneNetworkBuilder;
 import org.reactome.cytoscape.sc.diff.DiffGeneNetworkStyle;
+import org.reactome.cytoscape.service.PathwayEnrichmentApproach;
+import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
@@ -50,6 +58,8 @@ public class ScNetworkManager {
     private TableHelper tableHelper;
     // Cached map for quick performance
     private Map<String, Set<String>> mouse2humanMap;
+    // Currently selected species: Default to human
+    private PathwaySpecies species = Homo_sapiens;
 
     private ScNetworkManager() {
         serverCaller = new JSONServerCaller();
@@ -66,6 +76,14 @@ public class ScNetworkManager {
         return serverCaller;
     }
     
+    public PathwaySpecies getSpecies() {
+        return species;
+    }
+
+    public void setSpecies(PathwaySpecies species) {
+        this.species = species;
+    }
+
     public Boolean isEdgeDisplayed() {
         CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
         if (view == null)
@@ -275,6 +293,25 @@ public class ScNetworkManager {
                                           JOptionPane.ERROR_MESSAGE);
             logger.error(e.getMessage(), e);
         }
+    }
+    
+    public void doPathwayAnalysis(DiffExpResult result,
+                                  PathwayEnrichmentApproach approach) {
+        if (result == null || result.getNames() == null || result.getNames().size() == 0 || approach == null)
+            return;
+        // Load the pathway hierarchy if it has not been.
+        TaskManager tm = PlugInObjectManager.getManager().getTaskManager();
+        if (tm == null)
+            return;
+        PathwayHierarchyLoadTask hierarchyTask = new PathwayHierarchyLoadTask();
+        hierarchyTask.setSpecies(getSpecies());
+        // Conduct a pathway enrichment analysis
+        PathwayEnrichmentAnalysisTask analysisTask = new PathwayEnrichmentAnalysisTask();
+        // This is just for test right now
+        String geneList = result.getNames().stream().map(String::toUpperCase).collect(Collectors.joining("\n"));
+        analysisTask.setGeneList(geneList);
+        analysisTask.setEventPane(PathwayControlPanel.getInstance().getEventTreePane());
+        tm.execute(new TaskIterator(hierarchyTask, analysisTask));
     }
     
 }

@@ -6,11 +6,11 @@ package org.reactome.cytoscape.pathway;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Font;
 import java.awt.Point;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.ItemEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Collection;
@@ -48,12 +48,12 @@ import org.cytoscape.model.events.NetworkDestroyedEvent;
 import org.cytoscape.model.events.NetworkDestroyedListener;
 import org.cytoscape.model.events.RowsSetEvent;
 import org.cytoscape.model.events.RowsSetListener;
-import org.cytoscape.session.events.SessionAboutToBeLoadedEvent;
-import org.cytoscape.session.events.SessionAboutToBeLoadedListener;
 import org.cytoscape.session.events.SessionLoadedEvent;
 import org.cytoscape.session.events.SessionLoadedListener;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
 import org.gk.gkEditor.PathwayOverviewPane;
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
@@ -68,6 +68,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
+import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -95,6 +96,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
     private boolean selectFromPathway;
     private boolean selectFromNetwork;
     private ServiceRegistration serviceRegistration;
+    private PathwaySpecies currentSpecies;
     
     private static PathwayControlPanel instance;
     
@@ -115,6 +117,16 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         this.serviceRegistration = registration;
     }
     
+    public PathwaySpecies getCurrentSpecies() {
+        return currentSpecies;
+    }
+
+    public void setCurrentSpecies(PathwaySpecies currentSpecies) {
+        this.currentSpecies = currentSpecies;
+        // Make sure eventPane has the same selection
+        eventPane.getSpeciesBox().setSelectedItem(currentSpecies);
+    }
+
     private void init() {
         setLayout(new BorderLayout());
         eventPane = new EventTreePane();
@@ -270,6 +282,21 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                     showPathwayEnrichments((Boolean)evt.getNewValue());
                 }
             }
+        });
+        
+        // Switch species
+        eventPane.getSpeciesBox().addItemListener(e -> {
+            if (e.getStateChange() != ItemEvent.SELECTED)
+                return; // Only handle the selected part
+            // Actual loading
+            @SuppressWarnings("rawtypes")
+            TaskManager tm = PlugInObjectManager.getManager().getTaskManager();
+            if (tm == null)
+                return;
+            PathwayHierarchyLoadTask task = new PathwayHierarchyLoadTask();
+            PathwaySpecies species = (PathwaySpecies) eventPane.getSpeciesBox().getSelectedItem();
+            task.setSpecies(species);
+            tm.execute(new TaskIterator(task));
         });
         
         // Remove this panel if a new session is created

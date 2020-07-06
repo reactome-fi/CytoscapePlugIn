@@ -50,6 +50,13 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
         this.eventPane = (EventTreePane) treePane;
     }
     
+    public EventTreePane getEventPane() {
+        if (eventPane != null)
+            return eventPane;
+        // Otherwise, use the default one if any
+        return PathwayControlPanel.getInstance().getEventTreePane();
+    }
+    
     /**
      * Use a glass panel based way to do progress monitoring to avoid part text problem
      * in the event tree.
@@ -81,7 +88,7 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
             progressPane.setValue(75);
             progressPane.setText("Show enrichment results...");
             ModuleGeneSetAnnotation annotation = annotations.get(0); // There should be only one annotation here
-            eventPane.showPathwayEnrichments(annotation.getAnnotations());
+            getEventPane().showPathwayEnrichments(annotation.getAnnotations());
             progressPane.setValue(100);
         }
         catch(Exception e) {
@@ -124,7 +131,7 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
             
             @Override
             public void run() {
-                eventPane.showPathwayEnrichments(annotation.getAnnotations());
+                getEventPane().showPathwayEnrichments(annotation.getAnnotations());
             }
         });
         taskMonitor.setProgress(1.0d);

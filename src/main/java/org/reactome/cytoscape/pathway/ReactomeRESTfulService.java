@@ -47,8 +47,9 @@ public class ReactomeRESTfulService {
         return root;
     }
     
-    public String pathwayHierarchy() throws Exception {
-        String url = restfulAPIUrl + "pathwayHierarchy/Homo+sapiens";
+    public String pathwayHierarchy(String species) throws Exception {
+        species = species.replaceAll(" ", "+"); // Encode the species name
+        String url = restfulAPIUrl + "pathwayHierarchy/" + species;
         String text = PlugInUtilities.callHttpInText(url, PlugInUtilities.HTTP_GET, null);
         return text;
     }

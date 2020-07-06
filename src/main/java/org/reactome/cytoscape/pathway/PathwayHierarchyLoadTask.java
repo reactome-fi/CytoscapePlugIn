@@ -16,6 +16,7 @@ import org.cytoscape.work.TaskMonitor;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.input.SAXBuilder;
+import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory;
 public class PathwayHierarchyLoadTask extends AbstractTask {
     
     private static final Logger logger = LoggerFactory.getLogger(PathwayHierarchyLoadTask.class);
+    private PathwaySpecies species = PathwaySpecies.Homo_sapiens; // The default is always for human
     
     /**
      * Default constructor.
@@ -37,12 +39,21 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
     public PathwayHierarchyLoadTask() {
     }
     
+    public PathwaySpecies getSpecies() {
+        return species;
+    }
+
+    public void setSpecies(PathwaySpecies species) {
+        this.species = species;
+    }
+
     @Override
     public void run(TaskMonitor taskMonitor) throws Exception {
         displayReactomePathways(taskMonitor);
     }
 
     private void displayReactomePathways(TaskMonitor monitor) {
+        PathwayControlPanel controlPane = PathwayControlPanel.getInstance();
         CySwingApplication application = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel panel = application.getCytoPanel(CytoPanelName.WEST);
         if (panel.getState() == CytoPanelState.HIDE)
@@ -52,9 +63,9 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
         if (index >= 0) {
             // Make sure it is selected
             panel.setSelectedIndex(index);
-            return;
+            if (controlPane.getCurrentSpecies().equals(species))
+                return; // This is just a selection since pathways for the current species has been loaded.
         }
-        PathwayControlPanel controlPane = PathwayControlPanel.getInstance();
         if (panel.getCytoPanelComponentCount() > 0 && panel.getComponentAt(0) != null) {
             Component comp = panel.getComponentAt(0);
             controlPane.setPreferredSize(comp.getPreferredSize()); // Control its size to avoid weird behavior
@@ -63,7 +74,7 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
             monitor.setStatusMessage("Loading pathways...");
             monitor.setTitle("Pathway Loading");
             monitor.setProgress(0.2d);
-            String text = ReactomeRESTfulService.getService().pathwayHierarchy();
+            String text = ReactomeRESTfulService.getService().pathwayHierarchy(species.getName());
             StringReader reader = new StringReader(text);
             SAXBuilder builder = new SAXBuilder();
             Document document = builder.build(reader);
@@ -83,6 +94,7 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
         if (index >= 0)
             panel.setSelectedIndex(index);
         controlPane.validateDividerPosition();
+        PathwayControlPanel.getInstance().setCurrentSpecies(species);
     }
     
     /**

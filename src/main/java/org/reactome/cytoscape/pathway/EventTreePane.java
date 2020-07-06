@@ -4,9 +4,13 @@
  */
 package org.reactome.cytoscape.pathway;
 
+import static org.reactome.cytoscape.service.PathwaySpecies.Homo_sapiens;
+import static org.reactome.cytoscape.service.PathwaySpecies.Mus_musculus;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -31,6 +35,7 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -67,6 +72,7 @@ import org.reactome.cytoscape.drug.DrugDataSource;
 import org.reactome.cytoscape.drug.DrugListManager;
 import org.reactome.cytoscape.pgm.PathwayResultSummary;
 import org.reactome.cytoscape.service.GeneSetLoadingPane;
+import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -97,6 +103,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     // Use to display selected tree branch
     private JPanel selectionPane;
     private JTree selectionTree;
+    // To support mouse pathways
+    private JComboBox<PathwaySpecies> speciesBox;
     
     /**
      * Default constructor
@@ -226,12 +234,37 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             label.setHorizontalTextPosition(JLabel.CENTER);
             fdrColorBar.add(label);
         }
-        add(fdrColorBar, BorderLayout.NORTH);
+//        add(fdrColorBar, BorderLayout.NORTH);
         // Default should be disable
         fdrColorBar.setVisible(false);
         // Link the data model to the action class
         PathwayEnrichmentHighlighter highlighter = PathwayEnrichmentHighlighter.getHighlighter();
         highlighter.setPathwayToAnnotation(pathwayToAnnotation);
+        // Use for species
+        JPanel northPane = new JPanel();
+        northPane.setLayout(new BorderLayout());
+        northPane.add(createSpeciesPane(), BorderLayout.NORTH);
+        northPane.add(fdrColorBar, BorderLayout.SOUTH);
+        add(northPane, BorderLayout.NORTH);
+    }
+    
+    public JComboBox<PathwaySpecies> getSpeciesBox() {
+        return this.speciesBox;
+    }
+    
+    private JPanel createSpeciesPane() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        panel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),
+                                                           BorderFactory.createEmptyBorder(2, 1, 2, 0)));
+        JLabel label = new JLabel("Pahtways for: ");
+        panel.add(label);
+        speciesBox = new JComboBox<PathwaySpecies>();
+        speciesBox.addItem(Homo_sapiens);
+        speciesBox.addItem(Mus_musculus);
+        speciesBox.setSelectedIndex(0);
+        panel.add(speciesBox);
+        return panel;
     }
     
     private void installListners() {
@@ -802,11 +835,38 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             Element elm = (Element) obj;
             // To avoid disease for the time being
             String name = elm.getAttributeValue("displayName");
-            if (name.equals("Disease"))
+            if (name.equals("Disease")) {
+                // Want to add Infectious disease only, but not pull it up to 
+                // keep the order of front page items.
+                cleanUpDiseaseElm(elm);
+                if (elm.getChildren() != null && elm.getChildren().size() > 0)
+                    addEvent(treeRoot, elm); 
                 continue;
+            }
             addEvent(treeRoot, elm);
         }
         model.nodeStructureChanged(treeRoot);
+    }
+    
+    /**
+     * Keep the infection disease pathways only. We don't want to pull this pathway
+     * to the top as one front page item to avoid breaking the order of pathways.
+     * @param elm
+     */
+    @SuppressWarnings("unchecked")
+    private void cleanUpDiseaseElm(Element elm) {
+        List<Element> children = elm.getChildren();
+        Element infectiousDisease = null;
+        for (Element child : children) {
+            String name = child.getAttributeValue("displayName");
+            if (name.equals("Infectious disease")) {
+                infectiousDisease = child;
+                break;
+            }
+        }
+        elm.removeContent(); // Remove all
+        if (infectiousDisease != null)
+            elm.addContent(infectiousDisease);
     }
     
     /**
