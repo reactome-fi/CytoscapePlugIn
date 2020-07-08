@@ -74,7 +74,7 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
             monitor.setStatusMessage("Loading pathways...");
             monitor.setTitle("Pathway Loading");
             monitor.setProgress(0.2d);
-            String text = ReactomeRESTfulService.getService().pathwayHierarchy(species.getName());
+            String text = ReactomeRESTfulService.getService().pathwayHierarchy(species);
             StringReader reader = new StringReader(text);
             SAXBuilder builder = new SAXBuilder();
             Document document = builder.build(reader);

@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -16,13 +17,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
+import org.reactome.cytoscape.service.PathwayEnrichmentApproach;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 @SuppressWarnings("serial")
 public class DiffExpResultDialog extends JDialog {
     private JTable resultTable;
     private JLabel totalGeneLabel;
-    private JComboBox<String> pathwayBox;
+    private JComboBox<PathwayEnrichmentApproach> pathwayBox;
     private JButton pathwayBtn;
     private JButton fiBtn;
 
@@ -121,9 +123,8 @@ public class DiffExpResultDialog extends JDialog {
         pane.add(label);
         label = new JLabel("Reactome pathway analysis by ");
         pane.add(label);
-        pathwayBox = new JComboBox<String>();
-        pathwayBox.addItem("binomial test");
-        pathwayBox.addItem("GSEA");
+        pathwayBox = new JComboBox<PathwayEnrichmentApproach>();
+        Stream.of(PathwayEnrichmentApproach.values()).forEach(e -> pathwayBox.addItem(e));
         pathwayBox.setSelectedIndex(0); // Use Binomial test as the default.
         pane.add(pathwayBox);
         pathwayBtn = new JButton("Analyze");
@@ -142,7 +143,7 @@ public class DiffExpResultDialog extends JDialog {
         return this.fiBtn;
     }
     
-    public JComboBox<String> getPathwayMethodBox() {
+    public JComboBox<PathwayEnrichmentApproach> getPathwayMethodBox() {
         return this.pathwayBox;
     }
     

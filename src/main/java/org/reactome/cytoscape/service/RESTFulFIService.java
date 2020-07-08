@@ -547,8 +547,9 @@ public class RESTFulFIService implements FINetworkService {
         return annotateGeneSets(url, builder.toString());
     }
     
-    public List<ModuleGeneSetAnnotation> annotateGeneSetWithReactomePathways(String geneSet) throws Exception {
-        String url = restfulURL + "network/annotateGeneSetWithReactomePathways";
+    public List<ModuleGeneSetAnnotation> annotateGeneSetWithReactomePathways(String geneSet,
+                                                                             PathwaySpecies species) throws Exception {
+        String url = restfulURL + "network/annotateGeneSetWithReactomePathways/" + species.getURLEncode();
         return annotateGeneSets(url, geneSet);
     }
 

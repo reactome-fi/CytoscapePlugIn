@@ -22,13 +22,13 @@ import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
+import org.reactome.cytoscape.pathway.GSEAPathwayAnalyzer.GSEAPathwayAnalysisTask;
 import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.cytoscape.pathway.PathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.pathway.PathwayHierarchyLoadTask;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.sc.diff.DiffGeneNetworkBuilder;
 import org.reactome.cytoscape.sc.diff.DiffGeneNetworkStyle;
-import org.reactome.cytoscape.service.PathwayEnrichmentApproach;
 import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
@@ -295,9 +295,8 @@ public class ScNetworkManager {
         }
     }
     
-    public void doPathwayAnalysis(DiffExpResult result,
-                                  PathwayEnrichmentApproach approach) {
-        if (result == null || result.getNames() == null || result.getNames().size() == 0 || approach == null)
+    public void doBinomialTest(DiffExpResult result) {
+        if (result == null || result.getNames() == null || result.getNames().size() == 0)
             return;
         // Load the pathway hierarchy if it has not been.
         TaskManager tm = PlugInObjectManager.getManager().getTaskManager();
@@ -306,12 +305,27 @@ public class ScNetworkManager {
         PathwayHierarchyLoadTask hierarchyTask = new PathwayHierarchyLoadTask();
         hierarchyTask.setSpecies(getSpecies());
         // Conduct a pathway enrichment analysis
+        // There is no need to set the species. The species will be based on current displayed species
+        // in the pathway hierarchy, which should be handled by hierarchyTask.
         PathwayEnrichmentAnalysisTask analysisTask = new PathwayEnrichmentAnalysisTask();
         // This is just for test right now
-        String geneList = result.getNames().stream().map(String::toUpperCase).collect(Collectors.joining("\n"));
+        String geneList = result.getNames().stream().collect(Collectors.joining("\n"));
         analysisTask.setGeneList(geneList);
         analysisTask.setEventPane(PathwayControlPanel.getInstance().getEventTreePane());
         tm.execute(new TaskIterator(hierarchyTask, analysisTask));
+    }
+    
+    public void doGSEATest(DiffExpResult result) {
+        if (result == null || result.getNames() == null || result.getNames().size() == 0)
+            return;
+        PathwayHierarchyLoadTask hierarchyTask = new PathwayHierarchyLoadTask();
+        hierarchyTask.setSpecies(getSpecies());
+        GSEAPathwayAnalysisTask gseaTask = new GSEAPathwayAnalysisTask();
+        gseaTask.setPermutation(100); // For the default value
+        Map<String, Double> geneToScore = result.getGeneToScore();
+        gseaTask.setGeneToScore(geneToScore);
+        gseaTask.setEventPane(PathwayControlPanel.getInstance().getEventTreePane());
+        PlugInObjectManager.getManager().getTaskManager().execute(new TaskIterator(hierarchyTask, gseaTask));
     }
     
 }

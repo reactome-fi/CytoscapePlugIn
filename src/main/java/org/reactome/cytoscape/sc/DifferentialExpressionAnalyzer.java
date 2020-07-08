@@ -20,6 +20,7 @@ import org.apache.commons.math3.util.Pair;
 import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.sc.diff.DiffExpResultDialog;
+import org.reactome.cytoscape.service.PathwayEnrichmentApproach;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
@@ -63,15 +64,14 @@ public class DifferentialExpressionAnalyzer {
             ScNetworkManager.getManager().buildFINetwork(displayedResult);
         });
         dialog.getPathwayAnalyzeBtn().addActionListener(e -> {
-            JComboBox<String> box = dialog.getPathwayMethodBox();
-            if (box.getSelectedItem().equals("GSEA"))
-                ScNetworkManager.getManager().doPathwayAnalysis(result,
-                                                                GSEA);
-            else if (box.getSelectedItem().equals("binomial test")) {
+            PathwayEnrichmentApproach approach = (PathwayEnrichmentApproach) dialog.getPathwayMethodBox().getSelectedItem();
+            if (approach == Binomial_Test) {
+                // For displayed results only
                 DiffExpResult displayedResult = dialog.getDisplayedResult();
-                ScNetworkManager.getManager().doPathwayAnalysis(displayedResult,
-                                                                Binomial_Test);
+                ScNetworkManager.getManager().doBinomialTest(displayedResult);
             }
+            else if (approach == GSEA)
+                ScNetworkManager.getManager().doGSEATest(result);
         });
         dialog.setVisible(true);
     }

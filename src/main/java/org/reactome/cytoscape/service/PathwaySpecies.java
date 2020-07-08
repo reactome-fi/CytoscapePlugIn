@@ -21,4 +21,8 @@ public enum PathwaySpecies {
     public String getName() {
         return toString();
     }
+    
+    public String getURLEncode() {
+        return super.toString().replace("_", "+");
+    }
 }

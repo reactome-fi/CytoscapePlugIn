@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,6 +17,7 @@ import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
 import org.reactome.annotate.GeneSetAnnotation;
+import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.gsea.model.GseaAnalysisResult;
@@ -77,9 +79,9 @@ public class GSEAPathwayAnalyzer {
     
     public static class GSEAPathwayAnalysisTask extends AbstractTask {
         private String geneToScore;
-        private int minPathwaySize;
-        private int maxPathwaySize;
-        private int permutation;
+        private Integer minPathwaySize;
+        private Integer maxPathwaySize;
+        private Integer permutation;
         private EventTreePane eventPane;
         
         public GSEAPathwayAnalysisTask() {
@@ -99,6 +101,14 @@ public class GSEAPathwayAnalyzer {
 
         public void setGeneToScore(String geneToScore) {
             this.geneToScore = geneToScore;
+        }
+        
+        public void setGeneToScore(Map<String, Double> geneToScore) {
+            StringBuilder builder = new StringBuilder();
+            geneToScore.forEach((gene, score) -> {
+                builder.append(gene + "\t" + score + "\n");
+            });
+            setGeneToScore(builder.toString());
         }
 
         public int getMinPathwaySize() {
@@ -141,15 +151,24 @@ public class GSEAPathwayAnalyzer {
 //            )
             StringBuilder builder = new StringBuilder();
             builder.append(url).append("/analyse?");
-            builder.append("nperms=").append(permutation);
-            builder.append("&dataSetSizeMin=").append(minPathwaySize);
-            builder.append("&dataSetSizeMax=").append(maxPathwaySize);
+            // Attach species
+            builder.append("species=");
+            if (PathwayControlPanel.getInstance().getCurrentSpecies() == PathwaySpecies.Mus_musculus)
+                builder.append("mouse");
+            else 
+                builder.append("human"); // Default
+            if (permutation != null)
+                builder.append("&nperms=").append(permutation);
+            if (minPathwaySize != null)
+                builder.append("&dataSetSizeMin=").append(minPathwaySize);
+            if (maxPathwaySize != null)
+                builder.append("&dataSetSizeMax=").append(maxPathwaySize);
+
             String rtn = PlugInUtilities.callHttpInJson(builder.toString(),
                                                         PlugInUtilities.HTTP_POST,
                                                         geneToScore);
             ObjectMapper mapper = new ObjectMapper();
-            List<GseaAnalysisResult> results = mapper.readValue(rtn, new TypeReference<List<GseaAnalysisResult>>() {
-            });
+            List<GseaAnalysisResult> results = mapper.readValue(rtn, new TypeReference<List<GseaAnalysisResult>>() {});
             return results;
         }
         

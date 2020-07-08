@@ -16,6 +16,7 @@ import org.gk.util.ProgressPane;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cytoscape.service.AbstractPathwayEnrichmentAnalysisTask;
+import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.slf4j.Logger;
@@ -38,7 +39,7 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
      */
     public PathwayEnrichmentAnalysisTask() {
     }
-    
+
     public void setGeneList(String geneList) {
         this.geneList = geneList;
     }
@@ -83,7 +84,8 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
         // This is just for test by query pathway diagram for Cell Cycle Checkpoints 
         RESTFulFIService service = new RESTFulFIService();
         try {
-            List<ModuleGeneSetAnnotation> annotations = service.annotateGeneSetWithReactomePathways(geneList);
+            List<ModuleGeneSetAnnotation> annotations = service.annotateGeneSetWithReactomePathways(geneList,
+                                                                                                    PathwayControlPanel.getInstance().getCurrentSpecies());
             
             progressPane.setValue(75);
             progressPane.setText("Show enrichment results...");
@@ -114,7 +116,8 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
         taskMonitor.setProgress(0.25d); // A rather arbitrary progress
 
         RESTFulFIService service = new RESTFulFIService();
-        List<ModuleGeneSetAnnotation> annotations = service.annotateGeneSetWithReactomePathways(geneList);
+        List<ModuleGeneSetAnnotation> annotations = service.annotateGeneSetWithReactomePathways(geneList,
+                                                                                                PathwayControlPanel.getInstance().getCurrentSpecies());
         taskMonitor.setProgress(0.75d);
         taskMonitor.setStatusMessage("Show enrichment results...");
         final ModuleGeneSetAnnotation annotation = annotations.get(0); // There should be only one annotation here

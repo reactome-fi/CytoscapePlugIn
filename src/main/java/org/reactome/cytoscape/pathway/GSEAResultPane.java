@@ -34,7 +34,8 @@ public class GSEAResultPane extends PathwayEnrichmentResultPane {
     public void setResults(List<GseaAnalysisResult> results) {
         this.results = results;
         GSEAResultTableModel model = (GSEAResultTableModel) contentTable.getModel();
-        model.setResults(results, 1.0d);
+        model.setResults(results, 
+                         (Double) fdrFilter.getSelectedItem());
     }
 
     @Override

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdom.Element;
+import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -47,9 +48,8 @@ public class ReactomeRESTfulService {
         return root;
     }
     
-    public String pathwayHierarchy(String species) throws Exception {
-        species = species.replaceAll(" ", "+"); // Encode the species name
-        String url = restfulAPIUrl + "pathwayHierarchy/" + species;
+    public String pathwayHierarchy(PathwaySpecies species) throws Exception {
+        String url = restfulAPIUrl + "pathwayHierarchy/" + species.getURLEncode();
         String text = PlugInUtilities.callHttpInText(url, PlugInUtilities.HTTP_GET, null);
         return text;
     }

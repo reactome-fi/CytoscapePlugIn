@@ -1,6 +1,8 @@
 package org.reactome.cytoscape.sc.diff;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class is used to model the results produced from differential gene expression analysis.
@@ -16,6 +18,15 @@ public class DiffExpResult {
     private String resultName;
     
     public DiffExpResult() {
+    }
+    
+    public Map<String, Double> getGeneToScore() {
+        Map<String, Double> geneToScore = new HashMap<>();
+        for (int i = 0; i < names.size(); i++) {
+            geneToScore.put(names.get(i),
+                            scores.get(i));
+        }
+        return geneToScore;
     }
 
     public String getResultName() {
