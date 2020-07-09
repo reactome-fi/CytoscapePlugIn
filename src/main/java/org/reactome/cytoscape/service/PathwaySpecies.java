@@ -25,4 +25,10 @@ public enum PathwaySpecies {
     public String getURLEncode() {
         return super.toString().replace("_", "+");
     }
+    
+    public String getDBID() {
+        if (this == Mus_musculus)
+            return "48892";
+        return "48887";
+    }
 }

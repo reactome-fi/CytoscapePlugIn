@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -614,9 +615,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     private void openReacfoam() {
         String reacfoamUrl = "http://localhost:" + 
                               PlugInObjectManager.getManager().getProperties().getProperty("reacfoam_port") + 
-                              "/reacfoam/index.html";
+                              "/reacfoam/index.html?species=" + 
+                              ((PathwaySpecies)speciesBox.getSelectedItem()).getDBID();
         if (pathwayToAnnotation != null && pathwayToAnnotation.size() > 0)
-            reacfoamUrl += "?analysis=reactomefiviz";
+            reacfoamUrl += "&analysis=reactomefiviz";
         // TODO: Don't forget to add a new entry useCyBrowser=false for the preference to avoid using the low functional CyBrowser.
         PlugInUtilities.openURL(reacfoamUrl);
     }
@@ -953,8 +955,15 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         this.annotationPanel = pane;
     }
     
-    public Map<Long, String> grepEventIdToName() {
-        Map<Long, String> idToName = new HashMap<>();
+    public Map<String, EventObject> grepEventNameToObject() {
+        Map<String, EventObject> nameToObject = new HashMap<>();
+        grepEventObjectInfo(nameToObject, 
+                            eventObject -> nameToObject.put(eventObject.name, eventObject));
+        return nameToObject;
+    }
+    
+    private void grepEventObjectInfo(Map<?, ?> map,
+                                     Consumer<EventObject> putFunc) {
         DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
         DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
         Set<DefaultMutableTreeNode> current = new HashSet<>();
@@ -966,7 +975,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             for (DefaultMutableTreeNode node : current) {
                 if (node.getUserObject() instanceof EventObject) {
                     EventObject eventObject = (EventObject) node.getUserObject();
-                    idToName.put(eventObject.getDbId(), eventObject.getName());
+                    putFunc.accept(eventObject);
                     if (node.getChildCount() > 0) {
                         for (int i = 0; i < node.getChildCount(); i++)
                             next.add((DefaultMutableTreeNode)node.getChildAt(i));
@@ -977,9 +986,15 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             current.addAll(next);
             next.clear();
         }
-        return idToName;
     }
-
+    
+    public Map<String, String> grepStIdToName() {
+        Map<String, String> stIdToName = new HashMap<>();
+        grepEventObjectInfo(stIdToName,
+                            eventObject -> stIdToName.put(eventObject.stId, eventObject.name));
+        return stIdToName;
+    }
+    
     private void showSearchResults(List<TreePath> paths,
                                    boolean keepOriginalSelectPath) {
         DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
@@ -1161,9 +1176,11 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     private EventObject parseEvent(Element elm) {
         String dbId = elm.getAttributeValue("dbId");
         String name = elm.getAttributeValue("displayName");
+        String stId = elm.getAttributeValue("stId");
         EventObject event = new EventObject();
         event.dbId = new Long(dbId);
         event.name = name;
+        event.stId = stId;
         String clsName = elm.getName();
         if (clsName.equals(ReactomeJavaConstants.Pathway))
             event.isPathway = true;
@@ -1180,6 +1197,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         String name;
         @ApiModelProperty(value = "Reactome internal Id")
         Long dbId;
+        @ApiModelProperty(value = "Reactome stable Id")
+        String stId;
         boolean isPathway;
         boolean hasDiagram;
         @ApiModelProperty(value = "Contained Events")
@@ -1196,6 +1215,14 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public String getStId() {
+            return stId;
+        }
+
+        public void setStId(String stId) {
+            this.stId = stId;
         }
 
         public Long getDbId() {

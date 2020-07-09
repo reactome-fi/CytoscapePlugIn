@@ -256,6 +256,9 @@ public class PathwayDiagramRegistry implements Selectable {
                         it.remove();
                     }
                 }
+                // If no pathway diagram is displayed, we want to switch to the network view
+                if (diagramIdToFrame.isEmpty())
+                    PlugInObjectManager.getManager().removePathwayDesktop();
             }            
             
         });

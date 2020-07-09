@@ -387,7 +387,8 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
                     dbIds.add(new Long(token));
             }
         }
-        PlugInUtilities.selectByDbIds(pathwayView.getPathwayEditor(), dbIds);
+        if (pathwayView != null)
+            PlugInUtilities.selectByDbIds(pathwayView.getPathwayEditor(), dbIds);
         selectFromNetwork = false;
     }
     

@@ -7,6 +7,7 @@ import java.util.Map;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.plaf.basic.BasicTreeUI.TreePageAction;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -15,6 +16,7 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.ObservableTask;
 import org.cytoscape.work.SynchronousTaskManager;
 import org.cytoscape.work.TaskIterator;
+import org.forester.archaeopteryx.TreePanel;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.cytoscape.pathway.EventTreePane;
 import org.reactome.cytoscape.pathway.EventTreePane.EventObject;
@@ -69,19 +71,9 @@ public class ReactomeFIVizResourceImp implements ReactomeFIVizResource {
                 }
             }
         }
-        Long dbId = null;
-        if (id.startsWith("R-HSA-")) {
-            // This is a stable id
-            int index = id.lastIndexOf("-");
-            dbId = new Long(id.substring(index + 1));
-        }
-        else if (id.matches("\\d+"))
-            dbId = new Long(id);
-        if (dbId == null)
-            return; // Do nothing
         EventTreePane treePane = PathwayControlPanel.getInstance().getEventTreePane();
-        Map<Long, String> idToName = treePane.grepEventIdToName();
-        String name = idToName.get(dbId);
+        Map<String, String> stIdToName = treePane.grepStIdToName();
+        String name = stIdToName.get(id);
         if (name == null) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Cannot find an event for " + id + "\n*: Disease events are not supported.",
@@ -99,22 +91,18 @@ public class ReactomeFIVizResourceImp implements ReactomeFIVizResource {
     public PathwayEnrichmentResults fetchEnrichmentResults() {
         PathwayEnrichmentResults results = new PathwayEnrichmentResults();
         EventTreePane treePane = PathwayControlPanel.getInstance().getEventTreePane();
-        Map<Long, String> idToName = treePane.grepEventIdToName();
+        Map<String, EventObject> nameToObject = treePane.grepEventNameToObject();
         Map<String, GeneSetAnnotation> nameToAnnotation = treePane.getPathwayToAnnotation();
-        for (Long id : idToName.keySet()) {
-            String name = idToName.get(id);
-            GeneSetAnnotation annotation = nameToAnnotation.get(name);
-            if (name == null || annotation == null)
-                continue;
-            results.addPathway("R-HSA-" + id,
+        nameToAnnotation.forEach((name, annotation) -> {
+            EventObject eventObject = nameToObject.get(name);
+            if (eventObject == null)
+                return; // This should not occur
+            results.addPathway(eventObject.getStId(),
                                name, 
                                annotation.getFdr(), // We want to use FDR for all annotation 
                                annotation.getNumberInTopic() + "",
                                annotation.getHitNumber() + "");
-        }
-//        results.addPathway("R-HSA-418597",
-//                           "G alpha (z) signalling events", "0.0012616811274",
-//                           "62", "7");
+        });
         return results;
     }
 
