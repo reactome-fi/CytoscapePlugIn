@@ -13,6 +13,7 @@ import java.util.HashSet;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -49,9 +50,17 @@ public abstract class FIActionDialog extends JDialog {
     //Universal parameters
     protected boolean isOkClicked;
     
-    protected FIActionDialog() {
-        super(PlugInObjectManager.getManager().getCytoscapeDesktop());
+    /**
+     * Introduce this constructor for easy test.
+     * @param parent
+     */
+    protected FIActionDialog(JFrame parent) {
+        super(parent);
         init();
+    }
+    
+    protected FIActionDialog() {
+        this(PlugInObjectManager.getManager().getCytoscapeDesktop());
     }
     
     /**
@@ -174,15 +183,20 @@ public abstract class FIActionDialog extends JDialog {
             return;
         }
         FileUtil fileUtil = (FileUtil) context.getService(fileUtilRef);
-        File dataFile = fileUtil.getFile(this,
-                                         "Select File for Analysis", 
-                                         FileUtil.LOAD, 
-                                         filters);
+        File dataFile = getFile(fileUtil, filters);
         if (dataFile == null) 
             return;
         tf.setText(dataFile.getAbsolutePath());
         fileUtil = null;
         context.ungetService(fileUtilRef);
+    }
+
+    protected File getFile(FileUtil fileUtil, Collection<FileChooserFilter> filters) {
+        File dataFile = fileUtil.getFile(this,
+                                         "Select File for Analysis", 
+                                         FileUtil.LOAD, 
+                                         filters);
+        return dataFile;
     }
     
     /**

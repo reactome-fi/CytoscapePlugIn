@@ -34,6 +34,7 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
     public static final String CELL_NUMBER_NAME = "cells";
     // This is the key used in scanpy
     public static final String DPT_NAME = "dpt_pseudotime";
+    public static final String CYTOTRACE_NAME = "cytotrace";
     // For cluster ids
     public static final String CLUSTER_NODE_PREFIX = "cluster";
     private final double DEFAULT_NODE_SIZE = 0.10d;

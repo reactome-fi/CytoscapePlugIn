@@ -4,8 +4,11 @@
  */
 package org.reactome.cytoscape3;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.Properties;
+import java.util.function.Consumer;
 
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -13,7 +16,12 @@ import javax.swing.JOptionPane;
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.ServiceProperties;
+import org.cytoscape.work.Task;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
+import org.cytoscape.work.TaskMonitor;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.sc.ScNetworkManager;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -26,6 +34,23 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
     
     public ScNetworkPopupMenuHandler() {
+    }
+    
+    private ActionListener createActionListener(Consumer<ActionEvent> funct,
+                                                String title) {
+        ActionListener l = e -> {
+            Task task = new AbstractTask() {
+
+                @Override
+                public void run(TaskMonitor taskMonitor) throws Exception {
+                    taskMonitor.setTitle(title);
+                    funct.accept(e);
+                }
+            };
+            TaskManager<?, ?> taskManager = PlugInObjectManager.getManager().getTaskManager();
+            taskManager.execute(new TaskIterator(task));
+        };
+        return l;
     }
 
     @Override
@@ -54,13 +79,26 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         }
         
         props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
+        addPopupMenu(context, new CytotraceAnalysis(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new DPTAnalysis(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new DifferentialExpressionAnalysisMenu(), CyNetworkViewContextMenuFactory.class, props);
-        
+        addPopupMenu(context, new ProjectMenuItem(), CyNetworkViewContextMenuFactory.class, props);
+
         addPopupMenu(context, 
                      new ToggleEdgesDisplay(),
                      CyNetworkViewContextMenuFactory.class,
                      props);
+        
+    }
+    
+    private class ProjectMenuItem implements CyNetworkViewContextMenuFactory {
+        
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem projectMenuItem = new JMenuItem("Project New Data");
+            projectMenuItem.addActionListener(e -> ScNetworkManager.getManager().project());
+            return new CyMenuItem(projectMenuItem, 15.0f);
+        }
         
     }
     
@@ -117,19 +155,18 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         @Override
         public CyMenuItem createMenuItem(final CyNetworkView view) {
             JMenuItem netPathMenuItem = new JMenuItem("Diffusion Pseudotime Analysis");
-            netPathMenuItem.addActionListener(e -> performDPT());
+            netPathMenuItem.addActionListener(e -> ScNetworkManager.getManager().performDPT());
             return new CyMenuItem(netPathMenuItem, 7.0f);
         }
-        
-        private void performDPT() {
-            // Choose a cell as the root
-            String rootCell = JOptionPane.showInputDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                                      "Enter a cell id as the root:",
-                                                      "Enter Cell",
-                                                      JOptionPane.PLAIN_MESSAGE);
-            if (rootCell == null)
-                return;
-            ScNetworkManager.getManager().performDPT(rootCell);
+    }
+    
+    private class CytotraceAnalysis implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem menuItem = new JMenuItem("CytoTrace Analysis");
+            menuItem.addActionListener(createActionListener(e -> ScNetworkManager.getManager().performCytoTrace(),
+                                                            menuItem.getText()));
+            return new CyMenuItem(menuItem, 6.0f);
         }
     }
     

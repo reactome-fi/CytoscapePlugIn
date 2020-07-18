@@ -3,6 +3,7 @@ package org.reactome.cytoscape.sc;
 import static org.reactome.cytoscape.service.PathwaySpecies.Homo_sapiens;
 import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellClusterNetwork;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,15 +14,19 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.math3.util.Pair;
 import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNetwork;
+import org.cytoscape.model.CyNode;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
+import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.pathway.GSEAPathwayAnalyzer.GSEAPathwayAnalysisTask;
 import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.cytoscape.pathway.PathwayEnrichmentAnalysisTask;
@@ -29,6 +34,7 @@ import org.reactome.cytoscape.pathway.PathwayHierarchyLoadTask;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.sc.diff.DiffGeneNetworkBuilder;
 import org.reactome.cytoscape.sc.diff.DiffGeneNetworkStyle;
+import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
@@ -176,21 +182,71 @@ public class ScNetworkManager {
         }
     }
     
-    public void performDPT(String rootCell) {
+    public void performCytoTrace() {
         CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
         if (view == null)
             return ; // Do nothing
         try {
-            List<Double> dpt = serverCaller.performDPT(rootCell);
-            _loadValues(view, SCNetworkVisualStyle.DPT_NAME, dpt);
+            List<Double> cytotrace = serverCaller.performCytoTrace();
+            _loadValues(view, SCNetworkVisualStyle.CYTOTRACE_NAME, cytotrace);
         }
         catch(Exception e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           e.getMessage(),
-                                          "Error in Diffusion Pseudotime Analysis",
+                                          "Error in CytoTrace Analysis",
                                           JOptionPane.ERROR_MESSAGE);
             logger.error(e.getMessage(), e);
         }
+    }
+    
+    public void performDPT() {
+        // Choose 
+        CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
+        if (view == null)
+            return ; // Do nothing
+        CellRootSelectionDialog dialog = new CellRootSelectionDialog();
+        dialog.setVisible(true);
+        if (!dialog.isOkClicked())
+            return;
+        String rootCell = dialog.getRootCell();
+        List<String> clusters = dialog.getClusters();
+        if (rootCell == null && clusters == null) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "To perform a diffusion pseudotime analysis, enter either a cell id or clusters.",
+                                          "Error in Root Cell Information",
+                                          JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        Thread t = new Thread() {
+            public void run() {
+                JFrame parentFrame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+                try {
+                    String rootCell1 = rootCell;
+                    ProgressPane progressPane = new ProgressPane();
+                    progressPane.setIndeterminate(true);
+                    parentFrame.setGlassPane(progressPane);
+                    progressPane.setTitle("Diffusion Pseudotime Analysis");
+                    progressPane.setVisible(true);
+                    if (rootCell1 == null) {
+                        progressPane.setText("Infer root celll...");
+                        rootCell1 = serverCaller.inferCellRoot(clusters);
+                    }
+                    progressPane.setText("Performing dpt...");
+                    List<Double> dpt = serverCaller.performDPT(rootCell1);
+                    progressPane.setText("Loading values...");
+                    _loadValues(view, SCNetworkVisualStyle.DPT_NAME, dpt);
+                }
+                catch(Exception e) {
+                    JOptionPane.showMessageDialog(parentFrame,
+                                                  e.getMessage(),
+                                                  "Error in Diffusion Pseudotime Analysis",
+                                                  JOptionPane.ERROR_MESSAGE);
+                    logger.error(e.getMessage(), e);
+                }
+                parentFrame.getGlassPane().setVisible(false);
+            }
+        };
+        t.start();
     }
     
     public void loadCellFeature(String featureName) {
@@ -249,6 +305,67 @@ public class ScNetworkManager {
         if (diffGeneStyle == null)
             diffGeneStyle = new DiffGeneNetworkStyle();
         return diffGeneStyle;
+    }
+    
+    public void project() {
+        ScActionDialog actionDialog = new ScActionDialog();
+        File file = actionDialog.selectFile();
+        if (file == null)
+            return ;
+        String dirName = file.getAbsolutePath();
+        CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
+        if (view == null)
+            return ; // Do nothing
+        CyNetwork network = view.getModel();
+        Thread t = new Thread() {
+            public void run() {
+                JFrame parentFrame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+                try {
+                    ProgressPane progressPane = new ProgressPane();
+                    parentFrame.setGlassPane(progressPane);
+                    progressPane.setTitle("Project Data");
+                    progressPane.setIndeterminate(true);
+                    progressPane.setText("projecting...");
+                    parentFrame.getGlassPane().setVisible(true);
+                    //TODO: List<Double> two doubles and one string. Need to check the type!!!
+                    Map<String, List<?>> cellIdToUmapCluster = serverCaller.project(dirName);
+                    FINetworkGenerator networkGenerator = new FINetworkGenerator();
+                    TableHelper tableHelper = new TableHelper();
+                    Map<String, CyNode> cellIdToNode = new HashMap<>();
+                    for (String cellId : cellIdToUmapCluster.keySet()) {
+                        CyNode node = networkGenerator.createNode(network,
+                                                                  cellId, 
+                                                                  "cell", 
+                                                                  cellId);
+                        cellIdToNode.put(cellId, node);
+                    }
+                    view.updateView(); // Force to create views for new nodes
+                    // Assign coordinates
+                    for (String cellId : cellIdToNode.keySet()) {
+                        CyNode node = cellIdToNode.get(cellId);
+                        List<?> umapCluster = cellIdToUmapCluster.get(cellId);
+                        View<CyNode> nodeView = view.getNodeView(node);
+                        nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, umapCluster.get(0));
+                        nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, umapCluster.get(1));
+                        tableHelper.storeNodeAttribute(network, 
+                                                       node,
+                                                       SCNetworkVisualStyle.CLUSTER_NAME, 
+                                                       new Integer(umapCluster.get(2).toString())); // Should be an Integer
+                    }
+                    view.updateView(); // Do another view now for new coordinates
+                    parentFrame.getGlassPane().setVisible(false);
+                }
+                catch(IOException e) {
+                    JOptionPane.showMessageDialog(parentFrame,
+                                                  e.getMessage(),
+                                                  "Error in Projection",
+                                                  JOptionPane.ERROR_MESSAGE);
+                    logger.error(e.getMessage(), e);
+                    parentFrame.getGlassPane().setVisible(false);
+                }
+            }
+        };
+        t.start();
     }
     
     public void doDiffExpAnalysis() {

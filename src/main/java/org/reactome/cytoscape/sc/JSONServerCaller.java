@@ -46,6 +46,41 @@ public class JSONServerCaller {
                                        dir);
     }
     
+    /**
+     * Very weird: return two double and one String in the List. This needs to be handled.
+     * @param dir
+     * @return
+     * @throws JsonEOFException
+     * @throws IOException
+     */
+    public Map<String, List<?>> project(String dir) throws JsonEOFException, IOException {
+        Object result = callJSONServer("project", dir);
+        if (result instanceof String) // An error
+            throw new IllegalStateException(result.toString());
+        // There are only two types: String or List of String
+        // Convert to a double array
+        Map<String, List<?>> map = (Map<String, List<?>>) result;
+        return map;
+    }
+    
+    /**
+     * To run this test method, make sure testLoadData() is called first to create a reference dataset.
+     * @throws JsonEOFException
+     * @throws IOException
+     */
+    @Test
+    public void testProject() throws Exception {
+        testLoadData();
+        String dir = "/Users/wug/Documents/missy_single_cell/seq_data_v2/12_5_gfp/filtered_feature_bc_matrix";
+        Map<String, List<?>> cellToUmap = project(dir);
+        int count = 0;
+        for (String cell : cellToUmap.keySet()) {
+            if (count ++ == 10)
+                break;
+            System.out.println(cell + ": " + cellToUmap.get(cell));
+        }
+    }
+    
     public String preprocessData() throws JsonEOFException, IOException {
         return (String) callJSONServer("preprocess_data");
     }
@@ -70,6 +105,47 @@ public class JSONServerCaller {
         return list;
     }
     
+    public String inferCellRoot(List<String> targetClusters) throws JsonEOFException, IOException {
+        Object result = null;
+        if (targetClusters == null || targetClusters.size() == 0 || targetClusters.get(0).equals("all"))
+            result = callJSONServer("infer_cell_root");
+        else
+            result = callJSONServer("infer_cell_root", targetClusters.toArray(new String[] {}));
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        List<?> list = (List<?>) result;
+        return list.get(0).toString();
+    }
+    
+    @Test
+    public void testInferCellRoot() throws Exception {
+        // Without target clusters
+        Object result = callJSONServer("infer_cell_root");
+        System.out.println(result);
+        // Specify a target candidate cluster
+        List<String> clusters = new ArrayList<>();
+        clusters.add("8");
+        result = callJSONServer("infer_cell_root", clusters.toArray(new String[] {}));
+        System.out.println(result);
+        clusters.add("2");
+        result = callJSONServer("infer_cell_root", clusters.toArray(new String[] {}));
+        System.out.println(result);
+        clusters.clear();
+        clusters.add("9");
+        result = callJSONServer("infer_cell_root", clusters.toArray(new String[] {}));
+        System.out.println(result);
+    }
+    
+    @Test
+    public void test() throws Exception {
+        List<String> list = new ArrayList<>();
+        list.add("8");
+        list.add("2");
+        System.out.println(list);
+        ObjectMapper mapper = new ObjectMapper();
+        System.out.println(mapper.writeValueAsString(list));
+    }
+    
     public List<Double> performDPT(String rootCell) throws JsonEOFException, IOException {
         Object result = callJSONServer("dpt", rootCell);
         if (result instanceof String)
@@ -78,9 +154,24 @@ public class JSONServerCaller {
         return list;
     }
     
+    public List<Double> performCytoTrace() throws JsonEOFException, IOException {
+        Object result = callJSONServer("cytotrace");
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        List<Double> list = (List<Double>) result;
+        return list;
+    }
+    
+    @Test
+    public void testPerformCytoTrace() throws Exception {
+        List<Double> result = performCytoTrace();
+        System.out.println("Result: " + result.size());
+        result.subList(0, 10).forEach(System.out::println);
+    }
+    
     @Test
     public void testPerformDPA() throws Exception {
-        String rootCell = "GAAGTAAAGGCCCAAA-1";
+        String rootCell = "TTGACCCGTTAGCGGA-1";
         List<Double> result = performDPT(rootCell);
         System.out.println("Result: " + result.size());
         result.subList(0, 10).forEach(System.out::println);
@@ -120,6 +211,12 @@ public class JSONServerCaller {
         if (result instanceof String)
             throw new IllegalStateException(result.toString());
         return (List<String>)result;
+    }
+    
+    @Test
+    public void testGetCellFeatureNames() throws IOException {
+        List<String> featureNames = getCellFeatureNames();
+        featureNames.forEach(System.out::println);
     }
     
     /**
@@ -243,7 +340,7 @@ public class JSONServerCaller {
     }
     
     public DiffExpResult doDiffGeneExpAnalysis(String group,
-                                                              String reference) throws JsonEOFException, IOException {
+                                               String reference) throws JsonEOFException, IOException {
         Object result = callJSONServer("rank_genes_groups", group, reference);
         if (result instanceof String)
             throw new IllegalStateException(result.toString());
