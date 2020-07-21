@@ -512,11 +512,10 @@ public class PathwayDiagramRegistry implements Selectable {
     
     public void removeHighlightPathwayViews() {
         PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-        Set<String> genes = hiliter.getHitGenes();
-        List<String> geneList = new ArrayList<String>(genes);
         for (PathwayInternalFrame frame : diagramIdToFrame.values()) {
             hiliter.removeHighlightPathway(frame);
         }
+        hiliter.reset();
         // Check with network views
         List<CyNetworkView> networkViews = getDiagramNetworkViews();
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();

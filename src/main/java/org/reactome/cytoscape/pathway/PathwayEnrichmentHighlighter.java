@@ -22,6 +22,7 @@ import org.gk.graphEditor.GraphEditorActionEvent.ActionType;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
+import org.reactome.cytoscape.genescore.GeneScoreOverlayHelper;
 import org.reactome.cytoscape.service.CyPathwayDiagramHelper;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -35,6 +36,8 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 public class PathwayEnrichmentHighlighter {
     // Pathway Enrichment results cached for display
     private Map<String, GeneSetAnnotation> pathwayToAnnotation;
+    // For GSEA auto scoring
+    private Map<String, Double> geneToScore;
     // The singleton
     private static PathwayEnrichmentHighlighter highlighter;
     
@@ -51,12 +54,27 @@ public class PathwayEnrichmentHighlighter {
         return highlighter;
     }
     
+    /**
+     * Reset the cached data so that nothing to be highlighted for new pathway diagram.
+     */
+    public void reset() {
+        geneToScore = null;
+        pathwayToAnnotation = null;
+    }
+    
     public void setPathwayToAnnotation(Map<String, GeneSetAnnotation> annotations) {
         this.pathwayToAnnotation = annotations;
+        this.geneToScore = null;
     }
     
     public Map<String, GeneSetAnnotation> getPathwayToAnnotation() {
         return this.pathwayToAnnotation;
+    }
+    
+    public void setGeneToScore(Map<String, Double> geneToScore) {
+        this.geneToScore = geneToScore;
+        // Null other type of results
+        this.pathwayToAnnotation = null;
     }
     
     /**
@@ -64,7 +82,8 @@ public class PathwayEnrichmentHighlighter {
      * @return
      */
     public boolean isEmpty() {
-        if (pathwayToAnnotation == null || pathwayToAnnotation.size() == 0)
+        if ((pathwayToAnnotation == null || pathwayToAnnotation.size() == 0) &&
+            (geneToScore == null || geneToScore.size() == 0))
             return true;
         return false;
     }
@@ -93,13 +112,24 @@ public class PathwayEnrichmentHighlighter {
      */
     public void highlightPathway(PathwayInternalFrame pathwayFrame,
                                  String eventName) {
+        if (isEmpty()) 
+            return; // Do nothing
         if (pathwayFrame == null || eventName == null)
             return;
-        final GeneSetAnnotation annotation = pathwayToAnnotation.get(eventName);
-        if (annotation == null)
-            return;
-        List<String> hitGenes = annotation.getHitIds();
-        highlightPathway(pathwayFrame, hitGenes);
+        // Try pathwayToAnnotation first
+        if (pathwayToAnnotation != null) {
+            GeneSetAnnotation annotation = pathwayToAnnotation.get(eventName);
+            if (annotation == null)
+                return;
+            List<String> hitGenes = annotation.getHitIds();
+            highlightPathway(pathwayFrame, hitGenes);
+        }
+        else if (geneToScore != null) {
+            GeneScoreOverlayHelper scoreHelper = new GeneScoreOverlayHelper();
+            scoreHelper.overlayGeneScores(geneToScore,
+                                          pathwayFrame.getPathwayEditor(), 
+                                          pathwayFrame.getZoomablePathwayEditor().getHighlightControlPane());
+        }
     }
 
     public void highlightPathway(PathwayInternalFrame pathwayFrame,
@@ -145,6 +175,11 @@ public class PathwayEnrichmentHighlighter {
     public void removeHighlightPathway(PathwayInternalFrame pathwayFrame) {
         CyZoomablePathwayEditor pathwayEditor = pathwayFrame.getZoomablePathwayEditor();
         pathwayEditor.resetColors();
+        // Check if we need to do more for gene score overlaying
+        if (geneToScore != null && geneToScore.size() > 0) {
+            GeneScoreOverlayHelper scoreHelper = new GeneScoreOverlayHelper();
+            scoreHelper.removeGeneScores(pathwayFrame.getZoomablePathwayEditor().getHighlightControlPane());
+        }
     }
     
     public void removeHighlightNewtork(CyNetwork network) {

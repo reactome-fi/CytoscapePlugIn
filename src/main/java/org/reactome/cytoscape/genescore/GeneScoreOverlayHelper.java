@@ -73,13 +73,7 @@ public class GeneScoreOverlayHelper {
         }
         try {
             Map<String, Double> geneToScore = loadGeneToScore(fileName);
-            OverlayGeneScoreTask task = new OverlayGeneScoreTask();
-            task.geneToScore = geneToScore;
-            task.pathwayEditor = pathwayEditor;
-            task.hilitePane = hilitePane;
-            @SuppressWarnings("rawtypes")
-            TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
-            taskManager.execute(new TaskIterator(task));
+            overlayGeneScores(geneToScore, pathwayEditor, hilitePane);
         }
         catch(Exception e) {
             logger.error("Error in overlay gene scores: " + e.getMessage(), e);
@@ -89,6 +83,18 @@ public class GeneScoreOverlayHelper {
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
+    }
+
+    public void overlayGeneScores(Map<String, Double> geneToScore,
+                                  PathwayEditor pathwayEditor,
+                                  PathwayHighlightControlPanel hilitePane) {
+        OverlayGeneScoreTask task = new OverlayGeneScoreTask();
+        task.geneToScore = geneToScore;
+        task.pathwayEditor = pathwayEditor;
+        task.hilitePane = hilitePane;
+        @SuppressWarnings("rawtypes")
+        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
+        taskManager.execute(new TaskIterator(task));
     }
 
     private Map<String, Double> loadGeneToScore(String fileName) throws IOException {

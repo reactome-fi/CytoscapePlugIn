@@ -94,13 +94,11 @@ public class PathwayDiagramLoadTask extends AbstractTask {
     private void highlightPathway(PathwayInternalFrame frame) {
         // Try to highlight pathway based on enrichment results first
         PathwayEnrichmentHighlighter hiliter = PathwayEnrichmentHighlighter.getHighlighter();
-        if (!hiliter.isEmpty()) {
-            hiliter.highlightPathway(frame, pathwayName);
-            return;
-        }
+        hiliter.highlightPathway(frame, pathwayName);
         // If there is PGM inference result available, we want to highlight diagram based on these results
-        RenderablePathway diagram = (RenderablePathway) frame.getDisplayedPathway();
-        FactorGraphInferenceResults results = FactorGraphRegistry.getRegistry().getInferenceResults(diagram);
+        // Disable for the time being.
+//        RenderablePathway diagram = (RenderablePathway) frame.getDisplayedPathway();
+//        FactorGraphInferenceResults results = FactorGraphRegistry.getRegistry().getInferenceResults(diagram);
     }
     
     /**

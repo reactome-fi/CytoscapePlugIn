@@ -3,6 +3,7 @@ package org.reactome.cytoscape.pathway;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -191,6 +192,7 @@ public class GSEAPathwayAnalyzer {
             resultPane.setEventTreePane(eventPane);
             resultPane.setResults(results);
             PlugInObjectManager.getManager().selectCytoPane(resultPane, CytoPanelName.SOUTH);
+
         }
 
         @Override
@@ -211,7 +213,19 @@ public class GSEAPathwayAnalyzer {
             List<GeneSetAnnotation> annotations = convertGSEAResultsToAnnotation(gseaResults);
             if (eventPane != null) {
                 // Need to use a new thread to make sure all text in the tree can be displayed without truncation.
-                SwingUtilities.invokeLater(() -> eventPane.showPathwayEnrichments(annotations, false));
+                SwingUtilities.invokeLater(() -> {
+                    eventPane.showPathwayEnrichments(annotations, false);
+                    // Prepare for pathway highlighting
+                    // For pathway highlighting
+                    Map<String, Double> map = new HashMap<>();
+                    // Use this classic way to avoid duplicated keys in Stream expression.
+                    for (String line : geneToScore.split("\n")) {
+                        String[] tokens = line.split("\t");
+                        map.put(tokens[0], new Double(tokens[1]));
+                    }
+                    PathwayEnrichmentHighlighter highlighter = PathwayEnrichmentHighlighter.getHighlighter();
+                    highlighter.setGeneToScore(map);
+                });
             }
             showResults(gseaResults);
             taskMonitor.setProgress(1.0d);            
