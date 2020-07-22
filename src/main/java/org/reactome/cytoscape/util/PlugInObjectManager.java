@@ -31,6 +31,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
 import org.cytoscape.app.CyAppAdapter;
+import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.application.CyVersion;
 import org.cytoscape.application.swing.CySwingApplication;
 import org.cytoscape.application.swing.CytoPanel;
@@ -47,7 +48,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.SynchronousBundleListener;
-import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.fi.pgm.FIPGMConfiguration;
 import org.reactome.pathway.factorgraph.PathwayPGMConfiguration;
 import org.slf4j.Logger;
@@ -86,6 +86,7 @@ public class PlugInObjectManager {
     private CyNetworkViewManager networkViewManager;
     private CyNetworkViewFactory networkViewFactory;
     private CyServiceRegistrar serviceRegistra;
+    private CyApplicationManager applicationManager;
     // Currently selected FI network version
     private String fiNetworkVersion;
     // Used for setting colors for pathway diagram highlighting
@@ -528,6 +529,18 @@ public class PlugInObjectManager {
         if (networkViewManager != null)
             serviceReferences.add(ref);
         return networkViewManager;
+    }
+    
+    public CyApplicationManager getApplicationManager() {
+        if (applicationManager != null)
+            return applicationManager;
+        ServiceReference ref = context.getServiceReference(CyApplicationManager.class.getName());
+        if (ref == null)
+            return null;
+        applicationManager = (CyApplicationManager) context.getService(ref);
+        if (applicationManager != null)
+            serviceReferences.add(ref);
+        return applicationManager;
     }
     
     public CyNetworkViewFactory getNetworkViewFactory() {

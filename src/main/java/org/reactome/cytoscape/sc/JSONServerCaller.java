@@ -81,8 +81,13 @@ public class JSONServerCaller {
         }
     }
     
-    public String preprocessData() throws JsonEOFException, IOException {
-        return (String) callJSONServer("preprocess_data");
+    public String preprocessData(List<String> keys) throws JsonEOFException, IOException {
+        Object rtn = null;
+        if (keys == null || keys.size() == 0)
+            rtn = callJSONServer("preprocess_data");
+        else
+            rtn = callJSONServer("preprocess_data", String.join(",", keys));
+        return (String) rtn;
     }
     
     public String clusterData() throws JsonEOFException, IOException {
@@ -178,6 +183,12 @@ public class JSONServerCaller {
     }
     
     @Test
+    public void testPreprocess() throws Exception {
+        Object result = callJSONServer("preprocess_data", "total_counts,pct_mt_counts");
+        System.out.println(result);
+    }
+    
+    @Test
     public void testGeneGeneExp() throws Exception {
         String gene = "Cps1";
         List<Double> values = getGeneExp(gene);
@@ -270,7 +281,7 @@ public class JSONServerCaller {
         String dir_17_5 = "/Users/wug/Documents/missy_single_cell/seq_data_v2/17_5_gfp/filtered_feature_bc_matrix";
         String text = openData(dir_17_5);
         System.out.println("Open data: " + text);
-        text = preprocessData();
+        text = preprocessData(null);
         System.out.println("Preprocess data: " + text);
         text = clusterData();
         System.out.println("Cluster data: " + text);

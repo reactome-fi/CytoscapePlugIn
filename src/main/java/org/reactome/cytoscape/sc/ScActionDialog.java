@@ -3,15 +3,22 @@ package org.reactome.cytoscape.sc;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -20,11 +27,13 @@ import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 
+import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.reactome.cytoscape.service.FIActionDialog;
 import org.reactome.cytoscape.service.FIVersionSelectionPanel;
 import org.reactome.cytoscape.service.PathwaySpecies;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
  * Provide an entry point for performing single cell data analysis and visualization.
@@ -32,8 +41,9 @@ import org.reactome.cytoscape.service.PathwaySpecies;
  *
  */
 public class ScActionDialog extends FIActionDialog {
-    private final Dimension DEFAULT_SIZE = new Dimension(500, 300);
+    private final Dimension DEFAULT_SIZE = new Dimension(500, 445);
     private DataSetPanel datasetPane;
+    private PreprocessPane preprocessPane;
     
     public ScActionDialog(JFrame parent) {
         super(parent);
@@ -61,11 +71,19 @@ public class ScActionDialog extends FIActionDialog {
         return file;
     }
     
+    public List<String> getRegressoutKeys() {
+        return preprocessPane.getRegressoutKeys();
+    }
+    
     @Override
     protected File getFile(FileUtil fileUtil, Collection<FileChooserFilter> filters) {
+        CyApplicationManager appManager = PlugInObjectManager.getManager().getApplicationManager();
+        File startDir = appManager.getCurrentDirectory();
         File dataFile = fileUtil.getFolder(this,
                                            "Select a folder for Analysis", 
-                                           null);
+                                           startDir == null ? null : startDir.getAbsolutePath());
+        if (dataFile != null && dataFile.getParentFile() != null)
+            appManager.setCurrentDirectory(dataFile.getParentFile());
         return dataFile;
     }
 
@@ -75,9 +93,7 @@ public class ScActionDialog extends FIActionDialog {
         contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.Y_AXIS));
 
         Border border = BorderFactory.createEtchedBorder();
-
         datasetPane = new DataSetPanel() {
-
             @Override
             protected void createFileChooserGui(JTextField fileTF,
                                                 JLabel fileChooseLabel,
@@ -99,6 +115,15 @@ public class ScActionDialog extends FIActionDialog {
                                                                TitledBorder.CENTER,
                                                                font));
         contentPane.add(datasetPane);
+        
+        preprocessPane = new PreprocessPane();
+        preprocessPane.setBorder(BorderFactory.createTitledBorder(border,
+                                                                  "Preprocess Parameters",
+                                                                  TitledBorder.LEFT,
+                                                                  TitledBorder.CENTER,
+                                                                  font));
+        contentPane.add(preprocessPane);
+        
         return contentPane;
     }
     
@@ -132,7 +157,52 @@ public class ScActionDialog extends FIActionDialog {
                 System.exit(0);
             }
         });
+        dialog.addComponentListener(new ComponentAdapter() {
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+                // TODO Auto-generated method stub
+                System.out.println(dialog.getSize());
+            }
+            
+        });
         dialog.setVisible(true);
+    }
+    
+    private class PreprocessPane extends JPanel {
+        private JCheckBox totalCountsBox;
+        private JCheckBox pctCountsBox;
+        
+        public PreprocessPane() {
+            init();
+        }
+        
+        public List<String> getRegressoutKeys() {
+            List<String> rtn = new ArrayList<>();
+            if (totalCountsBox.isSelected())
+                rtn.add(totalCountsBox.getText());
+            if (pctCountsBox.isSelected())
+                rtn.add(pctCountsBox.getText());
+            return rtn;
+        }
+        
+        private void init() {
+            this.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(4, 4, 4, 4);
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            constraints.anchor = GridBagConstraints.WEST;
+            constraints.gridx = 0;
+            constraints.gridy = 0;
+            JLabel label = new JLabel("Choose attributes for regressout:");
+            this.add(label, constraints);
+            totalCountsBox = new JCheckBox("total_counts");
+            constraints.gridx ++;
+            this.add(totalCountsBox, constraints);
+            pctCountsBox = new JCheckBox("pct_counts_mt");
+            constraints.gridy ++;
+            this.add(pctCountsBox, constraints);
+        }
     }
 
 }

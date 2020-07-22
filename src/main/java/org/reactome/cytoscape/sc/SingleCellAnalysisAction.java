@@ -25,7 +25,8 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
                 return ;
             ScAnalysisTask task = new ScAnalysisTask(file.getAbsolutePath(), 
                                                      gui.getSpecies(),
-                                                     gui.getFormat());
+                                                     gui.getFormat(),
+                                                     gui.getRegressoutKeys());
             Thread thread = new Thread(task);
             thread.start();
 //            // The following is all test code.

@@ -157,24 +157,18 @@ public class PlugInUtilities {
     
     public static CyNetworkView getCurrentNetworkView() {
         // Show detailed information for the selected network
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceReference sf = context.getServiceReference(CyApplicationManager.class.getName());
-        CyApplicationManager appManager = (CyApplicationManager) context.getService(sf);
+        CyApplicationManager appManager = PlugInObjectManager.getManager().getApplicationManager();
         CyNetworkView networkView = null;
         if (appManager != null && appManager.getCurrentNetworkView() != null) {
             networkView = appManager.getCurrentNetworkView();
         }
-        context.ungetService(sf);
         return networkView;
     }
     
     public static void unselectNetwork() {
         // Show detailed information for the selected network
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        ServiceReference sf = context.getServiceReference(CyApplicationManager.class.getName());
-        CyApplicationManager appManager = (CyApplicationManager) context.getService(sf);
+        CyApplicationManager appManager = PlugInObjectManager.getManager().getApplicationManager();
         appManager.setCurrentNetwork(null);
-        context.ungetService(sf);
     }
     
     /**
