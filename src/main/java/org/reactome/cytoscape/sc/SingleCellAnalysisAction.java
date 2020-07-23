@@ -29,11 +29,6 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
                                                      gui.getRegressoutKeys());
             Thread thread = new Thread(task);
             thread.start();
-//            // The following is all test code.
-//            JSONServerCaller caller = ScNetworkManager.getManager().getServerCaller();
-//            buildClusterNetwork(caller);
-//            buildCellNetwork(caller);
-//            ScNetworkManager.getManager().setSpecies(PathwaySpecies.Mus_musculus);
         }
         catch(Exception e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),

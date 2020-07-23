@@ -32,6 +32,7 @@ import org.reactome.funcInt.Interaction;
 
 public class FINetworkGenerator implements NetworkGenerator {
     private String edgeType = "FI"; // Default
+    private String nodeType = "Gene"; // Default
     
     public FINetworkGenerator() {
     }
@@ -42,6 +43,14 @@ public class FINetworkGenerator implements NetworkGenerator {
 
     public void setEdgeType(String edgeType) {
         this.edgeType = edgeType;
+    }
+
+    public String getNodeType() {
+        return nodeType;
+    }
+
+    public void setNodeType(String nodeType) {
+        this.nodeType = nodeType;
     }
 
     /**
@@ -141,7 +150,7 @@ public class FINetworkGenerator implements NetworkGenerator {
         // the node.
         CyNode node = nameToNode.get(name);
         if (node != null) return node;
-        node = createNode(network, name, "Gene", name);
+        node = createNode(network, name, nodeType, name);
         CyTable nodeTable = network.getDefaultNodeTable();
         Long nodeSUID = node.getSUID();
         nodeTable.getRow(nodeSUID).set("name", name);

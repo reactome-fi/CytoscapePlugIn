@@ -21,6 +21,7 @@ import org.apache.commons.math3.util.Pair;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
@@ -55,6 +56,7 @@ import smile.math.MathEx;
  */
 @SuppressWarnings("rawtypes")
 public class ScNetworkManager {
+    private final String PROJECTED_CELL_TYPE = "newCell";
     private static final Logger logger = LoggerFactory.getLogger(ScNetworkManager.class);
     private static ScNetworkManager manager;
     private SCNetworkVisualStyle scStyle;
@@ -66,6 +68,8 @@ public class ScNetworkManager {
     private Map<String, Set<String>> mouse2humanMap;
     // Currently selected species: Default to human
     private PathwaySpecies species = Homo_sapiens;
+    // A flag indicating if there is a projected data
+    private boolean hasProjectedData;
 
     private ScNetworkManager() {
         serverCaller = new JSONServerCaller();
@@ -76,6 +80,14 @@ public class ScNetworkManager {
         if (manager == null)
             manager = new ScNetworkManager();
         return manager;
+    }
+    
+    public boolean hasProjectedData() {
+        return this.hasProjectedData;
+    }
+    
+    public void setHasProjectedData(boolean hasProjectedData) {
+        this.hasProjectedData = hasProjectedData;
     }
     
     public JSONServerCaller getServerCaller() {
@@ -307,6 +319,25 @@ public class ScNetworkManager {
         return diffGeneStyle;
     }
     
+    /**
+     * Remove the projected cells. Projected cells have been flaged with "New" in the nodeType attribute.
+     */
+    public void toggleProjectedData() {
+        CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
+        if (view == null)
+            return ; // Do nothing
+        CyTable table = view.getModel().getDefaultNodeTable();
+        view.getNodeViews().forEach(nodeView -> {
+            CyNode node = nodeView.getModel();
+            String value = table.getRow(node.getSUID()).get("nodeType", String.class);
+            if (value.equals(PROJECTED_CELL_TYPE)) {
+                Boolean isVisible = nodeView.getVisualProperty(BasicVisualLexicon.NODE_VISIBLE);
+                nodeView.setLockedValue(BasicVisualLexicon.NODE_VISIBLE, !isVisible);
+            }
+        });
+        view.updateView();
+    }
+    
     public void project() {
         ScActionDialog actionDialog = new ScActionDialog();
         File file = actionDialog.selectFile();
@@ -335,7 +366,7 @@ public class ScNetworkManager {
                     for (String cellId : cellIdToUmapCluster.keySet()) {
                         CyNode node = networkGenerator.createNode(network,
                                                                   cellId, 
-                                                                  "cell", 
+                                                                  PROJECTED_CELL_TYPE, 
                                                                   cellId);
                         cellIdToNode.put(cellId, node);
                     }
@@ -354,6 +385,7 @@ public class ScNetworkManager {
                     }
                     view.updateView(); // Do another view now for new coordinates
                     parentFrame.getGlassPane().setVisible(false);
+                    setHasProjectedData(true);
                 }
                 catch(IOException e) {
                     JOptionPane.showMessageDialog(parentFrame,

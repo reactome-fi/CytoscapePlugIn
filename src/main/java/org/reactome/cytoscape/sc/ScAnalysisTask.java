@@ -146,6 +146,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
                                               null,
                                               edgeNameToWeight,
                                               edges, 
+                                              "Cell",
                                               nameDelimit,
                                               SingleCellNetwork);
         // Turn off edges as the default
@@ -198,6 +199,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
                          idToCellNumber,
                          edgeNameToWeight,
                          edges, 
+                         "CellCluster",
                          edgeType,
                          SingleCellClusterNetwork);
     }
@@ -208,11 +210,15 @@ public class ScAnalysisTask extends FIAnalysisTask {
                                            Map<String, Integer> idToCellNumber,
                                            Map<String, Double> edgeNameToWeight,
                                            Set<String> edges,
+                                           String nodeType,
                                            String edgeType,
                                            ReactomeNetworkType type) {
-        CyNetwork network = new FINetworkGenerator().constructFINetwork(new HashSet<>(nodeIds), 
-                                                                        edges,
-                                                                        edgeType);
+        FINetworkGenerator generator = new FINetworkGenerator();
+        generator.setNodeType(nodeType);
+        generator.setEdgeType("Transition");
+        CyNetwork network = generator.constructFINetwork(new HashSet<>(nodeIds), 
+                                                         edges,
+                                                         edgeType);
         network.getDefaultNetworkTable().getRow(network.getSUID()).set("name", 
                                                                        type.toString());
         // Register and display the network

@@ -83,6 +83,7 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         addPopupMenu(context, new DPTAnalysis(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new DifferentialExpressionAnalysisMenu(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new ProjectMenuItem(), CyNetworkViewContextMenuFactory.class, props);
+        addPopupMenu(context, new ToggleProjectedCells(), CyNetworkViewContextMenuFactory.class, props);
 
         addPopupMenu(context, 
                      new ToggleEdgesDisplay(),
@@ -98,6 +99,19 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
             JMenuItem projectMenuItem = new JMenuItem("Project New Data");
             projectMenuItem.addActionListener(e -> ScNetworkManager.getManager().project());
             return new CyMenuItem(projectMenuItem, 15.0f);
+        }
+        
+    }
+    
+    private class ToggleProjectedCells implements CyNetworkViewContextMenuFactory {
+        
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            if (!ScNetworkManager.getManager().hasProjectedData())
+                return null;
+            JMenuItem projectMenuItem = new JMenuItem("Toggle Projected Data");
+            projectMenuItem.addActionListener(e -> ScNetworkManager.getManager().toggleProjectedData());
+            return new CyMenuItem(projectMenuItem, 15.5f);
         }
         
     }
