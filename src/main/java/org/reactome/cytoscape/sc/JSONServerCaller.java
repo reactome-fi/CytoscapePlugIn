@@ -2,6 +2,7 @@ package org.reactome.cytoscape.sc;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -81,12 +82,17 @@ public class JSONServerCaller {
         }
     }
     
-    public String preprocessData(List<String> keys) throws JsonEOFException, IOException {
+    public String preprocessData(List<String> regressoutKeys,
+                                 String imputationMethod) throws JsonEOFException, IOException {
         Object rtn = null;
-        if (keys == null || keys.size() == 0)
-            rtn = callJSONServer("preprocess_data");
-        else
-            rtn = callJSONServer("preprocess_data", String.join(",", keys));
+        if (regressoutKeys == null)
+            regressoutKeys = Collections.emptyList();
+        if (imputationMethod == null || imputationMethod.trim().length() == 0)
+            imputationMethod = "";
+            
+        rtn = callJSONServer("preprocess_data", 
+                             String.join(",", regressoutKeys),
+                             imputationMethod);
         return (String) rtn;
     }
     
@@ -184,7 +190,9 @@ public class JSONServerCaller {
     
     @Test
     public void testPreprocess() throws Exception {
-        Object result = callJSONServer("preprocess_data", "total_counts,pct_mt_counts");
+        Object result = callJSONServer("preprocess_data", 
+                                       "", // For regressout keys
+                                       ""); // For imputation
         System.out.println(result);
     }
     
@@ -271,6 +279,8 @@ public class JSONServerCaller {
     
     @Test
     public void testLoadData() throws Exception {
+        List<String> list = Collections.EMPTY_LIST;
+        System.out.println("Emtpty list: " + String.join(",", list));
 //        String query = "{\"jsonrpc\": \"2.0\", \"method\": \"echo\", \"id\": 2, \"params\":[\"test\"]}";
         RequestObject request = new RequestObject();
         request.id = 2;
@@ -281,7 +291,7 @@ public class JSONServerCaller {
         String dir_17_5 = "/Users/wug/Documents/missy_single_cell/seq_data_v2/17_5_gfp/filtered_feature_bc_matrix";
         String text = openData(dir_17_5);
         System.out.println("Open data: " + text);
-        text = preprocessData(null);
+        text = preprocessData(null, null);
         System.out.println("Preprocess data: " + text);
         text = clusterData();
         System.out.println("Cluster data: " + text);

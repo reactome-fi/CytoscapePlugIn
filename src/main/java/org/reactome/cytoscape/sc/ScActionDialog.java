@@ -23,6 +23,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -41,7 +42,7 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  *
  */
 public class ScActionDialog extends FIActionDialog {
-    private final Dimension DEFAULT_SIZE = new Dimension(500, 445);
+    private final Dimension DEFAULT_SIZE = new Dimension(500, 475);
     private DataSetPanel datasetPane;
     private PreprocessPane preprocessPane;
     
@@ -73,6 +74,16 @@ public class ScActionDialog extends FIActionDialog {
     
     public List<String> getRegressoutKeys() {
         return preprocessPane.getRegressoutKeys();
+    }
+    
+    /**
+     * This method will be expanded to include more imputation method. Currently it returns either null or magic.
+     * @return
+     */
+    public String getImputationMethod() {
+        if (preprocessPane.magicImputationBox.isSelected())
+            return "magic";
+        return null;
     }
     
     @Override
@@ -149,8 +160,13 @@ public class ScActionDialog extends FIActionDialog {
         return datasetPane.getFormat();
     }
     
+    public void hidePreprocessPane() {
+        this.preprocessPane.setVisible(false);
+    }
+    
     public static void main(String[] args) {
         ScActionDialog dialog = new ScActionDialog(null);
+        dialog.hidePreprocessPane();
         dialog.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -172,6 +188,7 @@ public class ScActionDialog extends FIActionDialog {
     private class PreprocessPane extends JPanel {
         private JCheckBox totalCountsBox;
         private JCheckBox pctCountsBox;
+        private JRadioButton magicImputationBox;
         
         public PreprocessPane() {
             init();
@@ -194,7 +211,14 @@ public class ScActionDialog extends FIActionDialog {
             constraints.anchor = GridBagConstraints.WEST;
             constraints.gridx = 0;
             constraints.gridy = 0;
-            JLabel label = new JLabel("Choose attributes for regressout:");
+            JLabel label = new JLabel("Choose an imputation method:");
+            magicImputationBox = new JRadioButton("MAGIC");
+            add(label, constraints);
+            constraints.gridx ++;
+            add(magicImputationBox, constraints);
+            label = new JLabel("Choose attributes for regressout:");
+            constraints.gridy ++;
+            constraints.gridx = 0;
             this.add(label, constraints);
             totalCountsBox = new JCheckBox("total_counts");
             constraints.gridx ++;

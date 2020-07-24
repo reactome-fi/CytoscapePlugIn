@@ -47,15 +47,18 @@ public class ScAnalysisTask extends FIAnalysisTask {
     private PathwaySpecies species;
     private String fileFormat;
     private List<String> regressoutKeys;
+    private String imputationMethod;
 
     public ScAnalysisTask(String file,
                           PathwaySpecies species,
                           String fileFormat,
-                          List<String> regressoutKeys) {
+                          List<String> regressoutKeys,
+                          String imputationMethod) {
         this.file = file;
         this.species = species;
         this.fileFormat = fileFormat;
         this.regressoutKeys = regressoutKeys;
+        this.imputationMethod = imputationMethod;
     }
 
     @Override
@@ -74,7 +77,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
             if (!checkMessage(parentFrame, message))
                 return;
             progPane.setText("Preprocessing data...");
-            message = serverCaller.preprocessData(regressoutKeys);
+            message = serverCaller.preprocessData(regressoutKeys, imputationMethod);
             if (!checkMessage(parentFrame, message))
                 return;
             progPane.setText("Clustering...");

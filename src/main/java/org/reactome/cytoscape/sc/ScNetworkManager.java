@@ -340,6 +340,8 @@ public class ScNetworkManager {
     
     public void project() {
         ScActionDialog actionDialog = new ScActionDialog();
+        actionDialog.hidePreprocessPane();
+        actionDialog.setSize(500, 300);
         File file = actionDialog.selectFile();
         if (file == null)
             return ;
