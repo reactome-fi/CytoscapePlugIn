@@ -24,6 +24,7 @@ public abstract class DataSetPanel extends JPanel {
     private JRadioButton x10MtxBtn;
     private JRadioButton x10Hdf5Btn;
     private JRadioButton x10visumBtn;
+    private JLabel dataFormatLabel;
     
     public DataSetPanel() {
         init();
@@ -33,6 +34,13 @@ public abstract class DataSetPanel extends JPanel {
         if (mouseBtn.isSelected())
             return PathwaySpecies.Mus_musculus;
         return PathwaySpecies.Homo_sapiens; // as the default
+    }
+    
+    public void setFormatGUIsVisible(boolean isVisible) {
+        dataFormatLabel.setVisible(isVisible);
+        x10MtxBtn.setVisible(isVisible);
+        x10Hdf5Btn.setVisible(isVisible);
+        x10visumBtn.setVisible(isVisible);
     }
     
     public String getFormat() {
@@ -70,7 +78,7 @@ public abstract class DataSetPanel extends JPanel {
         constraints.gridy ++;
         add(mouseBtn, constraints);
         // Data format
-        JLabel dataFormatLabel = new JLabel("Specify a format:");
+        dataFormatLabel = new JLabel("Specify a format:");
         // The following list is based on 
         // https://scanpy.readthedocs.io/en/stable/api/index.html#reading
         x10MtxBtn = new JRadioButton("10x-Genomics-mtx");

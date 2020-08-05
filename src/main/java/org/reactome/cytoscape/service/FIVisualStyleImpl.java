@@ -340,11 +340,6 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         hitGeneBorderFunction.putMapValue(true, 5);
         fiVisualStyle.addVisualMappingFunction(hitGeneBorderFunction);
     }
-
-    private int[] getSampleNumberRange(CyNetworkView view) {
-        Number[] numberRange = getValueRange(view, "sampleNumber");
-        return new int[] {numberRange[0].intValue(), numberRange[1].intValue()};
-    }
     
     protected Number[] getValueRange(CyNetworkView view,
                                    String attributeName) {
@@ -356,7 +351,10 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         Set<Object> set = new HashSet<Object>(idToValue.values());
         List<Double> list = new ArrayList<>();
         for (Object obj : set) {
-            list.add(((Number)obj).doubleValue()); // Regardless we should be able to use double
+            Number number = (Number) obj;
+            // Ignore these two values
+            if (Double.isFinite(number.doubleValue()))
+                list.add(number.doubleValue()); // Regardless we should be able to use double
         }
         Collections.sort(list);
         return new Number[]{list.get(0), list.get(list.size() - 1)};

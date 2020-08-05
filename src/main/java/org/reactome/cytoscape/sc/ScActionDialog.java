@@ -1,5 +1,6 @@
 package org.reactome.cytoscape.sc;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -17,16 +18,20 @@ import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.HyperlinkEvent;
 
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.util.swing.FileChooserFilter;
@@ -35,6 +40,7 @@ import org.reactome.cytoscape.service.FIActionDialog;
 import org.reactome.cytoscape.service.FIVersionSelectionPanel;
 import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * Provide an entry point for performing single cell data analysis and visualization.
@@ -42,7 +48,8 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  *
  */
 public class ScActionDialog extends FIActionDialog {
-    private final Dimension DEFAULT_SIZE = new Dimension(500, 475);
+    private final Dimension DEFAULT_SIZE = new Dimension(500, 535);
+    private final Dimension RNA_VELOCITY_SIZE = new Dimension(500, 455);
     private DataSetPanel datasetPane;
     private PreprocessPane preprocessPane;
     
@@ -104,6 +111,15 @@ public class ScActionDialog extends FIActionDialog {
         contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.Y_AXIS));
 
         Border border = BorderFactory.createEtchedBorder();
+        
+        JPanel approachPane = createApproachPane();
+        approachPane.setBorder(BorderFactory.createTitledBorder(border,
+                                                                "Approach",
+                                                                TitledBorder.LEFT,
+                                                                TitledBorder.CENTER,
+                                                                font));
+        contentPane.add(approachPane);
+        
         datasetPane = new DataSetPanel() {
             @Override
             protected void createFileChooserGui(JTextField fileTF,
@@ -121,7 +137,7 @@ public class ScActionDialog extends FIActionDialog {
 
         };
         datasetPane.setBorder(BorderFactory.createTitledBorder(border,
-                                                               "Data Information",
+                                                               "Data",
                                                                TitledBorder.LEFT, 
                                                                TitledBorder.CENTER,
                                                                font));
@@ -129,13 +145,48 @@ public class ScActionDialog extends FIActionDialog {
         
         preprocessPane = new PreprocessPane();
         preprocessPane.setBorder(BorderFactory.createTitledBorder(border,
-                                                                  "Preprocess Parameters",
+                                                                  "Preprocess",
                                                                   TitledBorder.LEFT,
                                                                   TitledBorder.CENTER,
                                                                   font));
         contentPane.add(preprocessPane);
         
         return contentPane;
+    }
+    
+    private JPanel createApproachPane() {
+        JPanel pane = new JPanel();
+        pane.setLayout(new GridBagLayout());
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.insets = new Insets(4, 4, 4, 4);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        JLabel approachLabel = new JLabel("Choose an approach:");
+        JRadioButton scanpyBtn = new JRadioButton("Standard analysis via Scanpy");
+        JRadioButton scevoBtn = new JRadioButton("RNA Velocity Analysis via scVelo");
+        ButtonGroup approachGroup = new ButtonGroup();
+        approachGroup.add(scanpyBtn);
+        approachGroup.add(scevoBtn);
+        scanpyBtn.setSelected(true);
+        // Add these approaches
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        pane.add(approachLabel, constraints);
+        constraints.gridx ++;
+        pane.add(scanpyBtn, constraints);
+        constraints.gridy ++;
+        pane.add(scevoBtn, constraints);
+        // Update GUIs based on choice
+        scanpyBtn.addActionListener(e -> {
+            datasetPane.setFormatGUIsVisible(true);
+            setSize(DEFAULT_SIZE);
+            preprocessPane.setIsForVelocity(false);
+        });
+        scevoBtn.addActionListener(e -> {
+            datasetPane.setFormatGUIsVisible(false);
+            setSize(RNA_VELOCITY_SIZE);
+            preprocessPane.setIsForVelocity(true);
+        });
+        return pane;
     }
     
     /**
@@ -166,7 +217,7 @@ public class ScActionDialog extends FIActionDialog {
     
     public static void main(String[] args) {
         ScActionDialog dialog = new ScActionDialog(null);
-        dialog.hidePreprocessPane();
+//        dialog.hidePreprocessPane();
         dialog.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -189,6 +240,8 @@ public class ScActionDialog extends FIActionDialog {
         private JCheckBox totalCountsBox;
         private JCheckBox pctCountsBox;
         private JRadioButton magicImputationBox;
+        // Used for showing velocity information
+        private JEditorPane velocityTA;
         
         public PreprocessPane() {
             init();
@@ -201,6 +254,16 @@ public class ScActionDialog extends FIActionDialog {
             if (pctCountsBox.isSelected())
                 rtn.add(pctCountsBox.getText());
             return rtn;
+        }
+        
+        public void setIsForVelocity(boolean isTrue) {
+            for (int i = 0; i < getComponentCount(); i++) {
+                Component comp = getComponent(i);
+                if (comp == velocityTA)
+                    comp.setVisible(isTrue);
+                else
+                    comp.setVisible(!isTrue);
+            }
         }
         
         private void init() {
@@ -226,6 +289,27 @@ public class ScActionDialog extends FIActionDialog {
             pctCountsBox = new JCheckBox("pct_counts_mt");
             constraints.gridy ++;
             this.add(pctCountsBox, constraints);
+            
+            // For velocity information
+            String velocityText = "<html>For the RNA velocity analysis, the input data should contain "
+                    + "two matrices for unspliced and spliced abundances, which can be generated using "
+                    + "velocyto or loompy/kallisto pipeline. For details, see "
+                    + "<a href=\"https://scvelo.readthedocs.io/getting_started.html\">https://scvelo.readthedocs.io/getting_started.html</a>.</html>";
+            velocityTA = new JEditorPane();
+            velocityTA.setContentType("text/html");
+            velocityTA.setText(velocityText);
+            velocityTA.setEditable(false);
+            velocityTA.setBackground(getBackground());
+            velocityTA.addHyperlinkListener(e -> {
+                if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                    String desc = e.getDescription();
+                    PlugInUtilities.openURL(desc);
+                }
+            });
+            constraints.gridy ++;
+            constraints.gridwidth = 2;
+            add(velocityTA, constraints);
+            velocityTA.setVisible(false); // Default 
         }
     }
 

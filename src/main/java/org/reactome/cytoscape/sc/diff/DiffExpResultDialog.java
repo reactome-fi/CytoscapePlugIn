@@ -125,7 +125,7 @@ public class DiffExpResultDialog extends JDialog {
         pane.add(label);
         pathwayBox = new JComboBox<PathwayEnrichmentApproach>();
         Stream.of(PathwayEnrichmentApproach.values()).forEach(e -> pathwayBox.addItem(e));
-        pathwayBox.setSelectedIndex(0); // Use Binomial test as the default.
+        pathwayBox.setSelectedIndex(1); // Use GSEA as the default, which is more powerful though slow.
         pane.add(pathwayBox);
         pathwayBtn = new JButton("Analyze");
         pathwayBtn.setToolTipText("Perform reactome pathway analysis");

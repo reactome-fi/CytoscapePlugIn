@@ -15,6 +15,7 @@ import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.slf4j.Logger;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -311,6 +312,19 @@ public class JSONServerCaller {
     }
     
     @Test
+    public void testScVeloFunctions() throws Exception {
+        String fileName = "/Users/wug/Documents/missy_single_cell/velocity/possorted_genome_bam_DP1YJ_E17_5.loom";
+        Object obj = callJSONServer("scv_open", fileName);
+        System.out.println("scv_open:\n" + obj);
+        obj = callJSONServer("scv_preprocess");
+        System.out.println("scv_preprocess:\n" + obj);
+        obj = callJSONServer("scv_velocity");
+        System.out.println("scv_velocity:\n" + obj);
+        obj = callJSONServer("scv_embedding", "Notch2");
+        System.out.println("scv_embedding:\n" + obj);
+    }
+    
+    @Test
     public void testUMap() throws Exception {
         List<List<Double>> list = getUMAP();
         logger.debug("List size: " + list.size());
@@ -407,6 +421,8 @@ public class JSONServerCaller {
 
     private ResponseObject callJSONServer(RequestObject request) throws JsonProcessingException, IOException {
         ObjectMapper mapper = new ObjectMapper();
+        // For some NaN, infinity, etc.
+        mapper.configure(JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS, true);
         String query = mapper.writeValueAsString(request);
         logger.debug(query);
         String output = PlugInUtilities.callHttpInJson(URL,
