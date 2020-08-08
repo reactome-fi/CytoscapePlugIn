@@ -8,6 +8,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -28,7 +29,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
-import javax.swing.JTextPane;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.HyperlinkEvent;
@@ -52,6 +52,7 @@ public class ScActionDialog extends FIActionDialog {
     private final Dimension RNA_VELOCITY_SIZE = new Dimension(500, 455);
     private DataSetPanel datasetPane;
     private PreprocessPane preprocessPane;
+    private boolean isForRNAVelocity;
     
     public ScActionDialog(JFrame parent) {
         super(parent);
@@ -60,6 +61,10 @@ public class ScActionDialog extends FIActionDialog {
     
     public ScActionDialog() {
         setSize(DEFAULT_SIZE);
+    }
+    
+    public boolean isForRNAVelocity() {
+        return this.isForRNAVelocity;
     }
     
     public File selectFile() {
@@ -95,6 +100,8 @@ public class ScActionDialog extends FIActionDialog {
     
     @Override
     protected File getFile(FileUtil fileUtil, Collection<FileChooserFilter> filters) {
+        if (isForRNAVelocity)
+            return super.getFile(fileUtil, filters);
         CyApplicationManager appManager = PlugInObjectManager.getManager().getApplicationManager();
         File startDir = appManager.getCurrentDirectory();
         File dataFile = fileUtil.getFolder(this,
@@ -104,7 +111,7 @@ public class ScActionDialog extends FIActionDialog {
             appManager.setCurrentDirectory(dataFile.getParentFile());
         return dataFile;
     }
-
+    
     @Override
     protected JPanel createInnerPanel(FIVersionSelectionPanel versionPanel, Font font) {
         JPanel contentPane = new JPanel();
@@ -166,6 +173,9 @@ public class ScActionDialog extends FIActionDialog {
         ButtonGroup approachGroup = new ButtonGroup();
         approachGroup.add(scanpyBtn);
         approachGroup.add(scevoBtn);
+        ItemListener l = e -> isForRNAVelocity = scevoBtn.isSelected();
+        scanpyBtn.addItemListener(l);
+        scevoBtn.addItemListener(l);
         scanpyBtn.setSelected(true);
         // Add these approaches
         constraints.gridx = 0;
@@ -194,7 +204,13 @@ public class ScActionDialog extends FIActionDialog {
      */
     @Override
     protected Collection<FileChooserFilter> createFileFilters() {
-        Collection<FileChooserFilter> filters = new HashSet<>();
+        Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
+        // The following code to choose two file formats is not reliable.
+        // The user may choose a customized file (e.g. tab delimited).
+        String[] exts = {"txt", "loom", "h5d", "h5ad"};
+        FileChooserFilter filter = new FileChooserFilter("Single Cell Files",
+                                                            exts);
+        filters.add(filter);
         return filters;
     }
 

@@ -3,6 +3,7 @@ package org.reactome.cytoscape.sc;
 import static org.reactome.cytoscape.sc.SCNetworkVisualStyle.CELL_NUMBER_NAME;
 import static org.reactome.cytoscape.sc.SCNetworkVisualStyle.CLUSTER_NAME;
 import static org.reactome.cytoscape.sc.SCNetworkVisualStyle.CONNECTIVITY_NAME;
+import static org.reactome.cytoscape.sc.SCNetworkVisualStyle.EDGE_IS_DIRECTED;
 import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellClusterNetwork;
 import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellNetwork;
 
@@ -20,6 +21,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.apache.commons.math3.linear.MatrixUtils;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
@@ -36,8 +38,11 @@ import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.r3.util.InteractionUtilities;
+import org.reactome.r3.util.MathUtilities;
 
 import com.fasterxml.jackson.core.io.JsonEOFException;
+
+import smile.math.matrix.Matrix;
 
 public class ScAnalysisTask extends FIAnalysisTask {
     //TODO: To be selected by the user
@@ -48,41 +53,40 @@ public class ScAnalysisTask extends FIAnalysisTask {
     private String fileFormat;
     private List<String> regressoutKeys;
     private String imputationMethod;
+    private boolean isForRNAVelocity;
 
     public ScAnalysisTask(String file,
                           PathwaySpecies species,
                           String fileFormat,
                           List<String> regressoutKeys,
-                          String imputationMethod) {
+                          String imputationMethod,
+                          boolean isForRNAVelocity) {
         this.file = file;
         this.species = species;
         this.fileFormat = fileFormat;
         this.regressoutKeys = regressoutKeys;
         this.imputationMethod = imputationMethod;
+        this.isForRNAVelocity = isForRNAVelocity;
     }
 
     @Override
     protected void doAnalysis() {
         ScNetworkManager.getManager().setSpecies(species);
+        ScNetworkManager.getManager().setForRNAVelocity(isForRNAVelocity);
         ProgressPane progPane = new ProgressPane();
         progPane.setIndeterminate(true);
         progPane.setTitle("Single Cell Data Analysis");
         JFrame parentFrame = PlugInObjectManager.getManager().getCytoscapeDesktop();
         parentFrame.setGlassPane(progPane);
         progPane.setVisible(true);
-        progPane.setText("Loading data...");
         JSONServerCaller serverCaller = ScNetworkManager.getManager().getServerCaller();
         try {
-            String message = serverCaller.openData(file);
-            if (!checkMessage(parentFrame, message))
-                return;
-            progPane.setText("Preprocessing data...");
-            message = serverCaller.preprocessData(regressoutKeys, imputationMethod);
-            if (!checkMessage(parentFrame, message))
-                return;
-            progPane.setText("Clustering...");
-            message = serverCaller.clusterData();
-            if (!checkMessage(parentFrame, message))
+            boolean success = false;
+            if (isForRNAVelocity)
+                success = velocityAnalysis(serverCaller, progPane, parentFrame);
+            else
+                success = standardAnalysis(serverCaller, progPane, parentFrame);
+            if (!success)
                 return;
             // Looks everything is fine. Let's build the network
             progPane.setText("Building cluster network...");
@@ -95,6 +99,42 @@ public class ScAnalysisTask extends FIAnalysisTask {
             e.printStackTrace();
         }
         parentFrame.getGlassPane().setVisible(false);
+    }
+    
+    private boolean velocityAnalysis(JSONServerCaller serverCaller,
+                                     ProgressPane progPane,
+                                     JFrame parentFrame) throws JsonEOFException, IOException {
+        progPane.setText("Loading data...");
+        String message = serverCaller.scvOpenData(file);
+        if (!checkMessage(parentFrame, message))
+            return false;
+        progPane.setText("Preprocessing data...");
+        message = serverCaller.scvPreprocessData();
+        if (!checkMessage(parentFrame, message))
+            return false;
+        progPane.setText("Analyzing velocity...");
+        message = serverCaller.scvVelocity();
+        if (!checkMessage(parentFrame, message))
+            return false;
+        return true; // Success
+    }
+
+    private boolean standardAnalysis(JSONServerCaller serverCaller,
+                                     ProgressPane progPane,
+                                     JFrame parentFrame) throws JsonEOFException, IOException {
+        progPane.setText("Loading data...");
+        String message = serverCaller.openData(file);
+        if (!checkMessage(parentFrame, message))
+            return false;
+        progPane.setText("Preprocessing data...");
+        message = serverCaller.preprocessData(regressoutKeys, imputationMethod);
+        if (!checkMessage(parentFrame, message))
+            return false;
+        progPane.setText("Clustering...");
+        message = serverCaller.clusterData();
+        if (!checkMessage(parentFrame, message))
+            return false;
+        return true; // Success
     }
 
     private boolean checkMessage(JFrame parentFrame, String message) {
@@ -148,6 +188,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
                                               idToCluster, 
                                               null,
                                               edgeNameToWeight,
+                                              null,
                                               edges, 
                                               "Cell",
                                               nameDelimit,
@@ -181,30 +222,51 @@ public class ScAnalysisTask extends FIAnalysisTask {
             idToCellNumber.put(nodeId, clusterToCellNumbers.get(i).intValue());
         }
 
-        // Handle edges
-        for (int i = 0; i < nodeIds.size() - 1; i++) {
-            String idi = nodeIds.get(i);
-            List<Double> weights = connectivities.get(i);
-            for (int j = i + 1; j < nodeIds.size(); j++) {
-                if (weights.get(j) < EDGE_WEIGHT_CUTOFF)
-                    continue;
-                String idj = nodeIds.get(j);
-                String pair = InteractionUtilities.generateFIFromGene(idi, idj);
-                edges.add(pair);
-                String edgeName = pair.replace("\t", " (" + edgeType + ") ");
-                edgeNameToWeight.put(edgeName, weights.get(j));
+        Map<String, Boolean> edgeNameToDirection = new HashMap<>();
+        if (isForRNAVelocity) { // This is directed
+            for (int i = 0; i < nodeIds.size(); i++) {
+                String idi = nodeIds.get(i);
+                List<Double> weights = connectivities.get(i);
+                for (int j = 0; j < nodeIds.size(); j++) {
+                    // Threshold should be handled by the server
+                    if (weights.get(j) < Double.MIN_NORMAL)
+                        continue;
+                    String idj = nodeIds.get(j);
+                    String pair = InteractionUtilities.generateFIFromGene(idi, idj);
+                    edges.add(pair);
+                    String edgeName = pair.replace("\t", " (" + edgeType + ") ");
+                    edgeNameToWeight.put(edgeName, weights.get(j));
+                    edgeNameToDirection.put(edgeName, Boolean.TRUE);
+                }
+            }
+        }
+        else { // This is undirected
+            for (int i = 0; i < nodeIds.size() - 1; i++) {
+                String idi = nodeIds.get(i);
+                List<Double> weights = connectivities.get(i);
+                for (int j = i + 1; j < nodeIds.size(); j++) {
+                    if (weights.get(j) < EDGE_WEIGHT_CUTOFF)
+                        continue;
+                    String idj = nodeIds.get(j);
+                    String pair = InteractionUtilities.generateFIFromGene(idi, idj);
+                    edges.add(pair);
+                    String edgeName = pair.replace("\t", " (" + edgeType + ") ");
+                    edgeNameToWeight.put(edgeName, weights.get(j));
+                    edgeNameToDirection.put(edgeName, Boolean.FALSE);
+                }
             }
         }
 
-        constructNetwork(nodeIds, 
-                         idToPos, 
-                         idToCluster,
-                         idToCellNumber,
-                         edgeNameToWeight,
-                         edges, 
-                         "CellCluster",
-                         edgeType,
-                         SingleCellClusterNetwork);
+        CyNetworkView networkview = constructNetwork(nodeIds, 
+                                                     idToPos, 
+                                                     idToCluster,
+                                                     idToCellNumber,
+                                                     edgeNameToWeight,
+                                                     edgeNameToDirection,
+                                                     edges, 
+                                                     "CellCluster",
+                                                     edgeType,
+                                                     SingleCellClusterNetwork);
     }
 
     private CyNetworkView constructNetwork(List<String> nodeIds,
@@ -212,6 +274,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
                                            Map<String, Integer> idToCluster,
                                            Map<String, Integer> idToCellNumber,
                                            Map<String, Double> edgeNameToWeight,
+                                           Map<String, Boolean> edgeNameToDirection,
                                            Set<String> edges,
                                            String nodeType,
                                            String edgeType,
@@ -252,6 +315,8 @@ public class ScAnalysisTask extends FIAnalysisTask {
         if (idToCellNumber != null)
             tableHelper.storeNodeAttributesByName(network, CELL_NUMBER_NAME, idToCellNumber);
         tableHelper.storeEdgeAttributesByName(network, CONNECTIVITY_NAME, edgeNameToWeight);
+        if (edgeNameToDirection != null)
+            tableHelper.storeEdgeAttributesByName(network, EDGE_IS_DIRECTED, edgeNameToDirection);
         FIVisualStyle style = null;
         if (type == ReactomeNetworkType.SingleCellClusterNetwork)
             style = ScNetworkManager.getManager().getClusterStyle();

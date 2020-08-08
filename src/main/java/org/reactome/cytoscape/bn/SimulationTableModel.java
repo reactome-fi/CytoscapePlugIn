@@ -171,8 +171,8 @@ public class SimulationTableModel extends AbstractTableModel implements Variable
                         varToActivation);
         for (BooleanVariable var : variables) {
             String reactomeId = var.getProperty("reactomeId");
-            if (reactomeId == null || !displayedIds.contains(reactomeId))
-                continue;
+//            if (reactomeId == null || !displayedIds.contains(reactomeId))
+//                continue;
             List<Object> rowValues = new ArrayList<>();
             values.add(rowValues);
             rowValues.add(var);

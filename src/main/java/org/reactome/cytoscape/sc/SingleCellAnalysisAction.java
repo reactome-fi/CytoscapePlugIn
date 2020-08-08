@@ -27,7 +27,8 @@ public class SingleCellAnalysisAction extends FICytoscapeAction {
                                                      gui.getSpecies(),
                                                      gui.getFormat(),
                                                      gui.getRegressoutKeys(),
-                                                     gui.getImputationMethod());
+                                                     gui.getImputationMethod(),
+                                                     gui.isForRNAVelocity());
             Thread thread = new Thread(task);
             thread.start();
         }

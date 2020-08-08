@@ -48,6 +48,10 @@ public class JSONServerCaller {
                                        dir);
     }
     
+    public String scvOpenData(String dir) throws JsonEOFException, IOException {
+        return (String) callJSONServer("scv_open", dir);
+    }
+    
     /**
      * Very weird: return two double and one String in the List. This needs to be handled.
      * @param dir
@@ -97,8 +101,16 @@ public class JSONServerCaller {
         return (String) rtn;
     }
     
+    public String scvPreprocessData() throws JsonEOFException, IOException {
+        return (String) callJSONServer("scv_preprocess");
+    }
+    
     public String clusterData() throws JsonEOFException, IOException {
         return (String) callJSONServer("cluster_data");
+    }
+    
+    public String scvVelocity() throws JsonEOFException, IOException {
+        return (String) callJSONServer("scv_velocity");
     }
     
     /**

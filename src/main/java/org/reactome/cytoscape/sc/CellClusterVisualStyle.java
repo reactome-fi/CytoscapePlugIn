@@ -8,11 +8,14 @@ import java.util.Map;
 import java.util.Set;
 
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.presentation.property.ArrowShapeVisualProperty;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.view.presentation.property.values.ArrowShape;
 import org.cytoscape.view.vizmap.VisualMappingFunctionFactory;
 import org.cytoscape.view.vizmap.VisualStyle;
 import org.cytoscape.view.vizmap.mappings.BoundaryRangeValues;
 import org.cytoscape.view.vizmap.mappings.ContinuousMapping;
+import org.cytoscape.view.vizmap.mappings.DiscreteMapping;
 import org.reactome.cytoscape.service.TableHelper;
 
 /**
@@ -45,6 +48,15 @@ public class CellClusterVisualStyle extends SCNetworkVisualStyle {
         edgeWidthFunction.addPoint(new Double(0.0d), lowerBoundary);
         edgeWidthFunction.addPoint(new Double(1.0d), upperBoundary);
         fiVisualStyle.addVisualMappingFunction(edgeWidthFunction);
+        
+        // Check if we need to use direction
+        // Set the edge target arrow shape based on FI Direction
+        DiscreteMapping<Boolean, ArrowShape> arrowMapping = (DiscreteMapping<Boolean, ArrowShape>) visMapFuncFactoryD.createVisualMappingFunction(SCNetworkVisualStyle.EDGE_IS_DIRECTED, 
+                                                                                                        Boolean.class,
+                                                                                                        BasicVisualLexicon.EDGE_TARGET_ARROW_SHAPE);
+        arrowMapping.putMapValue(Boolean.TRUE, ArrowShapeVisualProperty.ARROW);
+        arrowMapping.putMapValue(Boolean.FALSE, ArrowShapeVisualProperty.NONE);
+        fiVisualStyle.addVisualMappingFunction(arrowMapping);
     }
     
     @Override

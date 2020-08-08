@@ -31,6 +31,7 @@ import smile.plot.swing.Palette;
 public class SCNetworkVisualStyle extends FIVisualStyleImpl {
     public static final String CLUSTER_NAME = "cluster";
     public static final String CONNECTIVITY_NAME = "connectivity";
+    public static final String EDGE_IS_DIRECTED = "isDirected";
     public static final String CELL_NUMBER_NAME = "cells";
     // This is the key used in scanpy
     public static final String DPT_NAME = "dpt_pseudotime";

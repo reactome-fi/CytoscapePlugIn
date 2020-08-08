@@ -70,6 +70,8 @@ public class ScNetworkManager {
     private PathwaySpecies species = Homo_sapiens;
     // A flag indicating if there is a projected data
     private boolean hasProjectedData;
+    // Check if this analysis is for RNA velocity 
+    private boolean isForRNAVelocity;
 
     private ScNetworkManager() {
         serverCaller = new JSONServerCaller();
@@ -82,6 +84,14 @@ public class ScNetworkManager {
         return manager;
     }
     
+    public boolean isForRNAVelocity() {
+        return isForRNAVelocity;
+    }
+
+    public void setForRNAVelocity(boolean isForRNAVelocity) {
+        this.isForRNAVelocity = isForRNAVelocity;
+    }
+
     public boolean hasProjectedData() {
         return this.hasProjectedData;
     }
