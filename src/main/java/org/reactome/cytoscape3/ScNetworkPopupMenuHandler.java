@@ -144,6 +144,12 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
             return new CyMenuItem(menuItem, 4.0f);
         };
         addPopupMenu(context, menuFactory, CyNetworkViewContextMenuFactory.class, props);
+        menuFactory = view -> {
+            JMenuItem menuItem = new JMenuItem("Rank Dynamic Genes");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().rankDynamicGenes());
+            return new CyMenuItem(menuItem, 5.0f);
+        };
+        addPopupMenu(context, menuFactory, CyNetworkViewContextMenuFactory.class, props);
     }
     
     private class ProjectMenuItem implements CyNetworkViewContextMenuFactory {

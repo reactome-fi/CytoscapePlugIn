@@ -51,6 +51,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
     private List<String> regressoutKeys;
     private String imputationMethod;
     private boolean isForRNAVelocity;
+    private ScvVelocityMode velocityMode = ScvVelocityMode.stochastic;
 
     public ScAnalysisTask(String file,
                           PathwaySpecies species,
@@ -64,6 +65,10 @@ public class ScAnalysisTask extends FIAnalysisTask {
         this.regressoutKeys = regressoutKeys;
         this.imputationMethod = imputationMethod;
         this.isForRNAVelocity = isForRNAVelocity;
+    }
+    
+    public void setVelocityMode(ScvVelocityMode mode) {
+        this.velocityMode = mode;
     }
 
     @Override
@@ -110,7 +115,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
         if (!checkMessage(parentFrame, message))
             return false;
         progPane.setText("Analyzing velocity...");
-        message = serverCaller.scvVelocity();
+        message = serverCaller.scvVelocity(velocityMode);
         if (!checkMessage(parentFrame, message))
             return false;
         return true; // Success

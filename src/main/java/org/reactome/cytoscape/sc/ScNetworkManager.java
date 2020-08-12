@@ -447,6 +447,21 @@ public class ScNetworkManager {
         t.start();
     }
     
+    public void rankDynamicGenes() {
+        try {
+            List<List<String>> rankedGenes = serverCaller.rankDynamicGenes();
+            DifferentialExpressionAnalyzer helper = new DifferentialExpressionAnalyzer();
+            helper.displayClusterGenes(rankedGenes, "Cluster Specific Dynamic Genes");
+        }
+        catch(IOException e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          e.getMessage(),
+                                          "Error in Ranking Dynamic Genes",
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error(e.getMessage(), e);
+        }
+    }
+    
     public void rankVelocityGenes() {
         try {
             List<List<String>> rankedGenes = serverCaller.rankVelocityGenes();
@@ -456,7 +471,7 @@ public class ScNetworkManager {
         catch(IOException e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           e.getMessage(),
-                                          "Error in Differential Expression Analysis",
+                                          "Error in Ranking Velocity Genes",
                                           JOptionPane.ERROR_MESSAGE);
             logger.error(e.getMessage(), e);
         }

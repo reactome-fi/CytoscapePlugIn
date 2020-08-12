@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Stream;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -47,12 +48,15 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  * @author wug
  *
  */
+@SuppressWarnings("serial")
 public class ScActionDialog extends FIActionDialog {
     private final Dimension DEFAULT_SIZE = new Dimension(500, 535);
-    private final Dimension RNA_VELOCITY_SIZE = new Dimension(500, 455);
     private DataSetPanel datasetPane;
     private PreprocessPane preprocessPane;
     private boolean isForRNAVelocity;
+    private JLabel velocityLabel;
+    // Use a list is much easier than ButtonGroup
+    private List<JRadioButton> velocityModeBtns;
     
     public ScActionDialog(JFrame parent) {
         super(parent);
@@ -188,15 +192,49 @@ public class ScActionDialog extends FIActionDialog {
         // Update GUIs based on choice
         scanpyBtn.addActionListener(e -> {
             datasetPane.setFormatGUIsVisible(true);
-            setSize(DEFAULT_SIZE);
             preprocessPane.setIsForVelocity(false);
+            setVelocityModeGUIVisible(false);
         });
         scevoBtn.addActionListener(e -> {
             datasetPane.setFormatGUIsVisible(false);
-            setSize(RNA_VELOCITY_SIZE);
             preprocessPane.setIsForVelocity(true);
+            setVelocityModeGUIVisible(true);
         });
+        // RNA velocity specific GUIs
+        velocityLabel = new JLabel("Choose RNA velocity mode:");
+        constraints.gridx = 0;
+        constraints.insets = new Insets(0, 4, 0, 4);
+        constraints.gridy ++;
+        pane.add(velocityLabel, constraints);
+        // Default should be the first stochastic
+        ButtonGroup velocityModeGroup = new ButtonGroup();
+        constraints.gridx = 1;
+        // A much easier way than using ButtonGroup
+        velocityModeBtns = new ArrayList<>();
+        Stream.of(ScvVelocityMode.values()).forEach(mode -> {
+            JRadioButton btn = new JRadioButton(mode.toString());
+            velocityModeBtns.add(btn);
+            velocityModeGroup.add(btn);
+            pane.add(btn, constraints);
+            constraints.gridy ++;
+        });
+        velocityModeBtns.get(0).setSelected(true);
+        setVelocityModeGUIVisible(false);
         return pane;
+    }
+    
+    private void setVelocityModeGUIVisible(boolean isVisible) {
+        velocityLabel.setVisible(isVisible);
+        velocityModeBtns.forEach(btn -> btn.setVisible(isVisible));
+    }
+    
+    public ScvVelocityMode getVelocityMode() {
+        for (JRadioButton btn : velocityModeBtns) {
+            if (btn.isSelected()) {
+                return ScvVelocityMode.valueOf(btn.getText());
+            }
+        }
+        return ScvVelocityMode.stochastic;
     }
     
     /**

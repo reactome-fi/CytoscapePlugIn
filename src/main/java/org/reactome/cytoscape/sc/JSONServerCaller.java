@@ -60,6 +60,13 @@ public class JSONServerCaller {
         return (List<List<String>>) result;
     }
     
+    public List<List<String>> rankDynamicGenes() throws JSONException, IOException {
+        Object result = callJSONServer("scv_rank_dynamic_genes");
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        return (List<List<String>>) result;
+    }
+    
     /**
      * Very weird: return two double and one String in the List. This needs to be handled.
      * @param dir
@@ -117,8 +124,8 @@ public class JSONServerCaller {
         return (String) callJSONServer("cluster_data");
     }
     
-    public String scvVelocity() throws JsonEOFException, IOException {
-        return (String) callJSONServer("scv_velocity");
+    public String scvVelocity(ScvVelocityMode mode) throws JsonEOFException, IOException {
+        return (String) callJSONServer("scv_velocity", mode.toString());
     }
     
     /**
@@ -338,10 +345,10 @@ public class JSONServerCaller {
         System.out.println("scv_open:\n" + obj);
         obj = callJSONServer("scv_preprocess");
         System.out.println("scv_preprocess:\n" + obj);
-        obj = callJSONServer("scv_velocity");
+        obj = callJSONServer("scv_velocity", ScvVelocityMode.dynamical.toString());
         System.out.println("scv_velocity:\n" + obj);
-        obj = callJSONServer("scv_embedding", "Notch2");
-        System.out.println("scv_embedding:\n" + obj);
+//        obj = callJSONServer("scv_embedding", "Notch2");
+//        System.out.println("scv_embedding:\n" + obj);
     }
     
     @Test
