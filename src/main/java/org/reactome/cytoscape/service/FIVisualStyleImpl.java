@@ -144,7 +144,8 @@ public class FIVisualStyleImpl implements FIVisualStyle {
                         visMapFuncFactoryD);
         // Handle edge styles
         setDefaultEdgeStyle(fiVisualStyle);
-        setEdgeStyleOnAnnotations(fiVisualStyle, 
+        setEdgeStyleOnAnnotations(view,
+                                  fiVisualStyle, 
                                   visMapFuncFactoryD,
                                   visMapFuncFactoryC);
         setEdgeStyleOnEdgeType(fiVisualStyle, 
@@ -209,7 +210,8 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         fiVisualStyle.addVisualMappingFunction(sampleNumberToSizeFunction);
     }
     
-    protected void setEdgeStyleOnAnnotations(VisualStyle fiVisualStyle, 
+    protected void setEdgeStyleOnAnnotations(CyNetworkView view,
+                                             VisualStyle fiVisualStyle, 
                                              VisualMappingFunctionFactory visMapFuncFactoryD,
                                              VisualMappingFunctionFactory visMapFuncFactoryC) {
         // Set the edge target arrow shape based on FI Direction

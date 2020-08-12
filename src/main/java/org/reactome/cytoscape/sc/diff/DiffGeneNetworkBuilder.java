@@ -88,6 +88,8 @@ public class DiffGeneNetworkBuilder {
                                                           .collect(Collectors.toMap(Function.identity(), 
                                                                                     s -> String.join(",", human2mouseMap.get(s))));
         tableHelper.storeNodeAttributesByName(network, "mouseGenes", mouseGeneAtts);
+        if (result.isGeneListOnly())
+            return;
         String[] attNames = {
                 "score",
                 "logFoldChange",

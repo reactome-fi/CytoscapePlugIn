@@ -18,6 +18,7 @@ import javax.swing.JPanel;
 
 import org.apache.commons.math3.util.Pair;
 import org.gk.util.DialogControlPane;
+import org.reactome.cytoscape.sc.diff.ClusterGenesDialog;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.sc.diff.DiffExpResultDialog;
 import org.reactome.cytoscape.service.PathwayEnrichmentApproach;
@@ -59,6 +60,11 @@ public class DifferentialExpressionAnalyzer {
         DiffExpResultDialog dialog = new DiffExpResultDialog();
         dialog.setResult(result);
         dialog.setTitle("Differential Expression Analysis: " + result.getResultName());
+        addAnalysisFeatures(dialog, result);
+        dialog.setVisible(true);
+    }
+
+    private void addAnalysisFeatures(DiffExpResultDialog dialog, DiffExpResult result) {
         dialog.getFINetworkBtn().addActionListener(e -> {
             DiffExpResult displayedResult = dialog.getDisplayedResult();
             ScNetworkManager.getManager().buildFINetwork(displayedResult);
@@ -70,9 +76,22 @@ public class DifferentialExpressionAnalyzer {
                 DiffExpResult displayedResult = dialog.getDisplayedResult();
                 ScNetworkManager.getManager().doBinomialTest(displayedResult);
             }
-            else if (approach == GSEA)
+            else if (approach == GSEA && result != null)
                 ScNetworkManager.getManager().doGSEATest(result);
         });
+    }
+    
+    /**
+     * Display cluster specific genes.
+     * @param genes
+     */
+    public void displayClusterGenes(List<List<String>> genes,
+                                    String title) {
+        ClusterGenesDialog dialog = new ClusterGenesDialog();
+        dialog.setClusterGenes(genes);
+        dialog.setTitle(title);
+        dialog.setSize(1300, 500);
+        addAnalysisFeatures(dialog, null);
         dialog.setVisible(true);
     }
     

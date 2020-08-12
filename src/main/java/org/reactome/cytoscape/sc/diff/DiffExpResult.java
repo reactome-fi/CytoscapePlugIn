@@ -16,10 +16,20 @@ public class DiffExpResult {
     private List<Double> pvals;
     private List<Double> pvalsAdj;
     private String resultName;
+    // For a flag for gene list only
+    private boolean isGeneListOnly;
     
     public DiffExpResult() {
     }
     
+    public boolean isGeneListOnly() {
+        return isGeneListOnly;
+    }
+
+    public void setGeneListOnly(boolean isGeneListOnly) {
+        this.isGeneListOnly = isGeneListOnly;
+    }
+
     public Map<String, Double> getGeneToScore() {
         Map<String, Double> geneToScore = new HashMap<>();
         for (int i = 0; i < names.size(); i++) {

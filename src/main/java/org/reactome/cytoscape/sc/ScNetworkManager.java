@@ -111,6 +111,41 @@ public class ScNetworkManager {
     public void setSpecies(PathwaySpecies species) {
         this.species = species;
     }
+    
+    public void showGeneVelocity(String gene) {
+        try {
+            String fileName = (String) serverCaller.callJSONServer("scv_velocity_plot", gene);
+            openFile(fileName);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Wrong returned type from the python server: " + e.getMessage(),
+                                          "Error in Gene Velocity",
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error(e.getMessage(), e);
+        }
+    }
+    
+    public void showScvEmbedding(String function) {
+        try {
+            String fileName = (String) serverCaller.callJSONServer(function);
+            openFile(fileName);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Wrong returned type from the python server: " + e.getMessage(),
+                                          "Error in RNA Embedding",
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error(e.getMessage(), e);
+        }
+    }
+
+    private void openFile(String fileName) {
+        // This should be a PDF file.
+        String figureDir = PlugInObjectManager.getManager().getProperties().getProperty("scPythonDir") + File.separator + "figures";
+        String url = "file:///" + figureDir + File.separator + fileName; 
+        PlugInUtilities.openURL(url);
+    }
 
     public Boolean isEdgeDisplayed() {
         CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
@@ -410,6 +445,21 @@ public class ScNetworkManager {
             }
         };
         t.start();
+    }
+    
+    public void rankVelocityGenes() {
+        try {
+            List<List<String>> rankedGenes = serverCaller.rankVelocityGenes();
+            DifferentialExpressionAnalyzer helper = new DifferentialExpressionAnalyzer();
+            helper.displayClusterGenes(rankedGenes, "Cluster Specific Velocity Genes");
+        }
+        catch(IOException e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          e.getMessage(),
+                                          "Error in Differential Expression Analysis",
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error(e.getMessage(), e);
+        }
     }
     
     public void doDiffExpAnalysis() {

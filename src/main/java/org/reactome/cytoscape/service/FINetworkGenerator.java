@@ -33,12 +33,22 @@ import org.reactome.funcInt.Interaction;
 public class FINetworkGenerator implements NetworkGenerator {
     private String edgeType = "FI"; // Default
     private String nodeType = "Gene"; // Default
+    // To control how direction is created
+    private boolean directionInEdgeName;
     
     public FINetworkGenerator() {
     }
     
     public String getEdgeType() {
         return edgeType;
+    }
+
+    public boolean isDirectionInEdgeName() {
+        return directionInEdgeName;
+    }
+
+    public void setDirectionInEdgeName(boolean directionInEdgeName) {
+        this.directionInEdgeName = directionInEdgeName;
     }
 
     public void setEdgeType(String edgeType) {
@@ -119,10 +129,8 @@ public class FINetworkGenerator implements NetworkGenerator {
         
         String node1Name = nodeTable.getRow(node1.getSUID()).get("name", String.class);
         String node2Name = nodeTable.getRow(node2.getSUID()).get("name", String.class);
-        CyNode sourceNode = null;
-        CyNode targetNode = null;
         CyEdge edge = null;
-        if (node1Name.compareTo(node2Name) < 0) {
+        if (directionInEdgeName || node1Name.compareTo(node2Name) < 0) {
             // Add the edge to the network
             edge = network.addEdge(node1, node2, true);
             edgeTable.getRow(edge.getSUID()).set("name", node1Name + " (" + type + ") " + node2Name);

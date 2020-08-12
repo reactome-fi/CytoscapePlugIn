@@ -2,6 +2,7 @@ package org.reactome.cytoscape.sc.diff;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.Window;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -16,20 +17,27 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableModel;
 
 import org.reactome.cytoscape.service.PathwayEnrichmentApproach;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 @SuppressWarnings("serial")
 public class DiffExpResultDialog extends JDialog {
-    private JTable resultTable;
-    private JLabel totalGeneLabel;
-    private JComboBox<PathwayEnrichmentApproach> pathwayBox;
+    protected JTable resultTable;
+    protected JLabel totalGeneLabel;
+    protected JComboBox<PathwayEnrichmentApproach> pathwayBox;
     private JButton pathwayBtn;
     private JButton fiBtn;
+    protected JButton closeBtn;
 
     public DiffExpResultDialog() {
         super(PlugInObjectManager.getManager().getCytoscapeDesktop());
+        init();
+    }
+    
+    protected DiffExpResultDialog(Window parent) {
+        super(parent);
         init();
     }
     
@@ -66,11 +74,16 @@ public class DiffExpResultDialog extends JDialog {
         result.setResultName(model.result.getResultName());
         return result;
     }
+    
+    protected TableModel createTableModel() {
+        DiffExpResultTableModel model = new DiffExpResultTableModel();
+        return model;
+    }
 
     private void init() {
         setTitle("Differential Expression Analysis Result");
 
-        DiffExpResultTableModel model = new DiffExpResultTableModel();
+        TableModel model = createTableModel();
         resultTable = new JTable(model);
         resultTable.setAutoCreateRowSorter(true);
         resultTable.getTableHeader().setReorderingAllowed(false);
@@ -99,13 +112,18 @@ public class DiffExpResultDialog extends JDialog {
         JPanel container = new JPanel();
         container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
         container.setBorder(BorderFactory.createEtchedBorder());
-        DiffExpResultTableFilterPane filterPane = new DiffExpResultTableFilterPane(resultTable);
+        JPanel filterPane = createFilterPane();
         container.add(filterPane);
+        return container;
+    }
+    
+    protected JPanel createFilterPane() {
+        DiffExpResultTableFilterPane filterPane = new DiffExpResultTableFilterPane(resultTable);
         filterPane.addPropertyChangeListener(e -> {
             if (e.getPropertyName().equals("doFilter"))
                 totalGeneLabel.setText("Total genes displayed: " + resultTable.getRowCount());
         });
-        return container;
+        return filterPane;
     }
 
     public void setResult(DiffExpResult result) {
@@ -114,7 +132,7 @@ public class DiffExpResultDialog extends JDialog {
         totalGeneLabel.setText("Total genes displayed: " + resultTable.getRowCount());
     }
     
-    private JPanel createControlPane() {
+    protected JPanel createControlPane() {
         JPanel pane = new JPanel();
         pane.setLayout(new FlowLayout(FlowLayout.CENTER, 4, 1));
         pane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),
@@ -133,7 +151,7 @@ public class DiffExpResultDialog extends JDialog {
         fiBtn = new JButton("Build FI Network");
         fiBtn.setToolTipText("Build Reactome FI network");
         pane.add(fiBtn);
-        JButton closeBtn = new JButton("Close");
+        closeBtn = new JButton("Close");
         closeBtn.addActionListener(e -> dispose());
         pane.add(closeBtn);
         return pane;

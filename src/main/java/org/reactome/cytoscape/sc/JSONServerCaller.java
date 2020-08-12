@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import javajs.util.JSONException;
 import smile.plot.swing.Canvas;
 import smile.plot.swing.ScatterPlot;
 
@@ -50,6 +51,13 @@ public class JSONServerCaller {
     
     public String scvOpenData(String dir) throws JsonEOFException, IOException {
         return (String) callJSONServer("scv_open", dir);
+    }
+    
+    public List<List<String>> rankVelocityGenes() throws JSONException, IOException {
+        Object result = callJSONServer("scv_rank_velocity_genes");
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        return (List<List<String>>) result;
     }
     
     /**
@@ -279,8 +287,8 @@ public class JSONServerCaller {
         return (List<List<String>>) result;
     }
     
-    private Object callJSONServer(String method,
-                                  String... params) throws JsonEOFException, IOException {
+    public Object callJSONServer(String method,
+                                 String... params) throws JsonEOFException, IOException {
         request.method = method;
         request.resetParams();
         if (params != null)

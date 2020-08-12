@@ -24,31 +24,23 @@ import org.reactome.cytoscape.service.TableHelper;
  *
  */
 public class CellClusterVisualStyle extends SCNetworkVisualStyle {
-    private final double MIN_NODE_SIZE = 0.25d;
-    private final double MAX_NODE_SIZE = 2.5d;
+    public static final double MIN_CLUSTER_DIST = 100.0d; // Two maximum node sizes
+    private final double MIN_NODE_SIZE = 10.0d;
+    private final double MAX_NODE_SIZE = 100.0d;
     private final double MIN_EDGE_WIDTH = MIN_NODE_SIZE / 10.0d;
     private final double MAX_EDGE_WIDTH = MAX_NODE_SIZE / 10.0d;
     
     public CellClusterVisualStyle() {
         styleName = "Cell Cluster Style";
+        needNodeLabel = true;
     }
     
     @Override
-    protected void setEdgeStyleOnAnnotations(VisualStyle fiVisualStyle,
+    protected void setEdgeStyleOnAnnotations(CyNetworkView view,
+                                             VisualStyle fiVisualStyle,
                                              VisualMappingFunctionFactory visMapFuncFactoryD,
                                              VisualMappingFunctionFactory visMapFuncFactoryC) {
-        ContinuousMapping<Double, Double> edgeWidthFunction = (ContinuousMapping<Double, Double>) visMapFuncFactoryC.createVisualMappingFunction(CONNECTIVITY_NAME, 
-                                                                                                                                                 Double.class, 
-                                                                                                                                                 BasicVisualLexicon.EDGE_WIDTH);
-        // Make sure it is consistent with the node size, which is 0.10
-        // 1/100 of the node size
-        BoundaryRangeValues<Double> lowerBoundary = new BoundaryRangeValues<Double>(MIN_EDGE_WIDTH, MIN_EDGE_WIDTH, MIN_EDGE_WIDTH);
-        // 1/10 of the node size
-        BoundaryRangeValues<Double> upperBoundary = new BoundaryRangeValues<Double>(MAX_EDGE_WIDTH, MAX_EDGE_WIDTH, MAX_EDGE_WIDTH);
-        edgeWidthFunction.addPoint(new Double(0.0d), lowerBoundary);
-        edgeWidthFunction.addPoint(new Double(1.0d), upperBoundary);
-        fiVisualStyle.addVisualMappingFunction(edgeWidthFunction);
-        
+        setEdgeWeights(view, fiVisualStyle, visMapFuncFactoryC, MIN_EDGE_WIDTH, MAX_EDGE_WIDTH);
         // Check if we need to use direction
         // Set the edge target arrow shape based on FI Direction
         DiscreteMapping<Boolean, ArrowShape> arrowMapping = (DiscreteMapping<Boolean, ArrowShape>) visMapFuncFactoryD.createVisualMappingFunction(SCNetworkVisualStyle.EDGE_IS_DIRECTED, 

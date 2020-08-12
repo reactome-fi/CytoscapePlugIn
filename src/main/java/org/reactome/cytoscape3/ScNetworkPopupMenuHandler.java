@@ -78,6 +78,10 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
             }
         }
         
+        if (ScNetworkManager.getManager().isForRNAVelocity()) {
+            addRNAVelocityMenus(context, props, cellFeatures);
+        }
+        
         props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, new CytotraceAnalysis(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new DPTAnalysis(), CyNetworkViewContextMenuFactory.class, props);
@@ -90,6 +94,56 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
                      CyNetworkViewContextMenuFactory.class,
                      props);
         
+    }
+    
+    private String getGene() {
+        String gene = JOptionPane.showInputDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                                  "Enter a gene:",
+                                                  "Enter Gene",
+                                                  JOptionPane.PLAIN_MESSAGE);
+        return gene;
+    }
+
+    public void addRNAVelocityMenus(BundleContext context, Properties props, List<String> cellFeatures) {
+        // Add RNA velocity related feature
+        props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU + ".RNA Velocity Analysis[5.5]");
+        // Three embeddings
+        CyNetworkViewContextMenuFactory menuFactory = view -> {
+            JMenuItem menuItem = new JMenuItem("Embedding");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().showScvEmbedding("scv_embedding"));
+            return new CyMenuItem(menuItem, 0.0f);
+        };
+        addPopupMenu(context, menuFactory, CyNetworkViewContextMenuFactory.class, props);
+        menuFactory = view -> {
+            JMenuItem menuItem = new JMenuItem("Embedding Grid");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().showScvEmbedding("scv_embedding_grid"));
+            return new CyMenuItem(menuItem, 1.0f);
+        };
+        addPopupMenu(context, menuFactory, CyNetworkViewContextMenuFactory.class, props);
+        menuFactory = view -> {
+            JMenuItem menuItem = new JMenuItem("Embedding Stream");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().showScvEmbedding("scv_embedding_stream"));
+            return new CyMenuItem(menuItem, 2.0f);
+        };
+        addPopupMenu(context, menuFactory, CyNetworkViewContextMenuFactory.class, props);
+        // Gene-based data
+        menuFactory = view -> {
+            JMenuItem menuItem = new JMenuItem("Gene Velocity");
+            menuItem.addActionListener(e -> {
+                String gene = getGene();
+                if (gene == null)
+                    return;
+                ScNetworkManager.getManager().showGeneVelocity(gene);
+            });
+            return new CyMenuItem(menuItem, 3.0f);
+        };
+        addPopupMenu(context, menuFactory, CyNetworkViewContextMenuFactory.class, props);
+        menuFactory = view -> {
+            JMenuItem menuItem = new JMenuItem("Rank Velocity Genes");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().rankVelocityGenes());
+            return new CyMenuItem(menuItem, 4.0f);
+        };
+        addPopupMenu(context, menuFactory, CyNetworkViewContextMenuFactory.class, props);
     }
     
     private class ProjectMenuItem implements CyNetworkViewContextMenuFactory {
@@ -135,10 +189,7 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         }
         
         private void loadGeneExpression() {
-            String gene = JOptionPane.showInputDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                                      "Enter a gene:",
-                                                      "Enter Gene",
-                                                      JOptionPane.PLAIN_MESSAGE);
+            String gene = getGene();
             if (gene == null)
                 return;
             ScNetworkManager.getManager().loadGeneExp(gene);

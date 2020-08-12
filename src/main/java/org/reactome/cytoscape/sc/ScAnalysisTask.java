@@ -9,6 +9,7 @@ import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellNetwo
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +22,6 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.apache.commons.math3.linear.MatrixUtils;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNetworkManager;
 import org.cytoscape.model.CyNode;
@@ -38,11 +38,8 @@ import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.r3.util.InteractionUtilities;
-import org.reactome.r3.util.MathUtilities;
 
 import com.fasterxml.jackson.core.io.JsonEOFException;
-
-import smile.math.matrix.Matrix;
 
 public class ScAnalysisTask extends FIAnalysisTask {
     //TODO: To be selected by the user
@@ -214,10 +211,12 @@ public class ScAnalysisTask extends FIAnalysisTask {
         String edgeType = "-";
 
         // Handle nodes
+        double scale = 10.0d; // For position scale so that it is better rendered in Cytoscape
         for (int i = 0; i < positions.size(); i++) {
             String nodeId = SCNetworkVisualStyle.CLUSTER_NODE_PREFIX + i;
             nodeIds.add(nodeId);
-            idToPos.put(nodeId, positions.get(i));
+            List<Double> pos = positions.get(i);
+            idToPos.put(nodeId, Arrays.asList(pos.get(0) * scale, pos.get(1) * scale));
             idToCluster.put(nodeId, i);
             idToCellNumber.put(nodeId, clusterToCellNumbers.get(i).intValue());
         }
@@ -232,7 +231,9 @@ public class ScAnalysisTask extends FIAnalysisTask {
                     if (weights.get(j) < Double.MIN_NORMAL)
                         continue;
                     String idj = nodeIds.get(j);
-                    String pair = InteractionUtilities.generateFIFromGene(idi, idj);
+                    // Since we will use directed edge, therefore, we need to fix the edge
+                    // ids to make sure source and target are right.
+                    String pair = idj + "\t" + idi; // The direction is based on python code
                     edges.add(pair);
                     String edgeName = pair.replace("\t", " (" + edgeType + ") ");
                     edgeNameToWeight.put(edgeName, weights.get(j));
@@ -256,7 +257,8 @@ public class ScAnalysisTask extends FIAnalysisTask {
                 }
             }
         }
-
+        scalePositions(idToPos, edges);
+        
         CyNetworkView networkview = constructNetwork(nodeIds, 
                                                      idToPos, 
                                                      idToCluster,
@@ -267,6 +269,32 @@ public class ScAnalysisTask extends FIAnalysisTask {
                                                      "CellCluster",
                                                      edgeType,
                                                      SingleCellClusterNetwork);
+    }
+    
+    /**
+     * Scale the edges for cluster nodes based on the shortest edge.
+     * @param nodeIdToPos
+     * @param edges
+     */
+    private void scalePositions(Map<String, List<Double>> nodeIdToPos,
+                                Set<String> edges) {
+        double minDist = Double.MAX_VALUE;
+        for (String edge : edges) {
+            String[] ids = edge.split("\t");
+            List<Double> pos1 = nodeIdToPos.get(ids[0]);
+            List<Double> pos2 = nodeIdToPos.get(ids[1]);
+            double dx = pos1.get(0) - pos2.get(0);
+            double dy = pos1.get(1) - pos2.get(1);
+            double dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < minDist)
+                minDist = dist;
+        }
+        double scale = CellClusterVisualStyle.MIN_CLUSTER_DIST / minDist;
+        for (String nodeId : nodeIdToPos.keySet()) {
+            List<Double> pos = nodeIdToPos.get(nodeId);
+            pos.set(0, pos.get(0) * scale);
+            pos.set(1, pos.get(1) * scale);
+        }
     }
 
     private CyNetworkView constructNetwork(List<String> nodeIds,
@@ -282,6 +310,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
         FINetworkGenerator generator = new FINetworkGenerator();
         generator.setNodeType(nodeType);
         generator.setEdgeType("Transition");
+        generator.setDirectionInEdgeName(true);
         CyNetwork network = generator.constructFINetwork(new HashSet<>(nodeIds), 
                                                          edges,
                                                          edgeType);
@@ -309,7 +338,8 @@ public class ScAnalysisTask extends FIAnalysisTask {
             String name = tableHelper.getStoredNodeAttribute(network, node, "name", String.class);
             List<Double> coordinates = idToPos.get(name);
             nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, coordinates.get(0));
-            nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, coordinates.get(1));
+            // Python seemingly uses a different coordinate systems: the Y axis is flipped.
+            nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, -coordinates.get(1));
         });
         tableHelper.storeNodeAttributesByName(network, CLUSTER_NAME, idToCluster);
         if (idToCellNumber != null)
