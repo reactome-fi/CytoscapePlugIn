@@ -54,9 +54,9 @@ public class ScActionDialog extends FIActionDialog {
     private DataSetPanel datasetPane;
     private PreprocessPane preprocessPane;
     private boolean isForRNAVelocity;
-    private JLabel velocityLabel;
     // Use a list is much easier than ButtonGroup
     private List<JRadioButton> velocityModeBtns;
+    private JPanel velocityModePane;
     
     public ScActionDialog(JFrame parent) {
         super(parent);
@@ -131,6 +131,15 @@ public class ScActionDialog extends FIActionDialog {
                                                                 font));
         contentPane.add(approachPane);
         
+        velocityModePane = createVelocityModePane();
+        velocityModePane.setBorder(BorderFactory.createTitledBorder(border,
+                                                                    "Velocity Mode",
+                                                                    TitledBorder.LEFT,
+                                                                    TitledBorder.CENTER,
+                                                                    font));
+        contentPane.add(velocityModePane);
+        velocityModePane.setVisible(false); // Default should be false
+        
         datasetPane = new DataSetPanel() {
             @Override
             protected void createFileChooserGui(JTextField fileTF,
@@ -148,7 +157,7 @@ public class ScActionDialog extends FIActionDialog {
 
         };
         datasetPane.setBorder(BorderFactory.createTitledBorder(border,
-                                                               "Data",
+                                                               "Data Information",
                                                                TitledBorder.LEFT, 
                                                                TitledBorder.CENTER,
                                                                font));
@@ -193,18 +202,27 @@ public class ScActionDialog extends FIActionDialog {
         scanpyBtn.addActionListener(e -> {
             datasetPane.setFormatGUIsVisible(true);
             preprocessPane.setIsForVelocity(false);
-            setVelocityModeGUIVisible(false);
+            velocityModePane.setVisible(false);
         });
         scevoBtn.addActionListener(e -> {
             datasetPane.setFormatGUIsVisible(false);
             preprocessPane.setIsForVelocity(true);
-            setVelocityModeGUIVisible(true);
+            velocityModePane.setVisible(true);
         });
+        return pane;
+    }
+    
+    private JPanel createVelocityModePane() {
+        JPanel pane = new JPanel();
+        pane.setLayout(new GridBagLayout());
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.insets = new Insets(4, 4, 4, 4);
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        constraints.anchor = GridBagConstraints.WEST;
         // RNA velocity specific GUIs
-        velocityLabel = new JLabel("Choose RNA velocity mode:");
+        JLabel velocityLabel = new JLabel("Choose an RNA velocity mode:");
         constraints.gridx = 0;
-        constraints.insets = new Insets(0, 4, 0, 4);
-        constraints.gridy ++;
+        constraints.gridy = 0;
         pane.add(velocityLabel, constraints);
         // Default should be the first stochastic
         ButtonGroup velocityModeGroup = new ButtonGroup();
@@ -219,13 +237,7 @@ public class ScActionDialog extends FIActionDialog {
             constraints.gridy ++;
         });
         velocityModeBtns.get(0).setSelected(true);
-        setVelocityModeGUIVisible(false);
         return pane;
-    }
-    
-    private void setVelocityModeGUIVisible(boolean isVisible) {
-        velocityLabel.setVisible(isVisible);
-        velocityModeBtns.forEach(btn -> btn.setVisible(isVisible));
     }
     
     public ScvVelocityMode getVelocityMode() {
