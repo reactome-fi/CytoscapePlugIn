@@ -25,6 +25,7 @@ public abstract class DataSetPanel extends JPanel {
     private JRadioButton x10Hdf5Btn;
     private JRadioButton x10visumBtn;
     private JLabel dataFormatLabel;
+    private JLabel fileLabel;
     
     public DataSetPanel() {
         init();
@@ -47,6 +48,10 @@ public abstract class DataSetPanel extends JPanel {
         return x10MtxBtn.getText(); // To be supported. Currently only one choice.
     }
     
+    public JLabel getFileLabel() {
+        return this.fileLabel;
+    }
+    
     private void init() {
         setLayout(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
@@ -54,7 +59,7 @@ public abstract class DataSetPanel extends JPanel {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         
-        JLabel fileLabel = new JLabel("Choose a folder or file:");
+        fileLabel = new JLabel("Choose a folder or file:");
         JTextField fileTF = new JTextField();
         JButton browseButton = new JButton("Browse");
         createFileChooserGui(fileTF, 

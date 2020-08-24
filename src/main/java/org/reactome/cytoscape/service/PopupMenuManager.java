@@ -84,8 +84,10 @@ public class PopupMenuManager {
             return null; // Just return a null.
         // Uninstall menus in other PopupMenuHandler
         for (PopupMenuHandler tmpHandler : typeToHandler.values()) {
-            if (tmpHandler == handler)
-                continue;
+            // As of August 13, 2020, always re-install so that different approaches for ScRNA will get different
+            // popup menus (e.g. standard and RNA velocity)
+            //            if (tmpHandler == handler)
+            //                continue;
             if (!tmpHandler.isInstalled())
                 continue;
             tmpHandler.uninstall();

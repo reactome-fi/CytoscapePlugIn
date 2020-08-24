@@ -22,6 +22,8 @@ import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
 import org.cytoscape.model.CyTable;
+import org.cytoscape.util.swing.FileChooserFilter;
+import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
@@ -82,6 +84,11 @@ public class ScNetworkManager {
         if (manager == null)
             manager = new ScNetworkManager();
         return manager;
+    }
+    
+    public void reset() {
+        isForRNAVelocity = false;
+        hasProjectedData = false;
     }
     
     public boolean isForRNAVelocity() {
@@ -239,6 +246,44 @@ public class ScNetworkManager {
         }
     }
     
+    public void saveAnalyzedData() {
+        // Get a file
+        Collection<FileChooserFilter> filters = new ArrayList<FileChooserFilter>();
+        FileChooserFilter filter = new FileChooserFilter("Analysis Results",
+                                                         new String[]{"h5ad", ".h5ad"});
+        filters.add(filter);
+        File file = PlugInUtilities.getAnalysisFile("Save Analysis Results",
+                                                    FileUtil.SAVE,
+                                                    filters);
+        if (file == null)
+            return; // Canceled
+        // Save is a kind of slow process, we need to use a new thread 
+        // in order to show process
+        Thread t = new Thread() {
+            public void run() {
+                JFrame parentFrame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+                try {
+                    ProgressPane progressPane = new ProgressPane();
+                    progressPane.setIndeterminate(true);
+                    parentFrame.setGlassPane(progressPane);
+                    progressPane.setTitle("Saving Results");
+                    progressPane.setVisible(true);
+                    progressPane.setText("Saving analysis results...");
+                    serverCaller.writeData(file.getAbsolutePath());
+                }
+                catch(Exception e) {
+                    JOptionPane.showMessageDialog(parentFrame,
+                                                  e.getMessage(),
+                                                  "Error in Saving Results",
+                                                  JOptionPane.ERROR_MESSAGE);
+                    logger.error(e.getMessage(), e);
+                }
+                parentFrame.getGlassPane().setVisible(false);
+            }
+        };
+        t.start();
+    }
+    
     public void performCytoTrace() {
         CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
         if (view == null)
@@ -385,8 +430,8 @@ public class ScNetworkManager {
     
     public void project() {
         ScActionDialog actionDialog = new ScActionDialog();
-        actionDialog.hidePreprocessPane();
-        actionDialog.setSize(500, 300);
+        actionDialog.configForProjection();
+        actionDialog.setTitle("Choose Data for Projection");
         File file = actionDialog.selectFile();
         if (file == null)
             return ;
@@ -401,7 +446,7 @@ public class ScNetworkManager {
                 try {
                     ProgressPane progressPane = new ProgressPane();
                     parentFrame.setGlassPane(progressPane);
-                    progressPane.setTitle("Project Data");
+                    progressPane.setTitle("Data Projection");
                     progressPane.setIndeterminate(true);
                     progressPane.setText("projecting...");
                     parentFrame.getGlassPane().setVisible(true);
@@ -424,7 +469,9 @@ public class ScNetworkManager {
                         List<?> umapCluster = cellIdToUmapCluster.get(cellId);
                         View<CyNode> nodeView = view.getNodeView(node);
                         nodeView.setVisualProperty(BasicVisualLexicon.NODE_X_LOCATION, umapCluster.get(0));
-                        nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, umapCluster.get(1));
+                        // Don't forget to flip the y-axis 
+                        Double y = (Double) umapCluster.get(1);
+                        nodeView.setVisualProperty(BasicVisualLexicon.NODE_Y_LOCATION, -y);
                         tableHelper.storeNodeAttribute(network, 
                                                        node,
                                                        SCNetworkVisualStyle.CLUSTER_NAME, 
@@ -453,7 +500,7 @@ public class ScNetworkManager {
             DifferentialExpressionAnalyzer helper = new DifferentialExpressionAnalyzer();
             helper.displayClusterGenes(rankedGenes, "Cluster Specific Dynamic Genes");
         }
-        catch(IOException e) {
+        catch(Exception e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           e.getMessage(),
                                           "Error in Ranking Dynamic Genes",
@@ -468,7 +515,7 @@ public class ScNetworkManager {
             DifferentialExpressionAnalyzer helper = new DifferentialExpressionAnalyzer();
             helper.displayClusterGenes(rankedGenes, "Cluster Specific Velocity Genes");
         }
-        catch(IOException e) {
+        catch(Exception e) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           e.getMessage(),
                                           "Error in Ranking Velocity Genes",

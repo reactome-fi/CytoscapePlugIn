@@ -13,7 +13,7 @@ public class PGMImpactAnalysisAction extends FICytoscapeAction {
     
     public PGMImpactAnalysisAction() {
         super("Analyze");
-        setPreferredMenu("Apps.Reactome FI.PGM Impact Analysis[5]");
+        setPreferredMenu("Apps.Reactome FI.PGM Impact Analysis[20]");
         setMenuGravity(5.0f);
     }
     

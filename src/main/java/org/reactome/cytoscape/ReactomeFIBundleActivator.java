@@ -19,6 +19,7 @@ import org.reactome.cytoscape.pathway.ReactomePathwayAction;
 import org.reactome.cytoscape.rest.ReactomeFIVizResource;
 import org.reactome.cytoscape.rest.ReactomeFIVizResourceImp;
 import org.reactome.cytoscape.sc.SingleCellAnalysisAction;
+import org.reactome.cytoscape.sc.SingleCellLoadAction;
 import org.reactome.cytoscape.service.FIVisualStyle;
 import org.reactome.cytoscape.service.FIVisualStyleImpl;
 import org.reactome.cytoscape.service.PopupMenuManager;
@@ -94,15 +95,15 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
 
         MicroarrayAnalysisAction maa = new MicroarrayAnalysisAction(desktopApp);
         UserGuideAction uga = new UserGuideAction();
-        HotNetAnalysisAction hna = new HotNetAnalysisAction(desktopApp);
+//        HotNetAnalysisAction hna = new HotNetAnalysisAction(desktopApp);
         // Load pathway diagram into Cytoscape
         ReactomePathwayAction pathwayLoadAction = new ReactomePathwayAction();
+        // This is test code
+        SingleCellAnalysisAction scAction = new SingleCellAnalysisAction();
+        SingleCellLoadAction scLoadAction = new SingleCellLoadAction();
         // Perform impact analysis based on PGM
         PGMImpactAnalysisAction pgmImpactAction = new PGMImpactAnalysisAction();
         PGMImpactAnalysisResultLoadAction pgmLoadAction = new PGMImpactAnalysisResultLoadAction();
-        
-        // This is test code
-        SingleCellAnalysisAction scAction = new SingleCellAnalysisAction();
         
         // Register said Reactome FI Services with the OSGi framework.
         // An empty property
@@ -113,6 +114,7 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         // As of June 19, 2020, HotNet Mutation Analysis is retired.
 //        registerAllServices(context, hna, prop);
         registerAllServices(context, scAction, prop);
+        registerAllServices(context, scLoadAction, prop);
         registerAllServices(context, maa, prop);
         registerAllServices(context, pathwayLoadAction, prop);
         registerAllServices(context, uga, prop);

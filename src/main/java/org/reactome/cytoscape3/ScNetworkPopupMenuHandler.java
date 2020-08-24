@@ -93,6 +93,10 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
                      new ToggleEdgesDisplay(),
                      CyNetworkViewContextMenuFactory.class,
                      props);
+        addPopupMenu(context, 
+                     new SaveMenuItem(),
+                     CyNetworkViewContextMenuFactory.class,
+                     props);
         
     }
     
@@ -159,6 +163,17 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
             JMenuItem projectMenuItem = new JMenuItem("Project New Data");
             projectMenuItem.addActionListener(e -> ScNetworkManager.getManager().project());
             return new CyMenuItem(projectMenuItem, 15.0f);
+        }
+        
+    }
+    
+    private class SaveMenuItem implements CyNetworkViewContextMenuFactory {
+        
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem projectMenuItem = new JMenuItem("Save Analysis Results");
+            projectMenuItem.addActionListener(e -> ScNetworkManager.getManager().saveAnalyzedData());
+            return new CyMenuItem(projectMenuItem, 50.0f);
         }
         
     }

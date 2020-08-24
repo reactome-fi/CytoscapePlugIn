@@ -251,6 +251,18 @@ public class PlugInUtilities {
                                        int readOrWrite) {
         // Get a file
         Collection<FileChooserFilter> filters = PlugInUtilities.getAnalysisResultFilters();
+        return getAnalysisFile(title, readOrWrite, filters);
+    }
+    
+    /**
+     * Get a file for analysis.
+     * @param title
+     * @param readOrWrite FileUtil.SAVE or LOAD.
+     * @return
+     */
+    public static File getAnalysisFile(String title,
+                                       int readOrWrite,
+                                       Collection<FileChooserFilter> filters) {
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference reference = context.getServiceReference(FileUtil.class.getName());
         FileUtil fileUtil = (FileUtil) context.getService(reference);

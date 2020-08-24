@@ -49,6 +49,25 @@ public class JSONServerCaller {
                                        dir);
     }
     
+    /**
+     * Write a data into an external file in the h5ad format.
+     * @param fileName
+     * @return
+     * @throws JsonEOFException
+     * @throws IOException
+     */
+    public String writeData(String fileName) throws JsonEOFException, IOException {
+        if (!fileName.endsWith(".h5ad"))
+            throw new IllegalArgumentException("The supported format for writing is h5ad only. Make sure the passed extension name is .h5ad.");
+        return (String) callJSONServer("write_data", fileName);
+    }
+    
+    public String openAnalyzedData(String fileName) throws JsonEOFException, IOException {
+        if (!fileName.endsWith(".h5ad"))
+            throw new IllegalArgumentException("The supported format for opening is h5ad only. This type of file is not supported.");
+        return (String) callJSONServer("open_analyzed_data", fileName);
+    }
+    
     public String scvOpenData(String dir) throws JsonEOFException, IOException {
         return (String) callJSONServer("scv_open", dir);
     }
@@ -75,7 +94,9 @@ public class JSONServerCaller {
      * @throws IOException
      */
     public Map<String, List<?>> project(String dir) throws JsonEOFException, IOException {
-        Object result = callJSONServer("project", dir);
+        Object result = callJSONServer("project", 
+                                       dir,
+                                       ScNetworkManager.getManager().isForRNAVelocity() + "");
         if (result instanceof String) // An error
             throw new IllegalStateException(result.toString());
         // There are only two types: String or List of String
@@ -323,6 +344,10 @@ public class JSONServerCaller {
         System.out.println("Preprocess data: " + text);
         text = clusterData();
         System.out.println("Cluster data: " + text);
+        
+        String writeFileName = "/Users/wug/temp/17_5_gfp.h5ad";
+        text = writeData(writeFileName);
+        System.out.println("Write data: " + text);
     }
     
     @Test

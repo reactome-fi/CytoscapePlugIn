@@ -16,7 +16,7 @@ public class MicroarrayAnalysisAction extends FICytoscapeAction
     {
         super("Gene Expression Analysis");
         setPreferredMenu("Apps.Reactome FI");
-        setMenuGravity(20.0f);
+        setMenuGravity(3.0f);
         this.desktopApp = desktopApp;
     }
 

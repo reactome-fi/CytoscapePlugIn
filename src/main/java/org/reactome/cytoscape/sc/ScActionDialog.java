@@ -57,6 +57,7 @@ public class ScActionDialog extends FIActionDialog {
     // Use a list is much easier than ButtonGroup
     private List<JRadioButton> velocityModeBtns;
     private JPanel velocityModePane;
+    private JPanel approachPane;
     
     public ScActionDialog(JFrame parent) {
         super(parent);
@@ -175,8 +176,8 @@ public class ScActionDialog extends FIActionDialog {
     }
     
     private JPanel createApproachPane() {
-        JPanel pane = new JPanel();
-        pane.setLayout(new GridBagLayout());
+        approachPane = new JPanel();
+        approachPane.setLayout(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(4, 4, 4, 4);
         constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -193,23 +194,23 @@ public class ScActionDialog extends FIActionDialog {
         // Add these approaches
         constraints.gridx = 0;
         constraints.gridy = 0;
-        pane.add(approachLabel, constraints);
+        approachPane.add(approachLabel, constraints);
         constraints.gridx ++;
-        pane.add(scanpyBtn, constraints);
+        approachPane.add(scanpyBtn, constraints);
         constraints.gridy ++;
-        pane.add(scevoBtn, constraints);
+        approachPane.add(scevoBtn, constraints);
         // Update GUIs based on choice
-        scanpyBtn.addActionListener(e -> {
+        scanpyBtn.addItemListener(e -> {
             datasetPane.setFormatGUIsVisible(true);
             preprocessPane.setIsForVelocity(false);
             velocityModePane.setVisible(false);
         });
-        scevoBtn.addActionListener(e -> {
+        scevoBtn.addItemListener(e -> {
             datasetPane.setFormatGUIsVisible(false);
             preprocessPane.setIsForVelocity(true);
             velocityModePane.setVisible(true);
         });
-        return pane;
+        return approachPane;
     }
     
     private JPanel createVelocityModePane() {
@@ -277,13 +278,34 @@ public class ScActionDialog extends FIActionDialog {
         return datasetPane.getFormat();
     }
     
-    public void hidePreprocessPane() {
+    public void configForProjection() {
         this.preprocessPane.setVisible(false);
+        // Need to fix the selected approach
+        for (int i = 0; i < approachPane.getComponentCount(); i++) {
+            Component comp = approachPane.getComponent(i);
+            comp.setEnabled(false);
+            if (comp instanceof JRadioButton) {
+                JRadioButton btn = (JRadioButton) comp;
+                if (btn.getText().contains("Velocity") && ScNetworkManager.getManager().isForRNAVelocity())
+                    btn.setSelected(true);
+                else if (btn.getText().contains("Standard") && !ScNetworkManager.getManager().isForRNAVelocity())
+                    btn.setSelected(true);
+            }
+        }
+        // Make sure this is not visible
+        velocityModePane.setVisible(false);
+        if (ScNetworkManager.getManager().isForRNAVelocity())
+            setSize(DEFAULT_SIZE.width,
+                    350);
+        else
+            setSize(DEFAULT_SIZE.width,
+                    400);
     }
     
     public static void main(String[] args) {
         ScActionDialog dialog = new ScActionDialog(null);
-//        dialog.hidePreprocessPane();
+        ScNetworkManager.getManager().setForRNAVelocity(true);
+        dialog.configForProjection();
         dialog.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {

@@ -8,30 +8,24 @@ import org.reactome.cytoscape.service.FICytoscapeAction;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 @SuppressWarnings("serial")
-public class SingleCellAnalysisAction extends FICytoscapeAction {
+public class SingleCellLoadAction extends FICytoscapeAction {
 
-    public SingleCellAnalysisAction() {
-        super("Analyze");
+    public SingleCellLoadAction() {
+        super("Open");
         setPreferredMenu("Apps.Reactome FI.Single Cell Analysis[10]");
-        setMenuGravity(1.0f);
+        setMenuGravity(2.0f);
     }
 
     @Override
     protected void doAction() {
         try {
             ScNetworkManager.getManager().reset(); // Reset the status for a new analysis
-            ScActionDialog gui = new ScActionDialog();
+            ScLoadActionDialog gui = new ScLoadActionDialog();
             File file = gui.selectFile();
             if (file == null)
                 return ;
-            ScAnalysisTask task = new ScAnalysisTask(file.getAbsolutePath(), 
-                                                     gui.getSpecies(),
-                                                     gui.getFormat(),
-                                                     gui.getRegressoutKeys(),
-                                                     gui.getImputationMethod(),
-                                                     gui.isForRNAVelocity());
-            if (gui.isForRNAVelocity())
-                task.setVelocityMode(gui.getVelocityMode());
+            ScLoadTask task = new ScLoadTask();
+            task.setFile(file.getAbsolutePath());
             Thread thread = new Thread(task);
             thread.start();
         }

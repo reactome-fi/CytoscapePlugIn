@@ -20,7 +20,7 @@ public class ReactomePathwayAction extends FICytoscapeAction {
     public ReactomePathwayAction() {
         super("Reactome Pathways");
         setPreferredMenu("Apps.Reactome FI");
-        setMenuGravity(30.0f);
+        setMenuGravity(2.0f);
     }
     
     @Override

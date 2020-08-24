@@ -50,8 +50,12 @@ public class ScAnalysisTask extends FIAnalysisTask {
     private String fileFormat;
     private List<String> regressoutKeys;
     private String imputationMethod;
-    private boolean isForRNAVelocity;
+    protected boolean isForRNAVelocity;
     private ScvVelocityMode velocityMode = ScvVelocityMode.stochastic;
+    
+    protected ScAnalysisTask() {
+        
+    }
 
     public ScAnalysisTask(String file,
                           PathwaySpecies species,
@@ -83,24 +87,30 @@ public class ScAnalysisTask extends FIAnalysisTask {
         progPane.setVisible(true);
         JSONServerCaller serverCaller = ScNetworkManager.getManager().getServerCaller();
         try {
-            boolean success = false;
-            if (isForRNAVelocity)
-                success = velocityAnalysis(serverCaller, progPane, parentFrame);
-            else
-                success = standardAnalysis(serverCaller, progPane, parentFrame);
-            if (!success)
-                return;
-            // Looks everything is fine. Let's build the network
-            progPane.setText("Building cluster network...");
-            buildClusterNetwork(serverCaller);
-            progPane.setText("Building cell network...");
-            buildCellNetwork(serverCaller);
+            _doAnalysis(serverCaller, progPane, parentFrame);
         }
         catch(Exception e) {
             showErrorMessage(e.getMessage(), parentFrame);
             e.printStackTrace();
         }
         parentFrame.getGlassPane().setVisible(false);
+    }
+
+    protected void _doAnalysis(JSONServerCaller serverCaller, 
+                               ProgressPane progPane, 
+                               JFrame parentFrame) throws Exception {
+        boolean success = false;
+        if (isForRNAVelocity)
+            success = velocityAnalysis(serverCaller, progPane, parentFrame);
+        else
+            success = standardAnalysis(serverCaller, progPane, parentFrame);
+        if (!success)
+            return;
+        // Looks everything is fine. Let's build the network
+        progPane.setText("Building cluster network...");
+        buildClusterNetwork(serverCaller);
+        progPane.setText("Building cell network...");
+        buildCellNetwork(serverCaller);
     }
     
     private boolean velocityAnalysis(JSONServerCaller serverCaller,
@@ -139,7 +149,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
         return true; // Success
     }
 
-    private boolean checkMessage(JFrame parentFrame, String message) {
+    protected boolean checkMessage(JFrame parentFrame, String message) {
         if (message.startsWith("error")) {
             showErrorMessage(message, parentFrame);
             parentFrame.getGlassPane().setVisible(false);
@@ -156,7 +166,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
                                       JOptionPane.ERROR_MESSAGE);
     }
 
-    private void buildCellNetwork(JSONServerCaller caller) throws JsonEOFException, IOException {
+    protected void buildCellNetwork(JSONServerCaller caller) throws JsonEOFException, IOException {
         // Coordinates for cells based on umap
         List<List<Double>> umap = caller.getUMAP();
         List<Integer> clusters = caller.getCluster();
@@ -199,7 +209,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
         SwingUtilities.invokeLater(() -> ScNetworkManager.getManager().setEdgesVisible(false, view));
     }
 
-    private void buildClusterNetwork(JSONServerCaller caller) throws Exception {
+    protected void buildClusterNetwork(JSONServerCaller caller) throws Exception {
         Map<String, List<List<Double>>> paga = caller.getPAGA();
         List<List<Double>> positions = paga.get("pos");
         List<List<Double>> connectivities = paga.get("connectivities");
