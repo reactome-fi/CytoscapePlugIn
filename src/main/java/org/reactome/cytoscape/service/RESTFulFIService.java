@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBContext;
@@ -401,6 +402,19 @@ public class RESTFulFIService implements FINetworkService {
             fis.add(token);
         }
         return fis;
+    }
+    
+    public List<String> queryDorotheaFIs(PathwaySpecies species) throws IOException {
+        String url = restfulURL + "network/fetchDorotheaFIs/" + species.getCommonName();
+        String text = callHttp(url, HTTP_GET, null);
+        return Stream.of(text.split("\n")).collect(Collectors.toList());
+    }
+    
+    public Map<String, FIAnnotation> annotateDorotheaFIs(Set<String> fis,
+                                                  PathwaySpecies species) throws Exception {
+        String url = restfulURL + "network/annotateDorotheaFIs/" + species.getCommonName();
+        String query = String.join("\n", fis);
+        return _annotateFIs(url, query);
     }
 
     public Set<String> queryFIsBetween(Set<String> srcSet, Set<String> targetSet)
@@ -784,6 +798,10 @@ public class RESTFulFIService implements FINetworkService {
         String url = restfulURL + "network/annotate";
         // Create a query
         String query = convertEdgesToString(edges, view);
+        return _annotateFIs(url, query);
+    }
+
+    private Map<String, FIAnnotation> _annotateFIs(String url, String query) throws Exception {
         Element root = callInXML(url, query);
         List<?> annotations = root.getChildren();
         Map<String, FIAnnotation> edgeIdToAnnotation = new HashMap<String, FIAnnotation>();

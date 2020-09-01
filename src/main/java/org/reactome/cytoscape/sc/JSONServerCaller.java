@@ -2,9 +2,13 @@ package org.reactome.cytoscape.sc;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -13,6 +17,7 @@ import javax.swing.JFrame;
 import org.junit.Test;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.r3.util.FileUtility;
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -42,6 +47,59 @@ public class JSONServerCaller {
     public JSONServerCaller() {
         request = new RequestObject();
         request.id = 1; // As long as we have an id, it should be fine
+    }
+    
+    @Test
+    public void testCalculateGeneRelationships() throws Exception {
+//        String fileName1 = "/Users/wug/temp/17_5_gfp_velocity_dynamic.h5ad";
+//        String rtn = openAnalyzedData(fileName1);
+//        System.out.println("openAnalyzedData: \n" + rtn);
+//        List<String> cellTimeKeys = getCellTimeKeys();
+//        System.out.println("getCellTimeKeys(): " + cellTimeKeys);
+//        List<String> genePairs = Arrays.asList("Cps1\tBicc1", "Prom1\tMuc4");
+        // For loading gene pairs
+        String fileName = "/Users/wug/git/FIVizWS_corews/src/main/webapp/WEB-INF/dorothea_mm.tsv";
+        FileUtility fu = new FileUtility();
+        fu.setInput(fileName);
+        String line = fu.readLine();
+        Set<String> genePairs = new HashSet<>();
+        while ((line = fu.readLine()) != null) {
+            String[] tokens = line.split("\t");
+            genePairs.add(tokens[0] + "\t" + tokens[2]);
+        }
+        fu.close();
+        System.out.println("Total pairs: " + genePairs.size());
+        List<String> groups = Arrays.asList("all");
+        Map<String, List<Double>> pairToCor = calculateGeneRelationships(genePairs,
+                                                                         groups,
+                                                                         "latent_time",
+                                                                         "velocity",
+                                                                         7,
+                                                                         "spearman");
+        System.out.println("calculateGeneRelationships:");
+        pairToCor.forEach((pair, cor) -> System.out.println(pair + "\t" + cor.get(0) + "\t" + cor.get(1)));
+    }
+    
+    public Map<String, List<Double>> calculateGeneRelationships(Collection<String> genePairs,
+                                                                List<String> groups,
+                                                                String cellTimeKey,
+                                                                String layer,
+                                                                int delayWindow,
+                                                                String mode) throws JsonEOFException, IOException {
+        Object rtn = callJSONServer("calculate_gene_relations",
+                                    String.join("\n", genePairs),
+                                    String.join(",", groups),
+                                    cellTimeKey,
+                                    layer,
+                                    delayWindow + "",
+                                    mode);
+        if (rtn instanceof String)
+            throw new IllegalStateException(rtn.toString());
+        return (Map<String, List<Double>>) rtn;
+    }
+    
+    public List<String> getCellTimeKeys() throws JsonEOFException, IOException {
+        return (List<String>) callJSONServer("get_cell_time_keys");
     }
     
     public String openData(String dir) throws JsonEOFException, IOException {

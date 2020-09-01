@@ -25,6 +25,7 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.FIVisualStyleImpl;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 import smile.plot.swing.Palette;
 
@@ -45,11 +46,11 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
     private final double MIN_EDGE_WIDTH = DEFAULT_NODE_SIZE / 100.0d;
     private final double MAX_EDGE_WIDTH = DEFAULT_NODE_SIZE / 10.0d;
     protected boolean needNodeLabel = false;
-    
+
     public SCNetworkVisualStyle() {
         styleName = "Single Cell Style";
     }
-    
+
     /**
      * Copied some of code from the supper class to avoid showing node labels, which is very difficult to
      * control with the coordinates returned from scanpy.
@@ -71,25 +72,25 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
         else {
             String nodeLabelAttrName = "nodeLabel";
             PassthroughMapping<String, String> labelFunction = (PassthroughMapping<String, String>) visMapFuncFactoryP.createVisualMappingFunction(
-                    nodeLabelAttrName, String.class, BasicVisualLexicon.NODE_LABEL);
+                                                                                                                                                   nodeLabelAttrName, String.class, BasicVisualLexicon.NODE_LABEL);
             fiVisualStyle.addVisualMappingFunction(labelFunction);
         }
         String toolTipAttrName = "nodeToolTip";
         PassthroughMapping<String, String> toolTipFunction = (PassthroughMapping<String, String>) visMapFuncFactoryP.createVisualMappingFunction(toolTipAttrName, 
-                                                                                                                 String.class, 
-                                                                                                                 BasicVisualLexicon.NODE_TOOLTIP);
+                                                                                                                                                 String.class, 
+                                                                                                                                                 BasicVisualLexicon.NODE_TOOLTIP);
         fiVisualStyle.addVisualMappingFunction(toolTipFunction);
         // Really small nodes
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.NODE_SIZE, DEFAULT_NODE_SIZE);
     }
-    
+
     @Override
     protected void handleNodeHighlight(VisualStyle fiVisualStyle,
                                        VisualMappingFunctionFactory visMapFuncFactoryD,
                                        VisualMappingFunctionFactory visMapFuncFactoryC) {
         // Turn hit gene display off.
     }
-    
+
     @Override
     protected void displayNodeType(VisualStyle style,
                                    VisualMappingFunctionFactory visMapFuncFactoryD) {
@@ -104,7 +105,7 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
         });
         style.addVisualMappingFunction(colorToModuleFunction);
     }
-    
+
     public void updateNodeColors(CyNetworkView view,
                                  String attributeName,
                                  Class<?> type) {
@@ -116,7 +117,7 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
             updateNodeColorsForNumbers(view, attributeName);
         }
     }
-    
+
     private void updateNodeColorsForCategories(CyNetworkView view, String attributeName) {
         VisualStyle style = getVisualStyle();
         if (style == null)
@@ -159,7 +160,7 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
     private void updateNodeColorsForNumbers(CyNetworkView view, String attributeName) {
         updateNodeColorsForNumbers(view, attributeName, BasicVisualLexicon.NODE_FILL_COLOR);
     }
-    
+
     @Override
     protected void setEdgeStyleOnAnnotations(CyNetworkView view,
                                              VisualStyle fiVisualStyle,
@@ -168,13 +169,14 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
         setEdgeWeights(view, fiVisualStyle, visMapFuncFactoryC, MIN_EDGE_WIDTH, MAX_EDGE_WIDTH);
     }
 
-    public void setEdgeWeights(CyNetworkView view,
-                               VisualStyle fiVisualStyle,
-                               VisualMappingFunctionFactory visMapFuncFactoryC,
-                               double minEdgeWidth,
-                               double maxEdgeWidth) {
-        double[] edgeWeidghts = getEdgeWeightRange(view);
-        ContinuousMapping<Double, Double> edgeWidthFunction = (ContinuousMapping<Double, Double>) visMapFuncFactoryC.createVisualMappingFunction(CONNECTIVITY_NAME, 
+    private void setEdgeWeights(CyNetworkView view,
+                                VisualStyle fiVisualStyle,
+                                VisualMappingFunctionFactory visMapFuncFactoryC,
+                                String edgeWeightCol,
+                                double minEdgeWidth,
+                                double maxEdgeWidth) {
+        double[] edgeWeidghts = getEdgeWeightRange(edgeWeightCol, view);
+        ContinuousMapping<Double, Double> edgeWidthFunction = (ContinuousMapping<Double, Double>) visMapFuncFactoryC.createVisualMappingFunction(edgeWeightCol, 
                                                                                                                                                  Double.class, 
                                                                                                                                                  BasicVisualLexicon.EDGE_WIDTH);
         // Make sure it is consistent with the node size, which is 0.10
@@ -186,14 +188,24 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
         edgeWidthFunction.addPoint(edgeWeidghts[1], upperBoundary);
         fiVisualStyle.addVisualMappingFunction(edgeWidthFunction);
     }
-    
-    private double[] getEdgeWeightRange(CyNetworkView view) {
+
+    private double[] getEdgeWeightRange(String edgeWeightCol,
+                                        CyNetworkView view) {
         CyTable table = view.getModel().getDefaultEdgeTable();
-        CyColumn col = table.getColumn(CONNECTIVITY_NAME);
+        CyColumn col = table.getColumn(edgeWeightCol);
         List<Double> values = col.getValues(Double.class);
         Collections.sort(values);
         return new double[]{values.get(0), values.get(values.size() - 1)};
     }
+
+    protected void setEdgeWeights(CyNetworkView view,
+                                  VisualStyle fiVisualStyle,
+                                  VisualMappingFunctionFactory visMapFuncFactoryC,
+                                  double minEdgeWidth,
+                                  double maxEdgeWidth) {
+        setEdgeWeights(view, fiVisualStyle, visMapFuncFactoryC, CONNECTIVITY_NAME, minEdgeWidth, maxEdgeWidth);
+    }
+
 
     @Override
     protected void setDefaultEdgeStyle(VisualStyle fiVisualStyle) {
@@ -201,7 +213,7 @@ public class SCNetworkVisualStyle extends FIVisualStyleImpl {
         // 1/100 of node size
         fiVisualStyle.setDefaultValue(BasicVisualLexicon.EDGE_WIDTH, MIN_EDGE_WIDTH);
     }
-    
-    
+
+
 
 }

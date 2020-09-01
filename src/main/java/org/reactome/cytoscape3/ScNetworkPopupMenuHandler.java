@@ -88,15 +88,9 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         addPopupMenu(context, new DifferentialExpressionAnalysisMenu(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new ProjectMenuItem(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new ToggleProjectedCells(), CyNetworkViewContextMenuFactory.class, props);
-
-        addPopupMenu(context, 
-                     new ToggleEdgesDisplay(),
-                     CyNetworkViewContextMenuFactory.class,
-                     props);
-        addPopupMenu(context, 
-                     new SaveMenuItem(),
-                     CyNetworkViewContextMenuFactory.class,
-                     props);
+        addPopupMenu(context, new RegulatoryNetworkMenu(), CyNetworkViewContextMenuFactory.class, props);
+        addPopupMenu(context, new ToggleEdgesDisplay(), CyNetworkViewContextMenuFactory.class, props);
+        addPopupMenu(context, new SaveMenuItem(), CyNetworkViewContextMenuFactory.class, props);
         
     }
     
@@ -154,6 +148,15 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
             return new CyMenuItem(menuItem, 5.0f);
         };
         addPopupMenu(context, menuFactory, CyNetworkViewContextMenuFactory.class, props);
+    }
+    
+    private class RegulatoryNetworkMenu implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem menuItem = new JMenuItem("Build Regulatory Network");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().buildRegulatoryNetwork());
+            return new CyMenuItem(menuItem, 12.0f);
+        }
     }
     
     private class ProjectMenuItem implements CyNetworkViewContextMenuFactory {

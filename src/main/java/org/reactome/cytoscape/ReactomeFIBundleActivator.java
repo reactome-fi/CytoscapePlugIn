@@ -27,10 +27,10 @@ import org.reactome.cytoscape.service.ReactomeFIVizPropsReader;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape3.FINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.FactorGraphImportAction;
 import org.reactome.cytoscape3.GeneSetFINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.GeneSetMutationAnalysisAction;
-import org.reactome.cytoscape3.HotNetAnalysisAction;
 import org.reactome.cytoscape3.MechismoFINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.MicroarrayAnalysisAction;
 import org.reactome.cytoscape3.PGMFINetworkPopupMenuHandler;
@@ -138,6 +138,9 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
                                          new MechismoFINetworkPopupMenuHandler());
         popupManager.registerMenuHandler(SingleCellNetwork, 
                                          new ScNetworkPopupMenuHandler());
+        popupManager.registerMenuHandler(ReactomeNetworkType.DorotheaTFTargetNetwork,
+                                         new FINetworkPopupMenuHandler()); // Don't have fetch annotations. 
+                                                                           // This should be handled when the network is constructed.
         
         // Used as the default PopupMenuHandler. Most likely, this is not needed.
         // But keep it here for the time being.

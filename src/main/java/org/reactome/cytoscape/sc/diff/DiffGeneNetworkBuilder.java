@@ -16,21 +16,27 @@ import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.service.FINetworkServiceFactory;
+import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.r3.util.InteractionUtilities;
 
 public class DiffGeneNetworkBuilder {
+    private PathwaySpecies species;
     private Map<String, Set<String>> mouse2humanMap;
     private DiffGeneNetworkStyle style;
-    
+
     public DiffGeneNetworkBuilder() {
     }
-    
+
+    public void setSpecies(PathwaySpecies species) {
+        this.species = species;
+    }
+
     public void setStyle(DiffGeneNetworkStyle style) {
         this.style = style;
     }
-    
+
     public Map<String, Set<String>> getMouse2humanMap() {
         return mouse2humanMap;
     }
@@ -40,12 +46,18 @@ public class DiffGeneNetworkBuilder {
     }
 
     public void buildNetwork(DiffExpResult result) throws Exception {
-        Set<String> humanGenes = result.getNames()
-                .stream()
-                .filter(s -> mouse2humanMap.keySet().contains(s))
-                .map(mg -> mouse2humanMap.get(mg))
-                .flatMap(s -> s.stream())
-                .collect(Collectors.toSet());
+        Set<String> humanGenes = null;
+        if (PathwaySpecies.Mus_musculus == this.species) {
+            humanGenes = result.getNames()
+                    .stream()
+                    .filter(s -> mouse2humanMap.keySet().contains(s))
+                    .map(mg -> mouse2humanMap.get(mg))
+                    .flatMap(s -> s.stream())
+                    .collect(Collectors.toSet());
+        }
+        else {
+            humanGenes = result.getNames().stream().collect(Collectors.toSet());
+        }
         // Check if a local service should be used
         FINetworkService fiService = new FINetworkServiceFactory().getFINetworkService();
         Set<String> fis = fiService.buildFINetwork(humanGenes, false);
@@ -77,17 +89,45 @@ public class DiffGeneNetworkBuilder {
         view.updateView();
     }
 
-    private void storeGeneProperties(Set<String> humanGenes,
-                                     CyNetwork network,
-                                     DiffExpResult result,
-                                     TableHelper tableHelper) {
-        Map<String, Set<String>> human2mouseMap = InteractionUtilities.switchKeyValues(mouse2humanMap);
-        human2mouseMap.keySet().retainAll(humanGenes);
-        Map<String, String> mouseGeneAtts = human2mouseMap.keySet()
-                                                          .stream()
-                                                          .collect(Collectors.toMap(Function.identity(), 
-                                                                                    s -> String.join(",", human2mouseMap.get(s))));
-        tableHelper.storeNodeAttributesByName(network, "mouseGenes", mouseGeneAtts);
+    private void storeHumanGeneProperties(Set<String> humanGenes,
+                                          CyNetwork network,
+                                          DiffExpResult result,
+                                          TableHelper tableHelper) {
+        if (result.isGeneListOnly())
+            return;
+        String[] attNames = {
+                "score",
+                "logFoldChange",
+                "pValue",
+                "FDR"
+        };
+        List<?>[] values = {
+                result.getScores(),
+                result.getLogFoldChanges(),
+                result.getPvals(),
+                result.getPvalsAdj()
+        };
+        for (int i = 0; i < attNames.length; i++) {
+            String attName = attNames[i];
+            @SuppressWarnings("unchecked")
+            List<Double> valueList = (List<Double>) values[i];
+            Map<String, Double> attValues = new HashMap<>();
+            for (String humanGene : humanGenes) {
+                int index = result.getNames().indexOf(humanGene);
+                if (index < 0)
+                    continue;
+                Double value = valueList.get(index);
+                attValues.put(humanGene, value);
+            }
+            tableHelper.storeNodeAttributesByName(network, attName, attValues);
+        }
+    }    
+
+    private void storeMouseGeneProperties(Set<String> humanGenes,
+                                          CyNetwork network,
+                                          DiffExpResult result,
+                                          TableHelper tableHelper) {
+        tableHelper.storeMouse2HumanGeneMap(mouse2humanMap, humanGenes, network);
         if (result.isGeneListOnly())
             return;
         String[] attNames = {
@@ -109,6 +149,7 @@ public class DiffGeneNetworkBuilder {
                 result.getPvalsAdj()
         };
         List<String> mouseGenes = result.getNames();
+        Map<String, Set<String>> human2mouseMap = InteractionUtilities.switchKeyValues(mouse2humanMap);
         for (int i = 0; i < attNames.length; i++) {
             String attName = attNames[i];
             @SuppressWarnings("unchecked")
@@ -141,6 +182,16 @@ public class DiffGeneNetworkBuilder {
             }
             tableHelper.storeNodeAttributesByName(network, attName, attValues);
         }
+    }
+
+    private void storeGeneProperties(Set<String> humanGenes,
+                                     CyNetwork network,
+                                     DiffExpResult result,
+                                     TableHelper tableHelper) {
+        if (this.species == PathwaySpecies.Mus_musculus)
+            storeMouseGeneProperties(humanGenes, network, result, tableHelper);
+        else if (this.species == PathwaySpecies.Homo_sapiens)
+            storeHumanGeneProperties(humanGenes, network, result, tableHelper);
     }
 
 }

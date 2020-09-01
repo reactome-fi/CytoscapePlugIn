@@ -428,6 +428,12 @@ public class ScNetworkManager {
         view.updateView();
     }
     
+    public void buildRegulatoryNetwork() {
+        RegulatoryNetworkBuilder builder = new RegulatoryNetworkBuilder();
+        builder.setServerCaller(serverCaller);
+        builder.build();
+    }
+    
     public void project() {
         ScActionDialog actionDialog = new ScActionDialog();
         actionDialog.configForProjection();
@@ -552,10 +558,9 @@ public class ScNetworkManager {
         if (result == null || result.getNames() == null || result.getNames().size() == 0)
             return; // Nothing to do
         try {
-            if (mouse2humanMap == null)
-                mouse2humanMap = new RESTFulFIService().getMouseToHumanGeneMap();
             DiffGeneNetworkBuilder networkBuilder = new DiffGeneNetworkBuilder();
-            networkBuilder.setMouse2humanMap(mouse2humanMap);
+            networkBuilder.setSpecies(getSpecies());
+            networkBuilder.setMouse2humanMap(getMouse2humanGeneMap());
             networkBuilder.setStyle(getDiffGeneNetworkStyle());
             networkBuilder.buildNetwork(result);
         }
@@ -566,6 +571,12 @@ public class ScNetworkManager {
                                           JOptionPane.ERROR_MESSAGE);
             logger.error(e.getMessage(), e);
         }
+    }
+    
+    public Map<String, Set<String>> getMouse2humanGeneMap() throws Exception {
+        if (mouse2humanMap == null)
+            mouse2humanMap = new RESTFulFIService().getMouseToHumanGeneMap();
+        return mouse2humanMap;
     }
     
     public void doBinomialTest(DiffExpResult result) {

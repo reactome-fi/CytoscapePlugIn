@@ -57,41 +57,6 @@ public class FINetworkPopupMenuHandler extends AbstractPopupMenuHandler {
     
     public FINetworkPopupMenuHandler() {
         menuToRegistration = new HashMap<CyNetworkViewContextMenuFactory, ServiceRegistration>();
-        // // Add a listener for NewtorkView selection
-        // SetCurrentNetworkViewListener currentNetworkViewListener = new
-        // SetCurrentNetworkViewListener() {
-        //
-        // @Override
-        // public void handleEvent(SetCurrentNetworkViewEvent event) {
-        // if (event.getNetworkView() == null)
-        // return; // This is more like a Pathway view
-        // CyNetwork network = event.getNetworkView().getModel();
-        // // Check if this network is a converted
-        // CyRow row =
-        // network.getDefaultNetworkTable().getRow(network.getSUID());
-        // String dataSetType = row.get("dataSetType",
-        // String.class);
-        // if ("PathwayDiagram".equals(dataSetType)) {
-        // // Check the ReactomeNetworkType
-        // ReactomeNetworkType type = new
-        // TableHelper().getReactomeNetworkType(network);
-        // if (type == ReactomeNetworkType.FINetwork) {
-        // installConvertToDiagramMenu();
-        // }
-        // else if (type == ReactomeNetworkType.FactorGraph) {
-        // uninstallDynamicMenu(networkToDiagramMenu);
-        // }
-        // }
-        // else {
-        // uninstallDynamicMenu(networkToDiagramMenu);
-        // }
-        // }
-        // };
-        // BundleContext context =
-        // PlugInObjectManager.getManager().getBundleContext();
-        // context.registerService(SetCurrentNetworkViewListener.class.getName(),
-        // currentNetworkViewListener,
-        // null);
     }
     
     protected <T> void addPopupMenu(BundleContext context, T menuFactory, Class<T> cls, Properties properties) {

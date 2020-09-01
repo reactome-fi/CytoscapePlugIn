@@ -26,6 +26,7 @@ public class SingleCellLoadAction extends FICytoscapeAction {
                 return ;
             ScLoadTask task = new ScLoadTask();
             task.setFile(file.getAbsolutePath());
+            task.setPathwaySpecies(gui.getSpecies());
             Thread thread = new Thread(task);
             thread.start();
         }

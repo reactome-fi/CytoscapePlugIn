@@ -54,7 +54,6 @@ public class ScAnalysisTask extends FIAnalysisTask {
     private ScvVelocityMode velocityMode = ScvVelocityMode.stochastic;
     
     protected ScAnalysisTask() {
-        
     }
 
     public ScAnalysisTask(String file,
@@ -69,6 +68,10 @@ public class ScAnalysisTask extends FIAnalysisTask {
         this.regressoutKeys = regressoutKeys;
         this.imputationMethod = imputationMethod;
         this.isForRNAVelocity = isForRNAVelocity;
+    }
+    
+    public void setPathwaySpecies(PathwaySpecies species) {
+        this.species = species;
     }
     
     public void setVelocityMode(ScvVelocityMode mode) {

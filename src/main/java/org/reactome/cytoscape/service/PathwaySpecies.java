@@ -22,6 +22,14 @@ public enum PathwaySpecies {
         return toString();
     }
     
+    public String getCommonName() {
+        if (this == Mus_musculus)
+            return "mouse";
+        if (this == Homo_sapiens)
+            return "human";
+        return null;
+    }
+    
     public String getURLEncode() {
         return super.toString().replace("_", "+");
     }

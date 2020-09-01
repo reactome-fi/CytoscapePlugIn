@@ -3,6 +3,8 @@ package org.reactome.cytoscape.service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.cytoscape.model.CyColumn;
 import org.cytoscape.model.CyEdge;
@@ -13,6 +15,7 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.r3.util.InteractionUtilities;
 
 public class TableHelper {
     // Some constants used as keys
@@ -210,6 +213,18 @@ public class TableHelper {
     public void markAsReactomeNetwork(CyNetwork network) {
         markAsReactomeNetwork(network,
                               ReactomeNetworkType.FINetwork);
+    }
+    
+    public void storeMouse2HumanGeneMap(Map<String, Set<String>> mouse2humanMap,
+                                        Set<String> humanGenes,
+                                        CyNetwork network) {
+        Map<String, Set<String>> human2mouseMap = InteractionUtilities.switchKeyValues(mouse2humanMap);
+        human2mouseMap.keySet().retainAll(humanGenes);
+        Map<String, String> mouseGeneAtts = human2mouseMap.keySet()
+                .stream()
+                .collect(Collectors.toMap(Function.identity(), 
+                                          s -> String.join(",", human2mouseMap.get(s))));
+        storeNodeAttributesByName(network, "mouseGenes", mouseGeneAtts);
     }
     
     /**
