@@ -98,13 +98,8 @@ public class ClusterFINetworkTask extends AbstractTask {
                                           "Error in Clustering", JOptionPane.ERROR_MESSAGE);
             frame.getGlassPane().setVisible(false);
         }
-        
-        ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-        FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
-        visStyler.setVisualStyle(view, false);
-        
-        context.ungetService(servRef);
-        context.ungetService(tableFormatterServRef);
+  
+        view.updateView();
         
         frame.getGlassPane().setVisible(false);
     }

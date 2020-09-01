@@ -1,5 +1,8 @@
 package org.reactome.cytoscape.sc;
 
+import static org.reactome.cytoscape.sc.RegulatoryNetworkStyle.CORRELATION_COL_NAME;
+import static org.reactome.cytoscape.sc.RegulatoryNetworkStyle.CORRELATION_PVALUE_COL_NAME;
+
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -168,11 +171,7 @@ public class RegulatoryNetworkBuilder {
         PlugInObjectManager manager = PlugInObjectManager.getManager();
         CyNetworkManager networkManager = manager.getNetworkManager();
         networkManager.addNetwork(network);
-        // Build network view
-        CyNetworkViewFactory viewFactory = manager.getNetworkViewFactory();
-        CyNetworkView view = viewFactory.createNetworkView(network);
-        CyNetworkViewManager viewManager = manager.getNetworkViewManager();
-        viewManager.addNetworkView(view);
+
         // Handle network related properties. Do this at the end to avoid null exception because of no view available.
         TableHelper tableHelper = new TableHelper();
         tableHelper.storeFINetworkVersion(network, PlugInObjectManager.getManager().getFiNetworkVersion());
@@ -190,6 +189,13 @@ public class RegulatoryNetworkBuilder {
         storeCors(fiToCor, tableHelper, network);
         
         progressPane.setText("Creating network view...");
+        // Do this at the end after we have set up tables
+        // Build network view
+        CyNetworkViewFactory viewFactory = manager.getNetworkViewFactory();
+        CyNetworkView view = viewFactory.createNetworkView(network);
+        CyNetworkViewManager viewManager = manager.getNetworkViewManager();
+        viewManager.addNetworkView(view);
+        
         RegulatoryNetworkStyle visStyle = new RegulatoryNetworkStyle();
         visStyle.setVisualStyle(view);
         visStyle.doLayout();
@@ -222,7 +228,7 @@ public class RegulatoryNetworkBuilder {
         Set<String> tfs = fis.stream().map(fi -> fi.split("\t")[0]).collect(Collectors.toSet());
         Map<String, Boolean> nodeToValue = nodes.stream().collect(Collectors.toMap(Function.identity(),
                                                                                    node -> tfs.contains(node)));
-        tableHelper.storeNodeAttributesByName(network, "transcription factor", nodeToValue);
+        tableHelper.storeNodeAttributesByName(network, RegulatoryNetworkStyle.TF_COL_NAME, nodeToValue);
     }
     
     private void storeCors(Map<String, List<Double>> fiToCor,
@@ -253,8 +259,8 @@ public class RegulatoryNetworkBuilder {
                     }
             }
         }
-        tableHelper.storeEdgeAttributesByName(network, "correlation", fiToValue);
-        tableHelper.storeEdgeAttributesByName(network, "corr_pvalue", fiToPValue);
+        tableHelper.storeEdgeAttributesByName(network, CORRELATION_COL_NAME, fiToValue);
+        tableHelper.storeEdgeAttributesByName(network, CORRELATION_PVALUE_COL_NAME, fiToPValue);
     }
     
     private Set<String> mappedToHuman(Set<String> fis) throws Exception {
@@ -304,6 +310,7 @@ public class RegulatoryNetworkBuilder {
         dialog.setVisible(true);
     }
     
+    @SuppressWarnings("serial")
     private static class ConfigDialog extends JDialog {
         private boolean isOkClicked;
         private JButton okBtn;
