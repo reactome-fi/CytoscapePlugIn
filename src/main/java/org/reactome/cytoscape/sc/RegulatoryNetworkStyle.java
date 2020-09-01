@@ -1,5 +1,7 @@
 package org.reactome.cytoscape.sc;
 
+import java.awt.Color;
+import java.awt.Paint;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,9 +26,13 @@ public class RegulatoryNetworkStyle extends FIVisualStyleImpl {
     
     private final double MIN_EDGE_WEIGHT = 0.5d;
     private final double MAX_EDGE_WEIGHT = 5.0d;
+    // Color scheme based on default Cytoscape
+    private final Color MIN_COLOR = new Color(67, 147, 195);
+    private final Color MID_COLOR = new Color(247, 247, 247);
+    private final Color MAX_COLOR = new Color(214, 96, 77);
     
     public RegulatoryNetworkStyle() {
-        styleName = "Regulatory Gene Network Style";
+        styleName = "Regulatory Network Style";
     }
     
     @Override
@@ -35,13 +41,8 @@ public class RegulatoryNetworkStyle extends FIVisualStyleImpl {
                                              VisualMappingFunctionFactory visMapFuncFactoryD,
                                              VisualMappingFunctionFactory visMapFuncFactoryC) {
         super.setEdgeStyleOnAnnotations(view, fiVisualStyle, visMapFuncFactoryD, visMapFuncFactoryC);
-        setEdgeWeights(view, fiVisualStyle, visMapFuncFactoryC);
-    }
-    
-    private void setEdgeWeights(CyNetworkView view,
-                                VisualStyle fiVisualStyle,
-                                VisualMappingFunctionFactory visMapFuncFactoryC) {
         double[] minMaxCor = getCorRange(view);
+        // Edge widths based on correlation
         ContinuousMapping<Double, Double> edgeWidthFunction = (ContinuousMapping<Double, Double>) visMapFuncFactoryC.createVisualMappingFunction(CORRELATION_COL_NAME, 
                                                                                                                                                  Double.class, 
                                                                                                                                                  BasicVisualLexicon.EDGE_WIDTH);
@@ -53,6 +54,18 @@ public class RegulatoryNetworkStyle extends FIVisualStyleImpl {
         edgeWidthFunction.addPoint(minMaxCor[0], middle);
         edgeWidthFunction.addPoint(minMaxCor[1], upperBoundary);
         fiVisualStyle.addVisualMappingFunction(edgeWidthFunction);
+        // Edge colors based on correlation
+        ContinuousMapping<Double, Paint> edgeColorFunction = (ContinuousMapping<Double, Paint>) visMapFuncFactoryC.createVisualMappingFunction(CORRELATION_COL_NAME, 
+                                                                                                                                               Double.class, 
+                                                                                                                                               BasicVisualLexicon.EDGE_STROKE_UNSELECTED_PAINT);
+        BoundaryRangeValues<Paint> lowerColor = new BoundaryRangeValues<Paint>(MIN_COLOR, MIN_COLOR, MIN_COLOR);
+        BoundaryRangeValues<Paint> middleColor = new BoundaryRangeValues<Paint>(MID_COLOR, MID_COLOR, MID_COLOR);
+        BoundaryRangeValues<Paint> upperColor = new BoundaryRangeValues<Paint>(MAX_COLOR, MAX_COLOR, MAX_COLOR);
+        edgeColorFunction.addPoint(-minMaxCor[1], lowerColor);
+        edgeColorFunction.addPoint(-minMaxCor[0], middleColor);
+        edgeColorFunction.addPoint(minMaxCor[0], middleColor);
+        edgeColorFunction.addPoint(minMaxCor[1], upperColor);
+        fiVisualStyle.addVisualMappingFunction(edgeColorFunction);
     }
 
     private double[] getCorRange(CyNetworkView view) {

@@ -61,9 +61,12 @@ public class ScNetworkManager {
     private final String PROJECTED_CELL_TYPE = "newCell";
     private static final Logger logger = LoggerFactory.getLogger(ScNetworkManager.class);
     private static ScNetworkManager manager;
+    // There are should be one copy of styles only to avoid overriding
+    // the style for displayed network views
     private SCNetworkVisualStyle scStyle;
     private CellClusterVisualStyle clusterStyle;
     private DiffGeneNetworkStyle diffGeneStyle;
+    private RegulatoryNetworkStyle regNetworkStyle;
     private JSONServerCaller serverCaller;
     private TableHelper tableHelper;
     // Cached map for quick performance
@@ -407,6 +410,12 @@ public class ScNetworkManager {
         if (diffGeneStyle == null)
             diffGeneStyle = new DiffGeneNetworkStyle();
         return diffGeneStyle;
+    }
+    
+    public RegulatoryNetworkStyle getRegulatoryNetworkStyle() {
+        if (regNetworkStyle == null)
+            regNetworkStyle = new RegulatoryNetworkStyle();
+        return regNetworkStyle;
     }
     
     /**

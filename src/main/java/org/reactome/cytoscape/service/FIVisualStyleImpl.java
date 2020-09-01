@@ -146,13 +146,12 @@ public class FIVisualStyleImpl implements FIVisualStyle {
                         visMapFuncFactoryD);
         // Handle edge styles
         setDefaultEdgeStyle(fiVisualStyle);
+        setEdgeStyleOnEdgeType(fiVisualStyle, 
+                               visMapFuncFactoryD);
         setEdgeStyleOnAnnotations(view,
                                   fiVisualStyle, 
                                   visMapFuncFactoryD,
                                   visMapFuncFactoryC);
-        setEdgeStyleOnEdgeType(fiVisualStyle, 
-                               visMapFuncFactoryD);
-
         context.ungetService(referenceC);
         context.ungetService(referenceD);
         context.ungetService(referenceP);

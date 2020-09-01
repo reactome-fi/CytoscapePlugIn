@@ -149,6 +149,13 @@ public class RegulatoryNetworkBuilder {
                               List<String> groups,
                               RESTFulFIService fiService,
                               ProgressPane progressPane) throws Exception {
+        if (fiToCor == null || fiToCor.size() == 0) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Cannot find any pair of genes having correlation.",
+                                          "No Correlation",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
         progressPane.setText("Building network...");
         Set<String> fis = fiToCor.keySet()
                 .stream()
@@ -159,6 +166,13 @@ public class RegulatoryNetworkBuilder {
                 .collect(Collectors.toSet());
         // For edge annotations
         fiToCor.keySet().retainAll(fis);
+        if (fiToCor.size() == 0) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "No correlation left after filtering.",
+                                          "No Correlation",
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
         fis = mappedToHuman(fis); // Mouse FIs should be mapped to human in our display for functional analysis
         // Build CyNetwork
         FINetworkGenerator generator = new FINetworkGenerator();
@@ -196,8 +210,8 @@ public class RegulatoryNetworkBuilder {
         CyNetworkViewManager viewManager = manager.getNetworkViewManager();
         viewManager.addNetworkView(view);
         
-        RegulatoryNetworkStyle visStyle = new RegulatoryNetworkStyle();
-        visStyle.setVisualStyle(view);
+        RegulatoryNetworkStyle visStyle = ScNetworkManager.getManager().getRegulatoryNetworkStyle();
+        visStyle.setVisualStyle(view, false); // Need to use false to avoid unstyle previous style
         visStyle.doLayout();
         view.updateView();
     }
@@ -500,8 +514,8 @@ public class RegulatoryNetworkBuilder {
         private JPanel createFilterPane() {
             JPanel pane = new JPanel();
             pane.setLayout(new FlowLayout(FlowLayout.CENTER, 4,  4));
-            JLabel valueLabel = new JLabel("Value >= or <=");
-            valueTF = new JTextField("0.01");
+            JLabel valueLabel = new JLabel("Absolute value >=");
+            valueTF = new JTextField("0.05");
             valueTF.setColumns(4);
             JLabel pValueLabel = new JLabel("and p-Value <=");
             pvalueTF = new JTextField("0.05");

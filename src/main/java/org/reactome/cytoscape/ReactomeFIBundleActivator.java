@@ -1,5 +1,6 @@
 package org.reactome.cytoscape;
 
+import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellClusterNetwork;
 import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellNetwork;
 
 import java.util.Properties;
@@ -136,8 +137,9 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
                                          new ReactionNetworkPopupMenuHandler());
         popupManager.registerMenuHandler(ReactomeNetworkType.MechismoNetwork,
                                          new MechismoFINetworkPopupMenuHandler());
-        popupManager.registerMenuHandler(SingleCellNetwork, 
-                                         new ScNetworkPopupMenuHandler());
+        ScNetworkPopupMenuHandler scPopupHandler = new ScNetworkPopupMenuHandler();
+        popupManager.registerMenuHandler(SingleCellNetwork, scPopupHandler);
+        popupManager.registerMenuHandler(SingleCellClusterNetwork, scPopupHandler);
         popupManager.registerMenuHandler(ReactomeNetworkType.DorotheaTFTargetNetwork,
                                          new FINetworkPopupMenuHandler()); // Don't have fetch annotations. 
                                                                            // This should be handled when the network is constructed.
