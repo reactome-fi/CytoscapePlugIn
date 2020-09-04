@@ -90,13 +90,27 @@ public class ScAnalysisTask extends FIAnalysisTask {
         progPane.setVisible(true);
         JSONServerCaller serverCaller = ScNetworkManager.getManager().getServerCaller();
         try {
-            _doAnalysis(serverCaller, progPane, parentFrame);
+            if(setupService(serverCaller, progPane, parentFrame))
+                _doAnalysis(serverCaller, progPane, parentFrame);
         }
         catch(Exception e) {
             showErrorMessage(e.getMessage(), parentFrame);
             e.printStackTrace();
         }
         parentFrame.getGlassPane().setVisible(false);
+    }
+    
+    private boolean setupService(JSONServerCaller serverCaller,
+                                 ProgressPane progPane,
+                                 JFrame parentFrame) throws Exception {
+        // Download the analysis package if needed
+        Scpy4ReactomeDownloader downloader = new Scpy4ReactomeDownloader();
+        downloader.download(progPane);
+        progPane.setText("Starting service...");
+        if(!serverCaller.startServer()) {
+            return false;
+        }
+        return true;
     }
 
     protected void _doAnalysis(JSONServerCaller serverCaller, 

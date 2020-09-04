@@ -58,6 +58,7 @@ import smile.math.MathEx;
  */
 @SuppressWarnings("rawtypes")
 public class ScNetworkManager {
+    public static final String SCPY_2_REACTOME_NAME = "scpy4reactome.pyz";
     private final String PROJECTED_CELL_TYPE = "newCell";
     private static final Logger logger = LoggerFactory.getLogger(ScNetworkManager.class);
     private static ScNetworkManager manager;
@@ -77,6 +78,7 @@ public class ScNetworkManager {
     private boolean hasProjectedData;
     // Check if this analysis is for RNA velocity 
     private boolean isForRNAVelocity;
+
 
     private ScNetworkManager() {
         serverCaller = new JSONServerCaller();
@@ -150,10 +152,14 @@ public class ScNetworkManager {
         }
     }
 
-    private void openFile(String fileName) {
+    private void openFile(String fileName) throws IOException {
         // This should be a PDF file.
-        String figureDir = PlugInObjectManager.getManager().getProperties().getProperty("scPythonDir") + File.separator + "figures";
-        String url = "file:///" + figureDir + File.separator + fileName; 
+        String figureDir = PythonPathHelper.getHelper().getScPythonPath() + File.separator + "figures";
+        String figureFileName = figureDir + File.separator + fileName;
+        File figureFile = new File(figureFileName);
+        // Mark for deletion
+        figureFile.deleteOnExit();
+        String url = "file:///" + figureFileName; 
         PlugInUtilities.openURL(url);
     }
 

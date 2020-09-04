@@ -1,6 +1,10 @@
 package org.reactome.cytoscape.sc;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,14 +12,19 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
+import org.cytoscape.application.events.CyShutdownListener;
 import org.junit.Test;
+import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.r3.util.FileUtility;
 import org.slf4j.Logger;
@@ -39,14 +48,37 @@ import smile.plot.swing.ScatterPlot;
 public class JSONServerCaller {
     private static final Logger logger = org.slf4j.LoggerFactory.getLogger(JSONServerCaller.class);
     
-    //TODO: To be externalized
-    private final String URL = "http://localhost:8999";
+    private int port = 8999; // Default
     // As long as we have an id. 
     private RequestObject request;
+    // flag to track is the server is started
+    private boolean isStarted;
     
     public JSONServerCaller() {
         request = new RequestObject();
         request.id = 1; // As long as we have an id, it should be fine
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        if (context == null) // For test
+            return;
+        // This is much more reliable than listing to BundleEvent
+        CyShutdownListener l = e -> {
+            if (!e.actuallyShutdown()) // Only stop when it is actually shutdown.
+                return;
+            try {
+                stopServer();
+            }
+            catch(Exception e1) {
+                e1.printStackTrace();
+            }
+        };
+        context.registerService(CyShutdownListener.class.getName(),
+                                l,
+                                new Properties());
+        // Don't use BundleListener. It is not reliable enough to shutdown the server.
+    }
+    
+    public boolean isStarted() {
+        return this.isStarted;
     }
     
     @Test
@@ -255,13 +287,9 @@ public class JSONServerCaller {
     }
     
     @Test
-    public void test() throws Exception {
-        List<String> list = new ArrayList<>();
-        list.add("8");
-        list.add("2");
-        System.out.println(list);
-        ObjectMapper mapper = new ObjectMapper();
-        System.out.println(mapper.writeValueAsString(list));
+    public void testServer() throws Exception {
+        startServer();
+        stopServer();
     }
     
     public List<Double> performDPT(String rootCell) throws JsonEOFException, IOException {
@@ -523,19 +551,79 @@ public class JSONServerCaller {
     
     @Test
     public void stopServer() throws Exception {
+        if (!isStarted)
+            return;
         RequestObject request = new RequestObject();
         request.id = 100;
         request.method = "stop";
         callJSONServer(request);
+        isStarted = false;
+        System.out.println("The scpy4reactome has stopped.");
+        logger.info("The scpy4reactome has stopped.");
+    }
+    
+    @Test
+    public boolean startServer() throws IOException {
+        // Get an available port
+        ServerSocket socket = new ServerSocket(0);
+        this.port = socket.getLocalPort();
+        socket.close();
+        // Make a process call
+        String scPythonPath = PythonPathHelper.getHelper().getScPythonPath();
+        String pythonPath = PythonPathHelper.getHelper().getPythonPath();
+        if (pythonPath == null)
+            return false; // Cannot find a python path. This may be aborted by the user.
+        String[] parameters = {pythonPath, 
+                               scPythonPath + File.separator + ScNetworkManager.SCPY_2_REACTOME_NAME,
+                               this.port + ""};
+        ProcessBuilder builder = new ProcessBuilder(parameters);
+        builder.directory(new File(scPythonPath));
+        builder.redirectErrorStream(true);
+        builder.redirectOutput(Redirect.INHERIT);
+        builder.start();
+        // Poll the port to make sure it is reachable
+        long time1 = System.currentTimeMillis();
+        while (true) {
+            try {
+                Thread.sleep(250);
+                // Try again
+                Socket testSocket = new Socket("localhost", port);
+                if (testSocket.isConnected()) {
+                    isStarted = true;
+                    testSocket.close();
+                    break;
+                }
+                else
+                    testSocket.close();
+            }
+            catch(Exception e) { // Do nothing
+            }
+            long time2 = System.currentTimeMillis();
+            if ((time2 - time1) > 30000) {
+                // This is 30 seconds. Too long to start the server.
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              "There is some problem to start the python serivce for scRNA-seq data analysis.\n" + 
+                                              "Make sure you have python >= 3.7.0 and scpy4reactome installed.",
+                                              "Error in Starting Python Service",
+                                              JOptionPane.ERROR_MESSAGE);
+                break;
+            }
+        }
+        System.out.println("The scpy4reactome has started.");
+        logger.info("The scpy4reactome has started.");
+        return isStarted;
     }
 
     private ResponseObject callJSONServer(RequestObject request) throws JsonProcessingException, IOException {
+        if (!isStarted) 
+            startServer();
         ObjectMapper mapper = new ObjectMapper();
         // For some NaN, infinity, etc.
         mapper.configure(JsonParser.Feature.ALLOW_NON_NUMERIC_NUMBERS, true);
         String query = mapper.writeValueAsString(request);
         logger.debug(query);
-        String output = PlugInUtilities.callHttpInJson(URL,
+        String url = "http://localhost:" + port;
+        String output = PlugInUtilities.callHttpInJson(url,
                                                        PlugInUtilities.HTTP_POST,
                                                        query); // POST should be used always since the query is a JSON object.
         ResponseObject response = mapper.readValue(output, ResponseObject.class);
