@@ -30,14 +30,13 @@ import org.cytoscape.service.util.CyServiceRegistrar;
 import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This helper class is used to handle Python path for starting the python service.
  * @author wug
  *
  */
+@SuppressWarnings("unchecked")
 public class PythonPathHelper {
     private final String PYTHON_PROP_KEY = "python";
     // Cached path
@@ -165,6 +164,7 @@ public class PythonPathHelper {
         return scPythonPath;
     }
     
+    @SuppressWarnings("serial")
     private static class PythonPathDialog extends JDialog {
         private boolean isOkClicked;
         private JTextField tf;

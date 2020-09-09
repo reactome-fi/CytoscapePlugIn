@@ -549,6 +549,8 @@ public class JSONServerCaller {
         return rtn;
     }
     
+    // Note: If a test method cannot work, make sure @Test has not been added for methods
+    // returning something!
     @Test
     public void stopServer() throws Exception {
         if (!isStarted)
@@ -561,9 +563,10 @@ public class JSONServerCaller {
         System.out.println("The scpy4reactome has stopped.");
         logger.info("The scpy4reactome has stopped.");
     }
-    
-    @Test
+
     public boolean startServer() throws IOException {
+        if (isStarted)
+            return true; // Just return. There is no need to starty another process.
         // Get an available port
         ServerSocket socket = new ServerSocket(0);
         this.port = socket.getLocalPort();

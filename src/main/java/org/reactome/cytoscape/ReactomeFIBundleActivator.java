@@ -51,7 +51,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         PlugInObjectManager.getManager().setBundleContext(context);
         
         // Register properties: Make sure ReactomeFIViz.props is in the resources folder in the bundled app where resources is .in the top
-        ReactomeFIVizPropsReader propReader = new ReactomeFIVizPropsReader("ReactomeFIViz", "/resources/ReactomeFIViz.props");
+        // Note: the actual file name used for the property doesn't have resource here.
+        ReactomeFIVizPropsReader propReader = new ReactomeFIVizPropsReader("ReactomeFIViz", "ReactomeFIViz.props");
         Properties props = new Properties();
         props.setProperty("cyPropertyName", "ReactomeFIViz.props");
         registerAllServices(context, propReader, props);

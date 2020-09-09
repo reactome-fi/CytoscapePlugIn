@@ -365,11 +365,6 @@ public class RESTFulFIService implements FINetworkService {
         }
         return interaction;
     }
-    
-    private void outputXMLElement(Element elm) throws Exception {
-        XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
-        outputter.output(elm, System.out);
-    }
 
     public List<Long> highlight(List<Long> dbIds, String nodes)
             throws IOException
