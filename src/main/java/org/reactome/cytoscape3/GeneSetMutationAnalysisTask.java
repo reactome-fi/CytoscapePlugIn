@@ -210,7 +210,7 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             }
             if (fetchFIAnnotations) {
                 progPane.setText("Fetching FI annotations...");
-                EdgeActionCollection.annotateFIs(view);
+                new FINetworkGenerator().annotateFIs(view);
             }
             ServiceReference visHelperRef = context.getServiceReference(FIVisualStyle.class.getName());
             if (visHelperRef != null) {
@@ -218,24 +218,16 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
                 styleHelper.setVisualStyle(view);
                 styleHelper.doLayout();
             }
-            // BundleContext context =
-            // PlugInScopeObjectManager.getManager().getBundleContext();
-            // ServiceReference styleHelperRef =
-            // context.getServiceReference(FIVisualStyleImpl.class.getName());
-            // FIVisualStyleImpl styleHelper = (FIVisualStyleImpl)
-            // context.getService(styleHelperRef);
-            
+
             progPane.setIndeterminate(false);
             progPane.setValue(100);
         }
         catch (Exception e) {
             JOptionPane.showMessageDialog(frame, "Error in Loading File: " + e.getMessage(), "Error in Loading",
                                           JOptionPane.ERROR_MESSAGE);
-            frame.getGlassPane().setVisible(false);
             e.printStackTrace();
         }
         frame.getGlassPane().setVisible(false);
-        progPane = null;
     }
     
     private void loadGeneSampleFile(File file, Map<String, Integer> geneToSampleNumber,

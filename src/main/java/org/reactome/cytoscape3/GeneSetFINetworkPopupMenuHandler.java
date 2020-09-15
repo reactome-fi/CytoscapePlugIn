@@ -54,12 +54,13 @@ public class GeneSetFINetworkPopupMenuHandler extends FINetworkPopupMenuHandler 
                         @Override
                         public void run() {
                             try {
-                                EdgeActionCollection.annotateFIs(view);
-                                BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-                                ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
-                                FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
-                                visStyler.setVisualStyle(view, false); // If there is one already, don't recreate it.
-                                context.ungetService(servRef);
+                                if(EdgeActionCollection.annotateFIs(view)) {
+                                    BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+                                    ServiceReference servRef = context.getServiceReference(FIVisualStyle.class.getName());
+                                    FIVisualStyle visStyler = (FIVisualStyle) context.getService(servRef);
+                                    visStyler.setVisualStyle(view, false); // If there is one already, don't recreate it.
+                                    context.ungetService(servRef);
+                                }
                             }
                             catch (Exception t) {
                                 JOptionPane.showMessageDialog(

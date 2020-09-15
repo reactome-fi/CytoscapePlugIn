@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.cytoscape.event.CyEventHelper;
@@ -28,6 +29,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
+import org.reactome.funcInt.FIAnnotation;
 import org.reactome.funcInt.Interaction;
 
 public class FINetworkGenerator implements NetworkGenerator {
@@ -423,6 +425,77 @@ public class FINetworkGenerator implements NetworkGenerator {
             }
         }
         return null;
+    }
+    
+    public boolean annotateFIs(CyNetworkView view) {
+        TableHelper tableHelper = new TableHelper();
+        List<CyEdge> edges = null;
+        List<CyEdge> annotatedEdges = new ArrayList<CyEdge>();
+        List<CyEdge> unannotatedEdges = new ArrayList<CyEdge>();
+        for (View<CyEdge> edgeView : view.getEdgeViews()) {
+            CyEdge edge = edgeView.getModel();
+            if (tableHelper.hasEdgeAttribute(view, edge, "FI Direction", String.class))
+                annotatedEdges.add(edge);
+            else
+                unannotatedEdges.add(edge);
+        }
+        JFrame parentFrame = PlugInObjectManager.getManager().getCytoscapeDesktop();
+        if (!annotatedEdges.isEmpty() && !unannotatedEdges.isEmpty()) {
+            int reply = JOptionPane.showConfirmDialog(parentFrame, "Some FIs have already been annotated. Would you like to annotate\n" +
+                    "only those FIs without annotations? Choosing \"No\" will annotate all FIs.",
+                    "FI Annotation", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (reply == JOptionPane.CANCEL_OPTION) {
+                return false;
+            }
+            if (reply == JOptionPane.YES_OPTION)
+                edges = unannotatedEdges;
+            else {
+                edges = unannotatedEdges;
+                edges.addAll(annotatedEdges);
+            }
+        }
+        else if (annotatedEdges.size() > 0) {
+            int reply = JOptionPane.showConfirmDialog(parentFrame, "All FIs have been annotated. Would you like to re-annotate them?",
+                                                      "FI Annotation", JOptionPane.YES_NO_OPTION);
+            if (reply == JOptionPane.NO_OPTION) { 
+                return false;
+            }
+            edges = annotatedEdges;
+        }
+        else if (unannotatedEdges.size() > 0)
+            edges = unannotatedEdges;
+        
+        if (edges == null || edges.size() == 0) {
+            JOptionPane.showMessageDialog(parentFrame,
+                                          "No FIs need to be annotated.",
+                                          "FI Annotation", 
+                                          JOptionPane.INFORMATION_MESSAGE);
+            return false;
+        }
+        
+        try {
+            Map<String, String> edgeToAnnotation = new HashMap<String, String>();
+            Map<String, String> edgeToDirection = new HashMap<String, String>();
+            Map<String, Double> edgeToScore = new HashMap<String, Double>();
+            RESTFulFIService service = new RESTFulFIService(view);
+            Map<String, FIAnnotation> edgeIdToAnnotation = service.annotate(edges, view);
+            for (String edgeId : edgeIdToAnnotation.keySet()) {
+                FIAnnotation annotation = edgeIdToAnnotation.get(edgeId);
+                edgeToAnnotation.put(edgeId, annotation.getAnnotation());
+                edgeToDirection.put(edgeId, annotation.getDirection());
+                edgeToScore.put(edgeId, annotation.getScore());
+            }
+            tableHelper.storeEdgeAttributesByName(view, "FI Annotation", edgeToAnnotation);
+            tableHelper.storeEdgeAttributesByName(view, "FI Direction", edgeToDirection);
+            tableHelper.storeEdgeAttributesByName(view, "FI Score", edgeToScore);
+            return true;
+        } 
+        catch (Exception t) {
+            PlugInUtilities.showErrorMessage("Error in annotating FIs",
+                                             "FI Annotation failed. Please try again.");
+            t.printStackTrace();
+            return false;
+        }
     }
 
 }

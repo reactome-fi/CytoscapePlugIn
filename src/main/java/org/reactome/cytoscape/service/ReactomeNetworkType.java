@@ -8,6 +8,7 @@ package org.reactome.cytoscape.service;
  * @author gwu
  *
  */
+// TODO: Refactor to use a new manager to manage FIVisualStyle for different types of networks.
 public enum ReactomeNetworkType {
     
     FINetwork, // Just normal FI network

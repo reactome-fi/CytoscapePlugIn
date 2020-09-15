@@ -202,6 +202,7 @@ public class JSONServerCaller {
      */
     @Test
     public void testProject() throws Exception {
+        isStarted = true;
         testLoadData();
         String dir = "/Users/wug/Documents/missy_single_cell/seq_data_v2/12_5_gfp/filtered_feature_bc_matrix";
         Map<String, List<?>> cellToUmap = project(dir);
@@ -549,9 +550,6 @@ public class JSONServerCaller {
         return rtn;
     }
     
-    // Note: If a test method cannot work, make sure @Test has not been added for methods
-    // returning something!
-    @Test
     public void stopServer() throws Exception {
         if (!isStarted)
             return;
@@ -562,6 +560,14 @@ public class JSONServerCaller {
         isStarted = false;
         System.out.println("The scpy4reactome has stopped.");
         logger.info("The scpy4reactome has stopped.");
+    }
+    
+    // Note: If a test method cannot work, make sure @Test has not been added for methods
+    // returning something!
+    @Test
+    public void testStopServer() throws Exception {
+        isStarted = true;
+        stopServer();
     }
 
     public boolean startServer() throws IOException {

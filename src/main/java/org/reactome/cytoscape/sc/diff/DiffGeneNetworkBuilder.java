@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.cytoscape.model.CyNetwork;
@@ -13,6 +12,9 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskMonitor;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FINetworkService;
 import org.reactome.cytoscape.service.FINetworkServiceFactory;
@@ -45,48 +47,9 @@ public class DiffGeneNetworkBuilder {
         this.mouse2humanMap = mouse2humanMap;
     }
 
-    public void buildNetwork(DiffExpResult result) throws Exception {
-        Set<String> humanGenes = null;
-        if (PathwaySpecies.Mus_musculus == this.species) {
-            humanGenes = result.getNames()
-                    .stream()
-                    .filter(s -> mouse2humanMap.keySet().contains(s))
-                    .map(mg -> mouse2humanMap.get(mg))
-                    .flatMap(s -> s.stream())
-                    .collect(Collectors.toSet());
-        }
-        else {
-            humanGenes = result.getNames().stream().collect(Collectors.toSet());
-        }
-        // Check if a local service should be used
-        FINetworkService fiService = new FINetworkServiceFactory().getFINetworkService();
-        Set<String> fis = fiService.buildFINetwork(humanGenes, false);
-        // Build CyNetwork
-        FINetworkGenerator generator = new FINetworkGenerator();
-        CyNetwork network = generator.constructFINetwork(humanGenes, fis);
-        PlugInObjectManager manager = PlugInObjectManager.getManager();
-        CyNetworkManager networkManager = manager.getNetworkManager();
-        networkManager.addNetwork(network);
-        // Build network view
-        CyNetworkViewFactory viewFactory = manager.getNetworkViewFactory();
-        CyNetworkView view = viewFactory.createNetworkView(network);
-        CyNetworkViewManager viewManager = manager.getNetworkViewManager();
-        viewManager.addNetworkView(view);
-        // Handle network related properties. Do this at the end to avoid null exception because of no view available.
-        TableHelper tableHelper = new TableHelper();
-        tableHelper.storeFINetworkVersion(network, PlugInObjectManager.getManager().getFiNetworkVersion());
-        tableHelper.markAsReactomeNetwork(network);
-        tableHelper.storeNetworkAttribute(network, "name", "Network: " + result.getResultName());
-        // Save the mapping between mouse and human genes
-        storeGeneProperties(humanGenes, network, result, tableHelper);
-        if (style == null)
-            style = new DiffGeneNetworkStyle();
-        style.setVisualStyle(view, false);
-        // We need to call these two methods here. Otherwise they will not work since style is not registered during creation.
-        style.updateNodeColorsForNumbers(view, "score", BasicVisualLexicon.NODE_FILL_COLOR);
-        style.updateNodeColorsForNumbers(view, "logFoldChange", BasicVisualLexicon.NODE_BORDER_PAINT);
-        style.doLayout();
-        view.updateView();
+    public void buildNetwork(DiffExpResult result) {
+        BuildNetworkTask task = new BuildNetworkTask(result);
+        PlugInObjectManager.getManager().getTaskManager().execute(new TaskIterator(task));
     }
 
     private void storeHumanGeneProperties(Set<String> humanGenes,
@@ -192,6 +155,68 @@ public class DiffGeneNetworkBuilder {
             storeMouseGeneProperties(humanGenes, network, result, tableHelper);
         else if (this.species == PathwaySpecies.Homo_sapiens)
             storeHumanGeneProperties(humanGenes, network, result, tableHelper);
+    }
+    
+    private class BuildNetworkTask extends AbstractTask {
+        private DiffExpResult result;
+        
+        public BuildNetworkTask(DiffExpResult result) {
+            this.result = result;
+        }
+        
+        private void buildNetwork(TaskMonitor monitor) throws Exception {
+            monitor.setTitle("Building Network");
+            Set<String> humanGenes = null;
+            if (PathwaySpecies.Mus_musculus == species) {
+                humanGenes = result.getNames()
+                        .stream()
+                        .filter(s -> mouse2humanMap.keySet().contains(s))
+                        .map(mg -> mouse2humanMap.get(mg))
+                        .flatMap(s -> s.stream())
+                        .collect(Collectors.toSet());
+            }
+            else {
+                humanGenes = result.getNames().stream().collect(Collectors.toSet());
+            }
+            monitor.setStatusMessage("Building the network...");
+            // Check if a local service should be used
+            FINetworkService fiService = new FINetworkServiceFactory().getFINetworkService();
+            Set<String> fis = fiService.buildFINetwork(humanGenes, false);
+            // Build CyNetwork
+            FINetworkGenerator generator = new FINetworkGenerator();
+            CyNetwork network = generator.constructFINetwork(humanGenes, fis);
+            PlugInObjectManager manager = PlugInObjectManager.getManager();
+            CyNetworkManager networkManager = manager.getNetworkManager();
+            networkManager.addNetwork(network);
+            // Build network view
+            CyNetworkViewFactory viewFactory = manager.getNetworkViewFactory();
+            CyNetworkView view = viewFactory.createNetworkView(network);
+            CyNetworkViewManager viewManager = manager.getNetworkViewManager();
+            viewManager.addNetworkView(view);
+            // Handle network related properties. Do this at the end to avoid null exception because of no view available.
+            TableHelper tableHelper = new TableHelper();
+            tableHelper.storeFINetworkVersion(network, PlugInObjectManager.getManager().getFiNetworkVersion());
+            tableHelper.markAsReactomeNetwork(network);
+            tableHelper.storeNetworkAttribute(network, "name", "Network: " + result.getResultName());
+            // Save the mapping between mouse and human genes
+            storeGeneProperties(humanGenes, network, result, tableHelper);
+            monitor.setStatusMessage("Fetching FI annotations...");
+            generator.annotateFIs(view);
+            if (style == null)
+                style = new DiffGeneNetworkStyle();
+            style.setVisualStyle(view, false);
+            // We need to call these two methods here. Otherwise they will not work since style is not registered during creation.
+            style.updateNodeColorsForNumbers(view, "score", BasicVisualLexicon.NODE_FILL_COLOR);
+            style.updateNodeColorsForNumbers(view, "logFoldChange", BasicVisualLexicon.NODE_BORDER_PAINT);
+            style.doLayout();
+            view.updateView();
+        }
+
+        @Override
+        public void run(TaskMonitor taskMonitor) throws Exception {
+            buildNetwork(taskMonitor);
+        }
+        
     }
 
 }
