@@ -11,11 +11,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -33,7 +29,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
@@ -44,12 +39,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
-import javax.swing.border.Border;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -71,6 +63,7 @@ import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.cytoscape.drug.DrugDataSource;
 import org.reactome.cytoscape.drug.DrugListManager;
+import org.reactome.cytoscape.pathway.GSEAPathwayAnalyzer.GeneScoreLoadingPane;
 import org.reactome.cytoscape.pgm.PathwayResultSummary;
 import org.reactome.cytoscape.service.GeneSetLoadingPane;
 import org.reactome.cytoscape.service.PathwaySpecies;
@@ -711,9 +704,9 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         if (!loadingPane.isOkClicked() || loadingPane.getSelectedFile() == null)
             return; // Cancelled or nothing is input
         String fileName = loadingPane.getSelectedFile();
-        int minSize = Integer.parseInt(loadingPane.minTF.getText().trim());
-        int maxSize = Integer.parseInt(loadingPane.maxTF.getText().trim());
-        int permutation = Integer.parseInt(loadingPane.permutationTF.getText().trim());
+        int minSize = Integer.parseInt(loadingPane.getMinTF().getText().trim());
+        int maxSize = Integer.parseInt(loadingPane.getMaxTF().getText().trim());
+        int permutation = Integer.parseInt(loadingPane.getPermutationTF().getText().trim());
         GSEAPathwayAnalyzer analyzer = new GSEAPathwayAnalyzer();
         analyzer.performGSEAAnalysis(fileName,
                                      minSize,
@@ -1332,137 +1325,5 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 return fdrColors.get(3);
             }
         }
-    }
-    
-    /**
-     * A customized JPanel for loading a gene score file.
-     * @author wug
-     *
-     */
-    private class GeneScoreLoadingPane extends GeneSetLoadingPane {
-        private JTextField minTF;
-        private JTextField maxTF;
-        private JTextField permutationTF;
-
-        public GeneScoreLoadingPane(Component parent) {
-            super(parent);
-        }
-        
-        @Override
-        protected JPanel createFilePane() {
-            JPanel filePane = super.createFilePane();
-            JPanel container = new JPanel();
-            Border border = BorderFactory.createTitledBorder("Data");
-            container.setBorder(border);
-            container.setLayout(new GridBagLayout());
-            GridBagConstraints constraints = new GridBagConstraints();
-            constraints.fill = GridBagConstraints.HORIZONTAL;
-            constraints.anchor = GridBagConstraints.WEST;
-            container.add(filePane);
-            constraints.gridy = 1;
-            JTextArea noteTF = createNoteTF();
-            container.add(noteTF, constraints);
-            return container;
-        }
-        
-        @Override
-        protected void init(Component parent) {
-            this.setBorder(BorderFactory.createEtchedBorder());
-            this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));;
-            
-            JPanel filePanel = createFilePane();
-            this.add(filePanel);
-            
-            JPanel configPane = createConfigPane();
-            this.add(configPane);
-
-            showInDialog(parent);
-        }
-        
-        @Override
-        protected void setDialogSize() {
-            parentDialog.setSize(490, 340);
-        }
-        
-        @Override
-        protected String getTitle() {
-            return "Reactome GSEA Analysis";
-        }
-        
-        @Override
-        protected JLabel createFileLabel() {
-            return new JLabel("Choose a gene score file:");
-        }
-        
-        @Override
-        protected void browseFile() {
-            PlugInUtilities.browseFileForLoad(fileNameTF, 
-                    "Gene Score File", 
-                    new String[] {"txt", "rnk"});
-        }
-        
-        private JPanel createConfigPane() {
-            JPanel panel = new JPanel();
-            Border border = BorderFactory.createTitledBorder("Configuration");
-            panel.setBorder(border);
-            panel.setLayout(new GridBagLayout());
-            GridBagConstraints constraints = new GridBagConstraints();
-            constraints.insets = new Insets(0, 0, 0, 0);
-            constraints.fill = GridBagConstraints.HORIZONTAL;
-            constraints.anchor = GridBagConstraints.WEST;
-            
-            JLabel label = new JLabel("Choose pathways having sizes: ");
-            JLabel minLabel = new JLabel("Minimum: ");
-            JLabel maxLabel = new JLabel("Maximum: ");
-            minTF = new JTextField();
-            minTF.setColumns(4);
-            minTF.setText(5 + "");
-            maxTF = new JTextField();
-            maxTF.setColumns(4);
-            maxTF.setText(1000 + "");
-            
-            constraints.gridx = 0;
-            constraints.gridy = 0;
-            panel.add(label, constraints);
-            constraints.gridx = 1;
-            panel.add(minLabel, constraints);
-            constraints.gridx = 2;
-            panel.add(minTF, constraints);
-            constraints.gridy ++;
-            constraints.gridx = 1;
-            panel.add(maxLabel, constraints);
-            constraints.gridx ++;
-            panel.add(maxTF, constraints);
-            
-            label = new JLabel("Set number of permutations: ");
-            permutationTF = new JTextField();
-            permutationTF.setColumns(4);
-            permutationTF.setText(100 + "");
-            
-            constraints.gridy ++;
-            constraints.gridx = 0;
-            constraints.gridwidth = 2;
-            panel.add(label, constraints);
-            constraints.gridx = 2;
-            panel.add(permutationTF, constraints);
-            
-            return panel;
-        }
-        
-        private JTextArea createNoteTF() {
-            JTextArea noteTF = new JTextArea();
-            noteTF.setEditable(false);
-            noteTF.setBackground(getBackground());
-            noteTF.setLineWrap(true);
-            noteTF.setWrapStyleWord(true);
-            Font font = noteTF.getFont();
-            noteTF.setFont(font.deriveFont(Font.ITALIC, font.getSize() - 1));
-            String note = "Note: The gene score file should contain at least two tab-delimited "
-                    + "columns, first for human gene symbols and second for scores. The first row "
-                    + "should be for column headers.";
-            noteTF.setText(note);
-            return noteTF;
-        }
-        
     }
 }

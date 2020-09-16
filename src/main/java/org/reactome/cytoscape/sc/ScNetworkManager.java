@@ -3,6 +3,7 @@ package org.reactome.cytoscape.sc;
 import static org.reactome.cytoscape.service.PathwaySpecies.Homo_sapiens;
 import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellClusterNetwork;
 
+import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.pathway.GSEAPathwayAnalyzer.GSEAPathwayAnalysisTask;
+import org.reactome.cytoscape.pathway.GSEAPathwayAnalyzer.GeneScoreLoadingPane;
 import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.cytoscape.pathway.PathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.pathway.PathwayHierarchyLoadTask;
@@ -614,13 +616,23 @@ public class ScNetworkManager {
         tm.execute(new TaskIterator(hierarchyTask, analysisTask));
     }
     
-    public void doGSEATest(DiffExpResult result) {
+    public void doGSEATest(DiffExpResult result, Component parentComp) {
         if (result == null || result.getNames() == null || result.getNames().size() == 0)
             return;
+        // Some configuration for GSEA analysis
+        GeneScoreLoadingPane gseaConfigPane = new GeneScoreLoadingPane(parentComp, false);
+        if (!gseaConfigPane.isOkClicked())
+            return; // Cancelled by the user
         PathwayHierarchyLoadTask hierarchyTask = new PathwayHierarchyLoadTask();
         hierarchyTask.setSpecies(getSpecies());
+        // Set up GSEA task
         GSEAPathwayAnalysisTask gseaTask = new GSEAPathwayAnalysisTask();
-        gseaTask.setPermutation(100); // For the default value
+        int minSize = Integer.parseInt(gseaConfigPane.getMinTF().getText().trim());
+        int maxSize = Integer.parseInt(gseaConfigPane.getMaxTF().getText().trim());
+        int permutation = Integer.parseInt(gseaConfigPane.getPermutationTF().getText().trim());
+        gseaTask.setPermutation(permutation); 
+        gseaTask.setMinPathwaySize(minSize);
+        gseaTask.setMaxPathwaySize(maxSize);
         Map<String, Double> geneToScore = result.getGeneToScore();
         gseaTask.setGeneToScore(geneToScore);
         gseaTask.setEventPane(PathwayControlPanel.getInstance().getEventTreePane());

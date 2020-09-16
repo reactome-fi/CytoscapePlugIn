@@ -39,10 +39,17 @@ public class GeneSetLoadingPane extends JPanel {
     JRadioButton commaDelimitedBtn;
     JRadioButton tabDelimitedBtn;
     JRadioButton lineDelimitedBtn;
-    DialogControlPane controlPane;
+    protected DialogControlPane controlPane;
     protected JDialog parentDialog;
     String enteredGenes;
     JButton enterButton;
+    
+    /**
+     * This is used only for subclassing.
+     */
+    protected GeneSetLoadingPane() {
+        
+    }
     
     public GeneSetLoadingPane(Component parent) {
         init(parent);
@@ -118,7 +125,7 @@ public class GeneSetLoadingPane extends JPanel {
         return "line";
     }
     
-    private void validateOkButton() {
+    protected void validateOkButton() {
         if (getSelectedFile() != null || enteredGenes != null)
             controlPane.getOKBtn().setEnabled(true);
         else

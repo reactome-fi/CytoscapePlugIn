@@ -77,7 +77,7 @@ public class DifferentialExpressionAnalyzer {
                 ScNetworkManager.getManager().doBinomialTest(displayedResult);
             }
             else if (approach == GSEA && result != null)
-                ScNetworkManager.getManager().doGSEATest(result);
+                ScNetworkManager.getManager().doGSEATest(result, dialog);
         });
     }
     

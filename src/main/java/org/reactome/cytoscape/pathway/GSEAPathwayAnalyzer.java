@@ -1,5 +1,10 @@
 package org.reactome.cytoscape.pathway;
 
+import java.awt.Component;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -9,8 +14,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.work.AbstractTask;
@@ -18,6 +32,7 @@ import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.cytoscape.work.TaskMonitor;
 import org.reactome.annotate.GeneSetAnnotation;
+import org.reactome.cytoscape.service.GeneSetLoadingPane;
 import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -229,6 +244,211 @@ public class GSEAPathwayAnalyzer {
             }
             showResults(gseaResults);
             taskMonitor.setProgress(1.0d);            
+        }
+        
+    }
+    
+    /**
+     * A customized JPanel for loading a gene score file.
+     * @author wug
+     *
+     */
+    public static class GeneScoreLoadingPane extends GeneSetLoadingPane {
+        private JTextField minTF;
+        private JTextField maxTF;
+        private JTextField permutationTF;
+        private boolean needFilePanel;
+
+        public GeneScoreLoadingPane(Component parent) {
+            this(parent, true);
+        }
+        
+        public GeneScoreLoadingPane(Component parent, boolean needFilePanel) {
+            this.needFilePanel = needFilePanel;
+            init(parent);
+        }
+        
+        public JTextField getMinTF() {
+            return minTF;
+        }
+
+        public JTextField getMaxTF() {
+            return maxTF;
+        }
+
+        public JTextField getPermutationTF() {
+            return permutationTF;
+        }
+
+        @Override
+        protected JPanel createFilePane() {
+            JPanel filePane = super.createFilePane();
+            JPanel container = new JPanel();
+            Border border = BorderFactory.createTitledBorder("Data");
+            container.setBorder(border);
+            container.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            constraints.anchor = GridBagConstraints.WEST;
+            container.add(filePane);
+            constraints.gridy = 1;
+            JTextArea noteTF = createNoteTF();
+            container.add(noteTF, constraints);
+            return container;
+        }
+        
+        @Override
+        protected void init(Component parent) {
+            this.setBorder(BorderFactory.createEtchedBorder());
+            this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));;
+            
+            if (needFilePanel) {
+                JPanel filePanel = createFilePane();
+                this.add(filePanel);
+            }
+            
+            JPanel configPane = createConfigPane();
+            this.add(configPane);
+
+            showInDialog(parent);
+        }
+        
+        @Override
+        protected void validateOkButton() {
+            if (((fileNameTF != null && getSelectedFile() != null) || fileNameTF == null)
+                && isInteger(minTF)
+                && isInteger(maxTF) 
+                && isInteger(permutationTF))
+                controlPane.getOKBtn().setEnabled(true);
+            else
+                controlPane.getOKBtn().setEnabled(false);
+        }
+        
+        @Override
+        public String getSelectedFile() {
+            if (this.fileNameTF == null)
+                return null;
+            String file = this.fileNameTF.getText().trim();
+            if (file.length() == 0)
+                return null;
+            return file;
+        }
+        
+        private boolean isInteger(JTextField tf) {
+            String text = tf.getText().trim();
+            if (text.length() == 0)
+                return false;
+            return text.matches("\\d+");
+        }
+        
+        @Override
+        protected void setDialogSize() {
+            if (needFilePanel)
+                parentDialog.setSize(490, 340);
+            else
+                parentDialog.setSize(490, 200);
+        }
+        
+        @Override
+        protected String getTitle() {
+            return "Reactome GSEA Analysis";
+        }
+        
+        @Override
+        protected JLabel createFileLabel() {
+            return new JLabel("Choose a gene score file:");
+        }
+        
+        @Override
+        protected void browseFile() {
+            PlugInUtilities.browseFileForLoad(fileNameTF, 
+                    "Gene Score File", 
+                    new String[] {"txt", "rnk"});
+        }
+        
+        private JPanel createConfigPane() {
+            JPanel panel = new JPanel();
+            Border border = BorderFactory.createTitledBorder("Configuration");
+            panel.setBorder(border);
+            panel.setLayout(new GridBagLayout());
+            GridBagConstraints constraints = new GridBagConstraints();
+            constraints.insets = new Insets(0, 0, 0, 0);
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            constraints.anchor = GridBagConstraints.WEST;
+            
+            JLabel label = new JLabel("Choose pathways having sizes: ");
+            JLabel minLabel = new JLabel("Minimum: ");
+            JLabel maxLabel = new JLabel("Maximum: ");
+            minTF = new JTextField();
+            minTF.setColumns(4);
+            minTF.setText(5 + "");
+            maxTF = new JTextField();
+            maxTF.setColumns(4);
+            maxTF.setText(1000 + "");
+            
+            constraints.gridx = 0;
+            constraints.gridy = 0;
+            panel.add(label, constraints);
+            constraints.gridx = 1;
+            panel.add(minLabel, constraints);
+            constraints.gridx = 2;
+            panel.add(minTF, constraints);
+            constraints.gridy ++;
+            constraints.gridx = 1;
+            panel.add(maxLabel, constraints);
+            constraints.gridx ++;
+            panel.add(maxTF, constraints);
+            
+            label = new JLabel("Set number of permutations: ");
+            permutationTF = new JTextField();
+            permutationTF.setColumns(4);
+            permutationTF.setText(100 + "");
+            
+            constraints.gridy ++;
+            constraints.gridx = 0;
+            constraints.gridwidth = 2;
+            panel.add(label, constraints);
+            constraints.gridx = 2;
+            panel.add(permutationTF, constraints);
+            
+            // To check the values in these text fields
+            DocumentListener l = new DocumentListener() {
+                
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                    validateOkButton();
+                }
+                
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                    validateOkButton();
+                }
+                
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    validateOkButton();
+                }
+            };
+            minTF.getDocument().addDocumentListener(l);
+            maxTF.getDocument().addDocumentListener(l);
+            permutationTF.getDocument().addDocumentListener(l);
+            
+            return panel;
+        }
+        
+        private JTextArea createNoteTF() {
+            JTextArea noteTF = new JTextArea();
+            noteTF.setEditable(false);
+            noteTF.setBackground(getBackground());
+            noteTF.setLineWrap(true);
+            noteTF.setWrapStyleWord(true);
+            Font font = noteTF.getFont();
+            noteTF.setFont(font.deriveFont(Font.ITALIC, font.getSize() - 1));
+            String note = "Note: The gene score file should contain at least two tab-delimited "
+                    + "columns, first for human gene symbols and second for scores. The first row "
+                    + "should be for column headers.";
+            noteTF.setText(note);
+            return noteTF;
         }
         
     }
