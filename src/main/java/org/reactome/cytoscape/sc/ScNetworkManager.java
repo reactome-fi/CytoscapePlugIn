@@ -599,10 +599,6 @@ public class ScNetworkManager {
     public void doBinomialTest(DiffExpResult result) {
         if (result == null || result.getNames() == null || result.getNames().size() == 0)
             return;
-        // Load the pathway hierarchy if it has not been.
-        TaskManager tm = PlugInObjectManager.getManager().getTaskManager();
-        if (tm == null)
-            return;
         PathwayHierarchyLoadTask hierarchyTask = new PathwayHierarchyLoadTask();
         hierarchyTask.setSpecies(getSpecies());
         // Conduct a pathway enrichment analysis
@@ -613,7 +609,8 @@ public class ScNetworkManager {
         String geneList = result.getNames().stream().collect(Collectors.joining("\n"));
         analysisTask.setGeneList(geneList);
         analysisTask.setEventPane(PathwayControlPanel.getInstance().getEventTreePane());
-        tm.execute(new TaskIterator(hierarchyTask, analysisTask));
+        // Make sure hierarchy is loaded first by using sync task manager.
+        PlugInObjectManager.getManager().getSyncTaskManager().execute(new TaskIterator(hierarchyTask, analysisTask));
     }
     
     public void doGSEATest(DiffExpResult result, Component parentComp) {
@@ -636,7 +633,7 @@ public class ScNetworkManager {
         Map<String, Double> geneToScore = result.getGeneToScore();
         gseaTask.setGeneToScore(geneToScore);
         gseaTask.setEventPane(PathwayControlPanel.getInstance().getEventTreePane());
-        PlugInObjectManager.getManager().getTaskManager().execute(new TaskIterator(hierarchyTask, gseaTask));
+        PlugInObjectManager.getManager().getSyncTaskManager().execute(new TaskIterator(hierarchyTask, gseaTask));
     }
     
 }

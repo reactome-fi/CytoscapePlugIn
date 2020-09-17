@@ -4,6 +4,7 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -79,6 +80,8 @@ public class DiffExpResultTableFilterPane extends JPanel {
         add(filterBtn);
         // Control the display
         colNameBox.addItemListener(e -> {
+            if (e.getStateChange() != ItemEvent.SELECTED)
+                return;
             int selectedIndex = colNameBox.getSelectedIndex();
             Class<?> cls = table.getColumnClass(selectedIndex);
             // There are only two types of data
@@ -89,6 +92,12 @@ public class DiffExpResultTableFilterPane extends JPanel {
             }
             else if (cls.isAssignableFrom(Double.class)) {
                 Stream.of(DOUBLE_OPERATORS).forEach(tmpModel::addElement);
+                // Some default choice
+                Object selected = colNameBox.getSelectedItem();
+                if (selected.equals("FDR") || selected.equals("pValue"))
+                    operatorBox.setSelectedItem("<=");
+                else
+                    operatorBox.setSelectedItem(">= for abs");
             }
         });
     }
