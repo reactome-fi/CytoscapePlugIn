@@ -19,6 +19,7 @@ import javax.swing.JTextField;
 
 import org.gk.util.DialogControlPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * This customized JDialog is used to choose a cell or specific clusters for root inference.
@@ -83,13 +84,7 @@ public class CellRootSelectionDialog extends JDialog {
         constraints.gridx = 1;
         contentPane.add(clusterTF, constraints);
         // Add a note
-        JTextArea noteTF = new JTextArea();
-        Font font = label.getFont();
-        noteTF.setFont(font.deriveFont(Font.ITALIC, font.getSize() - 1));
-        noteTF.setEditable(false);
-        noteTF.setBackground(getBackground());
-        noteTF.setWrapStyleWord(true);
-        noteTF.setLineWrap(true);
+        JTextArea noteTF = PlugInUtilities.createTextAreaForNote(contentPane);
         noteTF.setText("Note: You may enter more than one cluster by delimiting them with \",\". "
                 + "To use all clusters, enter \"all\". If you enter information for both text boxes, "
                 + "the information in the cell root box will be used.");

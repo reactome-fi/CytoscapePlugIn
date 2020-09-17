@@ -3,13 +3,17 @@ package org.reactome.cytoscape.sc;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.gk.util.ProgressPane;
+import org.junit.Test;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
@@ -36,8 +40,7 @@ public class Scpy4ReactomeDownloader {
         String fileUrl = getURL(APP_FILE);
         URL url = new URL(fileUrl);
         InputStream is = url.openStream();
-        File localAppFile = new File(PythonPathHelper.getHelper().getScPythonPath(),
-                                     APP_FILE);
+        File localAppFile = getLocalAppFile();
         FileOutputStream fos = new FileOutputStream(localAppFile);
         byte[] buffer = new byte[10 * 1024]; // 10 k
         int read = 0;
@@ -46,6 +49,12 @@ public class Scpy4ReactomeDownloader {
         }
         is.close();
         fos.close();
+    }
+
+    protected File getLocalAppFile() throws IOException {
+        File localAppFile = new File(PythonPathHelper.getHelper().getScPythonPath(),
+                                     APP_FILE);
+        return localAppFile;
     }
     
     private boolean isUpdated() throws Exception {
@@ -61,7 +70,9 @@ public class Scpy4ReactomeDownloader {
         is.close();
         File versionFile = new File(PythonPathHelper.getHelper().getScPythonPath(),
                                     VERSION_FILE);
-        if (versionFile.exists()) {
+        // Also we need to make sure the app file there too
+        File appFile = getLocalAppFile();
+        if (versionFile.exists() && appFile.exists()) {
             // There should be one line only
             String localVersion = Files.readAllLines(versionFile.toPath()).get(0).trim();
             if (localVersion.equals(remoteVersion))

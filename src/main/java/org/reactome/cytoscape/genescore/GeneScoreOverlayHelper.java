@@ -1,7 +1,6 @@
 package org.reactome.cytoscape.genescore;
 
 import java.awt.BorderLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -27,7 +26,6 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.TaskIterator;
@@ -256,13 +254,7 @@ public class GeneScoreOverlayHelper {
         }
         
         private JTextArea createNoteTF() {
-            JTextArea noteTF = new JTextArea();
-            noteTF.setEditable(false);
-            noteTF.setBackground(getBackground());
-            noteTF.setLineWrap(true);
-            noteTF.setWrapStyleWord(true);
-            Font font = noteTF.getFont();
-            noteTF.setFont(font.deriveFont(Font.ITALIC, font.getSize() - 1));
+            JTextArea noteTF = PlugInUtilities.createTextAreaForNote(this);
             String note = "Note: The gene score file should contain at least two tab-delimited "
                     + "columns, first for human gene symbols and second for scores. The first row "
                     + "should be for column headers.";

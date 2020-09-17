@@ -436,13 +436,7 @@ public class ModuleBasedSurvivalAnalysisHelper
             constraints.weightx = 0.7d;
             contentPane.add(clinFileTF, constraints);
             // Add a note about requirement of the clinical information file
-            JTextArea noteTA = new JTextArea();
-            Font font = contentPane.getFont();
-            noteTA.setFont(font.deriveFont(font.getSize2D() - 2.0f));
-            noteTA.setEditable(false);
-            noteTA.setLineWrap(true);
-            noteTA.setWrapStyleWord(true);
-            noteTA.setBackground(contentPane.getBackground());
+            JTextArea noteTA = PlugInUtilities.createTextAreaForNote(contentPane);
             noteTA.setText("Note: At least three columns should be provided in a tab-delimited " +
                     "text file containing survival information: Sample, OSEVENT, OSDURATION.");
             constraints.gridx = 0;

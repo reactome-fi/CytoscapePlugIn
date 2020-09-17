@@ -60,6 +60,7 @@ import org.reactome.booleannetwork.TransferFunction;
 import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.pathway.booleannetwork.BNPerturbationAnalyzer;
 import org.reactome.pathway.booleannetwork.BNPerturbationInjector;
 import org.reactome.pathway.booleannetwork.ModificationType;
@@ -162,11 +163,7 @@ public class BooleanNetworkSamplePane extends JPanel {
         
         add(contentPane, BorderLayout.CENTER);
         
-        noteTF = new JTextArea();
-        noteTF.setBackground(getBackground());
-        noteTF.setEditable(false);
-        noteTF.setLineWrap(true);
-        noteTF.setWrapStyleWord(true);
+        noteTF = PlugInUtilities.createTextAreaForNote(this);
         add(noteTF, BorderLayout.SOUTH);
         
         enableSelectionSync();

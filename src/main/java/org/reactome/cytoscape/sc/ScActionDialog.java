@@ -29,6 +29,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
@@ -50,7 +51,7 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  */
 @SuppressWarnings("serial")
 public class ScActionDialog extends FIActionDialog {
-    private final Dimension DEFAULT_SIZE = new Dimension(500, 535);
+    private final Dimension DEFAULT_SIZE = new Dimension(500, 560);
     private DataSetPanel datasetPane;
     private PreprocessPane preprocessPane;
     private boolean isForRNAVelocity;
@@ -105,7 +106,7 @@ public class ScActionDialog extends FIActionDialog {
     
     @Override
     protected File getFile(FileUtil fileUtil, Collection<FileChooserFilter> filters) {
-        if (isForRNAVelocity)
+        if (isForRNAVelocity || getFormat().contains("h5")) // This is for a file
             return super.getFile(fileUtil, filters);
         CyApplicationManager appManager = PlugInObjectManager.getManager().getApplicationManager();
         File startDir = appManager.getCurrentDirectory();
@@ -199,6 +200,12 @@ public class ScActionDialog extends FIActionDialog {
         approachPane.add(scanpyBtn, constraints);
         constraints.gridy ++;
         approachPane.add(scevoBtn, constraints);
+        JTextArea noteTF = PlugInUtilities.createTextAreaForNote(approachPane);
+        noteTF.setText("Note: Analysis steps and their parameters will be logged into " + PythonPathHelper.getHelper().getLogFileName() + ".");
+        constraints.gridy ++;
+        constraints.gridwidth = 2;
+        constraints.gridx = 0;
+        approachPane.add(noteTF, constraints);
         // Update GUIs based on choice
         scanpyBtn.addItemListener(e -> {
             datasetPane.setFormatGUIsVisible(true);
@@ -296,15 +303,15 @@ public class ScActionDialog extends FIActionDialog {
         velocityModePane.setVisible(false);
         if (ScNetworkManager.getManager().isForRNAVelocity())
             setSize(DEFAULT_SIZE.width,
-                    350);
+                    395);
         else
             setSize(DEFAULT_SIZE.width,
-                    400);
+                    455);
     }
     
     public static void main(String[] args) {
         ScActionDialog dialog = new ScActionDialog(null);
-        ScNetworkManager.getManager().setForRNAVelocity(true);
+        ScNetworkManager.getManager().setForRNAVelocity(false);
         dialog.configForProjection();
         dialog.addWindowListener(new WindowAdapter() {
             @Override

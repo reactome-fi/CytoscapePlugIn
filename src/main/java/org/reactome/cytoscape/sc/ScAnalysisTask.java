@@ -152,7 +152,7 @@ public class ScAnalysisTask extends FIAnalysisTask {
                                      ProgressPane progPane,
                                      JFrame parentFrame) throws JsonEOFException, IOException {
         progPane.setText("Loading data...");
-        String message = serverCaller.openData(file);
+        String message = serverCaller.openData(file, fileFormat);
         if (!checkMessage(parentFrame, message))
             return false;
         progPane.setText("Preprocessing data...");

@@ -23,6 +23,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.common.DataType;
 import org.reactome.r3.util.FileUtility;
 import org.reactome.r3.util.InteractionUtilities;
@@ -163,14 +164,7 @@ public abstract class ObservationDataLoadPanel extends JPanel {
         final JButton browseBtn = new JButton("Browse");
         createFileChooserGui(twoCaseFileTF, label, browseBtn, pane, constraints);
         // Add a note
-        final JTextArea ta = new JTextArea();
-        ta.setEditable(false);
-        ta.setBackground(getBackground());
-        ta.setWrapStyleWord(true);
-        ta.setLineWrap(true);
-        Font font = ta.getFont();
-        font = font.deriveFont(Font.ITALIC, font.getSize() - 1);
-        ta.setFont(font);
+        JTextArea ta = PlugInUtilities.createTextAreaForNote(pane);
         ta.setText("Note: A sample information file should be a text file: one line for one sample containing "
                  + "sample name and type separated by a tab, two types only, and no title line. Your analysis "
                  + "will be performed against samples in this file.");

@@ -1,7 +1,6 @@
 package org.reactome.cytoscape.sc;
 
 import java.awt.BorderLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -10,6 +9,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -145,12 +146,11 @@ public class PythonPathHelper {
         return path;
     }
     
-    public String getScPythonPath() throws IOException {
+    public String getScPythonPath() {
         if (scPythonPath != null)
             return scPythonPath;
         // Get the scPythonPath
-        File cytoscapeDir = new File(System.getProperty("user.home"), CyProperty.DEFAULT_PROPS_CONFIG_DIR); 
-        File reactomeFIVizDir = new File(cytoscapeDir, "ReactomeFIViz");
+        File reactomeFIVizDir = getReactomeFIVizDir();
         if (!reactomeFIVizDir.exists()) {
             if(!reactomeFIVizDir.mkdirs()) {
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
@@ -162,6 +162,21 @@ public class PythonPathHelper {
         }
         scPythonPath = reactomeFIVizDir.getAbsolutePath();
         return scPythonPath;
+    }
+
+    private File getReactomeFIVizDir() {
+        File cytoscapeDir = new File(System.getProperty("user.home"), CyProperty.DEFAULT_PROPS_CONFIG_DIR); 
+        File reactomeFIVizDir = new File(cytoscapeDir, PlugInUtilities.APP_NAME);
+        return reactomeFIVizDir;
+    }
+    
+    public String getLogFileName() {
+        String pattern = "yyyy-MM-dd";
+        SimpleDateFormat formatter = new SimpleDateFormat(pattern);
+        Date today = new Date();
+        String dirName = getScPythonPath();
+        File logFile = new File(dirName, PlugInUtilities.APP_NAME + "." + formatter.format(today) + ".log");
+        return logFile.getAbsolutePath();
     }
     
     @SuppressWarnings("serial")
@@ -200,18 +215,12 @@ public class PythonPathHelper {
             constraints.gridx ++;
             contentPane.add(browse, constraints);
             
-            JTextArea ta = new JTextArea();
+            JTextArea ta = PlugInUtilities.createTextAreaForNote(contentPane);
             String note = "Python 3.7.0 or higher is required. If you have not installed python, install one from www.python.org. " + 
                     "If your path has been set up, you may enter python3 or just python. " +
                     "Otherwise, you may use the Browser button to find where your python is. You may change to another "
                     + "Python later on by editing the properties for ReactomeFIViz via menu Edit/Preferences/Properties.";
             ta.setText(note);
-            ta.setBackground(getBackground());
-            ta.setEditable(false);
-            ta.setLineWrap(true);
-            ta.setWrapStyleWord(true);
-            Font font = ta.getFont();
-            ta.setFont(font.deriveFont(Font.ITALIC, font.getSize() - 1));
             constraints.gridy ++;
             constraints.gridx = 0;
             constraints.gridwidth = 2;

@@ -30,6 +30,7 @@ import org.gk.util.DialogControlPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 
 /**
@@ -68,7 +69,7 @@ public abstract class FIActionDialog extends JDialog {
      * @return
      */
     protected String getActionTitle() {
-        return "ReactomeFIViz";
+        return PlugInUtilities.APP_NAME;
     }
     
     protected JTabbedPane createTabbedPane() {

@@ -8,6 +8,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Font;
 import java.awt.Window;
 import java.io.BufferedReader;
 import java.io.File;
@@ -30,6 +31,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.RowSorter;
 import javax.swing.RowSorter.SortKey;
@@ -100,12 +102,24 @@ import org.reactome.r3.util.MathUtilities;
  * 
  */
 public class PlugInUtilities {
+    public final static String APP_NAME = "ReactomeFIViz";
     public final static String HTTP_GET = "Get";
     public final static String HTTP_POST = "Post";
     public final static int PLOT_CATEGORY_AXIX_LABEL_CUT_OFF = 16;
     public final static Color DRUG_COLOR = new Color(255, 153, 153);
 
     public PlugInUtilities() {
+    }
+    
+    public static JTextArea createTextAreaForNote(Component container) {
+        JTextArea noteTF = new JTextArea();
+        noteTF.setBackground(container.getBackground());
+        noteTF.setEditable(false);
+        noteTF.setLineWrap(true);
+        noteTF.setWrapStyleWord(true);
+        Font font = noteTF.getFont();
+        noteTF.setFont(font.deriveFont(Font.ITALIC, font.getSize() - 1));
+        return noteTF;
     }
     
     /**

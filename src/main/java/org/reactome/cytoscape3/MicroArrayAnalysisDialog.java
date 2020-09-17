@@ -25,6 +25,7 @@ import javax.swing.border.TitledBorder;
 
 import org.reactome.cytoscape.service.FIActionDialog;
 import org.reactome.cytoscape.service.FIVersionSelectionPanel;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * @author gwu
@@ -74,13 +75,7 @@ public class MicroArrayAnalysisDialog extends FIActionDialog {
                              filePanel, 
                              constraints);
         // Add a note text
-        JTextArea noteTA = new JTextArea();
-        Font font3 = filePanel.getFont();
-        noteTA.setFont(font3.deriveFont(font3.getSize2D() - 2.0f));
-        noteTA.setEditable(false);
-        noteTA.setLineWrap(true);
-        noteTA.setWrapStyleWord(true);
-        noteTA.setBackground(filePanel.getBackground());
+        JTextArea noteTA = PlugInUtilities.createTextAreaForNote(filePanel);
         noteTA.setText("Note: The array file should be a tab-delimited text file" +
                 " with table header. The first column should be gene names. " +
                 "All other columns should be expression values in samples. " +

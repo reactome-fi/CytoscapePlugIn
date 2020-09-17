@@ -28,6 +28,7 @@ import org.reactome.cytoscape.service.ReactomeFIVizPropsReader;
 import org.reactome.cytoscape.service.ReactomeNetworkType;
 import org.reactome.cytoscape.service.TableFormatterImpl;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.cytoscape3.FINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.FactorGraphImportAction;
 import org.reactome.cytoscape3.GeneSetFINetworkPopupMenuHandler;
@@ -52,9 +53,11 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         
         // Register properties: Make sure ReactomeFIViz.props is in the resources folder in the bundled app where resources is .in the top
         // Note: the actual file name used for the property doesn't have resource here.
-        ReactomeFIVizPropsReader propReader = new ReactomeFIVizPropsReader("ReactomeFIViz", "ReactomeFIViz.props");
+        ReactomeFIVizPropsReader propReader = new ReactomeFIVizPropsReader(PlugInUtilities.APP_NAME,
+                                                                           PlugInUtilities.APP_NAME + ".props");
         Properties props = new Properties();
-        props.setProperty("cyPropertyName", "ReactomeFIViz.props");
+        props.setProperty("cyPropertyName", 
+                          PlugInUtilities.APP_NAME + ".props");
         registerAllServices(context, propReader, props);
         PlugInObjectManager.getManager().setCustomizedProps(propReader.getProperties());
         

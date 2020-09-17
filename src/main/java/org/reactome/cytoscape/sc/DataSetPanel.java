@@ -3,6 +3,8 @@ package org.reactome.cytoscape.sc;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -23,7 +25,8 @@ public abstract class DataSetPanel extends JPanel {
     private JRadioButton mouseBtn;
     private JRadioButton x10MtxBtn;
     private JRadioButton x10Hdf5Btn;
-    private JRadioButton x10visumBtn;
+//    private JRadioButton x10visumBtn;
+    private Map<JRadioButton, String> formatBtnToMethod;
     private JLabel dataFormatLabel;
     private JLabel fileLabel;
     
@@ -41,11 +44,15 @@ public abstract class DataSetPanel extends JPanel {
         dataFormatLabel.setVisible(isVisible);
         x10MtxBtn.setVisible(isVisible);
         x10Hdf5Btn.setVisible(isVisible);
-        x10visumBtn.setVisible(isVisible);
+//        x10visumBtn.setVisible(isVisible);
     }
     
     public String getFormat() {
-        return x10MtxBtn.getText(); // To be supported. Currently only one choice.
+        for (JRadioButton btn : formatBtnToMethod.keySet()) {
+            if (btn.isSelected()) 
+                return formatBtnToMethod.get(btn);
+        }
+        return null;
     }
     
     public JLabel getFileLabel() {
@@ -86,14 +93,18 @@ public abstract class DataSetPanel extends JPanel {
         dataFormatLabel = new JLabel("Specify a format:");
         // The following list is based on 
         // https://scanpy.readthedocs.io/en/stable/api/index.html#reading
+        formatBtnToMethod = new HashMap<>();
         x10MtxBtn = new JRadioButton("10x-Genomics-mtx");
-        x10Hdf5Btn = new JRadioButton("10x-Genomics-hdf5");
-        x10visumBtn = new JRadioButton("10x-Genomics-visum");
+        formatBtnToMethod.put(x10MtxBtn, "read_10x_mtx");
+        x10Hdf5Btn = new JRadioButton("h5ad");
+        formatBtnToMethod.put(x10Hdf5Btn, "read_h5ad");
+        // Disable it for the time being
+//        x10visumBtn = new JRadioButton("10x-Genomics-visum");
+//        formatBtnToMethod.put(x10visumBtn, "read_visium");
+        
         x10MtxBtn.setSelected(true);
-        x10Hdf5Btn.setEnabled(false);
-        x10visumBtn.setEnabled(false);
         ButtonGroup formatGroup = new ButtonGroup();
-        formatGroup.add(x10visumBtn);
+//        formatGroup.add(x10visumBtn);
         formatGroup.add(x10Hdf5Btn);
         formatGroup.add(x10MtxBtn);
         constraints.gridy ++;
@@ -103,8 +114,8 @@ public abstract class DataSetPanel extends JPanel {
         add(x10MtxBtn, constraints);
         constraints.gridy ++;
         add(x10Hdf5Btn, constraints);
-        constraints.gridy ++;
-        add(x10visumBtn, constraints);
+//        constraints.gridy ++;
+//        add(x10visumBtn, constraints);
     }
     
     protected abstract void createFileChooserGui(JTextField fileTF,

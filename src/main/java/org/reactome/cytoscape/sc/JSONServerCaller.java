@@ -134,9 +134,11 @@ public class JSONServerCaller {
         return (List<String>) callJSONServer("get_cell_time_keys");
     }
     
-    public String openData(String dir) throws JsonEOFException, IOException {
+    public String openData(String dir,
+                           String fileFormat) throws JsonEOFException, IOException {
         return (String) callJSONServer("open_data",
-                                       dir);
+                                       dir,
+                                       fileFormat);
     }
     
     /**
@@ -415,6 +417,7 @@ public class JSONServerCaller {
     
     @Test
     public void testLoadData() throws Exception {
+        isStarted = true;
         List<String> list = Collections.EMPTY_LIST;
         System.out.println("Emtpty list: " + String.join(",", list));
 //        String query = "{\"jsonrpc\": \"2.0\", \"method\": \"echo\", \"id\": 2, \"params\":[\"test\"]}";
@@ -424,8 +427,12 @@ public class JSONServerCaller {
         request.addParams("This is a test!");
         callJSONServer(request);
         
-        String dir_17_5 = "/Users/wug/Documents/missy_single_cell/seq_data_v2/17_5_gfp/filtered_feature_bc_matrix";
-        String text = openData(dir_17_5);
+//        String dir_17_5 = "/Users/wug/Documents/missy_single_cell/seq_data_v2/17_5_gfp/filtered_feature_bc_matrix";
+//        String text = openData(dir_17_5, "read_10x_mtx");
+        
+        String dir_17_5 = "/Users/wug/git/reactome-fi/fi_sc_analysis/cache/Users-wug-Documents-missy_single_cell-seq_data_v2-17_5_gfp-filtered_feature_bc_matrix-matrix.h5ad";
+        String text = openData(dir_17_5, "read_h5ad");
+        
         System.out.println("Open data: " + text);
         text = preprocessData(null, null);
         System.out.println("Preprocess data: " + text);
@@ -465,6 +472,7 @@ public class JSONServerCaller {
     
     @Test
     public void testUMap() throws Exception {
+        isStarted = true;
         List<List<Double>> list = getUMAP();
         logger.debug("List size: " + list.size());
         double[][] umap = new double[list.size()][];
@@ -584,7 +592,8 @@ public class JSONServerCaller {
             return false; // Cannot find a python path. This may be aborted by the user.
         String[] parameters = {pythonPath, 
                                scPythonPath + File.separator + ScNetworkManager.SCPY_2_REACTOME_NAME,
-                               this.port + ""};
+                               this.port + "",
+                               PythonPathHelper.getHelper().getLogFileName()};
         ProcessBuilder builder = new ProcessBuilder(parameters);
         builder.directory(new File(scPythonPath));
         builder.redirectErrorStream(true);
@@ -608,8 +617,9 @@ public class JSONServerCaller {
             catch(Exception e) { // Do nothing
             }
             long time2 = System.currentTimeMillis();
-            if ((time2 - time1) > 30000) {
-                // This is 30 seconds. Too long to start the server.
+            // It is observed that the service starts slow when it starts for the first time after download under Mac.
+            if ((time2 - time1) > 60000) {
+                // This is 60 seconds. Too long to start the server.
                 JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                               "There is some problem to start the python serivce for scRNA-seq data analysis.\n" + 
                                               "Make sure you have python >= 3.7.0 and scpy4reactome installed.",

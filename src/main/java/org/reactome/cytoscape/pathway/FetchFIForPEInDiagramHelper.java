@@ -43,6 +43,7 @@ import org.reactome.cytoscape.service.FISourceQueryHelper;
 import org.reactome.cytoscape.service.PathwayDiagramOverlayHelper;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * This customized task is used to fetch FIs for a selected object in a displayed
@@ -328,13 +329,7 @@ public class FetchFIForPEInDiagramHelper {
             setLayout(new BorderLayout());
             
             // Some kind of indication
-            titleText = new JTextArea();
-            Font font = titleText.getFont();
-            titleText.setFont(font.deriveFont(Font.BOLD));
-            titleText.setEditable(false);
-            titleText.setWrapStyleWord(true);
-            titleText.setLineWrap(true);
-            titleText.setBackground(getBackground());
+            titleText = PlugInUtilities.createTextAreaForNote(this);
             titleText.setText("Some text:");
             add(titleText, BorderLayout.NORTH);
             

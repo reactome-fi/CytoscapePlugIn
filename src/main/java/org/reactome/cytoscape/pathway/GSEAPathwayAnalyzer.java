@@ -1,7 +1,6 @@
 package org.reactome.cytoscape.pathway;
 
 import java.awt.Component;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -253,6 +252,7 @@ public class GSEAPathwayAnalyzer {
      * @author wug
      *
      */
+    //TODO: Consider merge this class together with GeneScoreLoadingDialog in the genescore package.
     public static class GeneScoreLoadingPane extends GeneSetLoadingPane {
         private JTextField minTF;
         private JTextField maxTF;
@@ -437,13 +437,7 @@ public class GSEAPathwayAnalyzer {
         }
         
         private JTextArea createNoteTF() {
-            JTextArea noteTF = new JTextArea();
-            noteTF.setEditable(false);
-            noteTF.setBackground(getBackground());
-            noteTF.setLineWrap(true);
-            noteTF.setWrapStyleWord(true);
-            Font font = noteTF.getFont();
-            noteTF.setFont(font.deriveFont(Font.ITALIC, font.getSize() - 1));
+            JTextArea noteTF = PlugInUtilities.createTextAreaForNote(this);
             String note = "Note: The gene score file should contain at least two tab-delimited "
                     + "columns, first for human gene symbols and second for scores. The first row "
                     + "should be for column headers.";
