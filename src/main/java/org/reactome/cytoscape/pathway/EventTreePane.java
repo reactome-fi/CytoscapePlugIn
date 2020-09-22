@@ -935,6 +935,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         // Need to select it
         PlugInObjectManager.getManager().selectCytoPane(annotationPanel, CytoPanelName.SOUTH);
         // Need to highlight any opened pathway diagrams or FI diagram view
+        // Call this in case the value is not there any more.
+        PathwayEnrichmentHighlighter.getHighlighter().setPathwayToAnnotation(pathwayToAnnotation);
         PathwayDiagramRegistry.getRegistry().highlightPathwayViews();
         // Fire a property change action
         firePropertyChange("showPathwayEnrichments", false, true);

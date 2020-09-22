@@ -23,6 +23,8 @@ import javax.swing.JOptionPane;
 import org.cytoscape.application.events.CyShutdownListener;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleEvent;
+import org.osgi.framework.BundleListener;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -74,7 +76,7 @@ public class JSONServerCaller {
         context.registerService(CyShutdownListener.class.getName(),
                                 l,
                                 new Properties());
-        // Don't use BundleListener. It is not reliable enough to shutdown the server.
+        // Don't use BundleListener. It is not reliable enough to shutdown the server even during the development stage.
     }
     
     public boolean isStarted() {

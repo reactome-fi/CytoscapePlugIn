@@ -15,16 +15,16 @@ FINetworkVersions=2019,2018,2017
 # For new cpws at Amazon AWS
 2017_restfulURL=http://cpws.reactome.org/caBigR3WebApp2017/FIService/
 2018_restfulURL=http://cpws.reactome.org/caBigR3WebApp2018/FIService/
-2019_restfulURL=http://cpws.reactome.org/caBigR3WebApp2019/FIService/
+2019_restfulURL=http://cpws.reactome.org/caBigR3WebApp2019_mm/FIService/
 # Reactome stuff
 #ReactomeRESTfulAPI=http://localhost:8080/corews/FIService/ReactomeRestful/
-ReactomeRESTfulAPI=http://cpws.reactome.org/caBigR3WebApp2019/FIService/ReactomeRestful/
+ReactomeRESTfulAPI=http://cpws.reactome.org/caBigR3WebApp2019_mm/FIService/ReactomeRestful/
 # A list of evidences and their labels
 evidenceProperties=humanInteraction,scePPI,dmePPI,celPPI,mousePPI,genewaysPPI,pavlidisGeneExp,carlosGeneExp,pfamDomainInt,goBPSharing,probability
 evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interaction,Mouse Interaction,Geneways Interaction,Pavlidis Gene Exp,Carlos Gene Exp,PfamDomain Interaction,GO BP Sharing,Score
 #ReactomeURL=http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&ID=
-# As of April 21, 2020, use this pathway browser URL for better view
-ReactomeURL=https://reactome.org/PathwayBrowser/#/
+# Use the detail view for robust. For mouse instances, pathwaybrowser cannot work for DB_ID.
+ReactomeURL=https://www.reactome.org/content/detail/
 # Use to control the debug model for PGM analysis
 PGMDebug=false
 # The file has pre-generated factor graph objects in a zipped XML file

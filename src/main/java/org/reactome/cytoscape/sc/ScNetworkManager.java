@@ -609,8 +609,7 @@ public class ScNetworkManager {
         String geneList = result.getNames().stream().collect(Collectors.joining("\n"));
         analysisTask.setGeneList(geneList);
         analysisTask.setEventPane(PathwayControlPanel.getInstance().getEventTreePane());
-        // Make sure hierarchy is loaded first by using sync task manager.
-        PlugInObjectManager.getManager().getSyncTaskManager().execute(new TaskIterator(hierarchyTask, analysisTask));
+        PlugInObjectManager.getManager().getTaskManager().execute(new TaskIterator(hierarchyTask, analysisTask));
     }
     
     public void doGSEATest(DiffExpResult result, Component parentComp) {
@@ -633,7 +632,7 @@ public class ScNetworkManager {
         Map<String, Double> geneToScore = result.getGeneToScore();
         gseaTask.setGeneToScore(geneToScore);
         gseaTask.setEventPane(PathwayControlPanel.getInstance().getEventTreePane());
-        PlugInObjectManager.getManager().getSyncTaskManager().execute(new TaskIterator(hierarchyTask, gseaTask));
+        PlugInObjectManager.getManager().getTaskManager().execute(new TaskIterator(hierarchyTask, gseaTask));
     }
     
 }
