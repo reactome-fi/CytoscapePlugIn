@@ -111,6 +111,16 @@ public class PlugInUtilities {
     public PlugInUtilities() {
     }
     
+    public static boolean isMac() {
+        String osName = System.getProperty("os.name").toLowerCase();
+        return osName != null && osName.contains("mac");
+    }
+    
+    public static boolean isWindows() {
+        String osName = System.getProperty("os.name").toLowerCase();
+        return osName != null && osName.contains("win");
+    }
+    
     public static JTextArea createTextAreaForNote(Component container) {
         JTextArea noteTF = new JTextArea();
         noteTF.setBackground(container.getBackground());

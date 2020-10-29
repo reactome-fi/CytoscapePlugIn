@@ -6,6 +6,7 @@ import static org.reactome.cytoscape.service.ReactomeNetworkType.SingleCellClust
 import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,7 +30,6 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.cytoscape.work.TaskIterator;
-import org.cytoscape.work.TaskManager;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.pathway.GSEAPathwayAnalyzer.GSEAPathwayAnalysisTask;
 import org.reactome.cytoscape.pathway.GSEAPathwayAnalyzer.GeneScoreLoadingPane;
@@ -91,6 +91,22 @@ public class ScNetworkManager {
         if (manager == null)
             manager = new ScNetworkManager();
         return manager;
+    }
+    
+    /**
+     * Check if the user's operating system is supported. 
+     * As of October, 2020, only Windows and Mac are supported.
+     * @return
+     */
+    public boolean isOSSupported() {
+        boolean rtn = PlugInUtilities.isMac() || PlugInUtilities.isWindows();
+        if (rtn) return true;
+        JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                      "Your operating system is not supported for scRNA-seq analysis.\n" + 
+                                      "Currently only Windows and Mac are supported.",
+                                      "OS Not Supported",
+                                      JOptionPane.INFORMATION_MESSAGE);
+        return false;
     }
     
     public void reset() {
@@ -161,8 +177,9 @@ public class ScNetworkManager {
         File figureFile = new File(figureFileName);
         // Mark for deletion
         figureFile.deleteOnExit();
-        String url = "file:///" + figureFileName; 
-        PlugInUtilities.openURL(url);
+//        String url = "file:///" + figureFileName; 
+        URL url = figureFile.toURI().toURL();
+        PlugInUtilities.openURL(url.toString());
     }
 
     public Boolean isEdgeDisplayed() {

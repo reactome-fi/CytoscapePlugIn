@@ -18,6 +18,8 @@ public class SingleCellLoadAction extends FICytoscapeAction {
 
     @Override
     protected void doAction() {
+        if (!ScNetworkManager.getManager().isOSSupported())
+            return;
         try {
             ScNetworkManager.getManager().reset(); // Reset the status for a new analysis
             ScLoadActionDialog gui = new ScLoadActionDialog();

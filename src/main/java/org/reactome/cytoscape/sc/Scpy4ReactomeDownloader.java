@@ -9,12 +9,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import org.gk.util.ProgressPane;
-import org.junit.Test;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * This class is used to download the scpy4reactome package from the server.
@@ -37,7 +35,7 @@ public class Scpy4ReactomeDownloader {
     }
     
     private void downloadApp() throws Exception {
-        String fileUrl = getURL(APP_FILE);
+        String fileUrl = getURL(APP_FILE, true);
         URL url = new URL(fileUrl);
         InputStream is = url.openStream();
         File localAppFile = getLocalAppFile();
@@ -59,7 +57,7 @@ public class Scpy4ReactomeDownloader {
     
     private boolean isUpdated() throws Exception {
         // Get the version file from the server
-        String fileUrl = getURL(VERSION_FILE);
+        String fileUrl = getURL(VERSION_FILE, false);
         URL url = new URL(fileUrl);
         InputStream is = url.openStream();
         InputStreamReader isr = new InputStreamReader(is);
@@ -85,10 +83,21 @@ public class Scpy4ReactomeDownloader {
         return false;
     }
     
-    private String getURL(String fileName) {
+    private String getURL(String fileName, boolean isForApp) {
         String hostURL = PlugInObjectManager.getManager().getHostURL();
-        String fileUrl = hostURL + "Cytoscape/" + fileName;
-        return fileUrl;
+        StringBuilder builder = new StringBuilder();
+        builder.append(hostURL).append("Cytoscape/scpy4reactome/");
+        if (isForApp) {
+            if (PlugInUtilities.isMac())
+                builder.append("mac");
+            else if (PlugInUtilities.isWindows())
+                builder.append("win");
+            else 
+                throw new IllegalStateException("Currently this operation systems is not supported " + 
+                                                "for scRNA-Seq data analysis and visualization.");
+            builder.append("/");
+        }
+        return builder.append(fileName).toString();
     }
 
 }
