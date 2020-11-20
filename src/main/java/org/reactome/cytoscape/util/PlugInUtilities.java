@@ -913,12 +913,13 @@ public class PlugInUtilities {
     }
     
     public static void browseFileForLoad(JTextField fileNameTF, 
-            String dialogTitle,
-            String[] fileExtensions) {
+                                         String dialogTitle,
+                                         String[] fileExtensions) {
         Collection<FileChooserFilter> filters = new HashSet<FileChooserFilter>();
-        FileChooserFilter mafFilter = new FileChooserFilter(dialogTitle, fileExtensions);
-        filters.add(mafFilter);
-        
+        if (fileExtensions != null && fileExtensions.length > 0) {
+            FileChooserFilter filter = new FileChooserFilter(dialogTitle, fileExtensions);
+            filters.add(filter);
+        }
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference fileUtilRef = context.getServiceReference(FileUtil.class.getName());
         FileUtil fileUtil = (FileUtil) context.getService(fileUtilRef);

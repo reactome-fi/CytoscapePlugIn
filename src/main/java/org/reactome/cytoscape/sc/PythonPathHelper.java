@@ -211,12 +211,12 @@ public class PythonPathHelper {
             constraints.gridwidth = 1;
             contentPane.add(tf, constraints);
             JButton browse = new JButton("Browse");
-            browse.addActionListener(e -> PlugInUtilities.browseFileForLoad(tf, "Choose Python", new String[] {}));
+            browse.addActionListener(e -> PlugInUtilities.browseFileForLoad(tf, "Choose Python", new String[] {""}));
             constraints.gridx ++;
             contentPane.add(browse, constraints);
             
             JTextArea ta = PlugInUtilities.createTextAreaForNote(contentPane);
-            String note = "Python 3.7.0 or higher is required. If you have not installed python, install one from www.python.org. " + 
+            String note = "Python 3.7 (not 3.8 or higher) is required. If you have not installed python, install one from www.python.org. " + 
                     "If your path has been set up, you may enter python3 or just python. " +
                     "Otherwise, you may use the Browser button to find where your python is. You may change to another "
                     + "Python later on by editing the properties for ReactomeFIViz via menu Edit/Preferences/Properties.";
