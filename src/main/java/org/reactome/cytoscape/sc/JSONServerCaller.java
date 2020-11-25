@@ -187,9 +187,11 @@ public class JSONServerCaller {
      * @throws JsonEOFException
      * @throws IOException
      */
-    public Map<String, List<?>> project(String dir) throws JsonEOFException, IOException {
+    public Map<String, List<?>> project(String dir,
+                                        String fileFormat) throws JsonEOFException, IOException {
         Object result = callJSONServer("project", 
                                        dir,
+                                       fileFormat,
                                        ScNetworkManager.getManager().isForRNAVelocity() + "");
         if (result instanceof String) // An error
             throw new IllegalStateException(result.toString());
@@ -209,7 +211,7 @@ public class JSONServerCaller {
         isStarted = true;
         testLoadData();
         String dir = "/Users/wug/Documents/missy_single_cell/seq_data_v2/12_5_gfp/filtered_feature_bc_matrix";
-        Map<String, List<?>> cellToUmap = project(dir);
+        Map<String, List<?>> cellToUmap = project(dir, "read_10x_mtx");
         int count = 0;
         for (String cell : cellToUmap.keySet()) {
             if (count ++ == 10)

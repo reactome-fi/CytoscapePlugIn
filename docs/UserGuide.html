@@ -18,8 +18,7 @@
 <ul>
 <li class="toclevel-2 tocsection-10">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#Gene_Set.2FMutation_Analysis"><span class="tocnumber">4.1.</span> <span class="toctext">Gene Set/Mutation Analysis</span></a></li>
 <li class="toclevel-2 tocsection-11">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#PGM_Impact_Analysis"><span class="tocnumber">4.2.</span> <span class="toctext">PGM Impact Analysis</span></a></li>
-<li class="toclevel-2 tocsection-12">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#HotNet_Mutation_Analysis"><span class="tocnumber">4.3.</span> <span class="toctext">HotNet Mutation Analysis</span></a></li>
-<li class="toclevel-2 tocsection-13">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#Microarray_Data_Analysis"><span class="tocnumber">4.4.</span> <span class="toctext">Microarray Data Analysis</span></a></li>
+<li class="toclevel-2 tocsection-13">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#Microarray_Data_Analysis"><span class="tocnumber">4.3.</span> <span class="toctext">Microarray Data Analysis</span></a></li>
 </ul>
 </li>
 <li class="toclevel-1 tocsection-14"><a href="#Visualize_Cancer_Drugs_in_Contexts_of_Reactome_Pathways_and_FI_Network"><span class="tocnumber">5.</span> <span class="toctext">Visualize Drugs in the Contexts of Reactome Pathways and FI Network</span></a>
@@ -32,11 +31,8 @@
 </li>
 <li class="toclevel-1 tocsection-18"><a href="#scRNA_seq"><span class="tocnumber">6.</span> <span class="toctext">Perform scRNA-seq Data Analysis and Visualization</span></a>
 <ul>
-<li class="toclevel-2 tocsection-19">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#scanpy_analysis"><span class="tocnumber">6.1.</span> <span class="toctext">Standard Analysis via Scanpy</span></a></li>
-<li class="toclevel-2 tocsection-20">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#Fetch_FIs_for_Node"><span class="tocnumber">6.2.</span> <span class="toctext">Fetch FIs for Node</span></a></li>
-<li class="toclevel-2 tocsection-21">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#Show_Pathway_Diagram"><span class="tocnumber">6.3.</span> <span class="toctext">Show Pathway Diagram</span></a></li>
-<li class="toclevel-2 tocsection-22">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#Load_Cancer_Gene_Index_Annotations"><span class="tocnumber">6.4.</span> <span class="toctext">Load Cancer Gene Index Annotations</span></a></li>
-<li class="toclevel-2 tocsection-23">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#Survival_Analysis"><span class="tocnumber">6.5.</span> <span class="toctext">Survival Analysis</span></a></li>
+<li class="toclevel-2 tocsection-19">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#scanpy_analysis"><span class="tocnumber">6.1.</span> <span class="toctext">Standard Analysis via scanpy</span></a></li>
+<li class="toclevel-2 tocsection-20">&nbsp; &nbsp; &nbsp; &nbsp;<a href="#scvelo_analysis"><span class="tocnumber">6.2.</span> <span class="toctext">RNA Velocity Analysis via scVelo</span></a></li>
 </ul>
 </li>
 <li class="toclevel-1 tocsection-18"><a href="#Other_Features_Related_to_the_FI_Network"><span class="tocnumber">7.</span> <span class="toctext">Other Features Related to the FI Network</span></a>
@@ -384,7 +380,7 @@ to view its detailed annotation in Reactome. Or you can choose "View in Reactome
 <li>To remove all displayed constrained fuzzy logic simulation results, use popup menu, "Remove Analysis Results" under "Run Logic Model Analysis". The pathway diagram should be reset to the original colors, and all tables related to logic model simulations will be deleted.</li>
 </ol>
 <h3><span id="Use_the_Reactome_Functional_Interaction_.28FI.29_Network">Use the Reactome Functional Interaction (FI) Network</span></h3>
-<p>After the ReactomeFIViz app installed, you should see a menu item called "Reactome FI" under the Apps menu. Clicking this menu, you will see 6 sub-menus: <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#Gene_Set.2FMutation_Analysis">Gene Set/Mutation Analysis</a>, <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#PGM_Impact_Analysis">PGM Impact Analysis</a>, <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#HotNet_Mutation_Analysis">HotNet Mutation Analysis</a>, <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#Microarray_Data_Analysis">Microarray Data Analysis</a>, <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#Use_Reactome_Pathways">Reactome Pathways</a> and User Guide. Gene set/mutation analysis is for doing FI network-based data analysis for a set of genes or a mutation data file, PGM Impact analysis for performing functional impact analysis based on a probabilistic graphical model for the Reactome FI network using multiple omics data types, HotNet mutation analysis for the HotNet algorithm to search for network modules (see <a href="http://compbio.cs.brown.edu/projects/hotnet/" rel="nofollow">http://compbio.cs.brown.edu/projects/hotnet/</a>), microarray data analysis for doing MCL (Markov Graph Clustering, <a href="http://micans.org/mcl/" rel="nofollow">http://micans.org/mcl/</a>) based FI network clustering analysis by converting a non-weighted FI network to weighted network using correlations among genes in the network, Reactome pathways for loading pathways from the Reactome database, visualizing Reactome pathways directly in Cytoscape in a their native way, and doing pathway enrichment analysis, and user guide brings you to this user guide.</p>
+<p>After the ReactomeFIViz app installed, you should see a menu item called "Reactome FI" under the Apps menu. Clicking this menu, you will see 6 sub-menus: <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#Gene_Set.2FMutation_Analysis">Gene Set/Mutation Analysis</a>, <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#PGM_Impact_Analysis">PGM Impact Analysis</a>, <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#Microarray_Data_Analysis">Microarray Data Analysis</a>, <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#Use_Reactome_Pathways">Reactome Pathways</a> and User Guide. Gene set/mutation analysis is for doing FI network-based data analysis for a set of genes or a mutation data file, PGM Impact analysis for performing functional impact analysis based on a probabilistic graphical model for the Reactome FI network using multiple omics data types, HotNet mutation analysis for the HotNet algorithm to search for network modules (see <a href="http://compbio.cs.brown.edu/projects/hotnet/" rel="nofollow">http://compbio.cs.brown.edu/projects/hotnet/</a>), microarray data analysis for doing MCL (Markov Graph Clustering, <a href="http://micans.org/mcl/" rel="nofollow">http://micans.org/mcl/</a>) based FI network clustering analysis by converting a non-weighted FI network to weighted network using correlations among genes in the network, Reactome pathways for loading pathways from the Reactome database, visualizing Reactome pathways directly in Cytoscape in a their native way, and doing pathway enrichment analysis, and user guide brings you to this user guide.</p>
 <div class="text-center">
 <div class="floatnone"><img src="images/userguide/fiviz/ReactomeFIMenu_4.png" alt="ReactomeFIViz app Menu" width="441" height="176" /></div>
 </div>
@@ -483,28 +479,6 @@ to view its detailed annotation in Reactome. Or you can choose "View in Reactome
 <div>
 <div><img src="images/userguide/fiviz/FIPGMResultNetwork.png" alt="" width="799" height="670" />
 <div>FI-PGM Result Network</div>
-</div>
-</div>
-</div>
-</li>
-</ol>
-<h4><span id="HotNet_Mutation_Analysis">HotNet Mutation Analysis</span></h4>
-<p>Reactome FI Cytoscape plug-in implements the algorithm developed by Raphael's group at Brown University, called "HotNet", for doing cancer mutation data analysis. For details about this algorithm, please see <a href="http://www.ncbi.nlm.nih.gov/pubmed/21385051" rel="nofollow">Algorithms for detecting significantly mutated pathways in cancer</a>, and <a href="http://www.ncbi.nlm.nih.gov/pubmed/22174262" rel="nofollow">Discovery of mutated subnetworks associated with clinical data in cancer</a>.</p>
-<ol>
-<li><b>Select a mutation data file and run HotNet algorithm</b>: After selecting sub-menu "HotNet Mutation Analysis" from menu Plugins/Reactome FIs, you would see the following dialog. Choose a version of FI Network, a mutation file from your local file system, and set parameters required by the HotNet algorithm. Currently the plug-in supports the NCI MAF mutation file only. We are going to support more file formats in the future. If you are not sure what delta value should be used, you may choose "Auto" in the dialog. However, using "Auto" takes much longer time to run the algorithm. Random permutation is used to calculate p-values and FDR values. The largest number of permutation is 1000. For details about permutation, please see the above two papers. After entering all required parameters, click the "OK" button to start HotNet analysis. It may take several minutes. If you choose "Auto" for delta, it takes even longer time. For a test run, you may use the TCGA GBM mutation file, <a href="https://github.com/reactome-fi/CytoscapePlugIn/raw/master/example_data/GeneList/GlioblastomaMutationTable.txt" rel="nofollow">GlioblastomaMutationTable.txt</a>, and choose the 2012 version of FI Network with delta 1.0e-4.
-<div class="text-center">
-<div>
-<div><img src="images/userguide/fiviz/HotNetMutation_4.png" alt="" width="497" />
-<div>Set Parameters for HotNet Mutation Analysis</div>
-</div>
-</div>
-</div>
-</li>
-<li><b>Select network modules and build a FI sub-network</b>: The generated FI network modules from the HotNet analysis are listed in the HotNet result dialog (see below). In the dialog, you can choose a size cutoff, or a FDR cutoff. The displayed selected network modules will be used to build a FI sub-network after you click the "OK" button. In the dialog, you can also see the chosen delta value and the number of permutations. You may try different delta values for better results.
-<div class="text-center">
-<div>
-<div><img src="images/userguide/fiviz/HotNetResults.png" alt="" width="711" height="558" />
-<div>HotNet Mutation Analysis Results</div>
 </div>
 </div>
 </div>
@@ -784,10 +758,141 @@ ReactomeFIViz uses the functions provided in scanpy for pre-processing, normaliz
             After the DPT analysis, cells will be colored based on DPT values ranged from 0 to 1 with 0 as the earliest cell (yellow) in the trajectory and 1 as the latest (blue). A new column called "dpt_pseudotime" will be added 
             into the Node Table at the bottom and "dpt_pseudotime" will be registered as a new item under "Load Cell Feature" popup menu for loading without repeating the analysis. <br>
             <b>Note</b>: You may not see this menu item after the analysis. Try to switch to another network view and then come back to refresh the menu items.<br>
-
+        </li>
+        <li>
+            <b>Differential Expression Analysis</b>: Perform differential gene expression analysis between a cell cluster (group) and another cell cluster or all other cell clusters using 
+            <a href="https://scanpy.readthedocs.io/en/stable/api/scanpy.tl.rank_genes_groups.html">t-test_overestim_var</a>. To conduct this analysis, you need to choose two groups of cells first:
+            The group of cell for analysis based on clustering results and another group as the reference. You may choose another cell cluster or all other cells as the reference.
+            <div class="text-center">
+                <div><img src="images/userguide/fiviz/ScDiffChooseGroups.png" alt="Choose Cell Groups for Differential Expression Analysis" width="400" /></div>
+                <div>Choose Cell Groups for Differentila Expression Analysis</div>
+            </div>
+            The differential expression analysis result is displayed in the following table. You may choose one or more filteres by clicking the "Add" button to filter genes displayed 
+            in the table. To create a FI network for the filtered genes displayed in the table, click the "Build FI Network" button. To conduct a pathway enrichment analysis, you can choose 
+            Binomial_test or <a href="#Gene_Set.2FMutation_Analysis">GSEA</a>. The Binomial_test will use the filtered, displayed genes in the table while the GSEA analysis will use all genes 
+            with scores, including genes that are not displayed in the table. 
+            <div class="text-center">
+                <div><img src="images/userguide/fiviz/ScDiffExpResultTable.png" alt="Differential Expression Analysis Result" width="800" /></div>
+                <div>Differential Expression Analysis Result</div>
+            </div>
+            <b>Note</b>: Genes in the FI network constructed from the selected genes are colored based on gene scores. For more information on how to use the features for the FI network, see 
+            <a href="#Gene_Set.2FMutation_Analysis">Gene Set/Mutation Analysis</a>. You may open a pathway diagram when a network view is shown. To get back to the previous network view, close 
+            all displayed pathway diagrams and then select the network in the Network tab in the left, control panel. Reactome mouse pathways are predicted from human pathways based on the 
+            panther orthologous mapping file. For details, see: <a href="https://reactome.org/documentation/inferred-events">Inferred Events in Reactome</a>. The mouse human functional interaction network 
+            is predicted from the human functional interaction network using the mapping file provided by <a href="http://www.informatics.jax.org">MGI</a>, downloaded using this link: 
+            <a href="http://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt">http://www.informatics.jax.org/downloads/reports/HOM_MouseHumanSequence.rpt</a>. One human gene
+            may be mapped to multiple mouse genes. Therefore, the mouse FI network may show a node that is annotated with multiple mouse genes. For example, see below: The original human KLK3 is 
+            mapped to Klk1b9, Klk1b21, and many others, which are all listed in the node table at the bottom and in the network view as the label for that node. Currently links to these nodes in
+            the FI network point to human genes (e.g. GeneCard).
+            <div class="text-center">
+                <div><img src="images/userguide/fiviz/OneHumanGeneToMultipleMouseGenes.png" alt="One Human Gene Mapped to Multiple Mouse Genes" width="1000" /></div>
+                <div>One Human Gene Mapped to Multiple Mouse Genes</div>
+            </div>
+        </li>
+        <li>
+            <b>Build Regulatory Network</b>: Infer an underlying gene regulatory network between transcriptional factors (TFs) and their targets for one or more cell clusters. This approach is inspirted 
+            by Qiu et al's <a href="https://www.sciencedirect.com/science/article/abs/pii/S2405471220300363">Inferring Causal Gene Regulatory Networks from Coupled Single-Cell Expression Dynamics
+            Using Scribe</a>. However, the current implementation provided by ReactomeFIViz uses time-delayed gene co-expression to infer potential causal relationships between TFs and 
+            their targers instead of "restricted directed information (RDI)" and limits the causal relationship search between TF/target interactions provided by <a href="https://saezlab.github.io/dorothea/">dorothea</a>. 
+            To perform this analysis, set up parameters in the following dialog:
+            <div class="text-center">
+                <div><img src="images/userguide/fiviz/ScRegNetSetup.png" width="400" alt="Gene Regulatory Network Infernece Setup"/></div>
+                <div>Gene Regulatory Network Inference Setup</div>
+            </div>
+            <b>Note</b>: You may choose Spearman, Pearson, or Kendal for gene expression correlaiton calculation. The cell time type is one of latent_time, velocity_pseudotime, cytotrace or dpt_pseudotime, which are cell properties 
+            calculated during trajectory inference. The first two types are generated during an RNA velocity analysis (See below). If ReactomeFIViz cannot find any of these variables, you will be asked to perform the dpt_pseudotime analysis first. 
+            The time delay is used to conduct a delayed gene co-expression calculation. For example, the expression of a TF is [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] and the expresison of one of 
+            its target is [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]. If the time delay = 4, the correlation between [1, 2, 3, 4, 5, 6] and [15, 16, 17, 18, 19, 20] is calculated. The time delay in the above dialog is for the maximum time delay.
+            Therefore, if you enter 7 for the time delay, the actual time delay values used for correlation calculation are [1, 2, 3, 4, 5, 6, 7]. The correlation is calculated 7 times and the maximum value of those calculated correlation values is used.
+            For the cell groups, you may choose all, one of cell clusters, or multiple cell clusters (hold the command key under Mac or the control key under Windows). <br />
+            It may take several minutes to calculate the correlation for all TF/target interactions and then build the regulatory network. The following is an example showing how the final gene regulatory network looks like:
+            <div class="text-center">
+                <div><img src="images/userguide/fiviz/PartialGeneRegNet.png" width="1000" alt="Partial Gene Regulatory Network"></div>
+                <div>Pairtial Gene Regulatory Network</div>
+            </div>
+            <b>Note</b>: A style called "Regulatory Network Style" is created for rendering the generated gene regulatory network. With this style, TFs are rendered as diamonds while their targets as circles. The original 
+            <a href="https://saezlab.github.io/dorothea/">dorothea</a> interactions provide annotation: -> for activation and -| for inhibition. Red for positive 
+            correlation while blue for negative correlaiton. The calculated correlation may not match the original annotation in dorothea. For example, in the above figure, the interaction between Insm1, a TF and one of its target, 
+            Scg3, is annotated as an inhibition. However, the actual calculated Spearman correlation is positive. The edge width is for the absolute value. You may check this style inside Cytoscape for more information. 
+        </li>
+        <li>
+            <b>Project New Data</b>: Project another data set onto the displayed network. This feature uses the <a href="https://scanpy.readthedocs.io/en/stable/api/scanpy.tl.ingest.html">ingest</a> function in scanpy to integrate a new 
+            dataset onto the dataset used to generate the network, showing where cells in the new dataset can be mapped to the displayed network. To perform this analysis, enter the data file in the following dialog:
+            <div class="text-center">
+                <div><img src="images/userguide/fiviz/ProjectNewDataConfig.png" alt="Project New Data Configuration" width="400"/></div>
+                <div>Project New Data Configuration</div>
+            </div>
+            <b>Note</b>: You cannot choose the approach in this dialog. It is expected that the same approach should be used to project a new dataset onto the existing network. After projecting, a new popup menu called "Toggle Projected Data" 
+            is added under the "Project New Data" menu for toggling the display of the projected cells. The following two figures show the cell network before and after a new dataset is projected: the left for before the projection and the 
+            right for after. As shown, the majority of cells in the new dataset are projected onto the cell clusters displayed in green, salmon and rosy brown around the middle and top-right regions. 
+            <div class="text-center">
+                <div><img src="images/userguide/fiviz/CellNetworkBeforeProject.png" width = "500" alt="Before Projecting"><img src="images/userguide/fiviz/CellNetworkAfterProject.png" width="500" alt="After Projecting"></div>
+            </div>
+        </li>
+        <li>
+            <b>Save Analysis Results</b>: All analysis results may be saved into a local file in the h5ad format. The saved file can be opened using the main menu, Apps/Reactome FI/Single Cell Analysis/Open.
         </li>
     </ul>
 </li>
+</ol>
+<h4><span id="scvelo_analysis">RNA Velocity Analysis via scVelo</span></h4>
+RNA velocity analysis is an approach to quantitatively model dynamic behavior of mRNA transcription of genes based on count ratios between unspliced and spliced forms of mRNAs (<a href="https://www.nature.com/articles/s41586-018-0414-6">La Manno 
+    et al 2018</a>). <a href="https://doi.org/10.1038/s41587-020-0591-3">scVelo</a> provides an enhanced implementation of the original approach in Python. ReactomeFIViz packages scVelo for you to conduct this analysis in Cytoscape using graphic user interfaces without scripting. For more 
+    information about RNA velocity and scVelo, see the original scVelo document: <a href="https://scvelo.readthedocs.io">https://scvelo.readthedocs.io</a>.
+<ol>
+    <li>
+        <b>Set up the analysis</b>: Select "RNA Velocity Analysis via scVelo" for Approach in the following scRNA-seq analysis action dialog and choose one of RNA velocity modes. To see the differences among the three models listed in 
+        dialog, see the original scVelo paper, <a href="https://doi.org/10.1038/s41587-020-0591-3">Generalizing RNA velocity to transient cell states through dynamical modeling</a>. The default is "stochastic". However, if you want to 
+        get more dynamic information, choose "dynamical". For what you can do with the dynamical model, see <a href="https://scvelo.readthedocs.io/DynamicalModeling.html">Dynamical Modeling with scVelo</a>. The data file required by this 
+        analysis should be pre-processed specically by using velocyto or loompy/kallisto pipeline and contain two matricies for unspliced and spliced abundances. See how to get started with this scVelo tutorial for more information: 
+        <a href="https://scvelo.readthedocs.io/getting_started.html">Getting Started</a>.
+        <div class="text-center">
+            <div><img src="images/userguide/fiviz/RNAVelocitySetup.png" width="400" alt="RNA Velocity Analysis Configuration"></div>
+            <div>RNA Velocity Analysis Configuration</div>
+        </div>
+    </li>
+    <li>
+        <b>Visualize the RNA velocity analysis results</b>: It may take a little bit while to conduct the RNA velocity analysis dependent on the model you choose. The outputs are the same as ones from a standard analysis using scanpy except 
+        that the single cell cluster network is displayed as directed, weighted network with directions corresponding times in the inferred trajectory based on the <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x">PAGA</a> 
+        approach and weights for the connectivities between cell clusters. The following figure shows an example of such a weighted, directed cell cluster network.
+        <div class="text-center">
+            <div><img src="images/userguide/fiviz/RNAVelocityNetwork.png" width="500" alt="RNA Velocity Cluster Network"></div>
+            <div>RNA Velocity Cluster Network</div>
+        </div>
+        <b>Note</b>: It is expected that you see different results from the RNA velocity analysis than ones from the standard analysis.
+    </li>
+    <li>
+        <b>Analyze the RNA velocity results</b>: Most of analysis features for the displayed networks generated from the RNA velocity analysis are the same as ones from the standard analysis via scanpy. However, the RNA velocity analysis provides 
+        much more cell features than the standard analysis as shown in the following popup menu:
+        <div class="text-center">
+            <div><img src="images/userguide/fiviz/RNAVelocityCellFeatures.png" width="600" alt="RNA Velocity Cell Features"></div>
+            <div>RNA Velocity Cell Features Popup Menu</div>
+        </div>
+        <b>Note</b>: To understand the meanings of these RNA velocity specific cell features, please refer to the original scVelo tutorials: <a href="https://scvelo.readthedocs.io/getting_started.html">scVelo tutorials</a>.
+        In addition to the above RNA velocity specific cell features, a new popup menu group is added for you to conduct some RNA velocity specific data analysis and visualization as shown below:
+        <div class="text-center">
+            <div><img src="images/userguide/fiviz/RNAVelocityPopupMenu.png" width="500" alt="RNA Velocity Popup Menu"></div>
+            <div>RNA Velocity Popup Menu</div>
+        </div>
+        <b>Note</b>: Refer to this scVelo tutorial for Embedding, Embedding Grid, Embedding Stream, and Gene Velocity: <a href="https://scvelo.readthedocs.io/VelocityBasics.html">RNA Velocity Basics</a>. ReactomeFIViz utilize scVelo's visualization 
+        features to generate image files for these plots and then automatically open them. To keep these files for your record, you may have to save them into your designated files. Otherwise, they will be automatically deleted when you close 
+        Cytoscape. 
+        <ul>
+            <li><b>Rank Velocity Genes</b>: Ranks genes in individual cell clusters based on differentila expression analysis using scVelo's rank_velocity_genes function: <a href="https://scvelo.readthedocs.io/scvelo.tl.rank_velocity_genes.html#scvelo.tl.rank_velocity_genes">
+            rank_velocity_genes</a>. Top 250 genes for individual clusters returned from this analysis are displayed in a table as shown in the following figure. You may conduct pathway enrichment analysis using a binomial test or build a FI network 
+            for a selected cell cluster. 
+            <div class="text-center">
+                <div><img src="images/userguide/fiviz/RNAVelocityRankGeneTable.png" width="1000" alt="RNA Velocity Rank Gene Table"></div>
+                <div>RNA Velocity Rank Gene Table</div>
+            </div>
+            <b>Note</b>: You may filter genes displayed in the table. However, for pathway enrichment analysis or building a FI network, all 250 genes for a selected cell cluster are used.
+            </li> 
+            <li>
+                <b>Rank Dynamic Genes</b>: If you choose the use the dynamic mode for your RNA velocity analysis, you can also do "Rank Dynamic Genes". This feature is based on scVelo function, 
+                <a href="https://scvelo.readthedocs.io/scvelo.tl.rank_dynamical_genes.html#scvelo.tl.rank_dynamical_genes">rank_dynamical_genes</a>. The output and the functions are the same as "Rank Velocity Genes".
+            </li>
+        </ul>
+    </li>
 </ol>
 
 <h3><span id="Other_Features_Related_to_the_FI_Network">Other Features Related to the FI Network</span></h3>

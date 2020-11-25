@@ -145,6 +145,14 @@ public class ScNetworkManager {
     public void showGeneVelocity(String gene) {
         try {
             String fileName = (String) serverCaller.callJSONServer("scv_velocity_plot", gene);
+            // Error flagged from the python server
+            if (fileName != null && fileName.startsWith("error:")) {
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                              fileName,
+                                              "Error in Gene Velocity",
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             openFile(fileName);
         }
         catch(Exception e) {
@@ -491,7 +499,8 @@ public class ScNetworkManager {
                     progressPane.setText("projecting...");
                     parentFrame.getGlassPane().setVisible(true);
                     //TODO: List<Double> two doubles and one string. Need to check the type!!!
-                    Map<String, List<?>> cellIdToUmapCluster = serverCaller.project(dirName);
+                    Map<String, List<?>> cellIdToUmapCluster = serverCaller.project(dirName,
+                                                                                    actionDialog.getFormat());
                     FINetworkGenerator networkGenerator = new FINetworkGenerator();
                     TableHelper tableHelper = new TableHelper();
                     Map<String, CyNode> cellIdToNode = new HashMap<>();
