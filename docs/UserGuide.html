@@ -678,14 +678,15 @@ to view its detailed annotation in Reactome. Or you can choose "View in Reactome
 </ol>
 
 <h3><span id="scRNA_seq">Perform scRNA-seq Data Analysis and Visualization</span></h3>
-ReactomeFIViz implements a suite of features for users to conduct scRNA-seq data analysis and visualization. To do this, we have packaged several popuplar Python packages together into a Python standalone application. These packages include <a href="https://scanpy.readthedocs.io/en/stable/">scanpy</a> for routine scRNA-seq data analysis and visualization and <a href="https://scvelo.readthedocs.io">scVelo</a> for RNA velocity based data analysis and visualization. 
-<br><b>Note</b>: For scRNA-seq data analysis and visualization, you need to have Python 3.7 or above installed at your computer. If you have not installed Python before, you can do so by downloading an installer from https://www.python.org/downloads/. We have tested Python 3.7 only and thefore suggest that you use 3.7 for these features. However, you don't need to install our standalone Python application indepedently from ReactomeFIViz. 
-When needed, ReactomeFIViz will automatically download and update the application for you as long as you point to the correct Python application path (aka directory or file).
+ReactomeFIViz implements a suite of features for users to conduct scRNA-seq data analysis and visualization. To do this, we have packaged several popuplar Python packages developed for scRNA-seq data analysis and visualization together into a Python standalone application. These packages include <a href="https://scanpy.readthedocs.io/en/stable/">scanpy</a> for routine scRNA-seq data analysis and visualization and <a href="https://scvelo.readthedocs.io">scVelo</a> for RNA velocity based data analysis and visualization. 
+<br><b>Note</b>: For scRNA-seq data analysis and visualization, you need to have Python 3.7 installed at your computer. If you have not installed Python at your computer, you can do so by downloading an installer from <a href="https://www.python.org/downloads/">https://www.python.org/downloads</a> for your computer. 
+We have tested Python 3.7 only and thefore suggest that you use 3.7 for these features. However, you don't need to install our standalone Python application indepedently from ReactomeFIViz. 
+When needed, ReactomeFIViz will automatically download and update the application for you as long as you point to the correct Python application path (i.e. directory and application file).
 <h4><span id="scanpy_analysis">Standard Analysis via Scanpy</span></h4>
 <ol>
 <li>
-<b>Set up the analysis:</b>The Python package, <a href="https://scanpy.readthedocs.io/en/stable/">scanpy</a>, provides a set of powerful analysis and visualization features for scRNA-seq data. ReactomeFIViz wrap these features for users to take advantage of pathway and network analysis and visualization features provided by Cytoscape in general and ReactomeFIViz in particular.
-To conduct a scRNA-sea analysis using scanpy, choose menu Apps/Reactome FI/Single Cell Analysis/Analyze to get the configuration window as shown below: 
+<b>Set up the analysis:</b>The Python package, <a href="https://scanpy.readthedocs.io/en/stable/">scanpy</a>, provides a set of powerful analysis and visualization features for scRNA-seq data. ReactomeFIViz wraps these features for users to take advantage of pathway and network analysis and visualization facilities provided by Cytoscape in general and ReactomeFIViz in particular.
+To conduct a scRNA-seq analysis using scanpy, choose menu Apps/Reactome FI/Single Cell Analysis/Analyze to get the configuration window as shown below: 
 <div class="text-center">
 <div><img src="images/userguide/fiviz/scRNASeqConfig.png" alt="scRNA-seq Analysis Configuration" width="450"/></div>
 <div>scRNA-seq Analysis Configuration</div>
@@ -697,14 +698,14 @@ control unwanted variations.
 <br><b>Note</b>: All analysis steps and their paramters are logged into CytoscapeConfiguration/ReactomeFIViz/ReactomeFIViz.{date}.log in your user folder for your review.
 </li>
 <li>
-<b>Configure Python for ReactomeFIViz:</b> If you have not done so, you will be asked to set up Python for ReactomeFIViz using the following configuration dialog when ReactomeFIViz downloads the Reactome python app for
+<b>Configure Python for ReactomeFIViz:</b> If you have not done so, you will be asked to set up Python for ReactomeFIViz using the following configuration dialog when ReactomeFIViz downloads the Reactome Python app for
 scRNA-seq data analysis and visualization.
 <div class="text-center">
     <div><img src="images/userguide/fiviz/SetupPython.png" alt="Set up Python" width="450"/></div>
     <div>Set up Python</div>
 </div>
 <b>Note</b>: Currently only Python 3.7 is supported.<br>
-ReactomeFIViz uses the functions provided in scanpy for pre-processing, normalization, UMAP analysis, cell clustering and all other scRNA-seq analysis except imputation, which is handled by
+ReactomeFIViz uses the functions provided by scanpy for pre-processing, normalization, UMAP analysis, cell clustering and all other scRNA-seq analysis except imputation, which is handled by
  <a href="https://github.com/KrishnaswamyLab/MAGIC">MAGIC</a>, if checked. See details in the scanpy document: 
 <a href="https://scanpy.readthedocs.io/en/stable/api/index.html">https://scanpy.readthedocs.io/en/stable/api/index.html</a>. For paramters used for these functions, open the ReactomeFIViz.{data}.log file (see above).
 </li>
@@ -727,16 +728,16 @@ ReactomeFIViz uses the functions provided in scanpy for pre-processing, normaliz
         <div>ScRNA-seq Standard Analysis Popup Menus</div>
     </div>
     <ul>
-        <li><b>Load Gene Expression</b>: Overlay expression value for a gene onto the networks. You may enter the gene name from the input dialog after clicking this menu.
+        <li><b>Load Gene Expression</b>: Overlay expression value for a gene onto the network. You may enter the gene name from the input dialog after clicking this menu.
         <br><b>Note</b>: Cell clusters use the median values of cells in the clusters for coloring for gene expression and cell features (below).
         </li>
-        <li><b>Load Cell Features</b>: Overlay no expression cell features by choosing a sub-menu, e.g., n_genes (total genes), n_genes_by_counts (total genes having counts), total_counts, total_count_mt (for mitonchorian genes), 
-            pct_counts_mt (percent of mintonchorian genes), and leiden (network clustering results based on the <a href="https://arxiv.org/abs/1810.08473">Leiden</a> algorithm).<br><b>Note</b>: Both the cell cluster network
+        <li><b>Load Cell Features</b>: Overlay cell features by choosing a sub-menu, e.g., n_genes (total genes), n_genes_by_counts (total genes having counts), total_counts, total_count_mt (for mitonchorian genes), 
+            pct_counts_mt (percent of mitochondria genes), and leiden (network clustering results based on the <a href="https://arxiv.org/abs/1810.08473">Leiden</a> algorithm).<br><b>Note</b>: Both the cell cluster network
             and the single cell network are colored based on the leiden clustering results when they are rendered after the analysis. To get back to the orignal colors, choose Load Cell Feature/leiden.
         </li>
         <li><b>CytoTrace Analysis</b>: Perform CytoTrace analysis to predict the differential state of cells based on the number of detected expressed genes per cell. ReactomeFIViz provides a Python implementation of CytoTrace based on the original R code published in 
             <a href="https://cytotrace.stanford.edu">https://cytotrace.stanford.edu</a>. For details about CytoTrace, see the original paper: <a href="https://science.sciencemag.org/content/367/6476/405.long">Single-cell 
-                transcriptional diversity is a hallmark of developmental potential</a>, and more information in the CytoTrace's web site: <a href="https://cytotrace.stanford.edu">https://cytotrace.stanford.edu</a>.
+                transcriptional diversity is a hallmark of developmental potential</a>. You can find more information in the CytoTrace's web site: <a href="https://cytotrace.stanford.edu">https://cytotrace.stanford.edu</a>.
             <br><b>Note</b>: The analysis may take several minutes. After the analysis, cells will be colored based on predicted differential state values scaled between 0 and 1: 0 for most differentiated (yellow) and 
             1 for least differentiated (blue). The analysis results are cached in ReactomeFIViz and listed in a new column called "cytotrace" in the Node Table at the bottom. When you choose this menu again after 
             the analysis, the results will be overlaid without performing another analysis. A new menu item called "cytotrace" will be added to the "Load Cell Features" popup menu too so that you can load these results directly.
@@ -744,7 +745,7 @@ ReactomeFIViz uses the functions provided in scanpy for pre-processing, normaliz
         </li>
         <li><b>Diffusion Pseudotime Analysis (DPT)</b>: Perform cell trajectory inference based on network diffusion. For details about the algorithm, see <a href="https://scanpy.readthedocs.io/en/stable/api/scanpy.tl.dpt.html">scanpy.tl.dpt</a> and 
             the original paper: <a href="https://doi.org/10.1186/s13059-019-1663-x">PAGA: graph abstraction reconciles clustering with trajectory inference through a topology preserving map of single cells</a>. To conduct this analysis,
-            the id of a cell that should be regarded as the root of the trajectory is needed. If you have some idea what this cell is, you may enter it directly in the following dialog. If you don't know what it is but have some idea on
+            the id of a cell that should be regarded as the root of the trajectory is needed. If you have some idea what this cell is, you may enter it directly in the following dialog. If you don't know what it is but have some idea in
             which cluster or clusters the root may reside, you can enter the cluster(s) in the second text field. ReactomeFIViz will try to infer a possibe cell root for you in your specified cluster(s) based
             on <a href="https://en.wikipedia.org/wiki/PageRank">PageRank</a>. For details about the cell root inference algorithm, see 
             <a href="https://github.com/reactome-fi/fi_sc_analysis/blob/5cd26c200d6860e4a27df12fd1716709685bfe63/python/scpy4reactome/ScanpyWrapper.py#L455">infer_cell_root</a>.
@@ -769,8 +770,8 @@ ReactomeFIViz uses the functions provided in scanpy for pre-processing, normaliz
             </div>
             The differential expression analysis result is displayed in the following table. You may choose one or more filteres by clicking the "Add" button to filter genes displayed 
             in the table. To create a FI network for the filtered genes displayed in the table, click the "Build FI Network" button. To conduct a pathway enrichment analysis, you can choose 
-            Binomial_test or <a href="#Gene_Set.2FMutation_Analysis">GSEA</a>. The Binomial_test will use the filtered, displayed genes in the table while the GSEA analysis will use all genes 
-            with scores, including genes that are not displayed in the table. 
+            Binomial_test or <a href="#Gene_Set.2FMutation_Analysis">GSEA</a>. The Binomial_test will use the filtered, displayed genes in the table while the GSEA analysis will use gene rank by the score, 
+            including genes that are not displayed in the table. 
             <div class="text-center">
                 <div><img src="images/userguide/fiviz/ScDiffExpResultTable.png" alt="Differential Expression Analysis Result" width="800" /></div>
                 <div>Differential Expression Analysis Result</div>
@@ -793,8 +794,8 @@ ReactomeFIViz uses the functions provided in scanpy for pre-processing, normaliz
             <b>Build Regulatory Network</b>: Infer an underlying gene regulatory network between transcriptional factors (TFs) and their targets for one or more cell clusters. This approach is inspirted 
             by Qiu et al's <a href="https://www.sciencedirect.com/science/article/abs/pii/S2405471220300363">Inferring Causal Gene Regulatory Networks from Coupled Single-Cell Expression Dynamics
             Using Scribe</a>. However, the current implementation provided by ReactomeFIViz uses time-delayed gene co-expression to infer potential causal relationships between TFs and 
-            their targers instead of "restricted directed information (RDI)" and limits the causal relationship search between TF/target interactions provided by <a href="https://saezlab.github.io/dorothea/">dorothea</a>. 
-            To perform this analysis, set up parameters in the following dialog:
+            their targers instead of "restricted directed information (RDI)" and limits the causal relationships search between TFs and their targets based on TF/target interactions provided by 
+            <a href="https://saezlab.github.io/dorothea/">dorothea</a>. To perform this analysis, set up parameters in the following dialog:
             <div class="text-center">
                 <div><img src="images/userguide/fiviz/ScRegNetSetup.png" width="400" alt="Gene Regulatory Network Infernece Setup"/></div>
                 <div>Gene Regulatory Network Inference Setup</div>
@@ -805,15 +806,16 @@ ReactomeFIViz uses the functions provided in scanpy for pre-processing, normaliz
             its target is [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]. If the time delay = 4, the correlation between [1, 2, 3, 4, 5, 6] and [15, 16, 17, 18, 19, 20] is calculated. The time delay in the above dialog is for the maximum time delay.
             Therefore, if you enter 7 for the time delay, the actual time delay values used for correlation calculation are [1, 2, 3, 4, 5, 6, 7]. The correlation is calculated 7 times and the maximum value of those calculated correlation values is used.
             For the cell groups, you may choose all, one of cell clusters, or multiple cell clusters (hold the command key under Mac or the control key under Windows). <br />
-            It may take several minutes to calculate the correlation for all TF/target interactions and then build the regulatory network. The following is an example showing how the final gene regulatory network looks like:
+            It may take several minutes to calculate the correlation for all TF/target interactions and then build the regulatory network. The following is an example showing how a final gene regulatory network looks like:
             <div class="text-center">
                 <div><img src="images/userguide/fiviz/PartialGeneRegNet.png" width="1000" alt="Partial Gene Regulatory Network"></div>
-                <div>Pairtial Gene Regulatory Network</div>
+                <div>Partial Gene Regulatory Network</div>
             </div>
             <b>Note</b>: A style called "Regulatory Network Style" is created for rendering the generated gene regulatory network. With this style, TFs are rendered as diamonds while their targets as circles. The original 
             <a href="https://saezlab.github.io/dorothea/">dorothea</a> interactions provide annotation: -> for activation and -| for inhibition. Red for positive 
             correlation while blue for negative correlaiton. The calculated correlation may not match the original annotation in dorothea. For example, in the above figure, the interaction between Insm1, a TF and one of its target, 
-            Scg3, is annotated as an inhibition. However, the actual calculated Spearman correlation is positive. The edge width is for the absolute value. You may check this style inside Cytoscape for more information. 
+            Scg3, is annotated as an inhibition. However, the actual calculated Spearman correlation is positive. The edge width is proportional to the absolute correlation value. You may investigate this style inside Cytoscape for 
+            more information. 
         </li>
         <li>
             <b>Project New Data</b>: Project another data set onto the displayed network. This feature uses the <a href="https://scanpy.readthedocs.io/en/stable/api/scanpy.tl.ingest.html">ingest</a> function in scanpy to integrate a new 
@@ -823,28 +825,28 @@ ReactomeFIViz uses the functions provided in scanpy for pre-processing, normaliz
                 <div>Project New Data Configuration</div>
             </div>
             <b>Note</b>: You cannot choose the approach in this dialog. It is expected that the same approach should be used to project a new dataset onto the existing network. After projecting, a new popup menu called "Toggle Projected Data" 
-            is added under the "Project New Data" menu for toggling the display of the projected cells. The following two figures show the cell network before and after a new dataset is projected: the left for before the projection and the 
-            right for after. As shown, the majority of cells in the new dataset are projected onto the cell clusters displayed in green, salmon and rosy brown around the middle and top-right regions. 
+            is added under the "Project New Data" menu for toggling the display of the projected cells. The following two figures show the cell network before (left) and after (right) a new dataset is projected. As shown, the majority of cells 
+            in the new dataset are projected onto the cell clusters displayed in green, salmon and rosy brown around the middle and top-right regions. 
             <div class="text-center">
                 <div><img src="images/userguide/fiviz/CellNetworkBeforeProject.png" width = "500" alt="Before Projecting"><img src="images/userguide/fiviz/CellNetworkAfterProject.png" width="500" alt="After Projecting"></div>
             </div>
         </li>
         <li>
-            <b>Save Analysis Results</b>: All analysis results may be saved into a local file in the h5ad format. The saved file can be opened using the main menu, Apps/Reactome FI/Single Cell Analysis/Open.
+            <b>Save Analysis Results</b>: All analysis results may be saved into a local file in the <a href="https://github.com/theislab/anndata/issues/180">h5ad</a> format. The saved file can be opened using the main menu, Apps/Reactome FI/Single Cell Analysis/Open.
         </li>
     </ul>
 </li>
 </ol>
 <h4><span id="scvelo_analysis">RNA Velocity Analysis via scVelo</span></h4>
-RNA velocity analysis is an approach to quantitatively model dynamic behavior of mRNA transcription of genes based on count ratios between unspliced and spliced forms of mRNAs (<a href="https://www.nature.com/articles/s41586-018-0414-6">La Manno 
+RNA velocity analysis is a powerful approach to quantitatively model dynamic behavior of mRNA transcription of genes based on count ratios between unspliced and spliced forms of mRNAs (<a href="https://www.nature.com/articles/s41586-018-0414-6">La Manno 
     et al 2018</a>). <a href="https://doi.org/10.1038/s41587-020-0591-3">scVelo</a> provides an enhanced implementation of the original approach in Python. ReactomeFIViz packages scVelo for you to conduct this analysis in Cytoscape using graphic user interfaces without scripting. For more 
     information about RNA velocity and scVelo, see the original scVelo document: <a href="https://scvelo.readthedocs.io">https://scvelo.readthedocs.io</a>.
 <ol>
     <li>
-        <b>Set up the analysis</b>: Select "RNA Velocity Analysis via scVelo" for Approach in the following scRNA-seq analysis action dialog and choose one of RNA velocity modes. To see the differences among the three models listed in 
+        <b>Set up the analysis</b>: Select "RNA Velocity Analysis via scVelo" for Approach in the following scRNA-seq analysis action dialog and choose one of RNA velocity modes. To see the differences among the three modes listed in 
         dialog, see the original scVelo paper, <a href="https://doi.org/10.1038/s41587-020-0591-3">Generalizing RNA velocity to transient cell states through dynamical modeling</a>. The default is "stochastic". However, if you want to 
         get more dynamic information, choose "dynamical". For what you can do with the dynamical model, see <a href="https://scvelo.readthedocs.io/DynamicalModeling.html">Dynamical Modeling with scVelo</a>. The data file required by this 
-        analysis should be pre-processed specically by using velocyto or loompy/kallisto pipeline and contain two matricies for unspliced and spliced abundances. See how to get started with this scVelo tutorial for more information: 
+        analysis should be pre-processed specically by using velocyto or loompy/kallisto pipeline and contain two matrices for unspliced and spliced abundances. For more information on how to get started, see this scVelo tutorial: 
         <a href="https://scvelo.readthedocs.io/getting_started.html">Getting Started</a>.
         <div class="text-center">
             <div><img src="images/userguide/fiviz/RNAVelocitySetup.png" width="400" alt="RNA Velocity Analysis Configuration"></div>
@@ -852,8 +854,8 @@ RNA velocity analysis is an approach to quantitatively model dynamic behavior of
         </div>
     </li>
     <li>
-        <b>Visualize the RNA velocity analysis results</b>: It may take a little bit while to conduct the RNA velocity analysis dependent on the model you choose. The outputs are the same as ones from a standard analysis using scanpy except 
-        that the single cell cluster network is displayed as directed, weighted network with directions corresponding times in the inferred trajectory based on the <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x">PAGA</a> 
+        <b>Visualize the RNA velocity analysis results</b>: Dependent on the mode you choose, it may take a while to conduct the RNA velocity analysis. The outputs are the same as ones from a standard analysis using scanpy except 
+        that the single cell cluster network is displayed as directed, weighted network with directions corresponding to times in the inferred trajectory based on the <a href="https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1663-x">PAGA</a> 
         approach and weights for the connectivities between cell clusters. The following figure shows an example of such a weighted, directed cell cluster network.
         <div class="text-center">
             <div><img src="images/userguide/fiviz/RNAVelocityNetwork.png" width="500" alt="RNA Velocity Cluster Network"></div>
@@ -874,11 +876,11 @@ RNA velocity analysis is an approach to quantitatively model dynamic behavior of
             <div><img src="images/userguide/fiviz/RNAVelocityPopupMenu.png" width="500" alt="RNA Velocity Popup Menu"></div>
             <div>RNA Velocity Popup Menu</div>
         </div>
-        <b>Note</b>: Refer to this scVelo tutorial for Embedding, Embedding Grid, Embedding Stream, and Gene Velocity: <a href="https://scvelo.readthedocs.io/VelocityBasics.html">RNA Velocity Basics</a>. ReactomeFIViz utilize scVelo's visualization 
+        <b>Note</b>: Refer to this scVelo tutorial for Embedding, Embedding Grid, Embedding Stream, and Gene Velocity: <a href="https://scvelo.readthedocs.io/VelocityBasics.html">RNA Velocity Basics</a>. ReactomeFIViz utilizes scVelo's visualization 
         features to generate image files for these plots and then automatically open them. To keep these files for your record, you may have to save them into your designated files. Otherwise, they will be automatically deleted when you close 
         Cytoscape. 
         <ul>
-            <li><b>Rank Velocity Genes</b>: Ranks genes in individual cell clusters based on differentila expression analysis using scVelo's rank_velocity_genes function: <a href="https://scvelo.readthedocs.io/scvelo.tl.rank_velocity_genes.html#scvelo.tl.rank_velocity_genes">
+            <li><b>Rank Velocity Genes</b>: Ranks genes in individual cell clusters based on differential expression analysis using scVelo's rank_velocity_genes function: <a href="https://scvelo.readthedocs.io/scvelo.tl.rank_velocity_genes.html#scvelo.tl.rank_velocity_genes">
             rank_velocity_genes</a>. Top 250 genes for individual clusters returned from this analysis are displayed in a table as shown in the following figure. You may conduct pathway enrichment analysis using a binomial test or build a FI network 
             for a selected cell cluster. 
             <div class="text-center">
@@ -888,7 +890,7 @@ RNA velocity analysis is an approach to quantitatively model dynamic behavior of
             <b>Note</b>: You may filter genes displayed in the table. However, for pathway enrichment analysis or building a FI network, all 250 genes for a selected cell cluster are used.
             </li> 
             <li>
-                <b>Rank Dynamic Genes</b>: If you choose the use the dynamic mode for your RNA velocity analysis, you can also do "Rank Dynamic Genes". This feature is based on scVelo function, 
+                <b>Rank Dynamic Genes</b>: If you choose the dynamic mode for your RNA velocity analysis, you can also do "Rank Dynamic Genes". This feature is based on scVelo function, 
                 <a href="https://scvelo.readthedocs.io/scvelo.tl.rank_dynamical_genes.html#scvelo.tl.rank_dynamical_genes">rank_dynamical_genes</a>. The output and the functions are the same as "Rank Velocity Genes".
             </li>
         </ul>
