@@ -21,15 +21,21 @@ import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyRow;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableUtil;
+import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.events.NetworkViewDestroyedListener;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.bn.VariableSelectionHandler;
 import org.reactome.cytoscape.service.PathwayDiagramHighlighter;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.mechismo.model.Interaction;
 
 @SuppressWarnings("serial")
 public class MechismoInteractionPane extends MechismoReactionPane {
     
     public static final String TITLE = "Mechismo Interaction";
+    private ServiceRegistration sr;
     
     public MechismoInteractionPane() {
         super(TITLE);
@@ -39,6 +45,19 @@ public class MechismoInteractionPane extends MechismoReactionPane {
     protected void doTableSelection(ListSelectionEvent e) {
         // For the time being, follow the default edge table behavior,
         // don't do anything.
+    }
+    
+    @Override
+    public void setNetworkView(CyNetworkView view) {
+        super.setNetworkView(view);
+        NetworkViewDestroyedListener l = event -> {
+            MechismoInteractionPane.this.close();
+            sr.unregister();
+        };
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        sr = context.registerService(NetworkViewDestroyedListener.class.getName(),
+                                     l,
+                                     null);
     }
     
     private void selectEdgesForSelectedRows() {

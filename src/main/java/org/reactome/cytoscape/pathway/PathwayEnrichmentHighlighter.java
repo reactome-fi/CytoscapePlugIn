@@ -23,6 +23,7 @@ import org.gk.graphEditor.PathwayEditor;
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.cytoscape.genescore.GeneScoreOverlayHelper;
+import org.reactome.cytoscape.mechismo.MechismoDataFetcher;
 import org.reactome.cytoscape.service.CyPathwayDiagramHelper;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -83,7 +84,8 @@ public class PathwayEnrichmentHighlighter {
      */
     public boolean isEmpty() {
         if ((pathwayToAnnotation == null || pathwayToAnnotation.size() == 0) &&
-            (geneToScore == null || geneToScore.size() == 0))
+            (geneToScore == null || geneToScore.size() == 0) &&
+            !MechismoDataFetcher.isMechismoDataLoaded())
             return true;
         return false;
     }
@@ -116,8 +118,11 @@ public class PathwayEnrichmentHighlighter {
             return; // Do nothing
         if (pathwayFrame == null || eventName == null)
             return;
+        // This is more like a hack. A comprehensive pathway hilite manager is still needed.
+        if (MechismoDataFetcher.isMechismoDataLoaded())
+            MechismoDataFetcher.loadMechismoResults(pathwayFrame.getZoomablePathwayEditor());
         // Try pathwayToAnnotation first
-        if (pathwayToAnnotation != null) {
+        else if (pathwayToAnnotation != null) {
             GeneSetAnnotation annotation = pathwayToAnnotation.get(eventName);
             if (annotation == null)
                 return;

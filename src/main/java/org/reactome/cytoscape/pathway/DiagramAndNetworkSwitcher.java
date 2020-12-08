@@ -74,8 +74,11 @@ public class DiagramAndNetworkSwitcher {
                                                          Long.class);
         if (pathwayId == null)
             return;
+        String pathwayName = helper.getStoredNetworkAttribute(networkView.getModel(),
+                                                          "PathwayName",
+                                                          String.class);
         PathwayDiagramRegistry registry = PathwayDiagramRegistry.getRegistry();
-        registry.showPathwayDiagram(pathwayId);
+        registry.showPathwayDiagram(pathwayId, false, pathwayName);
         // If the following code is invoked before the above statement is finished (it is possible since
         // a new thread is going to be used), a null exception may be thrown. So wrap it in an invokeLater method
         SwingUtilities.invokeLater(new Runnable() {
@@ -91,6 +94,7 @@ public class DiagramAndNetworkSwitcher {
     }
 
     public void convertToFINetwork(final Long pathwayId,
+                                   String pathwayName,
                                    final RenderablePathway pathway,
                                    final Set<String> hitGenes,
                                    final PathwayInternalFrame pathwayFrame) throws Exception {
@@ -99,6 +103,7 @@ public class DiagramAndNetworkSwitcher {
             @Override
             public void run(TaskMonitor taskMonitor) throws Exception {
                 convertPathwayToFINetwork(pathwayId,
+                                          pathwayName,
                                           pathway, 
                                           hitGenes,
                                           taskMonitor,
@@ -106,7 +111,7 @@ public class DiagramAndNetworkSwitcher {
             }
         }; 
         TaskIterator taskIterator = new TaskIterator(convertToFITask);
-        // If Mechismo results are loaded, load mechisnmo FIs then
+        // If Mechismo results are loaded, load Mechismo FIs then
         if (PathwayHighlightDataType.Mechismo == pathwayFrame.getHighlightDataType()) {
             Task loadMechsimoFITask = new AbstractTask() {
                 @Override
@@ -131,6 +136,7 @@ public class DiagramAndNetworkSwitcher {
     }
     
     private void convertPathwayToFINetwork(final Long pathwayId,
+                                           String pathwayName,
                                            final RenderablePathway pathway,
                                            final Set<String> hitGenes,
                                            TaskMonitor taskMonitor,
@@ -177,6 +183,9 @@ public class DiagramAndNetworkSwitcher {
         tableHelper.storeNetworkAttribute(network,
                                           "PathwayId", 
                                           pathwayId);
+        tableHelper.storeNetworkAttribute(network,
+                                          "PathwayName", 
+                                          pathwayName);
         PathwayEnrichmentHighlighter.getHighlighter().highlightNework(network, 
                                                                       hitGenes);
         // Store Instance ids information

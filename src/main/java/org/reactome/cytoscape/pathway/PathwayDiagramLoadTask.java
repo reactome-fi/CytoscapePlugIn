@@ -16,8 +16,6 @@ import org.cytoscape.work.TaskMonitor;
 import org.gk.render.RenderablePathway;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.reactome.cytoscape.pgm.FactorGraphInferenceResults;
-import org.reactome.cytoscape.pgm.FactorGraphRegistry;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**
@@ -41,7 +39,7 @@ public class PathwayDiagramLoadTask extends AbstractTask {
     public void setPathwayId(Long dbId) {
         this.pathwayId = dbId;
     }
-    
+
     @Override
     public void run(TaskMonitor taskMonitor) throws Exception {
         taskMonitor.setTitle("Load Pathway");
@@ -52,12 +50,12 @@ public class PathwayDiagramLoadTask extends AbstractTask {
         }
         taskMonitor.setProgress(0);
         taskMonitor.setStatusMessage("Loading pathway diagram...");
+        taskMonitor.setStatusMessage("Open pathway diagram...");
         String text = ReactomeRESTfulService.getService().pathwayDiagram(pathwayId);
         taskMonitor.setProgress(0.50d);
-        taskMonitor.setStatusMessage("Open pathway diagram...");
-        //        System.out.println(text);
-        final PathwayInternalFrame pathwayFrame = createPathwayFrame(text);
+        PathwayInternalFrame pathwayFrame = createPathwayFrame(text);
         pathwayFrame.setPathwayId(pathwayId);
+        pathwayFrame.setPathwayName(pathwayName);
         final JDesktopPane desktop = PlugInObjectManager.getManager().getPathwayDesktop();
         if (desktop == null) {
             // Cannot do anything

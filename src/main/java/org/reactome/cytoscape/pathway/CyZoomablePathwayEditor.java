@@ -38,11 +38,6 @@ import javax.swing.event.HyperlinkListener;
 import org.apache.commons.math.MathException;
 import org.cytoscape.property.CyProperty;
 import org.cytoscape.util.swing.FileUtil;
-import org.cytoscape.work.AbstractTask;
-import org.cytoscape.work.Task;
-import org.cytoscape.work.TaskIterator;
-import org.cytoscape.work.TaskManager;
-import org.cytoscape.work.TaskMonitor;
 import org.gk.gkEditor.RenderableDisplayFormatDialog;
 import org.gk.gkEditor.ZoomablePathwayEditor;
 import org.gk.graphEditor.GraphEditorActionEvent;
@@ -80,6 +75,7 @@ import org.reactome.cytoscape.service.CyPathwayEditor;
 import org.reactome.cytoscape.service.FIRenderableInteraction;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.PathwayHighlightDataType;
+import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.service.ReactomeSourceView;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -484,30 +480,9 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
     protected void addPathwayViewPopupMenus(JPopupMenu popup) {
         if (popup.getComponentCount() > 0)
             popup.addSeparator();
-        // To support overlay gene scores
-        JMenuItem overlayGeneScore = new JMenuItem("Overlay Gene Scores");
-        overlayGeneScore.addActionListener(e -> overlayGeneScores());
-        popup.add(overlayGeneScore);
-        JMenuItem removeGeneScore = new JMenuItem("Remove Gene Scores");
-        removeGeneScore.addActionListener(e -> removeGeneScores());
-        popup.add(removeGeneScore);
         
-        if (PlugInObjectManager.getManager().isCancerTargetEnabled()) {
-            if (popup.getComponentCount() > 0)
-                popup.addSeparator();
-            // Fetch cancer drugs for the whole pathway diagram
-            JMenuItem fetchDrugs = new JMenuItem("Fetch Cancer Drugs");
-            fetchDrugs.addActionListener(ac -> fetchDrugs(null, DrugDataSource.Targetome));
-            popup.add(fetchDrugs);
-            
-            JMenuItem fetchDrugCentralDrugs = new JMenuItem("Fetch DrugCentral Drugs");
-            fetchDrugCentralDrugs.addActionListener(ac -> fetchDrugs(null, DrugDataSource.DrugCentral));
-            popup.add(fetchDrugCentralDrugs);
-            
-            JMenuItem filterDrugs = new JMenuItem("Filter Drugs");
-            filterDrugs.addActionListener(ac -> filterDrugs());
-            popup.add(filterDrugs);
-        }
+        addGeneScoreMenu(popup);
+        addDrugMenu(popup);
                 
         final CyPathwayEditor pathwayEditor = (CyPathwayEditor) getPathwayEditor();
         if (pathwayEditor.hasFIsOverlaid()) {
@@ -524,16 +499,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             popup.add(item);
         }
         
-        if (PlugInObjectManager.getManager().isMechismoEnabled()) {
-            if (popup.getComponentCount() > 0)
-                popup.addSeparator();
-            JMenuItem loadMechismo = new JMenuItem("Load Mechismo Results");
-            loadMechismo.addActionListener(event -> loadMechismoResults());
-            popup.add(loadMechismo);
-            JMenuItem removeMechismo = new JMenuItem("Remove Mechismo Results");
-            removeMechismo.addActionListener(event -> removeMechismoResults());
-            popup.add(removeMechismo);
-        }
+        addMechismoMenu(popup);
         
         JMenuItem searchDiagram = new JMenuItem("Search Entities");
         searchDiagram.addActionListener(new ActionListener() {
@@ -552,6 +518,49 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         popup.add(searchReaction);
         
         addExportDiagramMenu(popup);
+    }
+
+    protected void addGeneScoreMenu(JPopupMenu popup) {
+        // To support overlay gene scores
+        JMenuItem overlayGeneScore = new JMenuItem("Overlay Gene Scores");
+        overlayGeneScore.addActionListener(e -> overlayGeneScores());
+        popup.add(overlayGeneScore);
+        JMenuItem removeGeneScore = new JMenuItem("Remove Gene Scores");
+        removeGeneScore.addActionListener(e -> removeGeneScores());
+        popup.add(removeGeneScore);
+    }
+
+    protected void addDrugMenu(JPopupMenu popup) {
+        if (PlugInObjectManager.getManager().isCancerTargetEnabled()) {
+            if (popup.getComponentCount() > 0)
+                popup.addSeparator();
+            // Fetch cancer drugs for the whole pathway diagram
+            JMenuItem fetchDrugs = new JMenuItem("Fetch Cancer Drugs");
+            fetchDrugs.addActionListener(ac -> fetchDrugs(null, DrugDataSource.Targetome));
+            popup.add(fetchDrugs);
+            
+            JMenuItem fetchDrugCentralDrugs = new JMenuItem("Fetch DrugCentral Drugs");
+            fetchDrugCentralDrugs.addActionListener(ac -> fetchDrugs(null, DrugDataSource.DrugCentral));
+            popup.add(fetchDrugCentralDrugs);
+            
+            JMenuItem filterDrugs = new JMenuItem("Filter Drugs");
+            filterDrugs.addActionListener(ac -> filterDrugs());
+            popup.add(filterDrugs);
+        }
+    }
+
+    protected void addMechismoMenu(JPopupMenu popup) {
+        if (PlugInObjectManager.getManager().isMechismoEnabled() &&
+            PathwayControlPanel.getInstance().getCurrentSpecies() == PathwaySpecies.Homo_sapiens) {
+            if (popup.getComponentCount() > 0)
+                popup.addSeparator();
+            JMenuItem loadMechismo = new JMenuItem("Load Mechismo Results");
+            loadMechismo.addActionListener(event -> MechismoDataFetcher.loadMechismoResults(this));
+            popup.add(loadMechismo);
+            JMenuItem removeMechismo = new JMenuItem("Remove Mechismo Results");
+            removeMechismo.addActionListener(event -> removeMechismoResults());
+            popup.add(removeMechismo);
+        }
     }
 
     protected void addExportDiagramMenu(JPopupMenu popup) {
@@ -1004,25 +1013,6 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             }
         };
         t.start();
-    }
-    
-    private void loadMechismoResults() {
-        Task task = new AbstractTask() {
-            @Override
-            public void run(TaskMonitor monitor) throws Exception {
-                MechismoDataFetcher fetcher = new MechismoDataFetcher();
-                fetcher.setHiliteControlPane(hiliteControlPane);
-                monitor.setTitle("Mechismo Results");
-                monitor.setStatusMessage("Loading Mechismo reaction results...");
-                monitor.setProgress(0.0d);
-                fetcher.loadMechismoReactions(getPathwayEditor());
-                monitor.setProgress(1.0d);
-            }
-        };
-        TaskIterator taskIterator = new TaskIterator(task);
-        @SuppressWarnings("rawtypes")
-        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
-        taskManager.execute(taskIterator);
     }
     
     private void removeMechismoResults() {

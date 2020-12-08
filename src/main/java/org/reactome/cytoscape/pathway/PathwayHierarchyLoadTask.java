@@ -95,6 +95,8 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
             panel.setSelectedIndex(index);
         controlPane.validateDividerPosition();
         PathwayControlPanel.getInstance().setCurrentSpecies(species);
+        // Make sure any displayed pathway is closed
+        PathwayDiagramRegistry.getRegistry().closeAllFrames();
     }
     
     /**

@@ -410,7 +410,7 @@ public class PathwayDiagramRegistry implements Selectable {
     /**
      * Close all opened JInternalFrames for pathways.
      */
-    private void closeAllFrames() {
+    public void closeAllFrames() {
         isFromCloseAll = true;
         for (JInternalFrame frame : diagramIdToFrame.values()) {
             frame.setVisible(false);
@@ -420,15 +420,6 @@ public class PathwayDiagramRegistry implements Selectable {
         diagramIdToFrame.clear(); // Empty the opened diagrams
         pathwayIdToDiagramId.clear();
         networkToDiagram.clear();
-    }
-    
-    /**
-     * Show the diagram for the pathway specified by the passed pathwayId. If no diagram has been displayed,
-     * the database will be queried.
-     * @param pathwayId
-     */
-    public void showPathwayDiagram(Long pathwayId) {
-        showPathwayDiagram(pathwayId, false, null);
     }
     
     /**
@@ -447,7 +438,7 @@ public class PathwayDiagramRegistry implements Selectable {
      * @param needCheckNetworkView
      * @param pathwayName
      */
-    private void showPathwayDiagram(Long pathwayId,
+    public void showPathwayDiagram(Long pathwayId,
                                    boolean needCheckNetworkView,
                                    String pathwayName) {
         PathwayInternalFrame frame = getPathwayFrame(pathwayId);

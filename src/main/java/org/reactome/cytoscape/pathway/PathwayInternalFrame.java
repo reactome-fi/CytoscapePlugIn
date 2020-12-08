@@ -49,12 +49,23 @@ public class PathwayInternalFrame extends JInternalFrame {
     private CyZoomablePathwayEditor pathwayEditor;
     // To be unregsiter
     private ServiceRegistration tableSelectionRegistration;
-    
+    // A pathway diagram may be related to several pathways.
+    // This value is used to set the start pathway for highlight or other purpose.
+    private String pathwayName;
+
     /**
      * Default constructor.
      */
     public PathwayInternalFrame() {
         init();
+    }
+    
+    public String getPathwayName() {
+        return pathwayName;
+    }
+
+    public void setPathwayName(String pathwayName) {
+        this.pathwayName = pathwayName;
     }
 
     private void init() {
@@ -270,6 +281,7 @@ public class PathwayInternalFrame extends JInternalFrame {
             DiagramAndNetworkSwitcher helper = new DiagramAndNetworkSwitcher();
             Set<String> hitGenes = PathwayEnrichmentHighlighter.getHighlighter().getHitGenes();
             helper.convertToFINetwork(getPathwayId(),
+                                      getPathwayName(),
                                       (RenderablePathway)pathwayEditor.getPathwayEditor().getRenderable(),
                                       hitGenes,
                                       this);

@@ -10,14 +10,21 @@ import java.util.stream.Collectors;
 import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CytoPanel;
+import org.cytoscape.application.swing.CytoPanelComponent;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.model.CyEdge;
 import org.cytoscape.model.CyTable;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.work.AbstractTask;
+import org.cytoscape.work.Task;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
+import org.cytoscape.work.TaskMonitor;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.HyperEdge;
 import org.gk.render.Renderable;
 import org.reactome.cytoscape.bn.VariableCytoPaneComponent;
+import org.reactome.cytoscape.pathway.CyZoomablePathwayEditor;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -208,6 +215,28 @@ public class MechismoDataFetcher {
         return dbIds;
     }
     
+    public static void loadMechismoResults(CyZoomablePathwayEditor editor) {
+        Task task = new AbstractTask() {
+            @Override
+            public void run(TaskMonitor monitor) throws Exception {
+                MechismoDataFetcher fetcher = new MechismoDataFetcher();
+                fetcher.setHiliteControlPane(editor.getHighlightControlPane());
+                monitor.setTitle("Mechismo Results");
+                monitor.setStatusMessage("Loading Mechismo reaction results...");
+                monitor.setProgress(0.0d);
+                fetcher.loadMechismoReactions(editor.getPathwayEditor());
+                monitor.setProgress(1.0d);
+            }
+        };
+        TaskIterator taskIterator = new TaskIterator(task);
+        @SuppressWarnings("rawtypes")
+        TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
+        taskManager.execute(taskIterator);
+    }
     
+    public static boolean isMechismoDataLoaded() {
+        CytoPanelComponent comp = PlugInUtilities.getCytoPanelComponent(CytoPanelName.SOUTH, MechismoReactionPane.TITLE);
+        return comp != null;
+    }
 
 }

@@ -29,7 +29,7 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
  *
  */
 public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
-    private final String BUTTON_GROUP_NAME = "HighlightPathway";
+    protected static final String BUTTON_GROUP_NAME = "HighlightPathway";
     // For selection diagram entities
     private VariableSelectionHandler selectionHandler;
     // For highlight pathway diagrams

@@ -557,26 +557,31 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             pathwayView = new ControlPathwayView();
             // Make sure the overview is at the correct place
             pathwayView.addComponentListener(new ComponentAdapter() {
-                
+
                 @Override
                 public void componentResized(ComponentEvent e) {
                     setOverviewPositionInPathwayView();
                 }
             });
-            
+
             // Synchronize selection
             pathwayView.getPathwayEditor().getSelectionModel().addGraphEditorActionListener(new GraphEditorActionListener() {
-                
+
                 @Override
                 public void graphEditorAction(GraphEditorActionEvent e) {
                     if (e.getID() == ActionType.SELECTION)
                         handlePathwayViewSelection();
                 }
             });
-            // Synchronize with tree
-            // Always register this to avoid an ConcurrentException related to collection.
-            PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().addEventSelectionListener(pathwayView);
         }
+        // Synchronize with tree
+        // Always register this to avoid an ConcurrentException related to collection.
+        // This registration may be removed when the view is switched to overview. Since the add is checked, it should be
+        // fine to call this multiple times.
+        PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().addEventSelectionListener(pathwayView);
+        SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
+        if (mediator.getSelectables() == null && !mediator.getSelectables().contains(pathwayView))
+            mediator.addSelectable(pathwayView);
         // Check if pathwayView has been set already
         if (jsp.getBottomComponent() == pathwayView) {
             // Just in case a new pathway is passed on
@@ -613,7 +618,7 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         layeredPane.validate();
         // Make sure overview has correct location
         SwingUtilities.invokeLater(new Runnable() {
-            
+
             @Override
             public void run() {
                 setOverviewPositionInPathwayView();
@@ -628,7 +633,13 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
         // Remove from the original container
         overviewContainer.getParent().remove(overviewContainer);
         // Don't listen to selection
-        overviewContainer.setPreferredSize(pathwayView.getSize());
+        if (pathwayView != null) {
+            PathwayDiagramRegistry.getRegistry().getEventSelectionMediator().removeEventSelectionListener(pathwayView);
+            SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
+            if (mediator.getSelectables() != null)
+                mediator.getSelectables().remove(pathwayView);
+            overviewContainer.setPreferredSize(pathwayView.getSize());
+        }
         int dividerPos = jsp.getDividerLocation();
         jsp.setBottomComponent(overviewContainer);
         jsp.setDividerLocation(dividerPos);
@@ -711,7 +722,6 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             // Use a smaller font to save space
             font = font.deriveFont(font.getSize() - 2.0f);
             setFont(font);
-            PlugInObjectManager.getManager().getDBIdSelectionMediator().addSelectable(this);
             // Need to send the db id selection
             getPathwayEditor().getSelectionModel().addGraphEditorActionListener(e -> {
                 if (e.getID() == ActionType.SELECTION) {
@@ -755,6 +765,13 @@ public class PathwayControlPanel extends JPanel implements CytoPanelComponent, C
             return showFIsForSelectedOnly.isSelected();
         }
         
+        @Override
+        protected void addGeneScoreMenu(JPopupMenu popup) {}
+        
+        @Override
+        protected void addMechismoMenu(JPopupMenu popup) {
+        }
+
         @Override
         protected void addDataAnalysisMenus(JPopupMenu popup) {
         }

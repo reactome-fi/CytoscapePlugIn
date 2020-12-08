@@ -20,6 +20,7 @@ import javax.swing.JPanel;
 import org.reactome.cytoscape.bn.SimulationComparisonPane;
 import org.reactome.cytoscape.bn.VariableSelectionHandler;
 import org.reactome.cytoscape.service.PathwayHighlightDataType;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.mechismo.model.AnalysisResult;
 import org.reactome.mechismo.model.Reaction;
 
@@ -54,8 +55,11 @@ public class MechismoReactionPane extends SimulationComparisonPane {
         }
         addControls();
         controlToolBar.add(closeGlue);
-        createHighlightViewBtn();
-        controlToolBar.add(hiliteDiagramBtn);
+        // There is no need for this button here
+        PlugInObjectManager.getManager().unregisterRadioButton(BUTTON_GROUP_NAME,
+                                                               hiliteDiagramBtn);
+        hiliteDiagramBtn.setSelected(true);
+        hiliteDiagramBtn.setVisible(false);
         controlToolBar.add(closeBtn);
     }
     
