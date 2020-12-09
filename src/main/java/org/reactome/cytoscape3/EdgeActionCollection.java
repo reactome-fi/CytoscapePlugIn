@@ -116,7 +116,8 @@ public class EdgeActionCollection {
 
         @Override
         public CyMenuItem createMenuItem(CyNetworkView networkView, View<CyEdge> edgeView) {
-            if (!PlugInObjectManager.getManager().isMechismoEnabled())
+            if (!PlugInObjectManager.getManager().isMechismoEnabled() ||
+                !MechismoDataFetcher.isMechismoDataLoaded()) // Make sure it works after the results are loaded.
                 return null;
             JMenuItem item = new JMenuItem("Fetch Mechismo Results");
             CyTable table = networkView.getModel().getDefaultEdgeTable();

@@ -10,8 +10,9 @@
 <li class="toclevel-2 tocsection-4">&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<a href="#Explore_Reactome_Pathways"><span class="tocnumber">3.1.</span> <span class="toctext">Explore Reactome Pathways</span></a></li>
 <li class="toclevel-2 tocsection-5">&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<a href="#Display_Reactome_Pathways_in_the_FI_Network_View"><span class="tocnumber">3.2.</span> <span class="toctext">Display Reactome Pathways in the FI Network View</span></a></li>
 <li class="toclevel-2 tocsection-6">&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<a href="#Pathway_Enrichment_Analysis"><span class="tocnumber">3.3.</span> <span class="toctext">Pathway Enrichment Analysis</span></a></li>
-<li class="toclevel-2 tocsection-7">&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<a href="#Probabilistic_Graphical_Model_based_Pathway_Analysis"><span class="tocnumber">3.4.</span> <span class="toctext">Probabilistic Graphical Model based Pathway Analysis</span></a></li>
-<li class="toclevel-2 tocsection-8">&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<a href="#Boolean_Network_based_Pathway_Analysis"><span class="tocnumber">3.5.</span> <span class="toctext">Boolean Network based Pathway Analysis</span></a></li>
+<li class="toclevel-2 tocsection-7">&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<a href="#Probabilistic_Graphical_Model_based_Pathway_Analysis"><span class="tocnumber">3.4.</span> <span class="toctext">Probabilistic Graphical Model Based Pathway Analysis</span></a></li>
+<li class="toclevel-2 tocsection-8">&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<a href="#Boolean_Network_based_Pathway_Analysis"><span class="tocnumber">3.5.</span> <span class="toctext">Boolean Network Based Pathway Analysis</span></a></li>
+<li class="toclevel-2 tocsection-8">&nbsp; &nbsp; &nbsp; &nbsp;&nbsp;<a href="#Structural_Variants_Visualization"><span class="tocnumber">3.6.</span> <span class="toctext">Visualization of Structural Variants in the Context of Reactome Pathways</span></a></li>
 </ul>
 </li>
 <li class="toclevel-1 tocsection-9"><a href="#Use_the_Reactome_Functional_Interaction_.28FI.29_Network"><span class="tocnumber">4.</span> <span class="toctext">Use the Reactome Functional Interaction (FI) Network</span></a>
@@ -292,7 +293,7 @@ to view its detailed annotation in Reactome. Or you can choose "View in Reactome
 </li>
 </ol></li>
 </ol>
-<h4><span id="Boolean_Network_based_Pathway_Analysis">Boolean Network based Pathway Analysis</span></h4>
+<h4><span id="Boolean_Network_based_Pathway_Analysis">Boolean Network Based Pathway Analysis</span></h4>
 <p>We have developed an approach (Manuscript in preparation) to convert biochemical reactions-based Reactome pathways into Boolean networks and then perform pathway simulation based on the constrained fuzzy logic method according to <a href="http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1001099" rel="nofollow">Training Signaling Pathway Maps to Biochemical Data with Constrained Fuzzy Logic: Quantitative Analysis of Liver Cell Responses to Inflammatory Stimuli</a> and <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3292705/" rel="nofollow">Querying quantitative logic models (Q2LM) to study intracellular signaling networks and cell-cytokine interactions</a>. Based on this approach, the user can perform pathway simulation inside Cytoscape using rich Reactome pathways based on fuzzy logic built upon Boolean networks.</p>
 <ol>
 <li><b>Set up and run logic model simulation</b>: Choose popup menu "Run Logic Model Analysis" in the Pathway Diagram View to get the New Simulation dialog. Enter a name for the simulation and the default value, which usually should be 1.0 to enable that the simulation can proceed, and then choose either PROD or MIN for the AND gate mode (the default choice PROD usually should be fine). <br /> <b>Note</b>: You may also choose an Transfer Function and adjust parameters for Hill function. However, for simplicity, it is suggested to use "Identity Function" first. For how to apply drugs for logic model simulation, see below. <br />
@@ -379,6 +380,49 @@ to view its detailed annotation in Reactome. Or you can choose "View in Reactome
 <br /> <b>Note:</b> The RelativeDifference in the comparison result table is calculated based on relative change for each fuzzy logic variable, calculated as (valueInSim2 - valueInSim1) / (valueInSim2 + valueInSim1). The time course may be interpolated based on the attractor until this relative difference converges.</li>
 <li>To remove all displayed constrained fuzzy logic simulation results, use popup menu, "Remove Analysis Results" under "Run Logic Model Analysis". The pathway diagram should be reset to the original colors, and all tables related to logic model simulations will be deleted.</li>
 </ol>
+
+<h4><span id="Structural_Variants_Visualization">Visualization of Structural Variants in the Context of Reactome Pathways</span></h4>
+By collaborating with Drs. Francesco Raimondi and Rob Russell at the University of Heidelberg to utilize protein-protein interaction 3D structures provided by <a href="https://pubmed.ncbi.nlm.nih.gov/25392414/">Mechismo</a>, a platform developed by <a href="Rob Russell">Dr. Russell's group</a> to study the 
+contributions of individual amino acid residues to protein structure and function, we have systematically analyzed mutations in the TCGA dataset and collected a set of reactions and functional interactions that involve proteins 
+significantly enriched with mutations in their interaction interfaces (manuscript in preparation). We have added features to ReactomeFIViz to visualize these 3D structures and mutated residues in the contexts of Reactome pathways, 
+reactions, and interactions.
+<br><b>Note</b>: For a quick view of these features, watch this short video (~ 3 minutes): <a href="images/userguide/fiviz/ReactomeFIViz_Mechismo_Demo.mov">ReactomeFIViz_Mechismo_Demo.mov</a>
+<ol>
+    <li>
+        <b>Visualize analysis results in the context of a pathway and its reactions</b>: In the opened pathway diagram view (See <a href="#Explore_Reactome_Pathways">Explore Reactome Pathways</a> for how to open a pathway diagram), 
+        use the popup menu "Load Mechismo Results" to load the analysis results into the opened pathway diagram. After the results are loaded, reactions are colored based on FDR values as listed in the bottom table 
+        labeled as "Mechismo Reaction". 
+        <div class="text-center">
+            <img src="images/userguide/fiviz/MechismoReactionView.png" alt="Mechismo Reaction View" width="1000" />
+            <div>Mechismo Reaction View</div>
+        </div>
+        <b>Note</b>: You may choose results from a different cancer type or pancancer by clicking the list at the top of the bottom tab labeled as "Choose a cancer type to highlight reactions based on FDRs in the table". Some of reactions 
+        are not highlighted by any color since there are no structural variants found for proteins annotated for these reactions. To remove the loaded results from the pathway diagram, use another popup menu "Remove Mechismo Results".
+    </li> 
+    <li>
+        <b>Visualize analysis results in the context of a pathway FI network</b>: After the Mechismo results are loaded into the pathway diagram, you can convert the diagram into a FI network by using popup menu "Convert to FI Network" as 
+        usual. The edges displayed in the FI network view are highlighted based on FDR values listed in the bottom table labeled as "Mechismo Interaction". 
+        <div class="text-center">
+            <img src="images/userguide/fiviz/MechismoInteractionView.png" alt="Mechismo Interaction View" width="1000" />
+            <div>Mechismo Interaction View</div>
+        </div>
+        <b>Note</b>: To make the FI network view simplier, check "Show FIs Only for Selected" at the left-bottom corner for the pathway diagram view. You may choose a reaction or complex and then view extracted FIs for 
+        the selected object in the pathway diagram view. Some of reactions and complexes may not contain any FI (e.g. a complex composed of a protein and a chemical or a reaction between a protein 
+        and a chemical).
+    </li>
+    <li>
+        <b>Visualize structural variants in the protein-protein 3D structures</b>: In the FI network view, choose the popup menu called "Fetch Mechismo Results" to bring the view for protein-protein interaction 3D models. Structural 
+        variants collected from the TCGA data set are mapped to the original protein-protein interaction 3D structures based on the <a href="https://pubmed.ncbi.nlm.nih.gov/25392414/">Mechismo</a> platform. 
+        <div class="text-center">
+            <img src="images/userguide/fiviz/MechismoStructureView.png" alt="Mechismo Structure View" width="900" />
+            <div>Mechismo Structure View</div>
+        </div>
+        <b>Note</b>: In the structure view, amino acid residues whose coordinates are mapped to structural variants are displayed in balls. The residues that are mapped to the selected rows in the bottom table are highlighted in 
+        yellow. ReactomeFIViz uses <a href="http://jmol.sourceforge.net">Jmol</a> for protein 3D structure visualization. For more information about how to use Jmol, see its 
+         documentation: <a href="http://jmol.sourceforge.net/docs/">http://jmol.sourceforge.net/docs/</a>.
+    </li>
+</ol>
+
 <h3><span id="Use_the_Reactome_Functional_Interaction_.28FI.29_Network">Use the Reactome Functional Interaction (FI) Network</span></h3>
 <p>After the ReactomeFIViz app installed, you should see a menu item called "Reactome FI" under the Apps menu. Clicking this menu, you will see 6 sub-menus: <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#Gene_Set.2FMutation_Analysis">Gene Set/Mutation Analysis</a>, <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#PGM_Impact_Analysis">PGM Impact Analysis</a>, <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#Microarray_Data_Analysis">Microarray Data Analysis</a>, <a href="http://wiki.reactome.org/index.php/ReactomeFIViz#Use_Reactome_Pathways">Reactome Pathways</a> and User Guide. Gene set/mutation analysis is for doing FI network-based data analysis for a set of genes or a mutation data file, PGM Impact analysis for performing functional impact analysis based on a probabilistic graphical model for the Reactome FI network using multiple omics data types, HotNet mutation analysis for the HotNet algorithm to search for network modules (see <a href="http://compbio.cs.brown.edu/projects/hotnet/" rel="nofollow">http://compbio.cs.brown.edu/projects/hotnet/</a>), microarray data analysis for doing MCL (Markov Graph Clustering, <a href="http://micans.org/mcl/" rel="nofollow">http://micans.org/mcl/</a>) based FI network clustering analysis by converting a non-weighted FI network to weighted network using correlations among genes in the network, Reactome pathways for loading pathways from the Reactome database, visualizing Reactome pathways directly in Cytoscape in a their native way, and doing pathway enrichment analysis, and user guide brings you to this user guide.</p>
 <div class="text-center">
@@ -594,7 +638,7 @@ to view its detailed annotation in Reactome. Or you can choose "View in Reactome
 <h4><span id="Visualize_DrugCentral_Drugs">Visualize DrugCentral Drugs</span></h4>
 <p>Visualize drugs collected in DrugCentral is simlar with cancer drugs collected in Cancer Targetome. You can use popup menu "View DrugCentral Drugs" in the pathway tree to list all drugs collected in the DrugCentral database, "Fetch DrugCentral Drugs" popup menu in the pathway diagram view to overlay drugs onto pathways, or "ReactomeFI/Overlay Drugs/Fetch DrugCentral Drugs" to overlay drugs onto the FI network in the network view.</p>
 <h4><span id="Simulate_Impact_of_Cancer_Drugs_on_Pathway_Activities">Simulate Impact of Drugs on Pathway Activities</span></h4>
-<p>Overlaying cancer drugs onto the contexts of Reactome pathways and its FI network helps users to understand the potential impact of applying drugs on the pathway activities and network behavior. However, the actual perturbation of drugs on pathways may be much more complicated. Performing pathway simulation may help users to understand the actual impact. ReactomeFIViz implements features to assist users to perform Boolean network-based drug simulation. Before you do drug simulation, please read section <a href="#Boolean_Network_based_Pathway_Analysis">Boolean Network based Pathway Analysis</a> first. In this section, we will use pathway <a href="https://reactome.org/PathwayBrowser/#/R-HSA-5693567" rel="nofollow">HDR through Homologous Recombination (HR) or Single Strand Annealing (SSA)</a> and drug Imatinib as an example (Note: To get the following screenshot, open diagram for this pathway, and then fetch cancer drugs and filter drugs to Imatinib using the name filter).</p>
+<p>Overlaying cancer drugs onto the contexts of Reactome pathways and its FI network helps users to understand the potential impact of applying drugs on the pathway activities and network behavior. However, the actual perturbation of drugs on pathways may be much more complicated. Performing pathway simulation may help users to understand the actual impact. ReactomeFIViz implements features to assist users to perform Boolean network-based drug simulation. Before you do drug simulation, please read section <a href="#Boolean_Network_based_Pathway_Analysis">Boolean Network Based Pathway Analysis</a> first. In this section, we will use pathway <a href="https://reactome.org/PathwayBrowser/#/R-HSA-5693567" rel="nofollow">HDR through Homologous Recombination (HR) or Single Strand Annealing (SSA)</a> and drug Imatinib as an example (Note: To get the following screenshot, open diagram for this pathway, and then fetch cancer drugs and filter drugs to Imatinib using the name filter).</p>
 <div class="text-center">
 <div>
 <div><img src="images/userguide/fiviz/ImatinibInHDRThroughHROrSSA.png" alt="" width="600" height="276" />
@@ -642,7 +686,7 @@ to view its detailed annotation in Reactome. Or you can choose "View in Reactome
 </div>
 </div>
 </li>
-<li><b>Investigate the drug impact on pathway activities</b>: To see the impact of a drug on the pathway activities, perform another Boolean network simulation without applying cancer drugs (here as Default) (For details, see <a href="#Boolean_Network_based_Pathway_Analysis">Boolean Network based Pathway Analysis</a>). The screenshot for the logic model simulation results with the default initial configuration for pathway "HDR through Homologous Recombination (HR) or Single Strand Annealing (SSA)" is displayed below: <br />
+<li><b>Investigate the drug impact on pathway activities</b>: To see the impact of a drug on the pathway activities, perform another Boolean network simulation without applying cancer drugs (here as Default) (For details, see <a href="#Boolean_Network_based_Pathway_Analysis">Boolean Network Based Pathway Analysis</a>). The screenshot for the logic model simulation results with the default initial configuration for pathway "HDR through Homologous Recombination (HR) or Single Strand Annealing (SSA)" is displayed below: <br />
 <div class="text-center">
 <div>
 <div><img src="images/userguide/fiviz/DefaultHDRThroughHROrSSABNResults.png" alt="" width="850" height="567" />
