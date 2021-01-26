@@ -49,7 +49,7 @@ public class ReacfoamServer {
                         stop();
                     }
                     catch(IOException e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                     }
                 }
             }
@@ -70,7 +70,13 @@ public class ReacfoamServer {
                                                                      serverSocket.getLocalPort() + "");
         logger.info("ReacfoamServer started at " + serverSocket.getLocalPort() + "...");
         while (true) {
-            handleResponse(serverSocket.accept());
+            Socket socket = serverSocket.accept();
+            Thread t = new Thread() {
+                public void run() {
+                    handleResponse(socket);
+                }
+            };
+            t.start();
         }
     }
     
@@ -81,64 +87,88 @@ public class ReacfoamServer {
         return null;
     }
     
-    private void handleResponse(Socket socket) throws IOException {
-        InputStream is = socket.getInputStream();
-        BufferedReader br = new BufferedReader(new InputStreamReader(is,
-                                                                     StandardCharsets.UTF_8));
-        String line = null;
-        String url = null;
-        while ((line = br.readLine()) != null) {
-            url = getURL(line);
-            if (url != null)
-                break; 
-            if (line.trim().length() == 0)
-                break; // Have to add this line. Otherwise this while loop will be stuck!
-        }
-//        System.out.println("URL: " + url);
-        OutputStream out = socket.getOutputStream();
-        if (url == null) {
-            out.write("Not supported".getBytes());
+    private void handleResponse(Socket socket) {
+        try {
+            InputStream is = socket.getInputStream();
+            BufferedReader br = new BufferedReader(new InputStreamReader(is,
+                                                                         StandardCharsets.UTF_8));
+            String line = null;
+            String url = null;
+            while ((line = br.readLine()) != null) {
+                url = getURL(line);
+                if (url != null)
+                    break; 
+                if (line.trim().length() == 0)
+                    break; // Have to add this line. Otherwise this while loop will be stuck!
+            }
+            //        System.out.println("URL: " + url);
+            OutputStream out = socket.getOutputStream();
+            if (url == null) {
+                out.write("Not supported".getBytes());
+                out.close();
+                br.close();
+                is.close();
+                socket.close();
+                return;
+            }
+            // HTTP header is required
+            String header = "HTTP/1.1 200 OK\r\nContent-Type: " + getContentType(url) + "\r\n\r\n";
+            //        String header = "HTTP/1.1 200 OK\r\n\r\n";
+            out.write(header.getBytes(StandardCharsets.UTF_8));
+            out.flush();
+            // As the response
+            if (url.startsWith("/reacfoam")) {
+                String appUrlName = PlugInObjectManager.getManager().getReactomeRESTfulAppURL();
+                URL appUrl = new URL(appUrlName + url);
+//                System.out.println(appUrl);
+                InputStream appIs = appUrl.openStream();
+                int length = 0;
+                byte[] buffer = new byte[1024];
+                while ((length = appIs.read(buffer, 0, buffer.length)) > 0) {
+                    // Just in case. However, the following exception still thrown
+                    // if the connection with browser is done: java.net.SocketException: Broken pipe (Write failed)
+                    // Not sure how to solve this issue!
+                    if (!socket.isClosed()) 
+                        out.write(buffer, 0, length);
+                }
+                out.flush();
+                appIs.close();
+            }
+            else if (url.startsWith("/reactomefiviz")) { // Calling the local Cytoscape CyREST API.
+                // There are two cases are supported
+                if (url.contains("/event/")) {
+                    int index = url.lastIndexOf("/");
+                    selectEvent(url.substring(index + 1));
+                }
+                else if (url.endsWith("reacfoam/enrichment")) {
+                    outputEnrichment(out);
+                }
+                else
+                    out.write("Not supported".getBytes());
+            }
+            else 
+                out.write("Not supported".getBytes());
             out.close();
             br.close();
             is.close();
             socket.close();
-            return;
         }
-        // HTTP header is required
-        String header = "HTTP/1.1 200 OK\r\nContent-Type: " + getContentType(url) + "\r\n\r\n";
-//        String header = "HTTP/1.1 200 OK\r\n\r\n";
-        out.write(header.getBytes(StandardCharsets.UTF_8));
-        out.flush();
-        // As the response
-        if (url.startsWith("/reacfoam")) {
-            String appUrlName = PlugInObjectManager.getManager().getReactomeRESTfulAppURL();
-            URL appUrl = new URL(appUrlName + url);
-            InputStream appIs = appUrl.openStream();
-            int length = 0;
-            byte[] buffer = new byte[1024];
-            while ((length = appIs.read(buffer, 0, buffer.length)) > 0)
-                out.write(buffer, 0, length);
-            out.flush();
-            appIs.close();
+        catch (Exception e) {
+            // In theory we should close all open sockets and streams in the try block.
+            // However, to make code easy, just throw an exception.
+            logger.error(e.getMessage(), e);
         }
-        else if (url.startsWith("/reactomefiviz")) { // Calling the local Cytoscape CyREST API.
-            // There are two cases are supported
-            if (url.contains("/event/")) {
-                int index = url.lastIndexOf("/");
-                selectEvent(url.substring(index + 1));
+        finally {
+            if (!socket.isClosed()) {
+                try {
+                    socket.close();
+                }
+                catch(IOException e) {
+                    // Last try
+                    logger.error(e.getMessage(), e);
+                }
             }
-            else if (url.endsWith("reacfoam/enrichment")) {
-                outputEnrichment(out);
-            }
-            else
-                out.write("Not supported".getBytes());
         }
-        else 
-            out.write("Not supported".getBytes());
-        out.close();
-        br.close();
-        is.close();
-        socket.close();
     }
     
     private void outputEnrichment(OutputStream os) throws IOException {

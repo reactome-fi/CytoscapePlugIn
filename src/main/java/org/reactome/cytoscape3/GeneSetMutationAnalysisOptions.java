@@ -9,7 +9,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(value = "Gene Set Analysis Parameters", description = "Parameters for gene set mutation analysis.")
 public class GeneSetMutationAnalysisOptions {
-    @ApiModelProperty(value = "FI Version", example = "2016", notes = "Call fiVersions API to get the list.")
+    @ApiModelProperty(value = "FI Version", example = "2019", notes = "Call fiVersions API to get the list.")
     private String fiVersion;
     @ApiModelProperty(value = "Format", example = "GeneSet", allowableValues = "GeneSet, GeneSample, MAF")
     private String format;
