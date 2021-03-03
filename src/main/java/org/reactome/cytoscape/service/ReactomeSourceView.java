@@ -29,6 +29,7 @@ import javax.swing.event.HyperlinkListener;
 import org.gk.model.ReactomeJavaConstants;
 import org.jdom.Element;
 import org.jdom.Namespace;
+import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +48,26 @@ public class ReactomeSourceView {
      * Default constructor.
      */
     public ReactomeSourceView() {
+    }
+    
+    public void viewInReactome(Long dbId,
+                               Component component) {
+        try {
+            String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
+            RESTFulFIService service = new RESTFulFIService();
+            String id = service.queryStableId(dbId);
+            if (id == null)
+                id = dbId + "";
+            String url = reactomeURL + id;
+            PlugInUtilities.openURL(url);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(component,
+                                          "Error in view reactome in reactome: " + e.getMessage(), 
+                                          "Error in View Reactome in Reactome", 
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error("Error in viewInReactome", e);
+        }
     }
     
     public void viewReactomeSource(Long dbId,

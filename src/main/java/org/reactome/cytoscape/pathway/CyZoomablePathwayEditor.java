@@ -841,9 +841,7 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
         showDetailed.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
-                String url = reactomeURL + dbId;
-                PlugInUtilities.openURL(url);
+                new ReactomeSourceView().viewInReactome(dbId, getPathwayEditor());
             }
         });
         popup.add(showDetailed);
@@ -1110,7 +1108,10 @@ public class CyZoomablePathwayEditor extends ZoomablePathwayEditor implements Ev
             if (genes.contains(",")) {
                 builder.append("<hr />");
                 String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
-                String url = reactomeURL + entityId;
+                String id = service.queryStableId(entityId);
+                if (id == null)
+                    id = entityId + "";
+                String url = reactomeURL + id;
                 builder.append("* Genes may be linked via complex subunits or entity set members. "
                         + "For details, click <a href=\"" + url + "\">View in Reactome</a>.");
             }

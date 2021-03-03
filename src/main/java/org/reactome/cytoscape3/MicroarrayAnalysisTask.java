@@ -362,7 +362,7 @@ public class MicroarrayAnalysisTask extends FIAnalysisTask {
             sizeTF.setColumns(6);
             constraints.gridx = 1;
             northPane.add(sizeTF, constraints);
-            JLabel corrLabel = new JLabel("Average correlation (default 2.5): ");
+            JLabel corrLabel = new JLabel("Average correlation (default 0.25): ");
             constraints.gridx = 2;
             northPane.add(corrLabel, constraints);
             corrTF = new JTextField();

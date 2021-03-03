@@ -468,9 +468,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             
             @Override
             public void actionPerformed(ActionEvent e) {
-                String reactomeURL = PlugInObjectManager.getManager().getProperties().getProperty("ReactomeURL");
-                String url = reactomeURL + event.dbId;
-                PlugInUtilities.openURL(url);
+                new ReactomeSourceView().viewInReactome(event.dbId, eventTree);
             }
         });
         popup.add(showDetailed);

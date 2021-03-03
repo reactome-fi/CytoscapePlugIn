@@ -37,8 +37,6 @@ import org.gk.render.RenderablePathway;
 import org.gk.util.StringUtils;
 import org.jdom.Element;
 import org.jdom.output.DOMOutputter;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.booleannetwork.BooleanNetwork;
@@ -755,6 +753,25 @@ public class RESTFulFIService implements FINetworkService {
         String url = restfulURL + "network/queryReactomeInstance/" + dbId;
         Element elm = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
         return elm;
+    }
+    
+    public String queryStableId(Long dbId) throws Exception {
+        String url = restfulURL + "network/queryReactomeInstance/" + dbId;
+        Element elm = PlugInUtilities.callHttpInXML(url, HTTP_GET, null);
+        // Do parsing
+        List<Element> attributes = elm.getChildren("attributes");
+        for (Element attElm : attributes) {
+            String name = attElm.getChildText("name");
+            if (name.equals("stableIdentifier")) {
+                Element valueElm = attElm.getChild("values");
+                String stableId = valueElm.getChildText("displayName");
+                int index = stableId.indexOf(".");
+                if (index > 0)
+                    stableId = stableId.substring(0, index);
+                return stableId;
+            }
+        }
+        return null;
     }
 
     public Element doMCLClustering(Set<String> fisWithCorrs, Double inflation) throws Exception {
