@@ -15,7 +15,7 @@
 	<!-- properites to be used for installing -->
 	<property name="ReactomeJar" value="${destDir}/reactome.jar" />
 	<property name="ReactomeId" value = "reactome-minimal" />
-	<property name="ReactomeVersion" value = "1.5" />
+	<property name="ReactomeVersion" value = "1.6" />
 		
 	<target name="jar">
         <jar destfile="${ReactomeJar}">

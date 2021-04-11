@@ -279,7 +279,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         DiscreteMapping linkerGeneTransparency = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isLinker", 
                                                                                                                    Boolean.class,
                                                                                                                    BasicVisualLexicon.NODE_TRANSPARENCY);
-        linkerGeneTransparency.putMapValue(true, 50.0f);
+        linkerGeneTransparency.putMapValue(true, 50);
         fiVisualStyle.addVisualMappingFunction(linkerGeneTransparency);
         
         DiscreteMapping linkerGeneFontColor = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isLinker", 
