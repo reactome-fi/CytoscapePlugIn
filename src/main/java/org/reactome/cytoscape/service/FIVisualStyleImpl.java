@@ -340,7 +340,7 @@ public class FIVisualStyleImpl implements FIVisualStyle {
         DiscreteMapping hitGeneBorderFunction = (DiscreteMapping) visMapFuncFactoryD.createVisualMappingFunction("isHitGene",
                                                                                                                       Boolean.class,
                                                                                                                       BasicVisualLexicon.NODE_BORDER_WIDTH);
-        hitGeneBorderFunction.putMapValue(true, 5);
+        hitGeneBorderFunction.putMapValue(true, 5.0d);
         fiVisualStyle.addVisualMappingFunction(hitGeneBorderFunction);
     }
     
