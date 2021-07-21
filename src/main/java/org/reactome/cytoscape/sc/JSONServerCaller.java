@@ -23,8 +23,6 @@ import javax.swing.JOptionPane;
 import org.cytoscape.application.events.CyShutdownListener;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleEvent;
-import org.osgi.framework.BundleListener;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -81,6 +79,10 @@ public class JSONServerCaller {
     
     public boolean isStarted() {
         return this.isStarted;
+    }
+    
+    public void setIsStarted(boolean isStarted) {
+        this.isStarted = isStarted;
     }
     
     @Test
