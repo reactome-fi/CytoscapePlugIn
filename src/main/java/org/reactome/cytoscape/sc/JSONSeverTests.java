@@ -27,6 +27,63 @@ public class JSONSeverTests {
     }
     
     @Test
+    public void testPathwayAnalysis() throws Exception {
+        caller.setIsStarted(true); // Avoid to restar the server
+        String fileName = "/Users/wug/Documents/wgm/work/FIPlugIns/test_data/ScRNASeq/SavedResults/mouse/17_5_gfp.h5ad";
+        String text = caller.openAnalyzedData(fileName); // Use this method so that we get pre-processed data
+        System.out.println("Read back the saved results:\n" + text);
+        String reactomeGMT = "/Users/wug/git/reactome-fi/fi_sc_analysis/python/data/gmt/MouseReactomePathways_Rel_75_122220_small.gmt";
+        Object result = caller.doPathwayAnalysis(reactomeGMT,
+                                                 ScPathwayMethod.aucell);
+        System.out.println("Results: " + result.toString());
+        result = caller.doPathwayAnalysis(reactomeGMT,
+                                          ScPathwayMethod.ssgsea);
+        System.out.println("Results: " + result.toString());
+//        Object result = "X_aucell";
+//        Map<String, Map<String, Double>> anovaResults = caller.doPathwayAnova(result.toString());
+//        System.out.println("Anova Results: " + anovaResults.size());
+        // The output is a huge string. Avoid to print it out.
+//        System.out.println("Results for aucell: \n" + result);
+//        fileName = "/Users/wug/temp/17_5_gfp_with_pathways.h5ad";
+//        caller.writeData(fileName);
+    }
+    
+    @Test
+    public void testTFsAnalysis() throws Exception {
+        caller.setIsStarted(true);
+        String fileName = "/Users/wug/Documents/wgm/work/FIPlugIns/test_data/ScRNASeq/SavedResults/mouse/17_5_gfp.h5ad";
+        String text = caller.openAnalyzedData(fileName); // Use this method so that we get pre-processed data
+        System.out.println("Read back the saved results:\n" + text);
+        String dorotheaFileName = "/Volumes/ssd/datasets/dorothea/dorothea_mm.tsv";
+        Object result = caller.doTFsAnalysis(dorotheaFileName,
+                                             ScPathwayMethod.aucell);
+        System.out.println("Results: " + result.toString());
+        result = caller.doTFsAnalysis(dorotheaFileName,
+                                      ScPathwayMethod.ssgsea);
+        System.out.println("Results: " + result.toString());
+        fileName = "/Users/wug/temp/17_5_gfp_with_tfs.h5ad";
+        caller.writeData(fileName);
+    }
+    
+    @Test
+    public void testPathwayAnova() throws Exception {
+        caller.setIsStarted(true);
+        String fileName = "/Users/wug/temp/17_5_gfp_with_pathways.h5ad";
+        String result = caller.openAnalyzedData(fileName);
+        System.out.println("Result:\n" + result);
+        String pathwayKey = "X_aucell";
+        Map<String, Map<String, Double>> anovaResults = caller.doPathwayAnova(pathwayKey);
+        System.out.println("Anova results: " + anovaResults.size());
+        String pathway = anovaResults.keySet().stream().findAny().get();
+        System.out.println(pathway + ":\n" + anovaResults.get(pathway));
+        Map<String, Double> pathwayActivities = caller.getPathwayActivities(pathway,
+                                                                            pathwayKey);
+        System.out.println("Total cells: " + pathwayActivities.size());
+        String cell = pathwayActivities.keySet().stream().findAny().get();
+        System.out.println(cell + ": " + pathwayActivities.get(cell));
+    }
+    
+    @Test
     public void testCalculateGeneRelationships() throws Exception {
 //        String fileName1 = "/Users/wug/temp/17_5_gfp_velocity_dynamic.h5ad";
 //        String rtn = openAnalyzedData(fileName1);
@@ -141,6 +198,7 @@ public class JSONSeverTests {
     @Test
     public void testLoadData() throws Exception {
         caller.setIsStarted(true);
+        @SuppressWarnings("unchecked")
         List<String> list = Collections.EMPTY_LIST;
         System.out.println("Emtpty list: " + String.join(",", list));
 //        String query = "{\"jsonrpc\": \"2.0\", \"method\": \"echo\", \"id\": 2, \"params\":[\"test\"]}";
@@ -148,7 +206,8 @@ public class JSONSeverTests {
         request.id = 2;
         request.method = "echo";
         request.addParams("This is a test!");
-        caller.callJSONServer(request);
+        ResponseObject rtn = caller.callJSONServer(request);
+        System.out.println("echo return: " + rtn.getResult());
         
 //        String dir_17_5 = "/Users/wug/Documents/missy_single_cell/seq_data_v2/17_5_gfp/filtered_feature_bc_matrix";
 //        String text = openData(dir_17_5, "read_10x_mtx");

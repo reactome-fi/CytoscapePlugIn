@@ -311,6 +311,42 @@ public class JSONServerCaller {
         return (Map<String, List<List<Double>>>) result;
     }
     
+    public String doPathwayAnalysis(String gmtFileName,
+                                    ScPathwayMethod method) throws JsonEOFException, IOException {
+        Object dataKey = callJSONServer("analyze_pathways",
+                                        gmtFileName,
+                                        method.toString(),
+                                        Boolean.FALSE + "");
+        return dataKey + "";
+    }
+    
+    public String doTFsAnalysis(String dorotheaFileName,
+                                ScPathwayMethod method) throws JsonEOFException, IOException {
+        Object dataKey = callJSONServer("analyze_tfs",
+                                        dorotheaFileName,
+                                        method.toString(),
+                                        Boolean.FALSE + "");
+        return dataKey + "";
+    }
+    
+    public Map<String, Map<String, Double>> doPathwayAnova(String dataKey) throws JsonEOFException, IOException {
+        Object result = callJSONServer("anova_pathway",
+                                        dataKey);
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        return (Map<String, Map<String, Double>>) result;
+    }
+    
+    public Map<String, Double> getPathwayActivities(String pathway, String dataKey) throws JsonEOFException, IOException {
+        Object result = callJSONServer("pathway_activities",
+                                       pathway,
+                                       dataKey);
+        if (result instanceof String)
+            throw new IllegalStateException(result.toString());
+        return (Map<String, Double>) result;
+    }
+                                       
+    
     public DiffExpResult doDiffGeneExpAnalysis(String group,
                                                String reference) throws JsonEOFException, IOException {
         Object result = callJSONServer("rank_genes_groups", group, reference);
