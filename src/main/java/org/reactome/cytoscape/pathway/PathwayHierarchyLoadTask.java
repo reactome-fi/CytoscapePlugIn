@@ -52,7 +52,11 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
         displayReactomePathways(taskMonitor);
     }
 
-    private void displayReactomePathways(TaskMonitor monitor) {
+    /**
+     * This is a public method so that it can be used not in the Cytoscape task management system.
+     * @param monitor
+     */
+    public void displayReactomePathways(TaskMonitor monitor) {
         PathwayControlPanel controlPane = PathwayControlPanel.getInstance();
         CySwingApplication application = PlugInObjectManager.getManager().getCySwingApplication();
         CytoPanel panel = application.getCytoPanel(CytoPanelName.WEST);
@@ -71,16 +75,19 @@ public class PathwayHierarchyLoadTask extends AbstractTask {
             controlPane.setPreferredSize(comp.getPreferredSize()); // Control its size to avoid weird behavior
         }   
         try {
-            monitor.setStatusMessage("Loading pathways...");
-            monitor.setTitle("Pathway Loading");
-            monitor.setProgress(0.2d);
+            if (monitor != null) {
+                monitor.setStatusMessage("Loading pathways...");
+                monitor.setTitle("Pathway Loading");
+                monitor.setProgress(0.2d);
+            }
             String text = ReactomeRESTfulService.getService().pathwayHierarchy(species);
             StringReader reader = new StringReader(text);
             SAXBuilder builder = new SAXBuilder();
             Document document = builder.build(reader);
             Element root = document.getRootElement();
             controlPane.setAllPathwaysInElement(root);
-            monitor.setProgress(1.0d);
+            if (monitor != null)
+                monitor.setProgress(1.0d);
         }
         catch(Exception e) {
             logger.error("Error in loading tree: " + e.getMessage(),

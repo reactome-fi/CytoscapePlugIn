@@ -1,4 +1,4 @@
-package org.reactome.cytoscape.sc;
+package org.reactome.cytoscape.sc.server;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,7 +18,11 @@ import javax.swing.JOptionPane;
 
 import org.cytoscape.application.events.CyShutdownListener;
 import org.osgi.framework.BundleContext;
+import org.reactome.cytoscape.sc.ScNetworkManager;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
+import org.reactome.cytoscape.sc.utils.PythonPathHelper;
+import org.reactome.cytoscape.sc.utils.ScPathwayMethod;
+import org.reactome.cytoscape.sc.utils.ScvVelocityMode;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.slf4j.Logger;
@@ -44,7 +48,10 @@ public class JSONServerCaller {
     // As long as we have an id. 
     private RequestObject request;
     // flag to track is the server is started
-    private boolean isStarted;
+    // During the development, make sure isStarted is true so that ReactomeFIViz can talk to
+    // the Python JSON server directly
+    private boolean isStarted = true;
+//    private boolean isStarted;
     
     public JSONServerCaller() {
         request = new RequestObject();
@@ -151,7 +158,8 @@ public class JSONServerCaller {
      * @throws IOException
      */
     public Map<String, List<?>> project(String dir,
-                                        String fileFormat) throws JsonEOFException, IOException {
+                                        String fileFormat,
+                                        boolean isForRNAVelocity) throws JsonEOFException, IOException {
         Object result = callJSONServer("project", 
                                        dir,
                                        fileFormat,
@@ -409,7 +417,7 @@ public class JSONServerCaller {
         if (pythonPath == null)
             return false; // Cannot find a python path. This may be aborted by the user.
         String[] parameters = {pythonPath, 
-                               scPythonPath + File.separator + ScNetworkManager.SCPY_2_REACTOME_NAME,
+                               scPythonPath + File.separator + PythonPathHelper.SCPY_2_REACTOME_NAME,
                                this.port + "",
                                PythonPathHelper.getHelper().getLogFileName()};
         ProcessBuilder builder = new ProcessBuilder(parameters);

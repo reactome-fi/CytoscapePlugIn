@@ -1,4 +1,4 @@
-package org.reactome.cytoscape.sc;
+package org.reactome.cytoscape.sc.server;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;

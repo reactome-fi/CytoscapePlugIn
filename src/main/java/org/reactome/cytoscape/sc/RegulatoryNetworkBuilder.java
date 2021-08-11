@@ -46,6 +46,7 @@ import org.cytoscape.view.model.CyNetworkViewFactory;
 import org.cytoscape.view.model.CyNetworkViewManager;
 import org.gk.util.DialogControlPane;
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.sc.server.JSONServerCaller;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.RESTFulFIService;

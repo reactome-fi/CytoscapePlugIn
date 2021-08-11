@@ -1,7 +1,8 @@
-package org.reactome.cytoscape.sc;
+package org.reactome.cytoscape.sc.utils;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +12,8 @@ import java.net.URL;
 import java.nio.file.Files;
 
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.service.PathwaySpecies;
+import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -21,7 +24,10 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  */
 public class Scpy4ReactomeDownloader {
     private final String VERSION_FILE = "scpy4reactome.ver";
-    private final String APP_FILE = ScNetworkManager.SCPY_2_REACTOME_NAME;
+    private final String APP_FILE = PythonPathHelper.SCPY_2_REACTOME_NAME;
+    private final String DOROTHEA_FILE = "dorothea.tsv";
+    private final String DOROTHEA_CONFIDENCE = "AB"; // Default to use A and B
+    private final String GMT_FILE = "reactome.gmt";
     
     public Scpy4ReactomeDownloader() {
     }
@@ -33,6 +39,46 @@ public class Scpy4ReactomeDownloader {
         progPane.setText("Downloading Python service app...");
         downloadApp();
     }
+    
+    /**
+     * Download the Dorothea TF/target interaction file.
+     * @param species
+     * @return
+     * @throws Exception
+     */
+    public String downloadDorotheaFIs(PathwaySpecies species) throws Exception {
+        RESTFulFIService service = new RESTFulFIService();
+        String text = service.downloadDorotheaFIs(species, DOROTHEA_CONFIDENCE);
+        File localFile = new File(PythonPathHelper.getHelper().getScPythonPath(),
+                                  species + "_" + DOROTHEA_FILE);
+        return downloadText(text, localFile);
+    }
+
+    protected String downloadText(String text, File localFile) throws FileNotFoundException {
+        PrintWriter pr = new PrintWriter(localFile);
+        pr.println(text);
+        pr.close();
+        return localFile.getAbsolutePath();
+    }
+    
+    /**
+     * Download the GMT file into a local file system for pathway activity analysis.
+     * @param species
+     * @return
+     * @throws Exception
+     */
+    public String downloadGMTFile(PathwaySpecies species) throws Exception {
+        String url = PlugInObjectManager.getManager().getProperties().getProperty("gseaWSURL");
+        if (url == null || url.length() == 0) {
+            throw new IllegalStateException("gseaWSURL is not configured!");
+        }
+        url = url + "downloadGMT/" + species.getCommonName();
+        String text = PlugInUtilities.callHttpInText(url, PlugInUtilities.HTTP_GET, null);
+        File localFile = new File(PythonPathHelper.getHelper().getScPythonPath(),
+                                  species + "_" + GMT_FILE);
+        return downloadText(text, localFile);
+    }
+    
     
     private void downloadApp() throws Exception {
         String fileUrl = getURL(APP_FILE, true);

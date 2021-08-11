@@ -1,4 +1,4 @@
-package org.reactome.cytoscape.sc;
+package org.reactome.cytoscape.sc.server;
 
 import java.util.ArrayList;
 import java.util.List;

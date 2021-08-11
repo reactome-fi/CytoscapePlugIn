@@ -16,7 +16,6 @@ import org.gk.util.ProgressPane;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cytoscape.service.AbstractPathwayEnrichmentAnalysisTask;
-import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.slf4j.Logger;
@@ -90,6 +89,7 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
             progressPane.setValue(75);
             progressPane.setText("Show enrichment results...");
             ModuleGeneSetAnnotation annotation = annotations.get(0); // There should be only one annotation here
+            getEventPane().setHighlightDataType("FDR");
             getEventPane().showPathwayEnrichments(annotation.getAnnotations());
             progressPane.setValue(100);
         }
@@ -134,6 +134,7 @@ public class PathwayEnrichmentAnalysisTask extends AbstractPathwayEnrichmentAnal
             
             @Override
             public void run() {
+                getEventPane().setHighlightDataType("FDR");
                 getEventPane().showPathwayEnrichments(annotation.getAnnotations());
             }
         });

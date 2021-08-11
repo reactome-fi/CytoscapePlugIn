@@ -99,12 +99,23 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     private JTree selectionTree;
     // To support mouse pathways
     private JComboBox<PathwaySpecies> speciesBox;
+    // The data type used for highlighting events
+    private String dataType = "FDR"; // Default should be FDR
+    private JLabel dataTypeLabel;
     
     /**
      * Default constructor
      */
     public EventTreePane() {
         init();
+    }
+    
+    public void setHighlightDataType(String dataType) {
+        if (this.dataType.equals(dataType))
+            return;
+        this.dataType = dataType;
+        if (dataTypeLabel != null) 
+            dataTypeLabel.setText(dataType + ": ");
     }
     
     private void init() {
@@ -212,8 +223,8 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         fdrColorBar = new JPanel();
         fdrColorBar.setBorder(BorderFactory.createEtchedBorder());
         fdrColorBar.setLayout(new GridLayout(1, 5));
-        JLabel label = new JLabel("FDR: ");
-        fdrColorBar.add(label);
+        dataTypeLabel = new JLabel(dataType + ": ");
+        fdrColorBar.add(dataTypeLabel);
         String[] labels = new String[] {
                 " >=0.1",
                 " >=0.01",
@@ -222,7 +233,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         };
         int i = 0;
         for (String text : labels) {
-            label = new JLabel(text);
+            JLabel label = new JLabel(text);
             label.setOpaque(true);
             label.setBackground(fdrColors.get(i ++));
             label.setHorizontalTextPosition(JLabel.CENTER);
@@ -604,6 +615,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     }
     
     private void openReacfoam() {
+        if (!dataType.equals("FDR")) {
+            JOptionPane.showMessageDialog(this,
+                                          "Note: The values used to highlight pathways in Reacform are " + dataType + ".");
+        }
         String reacfoamUrl = "http://localhost:" + 
                               PlugInObjectManager.getManager().getProperties().getProperty("reacfoam_port") + 
                               "/reacfoam/index.html?species=" + 
@@ -1302,7 +1317,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
                 if (!fdr.startsWith("<")) {
                     fdr = PlugInUtilities.formatProbability(new Double(fdr));
                 }
-                setText(event.name + " (FDR: " + fdr + ")");
+                setText(event.name + " (" + dataType + ": " + fdr + ")");
             }
             if (event.isPathway)
                 setIcon(pathwayIcon);

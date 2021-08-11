@@ -47,6 +47,8 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
                     funct.accept(e);
                 }
             };
+            // TODO: Need to investigate how to disable the cancel button. If not, use the
+            // in-house progress glass panel.
             TaskManager<?, ?> taskManager = PlugInObjectManager.getManager().getTaskManager();
             taskManager.execute(new TaskIterator(task));
         };
@@ -81,6 +83,14 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         if (ScNetworkManager.getManager().isForRNAVelocity()) {
             addRNAVelocityMenus(context, props, cellFeatures);
         }
+        
+        // Add pathway analysis features
+        props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU + ".Pathway Analysis[5.8]");
+        addPopupMenu(context, new PathwayAnalysis(), CyNetworkViewContextMenuFactory.class, props);
+        addPopupMenu(context, new ViewPathwayActivities(), CyNetworkViewContextMenuFactory.class, props);
+        addPopupMenu(context, new PathwayAnova(), CyNetworkViewContextMenuFactory.class, props);
+        
+        // Add TF analysis features
         
         props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, new CytotraceAnalysis(), CyNetworkViewContextMenuFactory.class, props);
@@ -256,6 +266,34 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
             menuItem.addActionListener(createActionListener(e -> ScNetworkManager.getManager().performCytoTrace(),
                                                             menuItem.getText()));
             return new CyMenuItem(menuItem, 6.0f);
+        }
+    }
+    
+    private class PathwayAnalysis implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem menuItem = new JMenuItem("Perform Pathway Analysis");
+            // Want to handle the thread itself
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().doPathwayAnalysis());
+            return new CyMenuItem(menuItem, 1.0f);
+        }
+    }
+    
+    private class ViewPathwayActivities implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem menuItem = new JMenuItem("View Pathway Activities");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().viewPathwayActivities());
+            return new CyMenuItem(menuItem, 3.0f);
+        }
+    }
+    
+    private class PathwayAnova implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem menuItem = new JMenuItem("Perform ANOVA");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().doPathwayAnova());
+            return new CyMenuItem(menuItem, 2.0f);
         }
     }
     

@@ -38,6 +38,8 @@ import javax.swing.event.HyperlinkEvent;
 import org.cytoscape.application.CyApplicationManager;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
+import org.reactome.cytoscape.sc.utils.PythonPathHelper;
+import org.reactome.cytoscape.sc.utils.ScvVelocityMode;
 import org.reactome.cytoscape.service.FIActionDialog;
 import org.reactome.cytoscape.service.FIVersionSelectionPanel;
 import org.reactome.cytoscape.service.PathwaySpecies;

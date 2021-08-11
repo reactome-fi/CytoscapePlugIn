@@ -18,7 +18,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
-import org.reactome.cytoscape.sc.JSONServerCaller;
+import org.reactome.cytoscape.sc.server.JSONServerCaller;
 import org.reactome.cytoscape.service.PathwayEnrichmentApproach;
 
 @SuppressWarnings("serial")

@@ -397,6 +397,13 @@ public class RESTFulFIService implements FINetworkService {
         return fis;
     }
     
+    public String downloadDorotheaFIs(PathwaySpecies species,
+                                      String confidence) throws IOException {
+        String url = restfulURL + "network/downloadDorotheaFIs/" + species.getCommonName() + "/" + confidence;
+        String text = callHttp(url, HTTP_GET, null);
+        return text;
+    }
+    
     public List<String> queryDorotheaFIs(PathwaySpecies species) throws IOException {
         String url = restfulURL + "network/fetchDorotheaFIs/" + species.getCommonName();
         String text = callHttp(url, HTTP_GET, null);

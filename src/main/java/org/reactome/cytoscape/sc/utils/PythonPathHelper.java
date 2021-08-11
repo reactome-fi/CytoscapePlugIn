@@ -1,4 +1,4 @@
-package org.reactome.cytoscape.sc;
+package org.reactome.cytoscape.sc.utils;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -39,6 +39,7 @@ import org.reactome.cytoscape.util.PlugInUtilities;
  */
 @SuppressWarnings("unchecked")
 public class PythonPathHelper {
+    public static final String SCPY_2_REACTOME_NAME = "scpy4reactome.pyz";
     private final String PYTHON_PROP_KEY = "python";
     // Cached path
     private String scPythonPath;

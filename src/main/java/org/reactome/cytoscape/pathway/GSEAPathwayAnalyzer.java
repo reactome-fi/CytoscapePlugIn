@@ -228,6 +228,7 @@ public class GSEAPathwayAnalyzer {
             if (eventPane != null) {
                 // Need to use a new thread to make sure all text in the tree can be displayed without truncation.
                 SwingUtilities.invokeLater(() -> {
+                    eventPane.setHighlightDataType("FDR");
                     eventPane.showPathwayEnrichments(annotations, false);
                     // Prepare for pathway highlighting
                     // For pathway highlighting

@@ -36,9 +36,13 @@ import org.reactome.cytoscape.pathway.GSEAPathwayAnalyzer.GeneScoreLoadingPane;
 import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.cytoscape.pathway.PathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.pathway.PathwayHierarchyLoadTask;
+import org.reactome.cytoscape.sc.PathwayActivityAnalyzer.PathwayActivities;
 import org.reactome.cytoscape.sc.diff.DiffExpResult;
 import org.reactome.cytoscape.sc.diff.DiffGeneNetworkBuilder;
 import org.reactome.cytoscape.sc.diff.DiffGeneNetworkStyle;
+import org.reactome.cytoscape.sc.server.JSONServerCaller;
+import org.reactome.cytoscape.sc.utils.PythonPathHelper;
+import org.reactome.cytoscape.sc.utils.ScPathwayMethod;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.RESTFulFIService;
@@ -60,7 +64,6 @@ import smile.math.MathEx;
  */
 @SuppressWarnings("rawtypes")
 public class ScNetworkManager {
-    public static final String SCPY_2_REACTOME_NAME = "scpy4reactome.pyz";
     private final String PROJECTED_CELL_TYPE = "newCell";
     private static final Logger logger = LoggerFactory.getLogger(ScNetworkManager.class);
     private static ScNetworkManager manager;
@@ -247,16 +250,25 @@ public class ScNetworkManager {
         Map<String, Object> idToValue = IntStream.range(0, cellIds.size())
                 .boxed()
                 .collect(Collectors.toMap(cellIds::get, values::get));
+        Object value = values.get(0);
+        _loadValues(view, feature, cellIds, idToValue, value);
+    }
+
+    protected void _loadValues(CyNetworkView view,
+                               String feature,
+                               List<String> cellIds,
+                               Map<String, Object> idToValue,
+                               Object value) throws JsonEOFException, IOException {
         ReactomeNetworkType type = tableHelper.getReactomeNetworkType(view.getModel());
         // If the view is for clusters, we need median values.
         if (type == SingleCellClusterNetwork) {
             // Basic requirement for calculating median
-            if (!(values.get(0) instanceof Comparable))
+            if (!(value instanceof Comparable))
                 return;
             calculateClusterMedians(cellIds, idToValue);
         }
         tableHelper.storeNodeAttributesByName(view, feature, idToValue);
-        getStyle(view).updateNodeColors(view, feature, values.get(0).getClass());
+        getStyle(view).updateNodeColors(view, feature, value.getClass());
     }
 
     private void calculateClusterMedians(List<String> cellIds, Map<String, Object> idToValue) throws JsonEOFException, IOException {
@@ -500,7 +512,8 @@ public class ScNetworkManager {
                     parentFrame.getGlassPane().setVisible(true);
                     //TODO: List<Double> two doubles and one string. Need to check the type!!!
                     Map<String, List<?>> cellIdToUmapCluster = serverCaller.project(dirName,
-                                                                                    actionDialog.getFormat());
+                                                                                    actionDialog.getFormat(),
+                                                                                    ScNetworkManager.getManager().isForRNAVelocity());
                     FINetworkGenerator networkGenerator = new FINetworkGenerator();
                     TableHelper tableHelper = new TableHelper();
                     Map<String, CyNode> cellIdToNode = new HashMap<>();
@@ -595,6 +608,70 @@ public class ScNetworkManager {
                                           JOptionPane.ERROR_MESSAGE);
             logger.error(e.getMessage(), e);
         }
+    }
+    
+    public void doPathwayAnalysis() {
+        PathwayActivityAnalyzer.getAnalyzer().performPathwayAnalysis(getSpecies(), serverCaller);
+    }
+    
+    public void doPathwayAnova() {
+        PathwayActivityAnalyzer.getAnalyzer().performANOVA(serverCaller, getSpecies());
+    }
+    
+    public void viewPathwayActivities() {
+        // Choose 
+        CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
+        if (view == null)
+            return ; // Do nothing
+        try {
+            PathwayActivities activities = PathwayActivityAnalyzer.getAnalyzer().viewPathwayActivities(serverCaller);
+            if (activities == null)
+                return; // cancelled
+            _viewPathwayActivities(view, activities);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          e.getMessage(),
+                                          "Error in Pathway Activities",
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error(e.getMessage(), e);
+        }
+    }
+    
+    public void viewPathwayActivities(ScPathwayMethod method,
+                                      String pathway) {
+        // Choose 
+        CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
+        if (view == null)
+            return ; // Do nothing
+        try {
+            PathwayActivities activities = PathwayActivityAnalyzer.getAnalyzer().viewPathwayActivities(pathway, 
+                                                                                                       method,
+                                                                                                       serverCaller);
+            if (activities == null)
+                return; // cancelled
+            _viewPathwayActivities(view, activities);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          e.getMessage(),
+                                          "Error in Pathway Activities",
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error(e.getMessage(), e);
+        }
+    }
+
+    protected void _viewPathwayActivities(CyNetworkView view, PathwayActivities activities)
+            throws JsonEOFException, IOException {
+        // A weird required
+        Map<String, Object> id2value = new HashMap<>();
+        activities.id2value.forEach((k, v) -> id2value.put(k, v));
+        List<String> cellIds = serverCaller.getCellIds();
+        _loadValues(view,
+                    activities.method + ":" + activities.pathwayName, 
+                    cellIds,
+                    id2value, 
+                    id2value.values().stream().findAny().get());
     }
     
     public void buildFINetwork(DiffExpResult result) {

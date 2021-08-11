@@ -1,4 +1,4 @@
-package org.reactome.cytoscape.sc;
+package org.reactome.cytoscape.sc.server;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,6 +12,8 @@ import java.util.Set;
 import javax.swing.JFrame;
 
 import org.junit.Test;
+import org.reactome.cytoscape.sc.utils.ScPathwayMethod;
+import org.reactome.cytoscape.sc.utils.ScvVelocityMode;
 import org.reactome.r3.util.FileUtility;
 
 import com.fasterxml.jackson.core.io.JsonEOFException;
@@ -125,7 +127,7 @@ public class JSONSeverTests {
         caller.setIsStarted(true);
         testLoadData();
         String dir = "/Users/wug/Documents/missy_single_cell/seq_data_v2/12_5_gfp/filtered_feature_bc_matrix";
-        Map<String, List<?>> cellToUmap = caller.project(dir, "read_10x_mtx");
+        Map<String, List<?>> cellToUmap = caller.project(dir, "read_10x_mtx", false);
         int count = 0;
         for (String cell : cellToUmap.keySet()) {
             if (count ++ == 10)

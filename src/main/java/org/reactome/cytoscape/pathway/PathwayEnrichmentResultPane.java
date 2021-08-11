@@ -113,6 +113,11 @@ public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
     @Override
     protected void doContentTablePopup(MouseEvent e) {
         JPopupMenu popupMenu = createExportAnnotationPopup();
+        createDiagramMenuItem(popupMenu);
+        popupMenu.show(contentTable, e.getX(), e.getY());
+    }
+
+    protected void createDiagramMenuItem(JPopupMenu popupMenu) {
         JMenuItem item = new JMenuItem("View in Diagram");
         item.addActionListener(new ActionListener() {
             @Override
@@ -122,7 +127,6 @@ public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
         });
         popupMenu.add(item);
         item.setEnabled(!eventTreePane.isDiagramDisplayed());
-        popupMenu.show(contentTable, e.getX(), e.getY());
     }
 
     private class PathwayEnrichmentTableModel extends AnnotationTableModel {

@@ -3,6 +3,7 @@ package org.reactome.cytoscape.sc;
 import javax.swing.JFrame;
 
 import org.gk.util.ProgressPane;
+import org.reactome.cytoscape.sc.server.JSONServerCaller;
 
 public class ScLoadTask extends ScAnalysisTask {
     private String file;

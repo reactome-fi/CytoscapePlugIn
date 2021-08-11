@@ -1,4 +1,4 @@
-package org.reactome.cytoscape.sc;
+package org.reactome.cytoscape.sc.utils;
 
 public enum ScvVelocityMode {
 

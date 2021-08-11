@@ -20,26 +20,18 @@ public class DrugPathwayImpactResultPane extends PathwayEnrichmentResultPane {
         controlToolBar.add(summaryLabel);
         controlToolBar.add(closeGlue);
         controlToolBar.add(closeBtn);
-        
-        eventTreePane.addDrugImpactResultPane(this);
     }
     
     @Override
-    public void close() {
-        super.close();
-        eventTreePane.removeDrugImpactResultPane(this);
-    }
-
-    @Override
     protected NetworkModuleTableModel createTableModel() {
-        return new DrugPathwayTableModel();
+        return new PathwayANOVATableModel();
     }
 
     public void setResults(String drug,
                            String results) {
         summaryLabel.setText("Pathway impact analysis results for " + drug);
         
-        DrugPathwayTableModel model = (DrugPathwayTableModel) contentTable.getModel();
+        PathwayANOVATableModel model = (PathwayANOVATableModel) contentTable.getModel();
         model.setResults(results);
         
         // Fake GeneSetAnnotation for highlight pathway diagrams
@@ -55,7 +47,7 @@ public class DrugPathwayImpactResultPane extends PathwayEnrichmentResultPane {
         contentTable.getRowSorter().setSortKeys(sortedKeys);
     }
     
-    private class DrugPathwayTableModel extends AnnotationTableModel {
+    private class PathwayANOVATableModel extends AnnotationTableModel {
         private String[] geneSetHeaders = new String[] {
                 "ReactomePathway",
                 "SumOfTotalOutputImpacts",
@@ -81,7 +73,7 @@ public class DrugPathwayImpactResultPane extends PathwayEnrichmentResultPane {
             fireTableDataChanged();
         }
         
-        public DrugPathwayTableModel() {
+        public PathwayANOVATableModel() {
             columnHeaders = geneSetHeaders;
         }
     }
