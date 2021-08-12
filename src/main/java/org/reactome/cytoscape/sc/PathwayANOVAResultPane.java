@@ -23,6 +23,7 @@ import javax.swing.table.TableRowSorter;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.cytoscape.pathway.EventTreePane;
 import org.reactome.cytoscape.pathway.PathwayEnrichmentResultPane;
+import org.reactome.cytoscape.sc.utils.ScPathwayDataType;
 import org.reactome.cytoscape.sc.utils.ScPathwayMethod;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -31,6 +32,7 @@ public class PathwayANOVAResultPane extends PathwayEnrichmentResultPane {
 
     private JLabel summaryLabel;
     private ScPathwayMethod method;
+    private ScPathwayDataType dataType = ScPathwayDataType.Pathway;
     
     public PathwayANOVAResultPane(EventTreePane eventTreePane, String title) {
         super(eventTreePane, title);
@@ -59,6 +61,10 @@ public class PathwayANOVAResultPane extends PathwayEnrichmentResultPane {
         if (eventTreePane != null)
             eventTreePane.setAnnotationPane(this);
     }
+    
+    public void setDataType(ScPathwayDataType dataType) {
+        this.dataType = dataType;
+    }
 
     @Override
     protected NetworkModuleTableModel createTableModel() {
@@ -69,24 +75,35 @@ public class PathwayANOVAResultPane extends PathwayEnrichmentResultPane {
     protected void doContentTablePopup(MouseEvent e) {
         JPopupMenu popupMenu = createExportAnnotationPopup();
         createDiagramMenuItem(popupMenu);
-        
+        createViewActivitiesMenu(popupMenu);
+        popupMenu.show(contentTable, e.getX(), e.getY());
+    }
+    
+    protected String getSelectedTopic() {
         int[] selectedRows = contentTable.getSelectedRows();
         if (selectedRows != null && selectedRows.length == 1) {
-            JMenuItem item = new JMenuItem("View Pathway Activities");
+            int modelIndex = contentTable.convertRowIndexToModel(selectedRows[0]);
+            TableModel tableModel = contentTable.getModel();
+            String pathway = (String) tableModel.getValueAt(modelIndex, 0);
+            return pathway;
+        }
+        return null;
+    }
+
+    protected void createViewActivitiesMenu(JPopupMenu popupMenu) {
+        String pathway = getSelectedTopic();
+        if (pathway != null) {
+            JMenuItem item = new JMenuItem("View " + dataType + " Activities");
             item.addActionListener(e1 -> {
-                int modelIndex = contentTable.convertRowIndexToModel(selectedRows[0]);
-                TableModel tableModel = contentTable.getModel();
-                String pathway = (String) tableModel.getValueAt(modelIndex, 0);
-                ScNetworkManager.getManager().viewPathwayActivities(method, pathway);
+                ScNetworkManager.getManager().viewPathwayActivities(method, pathway, dataType);
             });
             popupMenu.add(item);
         }
-        popupMenu.show(contentTable, e.getX(), e.getY());
     }
 
     public void setResults(ScPathwayMethod method,
                            Map<String, Map<String, Double>> results) {
-        summaryLabel.setText("Pathway ANOVA results based on " + method + " (*1/F: Inverse of F after scaled by the minimum of F)");
+        summaryLabel.setText(dataType + " ANOVA results based on " + method + " (*1/F: Inverse of F after scaled by the minimum of F)");
         
         PathwayANOVATableModel model = (PathwayANOVATableModel) contentTable.getModel();
         model.setResults(results);

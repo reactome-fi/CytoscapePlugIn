@@ -42,6 +42,7 @@ import org.reactome.cytoscape.sc.diff.DiffGeneNetworkBuilder;
 import org.reactome.cytoscape.sc.diff.DiffGeneNetworkStyle;
 import org.reactome.cytoscape.sc.server.JSONServerCaller;
 import org.reactome.cytoscape.sc.utils.PythonPathHelper;
+import org.reactome.cytoscape.sc.utils.ScPathwayDataType;
 import org.reactome.cytoscape.sc.utils.ScPathwayMethod;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.PathwaySpecies;
@@ -610,8 +611,36 @@ public class ScNetworkManager {
         }
     }
     
+    public void doTFAnalysis() {
+        TFActivityAnalyzer.getTFAnalyzer().performAnalysis(getSpecies(), serverCaller);
+    }
+    
+    public void doTFAnova() {
+        TFActivityAnalyzer.getTFAnalyzer().performANOVA(serverCaller, getSpecies());
+    }
+    
+    public void viewTFActivities() {
+        // Choose 
+        CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
+        if (view == null)
+            return ; // Do nothing
+        try {
+            PathwayActivities activities = TFActivityAnalyzer.getTFAnalyzer().viewPathwayActivities(serverCaller);
+            if (activities == null)
+                return; // cancelled
+            _viewPathwayActivities(view, activities);
+        }
+        catch(Exception e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          e.getMessage(),
+                                          "Error in Transcription Factor Activities",
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error(e.getMessage(), e);
+        }
+    }
+    
     public void doPathwayAnalysis() {
-        PathwayActivityAnalyzer.getAnalyzer().performPathwayAnalysis(getSpecies(), serverCaller);
+        PathwayActivityAnalyzer.getAnalyzer().performAnalysis(getSpecies(), serverCaller);
     }
     
     public void doPathwayAnova() {
@@ -639,15 +668,21 @@ public class ScNetworkManager {
     }
     
     public void viewPathwayActivities(ScPathwayMethod method,
-                                      String pathway) {
+                                      String pathway,
+                                      ScPathwayDataType dataType) {
         // Choose 
         CyNetworkView view = PlugInUtilities.getCurrentNetworkView();
         if (view == null)
             return ; // Do nothing
         try {
-            PathwayActivities activities = PathwayActivityAnalyzer.getAnalyzer().viewPathwayActivities(pathway, 
-                                                                                                       method,
-                                                                                                       serverCaller);
+            PathwayActivityAnalyzer analyzer = null;
+            if (dataType == ScPathwayDataType.Transcription_Factor)
+                analyzer = TFActivityAnalyzer.getTFAnalyzer();
+            else
+                analyzer = PathwayActivityAnalyzer.getAnalyzer();
+            PathwayActivities activities = analyzer.viewPathwayActivities(pathway, 
+                                                                          method,
+                                                                          serverCaller);
             if (activities == null)
                 return; // cancelled
             _viewPathwayActivities(view, activities);

@@ -26,7 +26,10 @@ public class Scpy4ReactomeDownloader {
     private final String VERSION_FILE = "scpy4reactome.ver";
     private final String APP_FILE = PythonPathHelper.SCPY_2_REACTOME_NAME;
     private final String DOROTHEA_FILE = "dorothea.tsv";
-    private final String DOROTHEA_CONFIDENCE = "AB"; // Default to use A and B
+    // Based on the paper, Robustness and applicability of transcription factor and pathway 
+    // analysis tools on single-cell RNA-seq data, ABC seems a good choice. However, we may 
+    // need to let users to choose this in the future.
+    private final String DOROTHEA_CONFIDENCE = "ABC"; // Default to use A,B,C
     private final String GMT_FILE = "reactome.gmt";
     
     public Scpy4ReactomeDownloader() {
@@ -46,9 +49,12 @@ public class Scpy4ReactomeDownloader {
      * @return
      * @throws Exception
      */
-    public String downloadDorotheaFIs(PathwaySpecies species) throws Exception {
+    public String downloadDorotheaFIs(PathwaySpecies species,
+                                      String confidenceLevels) throws Exception {
         RESTFulFIService service = new RESTFulFIService();
-        String text = service.downloadDorotheaFIs(species, DOROTHEA_CONFIDENCE);
+        if (confidenceLevels == null || confidenceLevels.trim().length() == 0)
+            confidenceLevels = DOROTHEA_CONFIDENCE;
+        String text = service.downloadDorotheaFIs(species, confidenceLevels);
         File localFile = new File(PythonPathHelper.getHelper().getScPythonPath(),
                                   species + "_" + DOROTHEA_FILE);
         return downloadText(text, localFile);

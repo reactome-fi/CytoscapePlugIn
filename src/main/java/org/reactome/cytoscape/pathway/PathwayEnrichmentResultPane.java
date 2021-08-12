@@ -47,6 +47,8 @@ public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
             public void valueChanged(ListSelectionEvent e) {
                 if (isFromTree)
                     return;
+                if (PathwayEnrichmentResultPane.this.eventTreePane == null)
+                    return; // Nothing to do
                 isFromTable = true;
                 DefaultTreeModel model = (DefaultTreeModel) PathwayEnrichmentResultPane.this.eventTreePane.eventTree.getModel();
                 DefaultMutableTreeNode root = (DefaultMutableTreeNode) PathwayEnrichmentResultPane.this.eventTreePane.eventTree.getModel().getRoot();

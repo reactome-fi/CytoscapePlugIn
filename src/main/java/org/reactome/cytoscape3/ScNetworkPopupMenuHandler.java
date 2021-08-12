@@ -91,6 +91,12 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         addPopupMenu(context, new PathwayAnova(), CyNetworkViewContextMenuFactory.class, props);
         
         // Add TF analysis features
+        props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU + ".Transcription Factor Analysis[5.9]");
+        addPopupMenu(context, new TFAnalysis(), CyNetworkViewContextMenuFactory.class, props);
+        addPopupMenu(context, new ViewTFActivities(), CyNetworkViewContextMenuFactory.class, props);
+        addPopupMenu(context, new TFAnova(), CyNetworkViewContextMenuFactory.class, props);
+        
+        // Add TF analysis features
         
         props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, new CytotraceAnalysis(), CyNetworkViewContextMenuFactory.class, props);
@@ -266,6 +272,34 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
             menuItem.addActionListener(createActionListener(e -> ScNetworkManager.getManager().performCytoTrace(),
                                                             menuItem.getText()));
             return new CyMenuItem(menuItem, 6.0f);
+        }
+    }
+    
+    private class TFAnalysis implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem menuItem = new JMenuItem("Perform TF Analysis");
+            // Want to handle the thread itself
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().doTFAnalysis());
+            return new CyMenuItem(menuItem, 1.0f);
+        }
+    }
+    
+    private class ViewTFActivities implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem menuItem = new JMenuItem("View TF Activities");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().viewTFActivities());
+            return new CyMenuItem(menuItem, 3.0f);
+        }
+    }
+    
+    private class TFAnova implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem menuItem = new JMenuItem("Perform ANOVA");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().doTFAnova());
+            return new CyMenuItem(menuItem, 2.0f);
         }
     }
     

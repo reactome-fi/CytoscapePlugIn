@@ -23,7 +23,6 @@ import javax.swing.event.HyperlinkListener;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.util.DialogControlPane;
 import org.gk.util.ProgressPane;
-import org.reactome.cytoscape.pathway.DrugPathwayImpactResultPane;
 import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.cytoscape.pathway.PathwayHierarchyLoadTask;
 import org.reactome.cytoscape.sc.server.JSONServerCaller;
@@ -45,9 +44,9 @@ import org.slf4j.LoggerFactory;
 public class PathwayActivityAnalyzer {
     private final static Logger logger = LoggerFactory.getLogger(PathwayActivityAnalyzer.class);
     private static PathwayActivityAnalyzer analyzer;
-    private Map<ScPathwayMethod, String> method2key;
+    protected Map<ScPathwayMethod, String> method2key;
     
-    private PathwayActivityAnalyzer() {
+    protected PathwayActivityAnalyzer() {
         method2key = new HashMap<>();
     }
     
@@ -63,12 +62,16 @@ public class PathwayActivityAnalyzer {
     public PathwayActivities viewPathwayActivities(JSONServerCaller caller) throws Exception {
         if(!ensureAnalysis()) 
             return null; // Analysis has not done yet
-        PathwayNameDialog dialog = new PathwayNameDialog();
+        PathwayNameDialog dialog = createNameDialog();
         if (!dialog.isOKClicked)
             return null;
         String pathway = dialog.pathwayTF.getText().trim();
         ScPathwayMethod method = (ScPathwayMethod) dialog.methodBox.getSelectedItem();
         return viewPathwayActivities(pathway, method, caller);
+    }
+    
+    protected PathwayNameDialog createNameDialog() {
+        return new PathwayNameDialog();
     }
     
     /**
@@ -126,9 +129,9 @@ public class PathwayActivityAnalyzer {
                     ProgressPane progressPane = new ProgressPane();
                     progressPane.setIndeterminate(true);
                     parentFrame.setGlassPane(progressPane);
-                    progressPane.setTitle("Pathway ANOVA");
+                    progressPane.setTitle("ANOVA");
                     progressPane.setVisible(true);
-                    progressPane.setText("Perform pathway anova...");
+                    progressPane.setText("Performing anova...");
                     Map<String, Map<String, Double>> anovaResults = caller.doPathwayAnova(dataKey);
                     displayANOVA(anovaResults, method1, species, progressPane);
                     progressPane.setText("Done");
@@ -136,7 +139,7 @@ public class PathwayActivityAnalyzer {
                 catch(Exception e) {
                     JOptionPane.showMessageDialog(parentFrame,
                                                   e.getMessage(),
-                                                  "Error in Pathway ANOVA",
+                                                  "Error in ANOVA",
                                                   JOptionPane.ERROR_MESSAGE);
                     logger.error(e.getMessage(), e);
                 }
@@ -146,10 +149,10 @@ public class PathwayActivityAnalyzer {
         t.start();
     }
     
-    private void displayANOVA(Map<String, Map<String, Double>> anovaResults,
-                              ScPathwayMethod method,
-                              PathwaySpecies species,
-                              ProgressPane progressPane) throws Exception {
+    protected void displayANOVA(Map<String, Map<String, Double>> anovaResults,
+                                ScPathwayMethod method,
+                                PathwaySpecies species,
+                                ProgressPane progressPane) throws Exception {
         progressPane.setText("Load pathways...");
         PathwayHierarchyLoadTask pathwayLoader = new PathwayHierarchyLoadTask();
         pathwayLoader.setSpecies(species);
@@ -168,7 +171,7 @@ public class PathwayActivityAnalyzer {
      * @param species
      * @param caller
      */
-    public void performPathwayAnalysis(PathwaySpecies species,
+    public void performAnalysis(PathwaySpecies species,
                                        JSONServerCaller caller) {
         ScPathwayMethod method = chooseMethod();
         if (method == null)
@@ -229,7 +232,7 @@ public class PathwayActivityAnalyzer {
 
         @Override
         protected String getDialogTitle() {
-            return "Pathway Method for ANOVA";
+            return "Method for ANOVA";
         }
 
         @Override
@@ -250,7 +253,7 @@ public class PathwayActivityAnalyzer {
         
     }
     
-    private class PathwayNameDialog extends PathwayMethodDialog {
+    protected class PathwayNameDialog extends PathwayMethodDialog {
         private JTextField pathwayTF;
         
         public PathwayNameDialog() {
@@ -261,10 +264,14 @@ public class PathwayActivityAnalyzer {
         protected String getDialogTitle() {
             return "Choose a Pathway";
         }
+        
+        protected String getLabelText() {
+            return "Enter a pathway:";
+        }
 
         @Override
         protected void customizeContentPane(JPanel contentPane, GridBagConstraints constraints) {
-            JLabel label = new JLabel("Enter a pathway:");
+            JLabel label = new JLabel(getLabelText());
             constraints.gridx = 0;
             constraints.gridy = 1;
             constraints.gridwidth = 2;
@@ -288,7 +295,7 @@ public class PathwayActivityAnalyzer {
         }
     }
     
-    private class MethodChooseDialog extends PathwayMethodDialog {
+    protected class MethodChooseDialog extends PathwayMethodDialog {
         
         public MethodChooseDialog() {
             super();
@@ -296,12 +303,14 @@ public class PathwayActivityAnalyzer {
         
         @Override
         protected String getDialogTitle() {
-            return "Choose Pathway Analysis Method";
+            return "Choose Analysis Method";
         }
 
         @Override
         protected void customizeContentPane(JPanel contentPane, GridBagConstraints constraints) {
-            addNotePane(contentPane, constraints);
+            String note = "<html>*: For information about each method, double click <a href=\"https://www.nature.com/articles/nature08460\">ssGSEA</a> or"
+                    + " <a href=\"https://www.nature.com/articles/nmeth.4463\">AUCell</a></html>";
+            addNotePane(note, contentPane, constraints);
         }
 
         @Override
@@ -314,17 +323,14 @@ public class PathwayActivityAnalyzer {
         protected void setDialogSize() {
             setSize(490, 235);
         }
-
-        protected void addNotePane(JPanel contentPane, GridBagConstraints constraints) {
+        
+        protected void addNotePane(String note,
+                                   JPanel contentPane, 
+                                   GridBagConstraints constraints) {
             JEditorPane editorPane = new JEditorPane();
-            Font font = editorPane.getFont();
-            font = font.deriveFont(Font.ITALIC);
-            editorPane.setFont(font);
             editorPane.setEditable(false);
             editorPane.setContentType("text/html");
             editorPane.setBackground(getBackground());
-            String note = "<html>*: For more information about each method, double click <a href=\"https://www.nature.com/articles/nature08460\">ssGSEA</a> or"
-                    + " <a href=\"https://www.nature.com/articles/nmeth.4463\">AUCell</a></html>";
             editorPane.setText(note);
             editorPane.addHyperlinkListener(new HyperlinkListener() {
                 public void hyperlinkUpdate(HyperlinkEvent e) {
@@ -336,9 +342,9 @@ public class PathwayActivityAnalyzer {
             });
             
             constraints.gridx = 0;
-            constraints.gridy = 1;
+            constraints.gridy ++;
             constraints.gridwidth = 2;
-            constraints.gridheight = 2;
+            constraints.gridheight = 1;
             contentPane.add(editorPane, constraints);
             getContentPane().add(contentPane, BorderLayout.CENTER);
         }
@@ -370,7 +376,9 @@ public class PathwayActivityAnalyzer {
             constraints.insets = new Insets(4, 4, 4, 4);
             constraints.anchor = GridBagConstraints.WEST;
             constraints.fill = GridBagConstraints.HORIZONTAL;
-            JLabel label = new JLabel("Choose a pathway analysis method: ");
+            JLabel label = new JLabel("Choose an analysis method: ");
+            constraints.gridx = 0;
+            constraints.gridy = 0;
             contentPane.add(label, constraints);
             methodBox = new JComboBox<ScPathwayMethod>();
             addMethods(methodBox);
