@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.swing.JFrame;
 
@@ -26,6 +27,21 @@ public class JSONSeverTests {
     
     public JSONSeverTests() {
         caller = new JSONServerCaller();
+    }
+    
+    @Test
+    public void testGetAnalyzedPathwayKeys() throws Exception {
+        caller.setIsStarted(true); // Avoid to restart the server
+        String fileName = "/Users/wug/Documents/wgm/work/FIPlugIns/test_data/ScRNASeq/SavedResults/mouse/17_5_gfp.h5ad";
+        String text = caller.openAnalyzedData(fileName); // Use this method so that we get pre-processed data
+        System.out.println("Read back the saved results:\n" + text);
+        List<String> keys = caller.getAnalyzedPathwayKeys();
+        System.out.println("Analyzed pathway keys: " + keys);
+        fileName = "/Users/wug/Documents/missy_single_cell/test_results/17_5_gfp_with_pathways.h5ad";
+        text = caller.openAnalyzedData(fileName);
+        System.out.println("Read back the saved results:\n" + text);
+        keys = caller.getAnalyzedPathwayKeys();
+        System.out.println("Analyzed pathway keys: " + keys);
     }
     
     @Test

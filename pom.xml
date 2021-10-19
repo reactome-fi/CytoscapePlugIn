@@ -9,17 +9,21 @@
 		<!-- Prevent Using platform encoding (UTF-8 actually) to copy filtered 
 			resources, i.e. build is platform dependent! See: https://maven.apache.org/general.html -->
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<cytoscape.api.version>3.7.0</cytoscape.api.version>
+		<cytoscape.api.version>3.8.2</cytoscape.api.version>
+		<maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+		<maven-surefire-plugin.version>3.0.0-M3</maven-surefire-plugin.version>
+		<maven-bundle-plugin.version>4.1.0</maven-bundle-plugin.version>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome</groupId>
 	<artifactId>reactomeFI-app</artifactId>
-	<version>8.0.3</version>
+	<version>8.0.4</version>
 	<name>${bundle.symbolicName}</name>
 	<packaging>bundle</packaging>
 
 	<build>
+		<sourceDirectory>src/main/java</sourceDirectory>
 		<resources>
 			<resource>
 				<directory>${project.basedir}/src/main/java/org/reactome/cytoscape/util</directory>
@@ -45,12 +49,40 @@
 				</includes>
 			</resource>
 		</resources>
-		<!-- Cytoscape requires Java 1.8 -->
 		<plugins>
+		   <!-- Add this plugin to make Eclipse's configration happy. Oterhwise the source directory is not right. -->
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.2.0</version>
+				<executions>
+					<execution>
+						<id>copy-resources</id>
+						<!-- here the phase you need -->
+						<phase>validate</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${basedir}/target/classes/org/reactome/cytoscape/util</outputDirectory>
+							<resources>
+								<resource>
+									<directory>src/org/reactome/cytoscape/util</directory>
+									<filtering>true</filtering>
+									<includes>
+										<include>Config.prop</include>
+										<include>*.gif</include>
+										<include>*.xml</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.5.1</version>
+				<version>${maven-compiler-plugin.version}</version>
 				<executions>
 					<execution>
 						<id>default-testCompile</id>
@@ -68,8 +100,8 @@
 					</execution>
 				</executions>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>11</source>
+					<target>11</target>
 					<optimize>true</optimize>
 					<showWarnings>true</showWarnings>
 					<showDeprecation>true</showDeprecation>
@@ -85,7 +117,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.7.1</version>
+				<version>${maven-surefire-plugin.version}</version>
 				<configuration>
 					<redirectTestOutputToFile>true</redirectTestOutputToFile>
 				</configuration>
@@ -94,7 +126,7 @@
 			<plugin>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>${maven-bundle-plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
 					<instructions>
@@ -233,16 +265,17 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<!-- Apparently the following version cannot be used in the current build env. Have to use the old 2.9.10.7. -->
-<!-- 			<version>2.12.4</version> -->
+			<!-- Apparently the following version cannot be used in the current build 
+				env. Have to use the old 2.9.10.7. -->
+			<!-- <version>2.12.4</version> -->
 			<version>2.9.10.7</version>
 		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
 		<!-- Thought the above dependency (databind) will pull the following jar 
 			file. However, the pulled jar cannot be built into the target app, which 
-			is strange. Have to add this dependency and make sure they have the compatible versions as
-			the above. -->
+			is strange. Have to add this dependency and make sure they have the compatible 
+			versions as the above. -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
@@ -367,11 +400,7 @@
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>app-api</artifactId>
-			<!-- Use the 3.0.1 version since the released version is 3.0.2. Otherwise, 
-				RELEASE should be used for all Cytoscape jar files. -->
-			<!-- Try to use the older version for backward compatibility. Otherwise, 
-				the built app will not work for older Cytoscape 3.0 -->
-			<version>3.7.0</version>
+			<version>${cytoscape.api.version}</version>
 		</dependency>
 
 		<dependency>
@@ -555,5 +584,6 @@
 			<version>${cytoscape.api.version}</version>
 			<scope>provided</scope>
 		</dependency>
+
 	</dependencies>
 </project>

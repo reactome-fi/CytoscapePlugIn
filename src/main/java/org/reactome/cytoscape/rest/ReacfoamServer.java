@@ -9,12 +9,19 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
+import org.junit.Test;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
 import org.osgi.framework.ServiceReference;
+import org.reactome.cytoscape.pathway.EventTreePane;
+import org.reactome.cytoscape.pathway.PathwayControlPanel;
+import org.reactome.cytoscape.pathway.EventTreePane.EventObject;
 import org.reactome.cytoscape.rest.tasks.PathwayEnrichmentResults;
+import org.reactome.cytoscape.sc.ScNetworkManager;
+import org.reactome.cytoscape.sc.utils.ScPathwayMethod;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +29,8 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
@@ -141,7 +150,12 @@ public class ReacfoamServer {
                     selectEvent(url.substring(index + 1));
                 }
                 else if (url.endsWith("reacfoam/enrichment")) {
-                    outputEnrichment(out);
+                	// For scRNA-seq, we expect a pattern like this: /reactomefiviz_sc_cluster_1_aucell
+                	String analysisToken = url.split("/")[1]; // The first token is an empty string
+                	if (analysisToken.equals("reactomefiviz"))
+                		outputEnrichment(out); // For pathway tree
+                	else if (analysisToken.matches("reactomefiviz_sc_cluster_(\\d)+_(\\w)+")) // For cluster pathway activities
+                		outputScClusterPathwayActivities(out, analysisToken);
                 }
                 else
                     out.write("Not supported".getBytes());
@@ -171,6 +185,32 @@ public class ReacfoamServer {
         }
     }
     
+    private void outputScClusterPathwayActivities(OutputStream os,
+                                                  String analysisToken) throws Exception {
+    	EventTreePane treePane = PathwayControlPanel.getInstance().getEventTreePane();
+        Map<String, EventObject> nameToObject = treePane.grepEventNameToObject();
+    	String[] tokens = analysisToken.split("_");
+    	int cluster = Integer.parseInt(tokens[3]);
+    	ScPathwayMethod method = ScPathwayMethod.valueOf(tokens[4]);
+    	Map<String, Double> pathway2score = ScNetworkManager.getManager().fetchClusterPathwayActivities(method, cluster);
+    	PathwayEnrichmentResults results = new PathwayEnrichmentResults();
+    	if (pathway2score != null && pathway2score.size() > 0) {
+    		pathway2score.forEach((p, score) -> {
+    			EventObject event = nameToObject.get(p);
+    			// Just in case: there may be some unsyc happens.
+    			if (event == null)
+    				return;
+    			results.addPathway(event.getStId(),
+    					           event.getName(),
+    					           score + "",
+    					           "1.0", // To mimic ratio
+    					           score + "");
+    					           
+    		});
+    	}
+    	outputEnrichment(os, results);
+    }
+    
     private void outputEnrichment(OutputStream os) throws IOException {
         BundleContext context = PlugInObjectManager.getManager().getBundleContext();
         ServiceReference reference = context.getServiceReference(ReactomeFIVizResource.class.getName());
@@ -182,14 +222,19 @@ public class ReacfoamServer {
         PathwayEnrichmentResults results = resource.fetchEnrichmentResults();
         if (results == null)
             os.write("No results".getBytes());
-        ObjectMapper mapper = new ObjectMapper();
+        outputEnrichment(os, results);
+        context.ungetService(reference);
+    }
+
+	private void outputEnrichment(OutputStream os, PathwayEnrichmentResults results)
+	        throws IOException, JsonGenerationException, JsonMappingException {
+		ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(Include.NON_NULL);
         // Force to look at any fields
         mapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
         ObjectWriter writer = mapper.writer();
         writer.writeValue(os, results);
-        context.ungetService(reference);
-    }
+	}
     
     /**
      * We will call the serice directly to avoid any huddle related to the REST API.

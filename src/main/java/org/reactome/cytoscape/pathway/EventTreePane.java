@@ -615,18 +615,13 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     }
     
     private void openReacfoam() {
-        if (!dataType.equals("FDR")) {
-            JOptionPane.showMessageDialog(this,
-                                          "Note: The values used to highlight pathways in Reacform are " + dataType + ".");
-        }
-        String reacfoamUrl = "http://localhost:" + 
-                              PlugInObjectManager.getManager().getProperties().getProperty("reacfoam_port") + 
-                              "/reacfoam/index.html?species=" + 
-                              ((PathwaySpecies)speciesBox.getSelectedItem()).getDBID();
-        if (pathwayToAnnotation != null && pathwayToAnnotation.size() > 0)
-            reacfoamUrl += "&analysis=reactomefiviz";
-        // TODO: Don't forget to add a new entry useCyBrowser=false for the preference to avoid using the low functional CyBrowser.
-        PlugInUtilities.openURL(reacfoamUrl);
+    	String analysisToken = null;
+    	if (pathwayToAnnotation != null && pathwayToAnnotation.size() > 0)
+            analysisToken = "reactomefiviz";
+    	PlugInUtilities.openReacfoam(dataType,
+    							     analysisToken,
+    							     ((PathwaySpecies)speciesBox.getSelectedItem()).getDBID(),
+    							     false);
     }
     
     private void loadPGMResults() {

@@ -353,6 +353,23 @@ public class JSONServerCaller {
             throw new IllegalStateException(result.toString());
         return (Map<String, Double>) result;
     }
+    
+    public List<String> getAnalyzedPathwayKeys() throws JsonEOFException, IOException {
+    	Object result = callJSONServer("get_analyzed_pathway_keys");
+    	if (result instanceof String)
+    		throw new IllegalStateException(result.toString());
+    	return (List<String>) result;
+    }
+    
+    public Map<String, Double> fetchClusterPathwayActivities(String pathwayKey,
+                                                             int cluster) throws JsonEOFException, IOException {
+    	Object result = callJSONServer("fetch_cluster_pathway_activities",
+    								   pathwayKey,
+    								   cluster + "");
+    	if (result instanceof String) 
+    		throw new IllegalStateException(result.toString());
+    	return (Map<String, Double>) result;
+    }
                                        
     
     public DiffExpResult doDiffGeneExpAnalysis(String group,

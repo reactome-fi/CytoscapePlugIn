@@ -85,6 +85,7 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
+import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
@@ -960,6 +961,27 @@ public class PlugInUtilities {
         catch(Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    public static void openReacfoam(String dataType,
+                                    String analysisToken,
+                                    String dbId,
+                                    boolean needCoverage) {
+        if (!dataType.equals("FDR")) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          "Note: The values used to highlight pathways in Reacform are " + dataType + ".",
+                                          "Warning About Data Type",
+                                          JOptionPane.INFORMATION_MESSAGE);
+        }
+        String reacfoamUrl = "http://localhost:" + 
+                              PlugInObjectManager.getManager().getProperties().getProperty("reacfoam_port") + 
+                              "/reacfoam/index.html?species=" + dbId;
+        if (analysisToken != null && analysisToken.length() > 0)
+            reacfoamUrl += "&analysis=" + analysisToken;
+        if (needCoverage)
+        	reacfoamUrl += "&coverage=true&color=COPPER_COV"; // Use a customized color scheme for better view
+        // TODO: Don't forget to add a new entry useCyBrowser=false for the preference to avoid using the low functional CyBrowser.
+        PlugInUtilities.openURL(reacfoamUrl);
     }
 
     /**

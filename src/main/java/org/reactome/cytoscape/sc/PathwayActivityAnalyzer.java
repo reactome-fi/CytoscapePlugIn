@@ -1,11 +1,11 @@
 package org.reactome.cytoscape.sc;
 
 import java.awt.BorderLayout;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -23,6 +23,7 @@ import javax.swing.event.HyperlinkListener;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.gk.util.DialogControlPane;
 import org.gk.util.ProgressPane;
+import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.cytoscape.pathway.PathwayHierarchyLoadTask;
 import org.reactome.cytoscape.sc.server.JSONServerCaller;
@@ -60,7 +61,7 @@ public class PathwayActivityAnalyzer {
      * View pathway activities.
      */
     public PathwayActivities viewPathwayActivities(JSONServerCaller caller) throws Exception {
-        if(!ensureAnalysis()) 
+        if(!ensureAnalysis(caller)) 
             return null; // Analysis has not done yet
         PathwayNameDialog dialog = createNameDialog();
         if (!dialog.isOKClicked)
@@ -89,16 +90,89 @@ public class PathwayActivityAnalyzer {
         rtn.pathwayName = pathway;
         return rtn;
     }
+    
+    public void viewClusterPathwayActivities(int cluster,
+                                             JSONServerCaller caller,
+                                             PathwaySpecies species) {
+    	try {
+    		if(!ensureAnalysis(caller)) 
+    			return; // Analysis has not done yet
+    		ScPathwayMethod method = null;
+    		if (method2key.size() == 1)
+    			method = method2key.keySet().stream().findAny().get();
+    		else {
+    			method = chooseMethod();
+    		}
+    		if (method == null)
+    			return; // Nothing to do.
+    		// Generate a URL for opening the browser
+    		String token = "reactomefiviz_sc_cluster_" + cluster + "_" + method;
+    		PlugInUtilities.openReacfoam("pathway score from " + method,
+    								     token,
+    								     species.getDBID(),
+    								     true);
+    	}
+    	catch(Exception e) {
+    		JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+    								      e.getMessage(),
+    								      "Error in Viewing Cluster Pathway Activities",
+    								      JOptionPane.ERROR_MESSAGE);
+    		logger.error(e.getMessage(), e);
+    	}
+    }
+    
+    /**
+     * Hacking the code for displaying in the Reacfoam.
+     * @param pathway2score
+     * @return
+     */
+    private Map<String, GeneSetAnnotation> convertToAnnotation(Map<String, Double> pathway2score) {
+    	Map<String, GeneSetAnnotation> rtn = new HashMap<>();
+    	for (String pathway : pathway2score.keySet()) {
+    		GeneSetAnnotation annotation = new GeneSetAnnotation();
+    		annotation.setTopic(pathway);
+    		// Use coverage for the score
+    		annotation.setRatioOfTopic(pathway2score.get(pathway));
+    		rtn.put(pathway, annotation);
+    	}
+    	return rtn;
+    }
 
-    protected boolean ensureAnalysis() {
-        if (method2key.size() == 0) {
-            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
-                                          "Please perform a pathway analysis first before viewing.",
-                                          "No Pathway Data",
-                                          JOptionPane.INFORMATION_MESSAGE);
-            return false;
-        }
-        return true;
+    protected boolean ensureAnalysis(JSONServerCaller caller) throws Exception {
+    	if (method2key.size() == 0) {
+    		// See if there is any pre-analyzed results
+    		queryPreAnalyzedResults(caller);
+    		if (method2key.size() == 0) {
+    			JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+    					"Please perform a pathway analysis first before viewing.",
+    					"No Pathway Data",
+    					JOptionPane.INFORMATION_MESSAGE);
+    			return false;
+    		}
+    	}
+    	return true;
+    }
+    
+    /**
+     * Check if any pathway analysis has been done in the loaded data at server.
+     * @throws Exception
+     */
+    private void queryPreAnalyzedResults(JSONServerCaller caller) throws Exception {
+    	// Make sure this call works when nothing is here
+    	if (method2key.size() > 0)
+    		return;
+    	List<String> pathwayKeys = caller.getAnalyzedPathwayKeys();
+    	if (pathwayKeys == null || pathwayKeys.size() == 0)
+    		return; // Nothing to do here
+    	for (String pathwayKey : pathwayKeys) {
+    		// Based on these two keys in the Python code
+    		// SSGSEA_KEY = "X_ssgsea"
+    	    /// AUCELL_KEY = "X_aucell"
+    		if (pathwayKey.endsWith("ssgsea"))
+    			method2key.put(ScPathwayMethod.ssgsea, pathwayKey);
+    		else if (pathwayKey.endsWith("aucell"))
+    			method2key.put(ScPathwayMethod.aucell, pathwayKey);
+    	}
     }
     
     /**
@@ -106,8 +180,17 @@ public class PathwayActivityAnalyzer {
      */
     public void performANOVA(JSONServerCaller caller,
                              PathwaySpecies species) {
-        if (!ensureAnalysis())
-            return ; // Nothing is done yet
+    	try {
+    		if (!ensureAnalysis(caller))
+    			return ; // Nothing is done yet
+    	}
+    	catch(Exception e) {
+    		JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+    				e.getMessage(),
+    				"Error in ANOVA",
+    				JOptionPane.ERROR_MESSAGE);
+    				logger.error(e.getMessage(), e);
+    	}
         // If there is only one pathway analysis, there is no need to popup a dialog
         ScPathwayMethod method = null;
         if (method2key.size() == 1)
@@ -172,7 +255,7 @@ public class PathwayActivityAnalyzer {
      * @param caller
      */
     public void performAnalysis(PathwaySpecies species,
-                                       JSONServerCaller caller) {
+                                JSONServerCaller caller) {
         ScPathwayMethod method = chooseMethod();
         if (method == null)
             return; // Cancelled by the user
@@ -346,7 +429,6 @@ public class PathwayActivityAnalyzer {
             constraints.gridwidth = 2;
             constraints.gridheight = 1;
             contentPane.add(editorPane, constraints);
-            getContentPane().add(contentPane, BorderLayout.CENTER);
         }
     }
     
@@ -385,6 +467,7 @@ public class PathwayActivityAnalyzer {
             constraints.gridx = 1;
             contentPane.add(methodBox, constraints);
             customizeContentPane(contentPane, constraints);
+            getContentPane().add(contentPane, BorderLayout.CENTER);
             
             DialogControlPane controlPane = new DialogControlPane();
             controlPane.getOKBtn().addActionListener(e -> {

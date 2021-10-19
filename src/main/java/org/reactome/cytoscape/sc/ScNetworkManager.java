@@ -33,6 +33,7 @@ import org.cytoscape.work.TaskIterator;
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.pathway.GSEAPathwayAnalyzer.GSEAPathwayAnalysisTask;
 import org.reactome.cytoscape.pathway.GSEAPathwayAnalyzer.GeneScoreLoadingPane;
+import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.cytoscape.pathway.PathwayControlPanel;
 import org.reactome.cytoscape.pathway.PathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.pathway.PathwayHierarchyLoadTask;
@@ -696,8 +697,7 @@ public class ScNetworkManager {
         }
     }
 
-    protected void _viewPathwayActivities(CyNetworkView view, PathwayActivities activities)
-            throws JsonEOFException, IOException {
+    protected void _viewPathwayActivities(CyNetworkView view, PathwayActivities activities) throws JsonEOFException, IOException {
         // A weird required
         Map<String, Object> id2value = new HashMap<>();
         activities.id2value.forEach((k, v) -> id2value.put(k, v));
@@ -707,6 +707,32 @@ public class ScNetworkManager {
                     cellIds,
                     id2value, 
                     id2value.values().stream().findAny().get());
+    }
+    
+    public void viewClusterPathwayActivities(int cluster) {
+    	// To do this, we need all pathways displayed
+    	// TODO: Add a thread
+        PathwayHierarchyLoadTask pathwayLoader = new PathwayHierarchyLoadTask();
+        pathwayLoader.setSpecies(species);
+        pathwayLoader.displayReactomePathways(null);
+    	PathwayActivityAnalyzer.getAnalyzer().viewClusterPathwayActivities(cluster,
+    			serverCaller,
+    			getSpecies());
+    }
+    
+    /**
+     * Query the pathway scores for a cluster that can be displayed in Reactome Reacfoam.
+     * @param method
+     * @param cluster
+     */
+    public Map<String, Double> fetchClusterPathwayActivities(ScPathwayMethod method,
+                                              int cluster) throws Exception {
+    	String pathwayKey = PathwayActivityAnalyzer.getAnalyzer().method2key.get(method);
+    	if (pathwayKey == null)
+    		return null;
+    	Map<String, Double> pathway2score = serverCaller.fetchClusterPathwayActivities(pathwayKey,
+    																				   cluster);
+		return pathway2score;
     }
     
     public void buildFINetwork(DiffExpResult result) {

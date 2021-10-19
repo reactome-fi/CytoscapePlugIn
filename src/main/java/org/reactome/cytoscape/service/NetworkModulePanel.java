@@ -409,8 +409,14 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
     
     protected Set<String> getSelectedNodes() {
         int[] selectedRows = contentTable.getSelectedRows();
+        // Need to convert table rows into model rows
+        int[] modelRows = new int[selectedRows.length];
+        for (int i = 0; i < selectedRows.length; i++) {
+        	int modelRow = contentTable.convertRowIndexToModel(selectedRows[i]);
+        	modelRows[i] = modelRow;
+        }
         NetworkModuleTableModel model = (NetworkModuleTableModel) contentTable.getModel();
-        List<String> idsInRows = model.getNodeIdsAtRows(selectedRows);
+        List<String> idsInRows = model.getNodeIdsAtRows(modelRows);
         // Do a selection
         Set<String> selectedIds = new HashSet<String>();
         for (String ids : idsInRows) {

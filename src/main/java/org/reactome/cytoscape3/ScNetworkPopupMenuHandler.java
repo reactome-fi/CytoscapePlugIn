@@ -15,7 +15,10 @@ import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
+import org.cytoscape.application.swing.CyNodeViewContextMenuFactory;
+import org.cytoscape.model.CyNode;
 import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
 import org.cytoscape.work.AbstractTask;
 import org.cytoscape.work.ServiceProperties;
 import org.cytoscape.work.Task;
@@ -25,6 +28,7 @@ import org.cytoscape.work.TaskMonitor;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.sc.ScNetworkManager;
 import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * Show popup menu for Reaction networks.
@@ -96,8 +100,6 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         addPopupMenu(context, new ViewTFActivities(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new TFAnova(), CyNetworkViewContextMenuFactory.class, props);
         
-        // Add TF analysis features
-        
         props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, new CytotraceAnalysis(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new DPTAnalysis(), CyNetworkViewContextMenuFactory.class, props);
@@ -108,6 +110,8 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         addPopupMenu(context, new ToggleEdgesDisplay(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new SaveMenuItem(), CyNetworkViewContextMenuFactory.class, props);
         
+        // Actions related to nodes
+        addPopupMenu(context, new ViewClusterPathways(), CyNodeViewContextMenuFactory.class, props);
     }
     
     private String getGene() {
@@ -331,6 +335,22 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         }
     }
     
-    
+    private class ViewClusterPathways implements CyNodeViewContextMenuFactory {
+    	@Override
+    	public CyMenuItem createMenuItem(CyNetworkView netView, View<CyNode> nodeView) {
+    		JMenuItem menuItem = new JMenuItem("View Pathway Activities");
+    		menuItem.addActionListener(new ActionListener() {
+    			@Override
+    			public void actionPerformed(ActionEvent e) {
+    				Long nodeID = nodeView.getModel().getSUID();
+    				Integer cluster = netView.getModel().getDefaultNodeTable()
+    						.getRow(nodeID).get("cluster", Integer.class);
+    				ScNetworkManager.getManager().viewClusterPathwayActivities(cluster);
+    			}
+
+    		});
+    		return new CyMenuItem(menuItem, 1.0f);
+    	}
+    }
     
 }
