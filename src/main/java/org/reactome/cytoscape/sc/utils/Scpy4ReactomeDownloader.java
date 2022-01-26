@@ -11,6 +11,8 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.file.Files;
 
+import javax.swing.JOptionPane;
+
 import org.gk.util.ProgressPane;
 import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.service.RESTFulFIService;
@@ -107,32 +109,41 @@ public class Scpy4ReactomeDownloader {
         return localAppFile;
     }
     
-    private boolean isUpdated() throws Exception {
-        // Get the version file from the server
-        String fileUrl = getURL(VERSION_FILE, false);
-        URL url = new URL(fileUrl);
-        InputStream is = url.openStream();
-        InputStreamReader isr = new InputStreamReader(is);
-        BufferedReader br = new BufferedReader(isr);
-        String remoteVersion = br.readLine().trim();
-        br.close();
-        isr.close();
-        is.close();
-        File versionFile = new File(PythonPathHelper.getHelper().getScPythonPath(),
-                                    VERSION_FILE);
-        // Also we need to make sure the app file there too
-        File appFile = getLocalAppFile();
-        if (versionFile.exists() && appFile.exists()) {
-            // There should be one line only
-            String localVersion = Files.readAllLines(versionFile.toPath()).get(0).trim();
-            if (localVersion.equals(remoteVersion))
-                return true;
-        }
-        // Write out the version
-        PrintWriter pw = new PrintWriter(versionFile);
-        pw.println(remoteVersion);
-        pw.close();
-        return false;
+    private boolean isUpdated() {
+    	// Get the version file from the server
+    	String fileUrl = getURL(VERSION_FILE, false);
+    	try {
+    		URL url = new URL(fileUrl);
+    		InputStream is = url.openStream();
+    		InputStreamReader isr = new InputStreamReader(is);
+    		BufferedReader br = new BufferedReader(isr);
+    		String remoteVersion = br.readLine().trim();
+    		br.close();
+    		isr.close();
+    		is.close();
+    		File versionFile = new File(PythonPathHelper.getHelper().getScPythonPath(),
+    				VERSION_FILE);
+    		// Also we need to make sure the app file there too
+    		File appFile = getLocalAppFile();
+    		if (versionFile.exists() && appFile.exists()) {
+    			// There should be one line only
+    			String localVersion = Files.readAllLines(versionFile.toPath()).get(0).trim();
+    			if (localVersion.equals(remoteVersion))
+    				return true;
+    		}
+    		// Write out the version
+    		PrintWriter pw = new PrintWriter(versionFile);
+    		pw.println(remoteVersion);
+    		pw.close();
+    		return false;
+    	}
+    	catch(IOException e) {
+    		JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+    				"Cannot connect to the server to check for update: \n" + e.getMessage(),
+    				"Error in Checking Update",
+    				JOptionPane.ERROR_MESSAGE);
+    		return true; // Don't do anything if we cannot find an update information
+    	}
     }
     
     private String getURL(String fileName, boolean isForApp) {

@@ -41,6 +41,11 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
         init();
     }
     
+    public GeneSetAnnotationPanel(String title, boolean needRegister) {
+    	super(title, needRegister);
+    	init();
+    }
+    
     private void init() {
         // Remove closeBtn 
         controlToolBar.remove(closeGlue);

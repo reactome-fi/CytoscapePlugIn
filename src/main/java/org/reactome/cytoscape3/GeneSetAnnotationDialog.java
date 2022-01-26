@@ -119,8 +119,9 @@ public class GeneSetAnnotationDialog extends JDialog {
     private class AnnotationPaneForSelectedGenes extends GeneSetAnnotationPanel {
         
         public AnnotationPaneForSelectedGenes(String title) {
-            super(title);
+            super(title, false);
             controlToolBar.remove(closeBtn);
+            this.close();
         }
         
     }

@@ -18,7 +18,9 @@ import org.reactome.cytoscape.util.PlugInUtilities;
 public class KEGGHelper
 {
     private String KEGG_BASE_URL = "http://rest.kegg.jp/";
-    private String KEGG_PATHWAY_DETAIL_URL = "http://www.kegg.jp/kegg-bin/show_pathway?";
+//    private String KEGG_PATHWAY_DETAIL_URL = "http://www.kegg.jp/kegg-bin/show_pathway?";
+    // Update as of Jan, 2022
+    private String KEGG_PATHWAY_DETAIL_URL = "https://www.kegg.jp/kegg-bin/highlight_pathway?map=";
     
     private String getKeggMapNumber(String pathway) throws IOException
     {
@@ -76,9 +78,12 @@ public class KEGGHelper
 //                //urlBuilder.append(id + "%09," + GENE_COLOR + "/");
 //                System.out.println(urlBuilder);
 //            }
-            for (String node : nodes.split(","))
-            {
-                urlBuilder.append("+" + node);
+            String[] genes = nodes.split(",");
+            if (genes.length > 0) {
+            	urlBuilder.append("&keyword=").append(genes[0]);
+            	for (int i = 1; i < genes.length; i++) {
+            		urlBuilder.append("+" + genes[i]);
+            	}
             }
             String url = urlBuilder.toString();
             PlugInUtilities.openURL(url);

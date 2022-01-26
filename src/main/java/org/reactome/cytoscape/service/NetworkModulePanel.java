@@ -84,7 +84,7 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         this(null);
     }
     
-    protected NetworkModulePanel(String title) {
+    protected NetworkModulePanel(String title, boolean needRegister) {
         setTitle(title);
         init();
         // Most likely SessionAboutToBeLoadedListener should be used in 3.1.0.
@@ -99,8 +99,12 @@ public abstract class NetworkModulePanel extends JPanel implements CytoPanelComp
         context.registerService(SessionLoadedListener.class.getName(),
                                 sessionListener, 
                                 null);
-        
-        serviceRegistration = PlugInUtilities.registerCytoPanelComponent(this);
+        if (needRegister)
+        	serviceRegistration = PlugInUtilities.registerCytoPanelComponent(this);
+    }
+    
+    protected NetworkModulePanel(String title) {
+        this(title, true);
     }
     
     public void setNetworkView(CyNetworkView view)
