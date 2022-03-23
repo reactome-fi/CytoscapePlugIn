@@ -50,8 +50,8 @@ public class JSONServerCaller {
     // flag to track is the server is started
     // During the development, make sure isStarted is true so that ReactomeFIViz can talk to
     // the Python JSON server directly
-    private boolean isStarted = true;
-//    private boolean isStarted;
+//    private boolean isStarted = true;
+    private boolean isStarted;
     
     public JSONServerCaller() {
         request = new RequestObject();

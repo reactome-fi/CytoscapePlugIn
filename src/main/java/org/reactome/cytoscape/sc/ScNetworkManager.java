@@ -709,7 +709,7 @@ public class ScNetworkManager {
                     id2value.values().stream().findAny().get());
     }
     
-    public void viewClusterPathwayActivities(int cluster) {
+    public void viewClusterPathwayActivities(int cluster, String approach) {
     	// To do this, we need all pathways displayed
     	// TODO: Add a thread
         PathwayHierarchyLoadTask pathwayLoader = new PathwayHierarchyLoadTask();
@@ -717,8 +717,10 @@ public class ScNetworkManager {
         pathwayLoader.displayReactomePathways(null);
     	PathwayActivityAnalyzer.getAnalyzer().viewClusterPathwayActivities(cluster,
     			serverCaller,
-    			getSpecies());
+    			getSpecies(),
+    			approach);
     }
+    
     
     /**
      * Query the pathway scores for a cluster that can be displayed in Reactome Reacfoam.

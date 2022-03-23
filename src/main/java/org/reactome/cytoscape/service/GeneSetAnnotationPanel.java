@@ -21,6 +21,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.table.TableRowSorter;
 
+import org.gk.util.GKApplicationUtilities;
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
@@ -313,10 +314,7 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
         }
         
         protected String formatPValue(double pvalue) {
-            if (pvalue < 0.01)
-                return String.format("%.4E", pvalue);
-            else
-                return String.format("%.4f", pvalue);
+            return PlugInUtilities.formatProbability(pvalue);
         }
 
     }

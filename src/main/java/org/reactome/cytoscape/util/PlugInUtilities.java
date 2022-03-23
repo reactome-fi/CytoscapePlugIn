@@ -113,7 +113,7 @@ public class PlugInUtilities {
     }
     
     public static boolean isMac() {
-        String osName = System.getProperty("os.name").toLowerCase();
+    	String osName = System.getProperty("os.name").toLowerCase();
         return osName != null && osName.contains("mac");
     }
     
@@ -982,6 +982,15 @@ public class PlugInUtilities {
         	reacfoamUrl += "&coverage=true&color=COPPER_COV"; // Use a customized color scheme for better view
         // TODO: Don't forget to add a new entry useCyBrowser=false for the preference to avoid using the low functional CyBrowser.
         PlugInUtilities.openURL(reacfoamUrl);
+    }
+    
+    public static void openPathwayPlot(String token) {
+    	String pathwayPlotUrl = "http://localhost:" + 
+                PlugInObjectManager.getManager().getProperties().getProperty("reacfoam_port") + 
+                "/pathwayplot.html";
+    	if (token != null)
+    		pathwayPlotUrl += ("?analysis=" + token);
+    	PlugInUtilities.openURL(pathwayPlotUrl);
     }
 
     /**

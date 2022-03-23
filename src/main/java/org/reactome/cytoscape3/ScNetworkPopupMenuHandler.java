@@ -88,17 +88,20 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
             addRNAVelocityMenus(context, props, cellFeatures);
         }
         
-        // Add pathway analysis features
-        props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU + ".Pathway Analysis[5.8]");
-        addPopupMenu(context, new PathwayAnalysis(), CyNetworkViewContextMenuFactory.class, props);
-        addPopupMenu(context, new ViewPathwayActivities(), CyNetworkViewContextMenuFactory.class, props);
-        addPopupMenu(context, new PathwayAnova(), CyNetworkViewContextMenuFactory.class, props);
-        
-        // Add TF analysis features
-        props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU + ".Transcription Factor Analysis[5.9]");
-        addPopupMenu(context, new TFAnalysis(), CyNetworkViewContextMenuFactory.class, props);
-        addPopupMenu(context, new ViewTFActivities(), CyNetworkViewContextMenuFactory.class, props);
-        addPopupMenu(context, new TFAnova(), CyNetworkViewContextMenuFactory.class, props);
+        // As of Feb 26, 2022, the following two menus are supported for Mac OS only
+        if (PlugInUtilities.isMac()) {
+        	// Add pathway analysis features
+        	props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU + ".Pathway Analysis[5.8]");
+        	addPopupMenu(context, new PathwayAnalysis(), CyNetworkViewContextMenuFactory.class, props);
+        	addPopupMenu(context, new ViewPathwayActivities(), CyNetworkViewContextMenuFactory.class, props);
+        	addPopupMenu(context, new PathwayAnova(), CyNetworkViewContextMenuFactory.class, props);
+
+        	// Add TF analysis features
+        	props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU + ".Transcription Factor Analysis[5.9]");
+        	addPopupMenu(context, new TFAnalysis(), CyNetworkViewContextMenuFactory.class, props);
+        	addPopupMenu(context, new ViewTFActivities(), CyNetworkViewContextMenuFactory.class, props);
+        	addPopupMenu(context, new TFAnova(), CyNetworkViewContextMenuFactory.class, props);
+        }
         
         props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, new CytotraceAnalysis(), CyNetworkViewContextMenuFactory.class, props);
@@ -112,6 +115,7 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         
         // Actions related to nodes
         addPopupMenu(context, new ViewClusterPathways(), CyNodeViewContextMenuFactory.class, props);
+        addPopupMenu(context, new PlotClusterPathways(), CyNodeViewContextMenuFactory.class, props);
     }
     
     private String getGene() {
@@ -338,18 +342,36 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
     private class ViewClusterPathways implements CyNodeViewContextMenuFactory {
     	@Override
     	public CyMenuItem createMenuItem(CyNetworkView netView, View<CyNode> nodeView) {
-    		JMenuItem menuItem = new JMenuItem("View Pathway Activities");
+    		JMenuItem menuItem = new JMenuItem("View Pathway Activities in Reacfoam");
     		menuItem.addActionListener(new ActionListener() {
     			@Override
     			public void actionPerformed(ActionEvent e) {
     				Long nodeID = nodeView.getModel().getSUID();
     				Integer cluster = netView.getModel().getDefaultNodeTable()
     						.getRow(nodeID).get("cluster", Integer.class);
-    				ScNetworkManager.getManager().viewClusterPathwayActivities(cluster);
+    				ScNetworkManager.getManager().viewClusterPathwayActivities(cluster, "reacfoam");
     			}
 
     		});
     		return new CyMenuItem(menuItem, 1.0f);
+    	}
+    }
+    
+    private class PlotClusterPathways implements CyNodeViewContextMenuFactory {
+    	@Override
+    	public CyMenuItem createMenuItem(CyNetworkView netView, View<CyNode> nodeView) {
+    		JMenuItem menuItem = new JMenuItem("Plot Pathway Activities");
+    		menuItem.addActionListener(new ActionListener() {
+    			@Override
+    			public void actionPerformed(ActionEvent e) {
+    				Long nodeID = nodeView.getModel().getSUID();
+    				Integer cluster = netView.getModel().getDefaultNodeTable()
+    						.getRow(nodeID).get("cluster", Integer.class);
+    				ScNetworkManager.getManager().viewClusterPathwayActivities(cluster, "plot");
+    			}
+
+    		});
+    		return new CyMenuItem(menuItem, 2.0f);
     	}
     }
     

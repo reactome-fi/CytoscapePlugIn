@@ -93,7 +93,8 @@ public class PathwayActivityAnalyzer {
     
     public void viewClusterPathwayActivities(int cluster,
                                              JSONServerCaller caller,
-                                             PathwaySpecies species) {
+                                             PathwaySpecies species,
+                                             String approach) {
     	try {
     		if(!ensureAnalysis(caller)) 
     			return; // Analysis has not done yet
@@ -107,10 +108,13 @@ public class PathwayActivityAnalyzer {
     			return; // Nothing to do.
     		// Generate a URL for opening the browser
     		String token = "reactomefiviz_sc_cluster_" + cluster + "_" + method;
-    		PlugInUtilities.openReacfoam("pathway score from " + method,
-    								     token,
-    								     species.getDBID(),
-    								     true);
+    		if (approach.equals("reacfoam"))
+    			PlugInUtilities.openReacfoam("pathway score from " + method,
+    								     	token,
+    								     	species.getDBID(),
+    								     	true);
+    		else if (approach.equals("plot")) 
+    			PlugInUtilities.openPathwayPlot(token);
     	}
     	catch(Exception e) {
     		JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),

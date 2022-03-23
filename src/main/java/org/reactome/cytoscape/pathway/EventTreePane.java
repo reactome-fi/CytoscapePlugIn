@@ -57,6 +57,7 @@ import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.util.TreeUtilities;
+import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
 import org.jdom.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -534,6 +535,12 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         
         // If there is any annotation
         if (pathwayToAnnotation.size() > 0 || annotationPanel != null) {
+        	// Plot the enrichment analysis results in scatter plot in JS
+        	JMenuItem plotEnrichmentAnalysis = new JMenuItem("Plot Enrichment Results");
+        	plotEnrichmentAnalysis.addActionListener(e1 -> {
+        		plotEnrichmentResults();
+        	});
+        	popup.add(plotEnrichmentAnalysis);
             JMenuItem removeEnrichmentAnalysis = new JMenuItem("Remove Enrichment Results");
             removeEnrichmentAnalysis.addActionListener(new ActionListener() {
                 
@@ -882,6 +889,11 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         model.nodeStructureChanged(root);
     }
     
+    private void plotEnrichmentResults() {
+    	if (annotationPanel == null) return; // No data
+    	PlugInUtilities.openPathwayPlot(null);
+    }
+    
     protected void removeEnrichmentResults() {
         if (annotationPanel != null) {
             annotationPanel.close();
@@ -956,6 +968,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
     
     public void setAnnotationPane(PathwayEnrichmentResultPane pane) {
         this.annotationPanel = pane;
+    }
+    
+    public PathwayEnrichmentResultPane getAnnotationPane() {
+        return this.annotationPanel;
     }
     
     public Map<String, EventObject> grepEventNameToObject() {
@@ -1164,7 +1180,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         String name = elm.getChildText("displayName");
         EventObject event = new EventObject();
         event.dbId = new Long(dbId);
-        event.name = name;
+        event.name = name.trim(); // In case there is any space
         String clsName = elm.getChildText("schemaClass");
         if (clsName.equals(ReactomeJavaConstants.Pathway))
             event.isPathway = true;
@@ -1182,7 +1198,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         String stId = elm.getAttributeValue("stId");
         EventObject event = new EventObject();
         event.dbId = new Long(dbId);
-        event.name = name;
+        event.name = name.trim();
         event.stId = stId;
         String clsName = elm.getName();
         if (clsName.equals(ReactomeJavaConstants.Pathway))
@@ -1195,6 +1211,40 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         return event;
     }
     
+    public List<EventObject> getHierarchicalOrderedPathways() {
+    	List<EventObject> pathways = new ArrayList<>();
+    	DefaultTreeModel model = (DefaultTreeModel) eventTree.getModel();
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) model.getRoot();
+        Set<String> checkedObjects = new HashSet<>();
+        for (int i = 0; i < root.getChildCount(); i++) {
+        	DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) root.getChildAt(i);
+        	EventObject topEventObject = (EventObject) treeNode.getUserObject();
+        	traversePathway(topEventObject,
+        			       treeNode,
+        			       pathways,
+        			       checkedObjects);
+        }
+    	return pathways;
+    }
+	
+	private void traversePathway(EventObject topObject,
+	                             DefaultMutableTreeNode currentNode,
+	                             List<EventObject> list,
+	                             Set<String> checkedObjects) {
+		EventObject currentObject = (EventObject) currentNode.getUserObject();
+		if (!currentObject.isPathway ||
+		    checkedObjects.contains(currentObject.getName())) 
+			return;
+		checkedObjects.add(currentObject.getName());
+		// Just in case if this is not set
+		currentObject.setTopLevelPathway(topObject.name);
+		list.add(currentObject);
+		for (int i = 0; i < currentNode.getChildCount(); i++) {
+			DefaultMutableTreeNode childNode = (DefaultMutableTreeNode) currentNode.getChildAt(i);
+			traversePathway(topObject, childNode, list, checkedObjects);
+		}
+	}
+    
     @ApiModel(value = "Reactome Event", description = "An event may be a pathway or reaction.")
     public static class EventObject {
         String name;
@@ -1206,8 +1256,17 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         boolean hasDiagram;
         @ApiModelProperty(value = "Contained Events")
         private List<EventObject> children;
+        String topLevelPathway;
         
-        @Override
+        public String getTopLevelPathway() {
+			return topLevelPathway;
+		}
+
+		public void setTopLevelPathway(String topLevelPathway) {
+			this.topLevelPathway = topLevelPathway;
+		}
+
+		@Override
         public String toString() {
             return name;
         }

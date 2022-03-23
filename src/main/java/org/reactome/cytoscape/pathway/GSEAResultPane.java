@@ -37,6 +37,10 @@ public class GSEAResultPane extends PathwayEnrichmentResultPane {
         model.setResults(results, 
                          (Double) fdrFilter.getSelectedItem());
     }
+    
+    public List<GseaAnalysisResult> getResults() {
+    	return this.results;
+    }
 
     @Override
     protected void resetAnnotations() {
