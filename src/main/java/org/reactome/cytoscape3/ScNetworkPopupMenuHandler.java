@@ -94,6 +94,7 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         	props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU + ".Pathway Analysis[5.8]");
         	addPopupMenu(context, new PathwayAnalysis(), CyNetworkViewContextMenuFactory.class, props);
         	addPopupMenu(context, new ViewPathwayActivities(), CyNetworkViewContextMenuFactory.class, props);
+        	addPopupMenu(context, new plotPathwayActivityComparison(), CyNetworkViewContextMenuFactory.class, props);
         	addPopupMenu(context, new PathwayAnova(), CyNetworkViewContextMenuFactory.class, props);
 
         	// Add TF analysis features
@@ -101,8 +102,12 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         	addPopupMenu(context, new TFAnalysis(), CyNetworkViewContextMenuFactory.class, props);
         	addPopupMenu(context, new ViewTFActivities(), CyNetworkViewContextMenuFactory.class, props);
         	addPopupMenu(context, new TFAnova(), CyNetworkViewContextMenuFactory.class, props);
+        	
+            // Actions related to nodes
+        	props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
+            addPopupMenu(context, new ViewClusterPathways(), CyNodeViewContextMenuFactory.class, props);
+            addPopupMenu(context, new PlotClusterPathways(), CyNodeViewContextMenuFactory.class, props);
         }
-        
         props.setProperty(ServiceProperties.PREFERRED_MENU, PREFERRED_MENU);
         addPopupMenu(context, new CytotraceAnalysis(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new DPTAnalysis(), CyNetworkViewContextMenuFactory.class, props);
@@ -112,10 +117,6 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
         addPopupMenu(context, new RegulatoryNetworkMenu(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new ToggleEdgesDisplay(), CyNetworkViewContextMenuFactory.class, props);
         addPopupMenu(context, new SaveMenuItem(), CyNetworkViewContextMenuFactory.class, props);
-        
-        // Actions related to nodes
-        addPopupMenu(context, new ViewClusterPathways(), CyNodeViewContextMenuFactory.class, props);
-        addPopupMenu(context, new PlotClusterPathways(), CyNodeViewContextMenuFactory.class, props);
     }
     
     private String getGene() {
@@ -327,6 +328,15 @@ public class ScNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
             JMenuItem menuItem = new JMenuItem("View Pathway Activities");
             menuItem.addActionListener(e -> ScNetworkManager.getManager().viewPathwayActivities());
             return new CyMenuItem(menuItem, 3.0f);
+        }
+    }
+    
+    private class plotPathwayActivityComparison implements CyNetworkViewContextMenuFactory {
+        @Override
+        public CyMenuItem createMenuItem(final CyNetworkView view) {
+            JMenuItem menuItem = new JMenuItem("Plot Pathway Activity Comparison");
+            menuItem.addActionListener(e -> ScNetworkManager.getManager().plotClusterPathwayActivityComparison());
+            return new CyMenuItem(menuItem, 4.0f);
         }
     }
     

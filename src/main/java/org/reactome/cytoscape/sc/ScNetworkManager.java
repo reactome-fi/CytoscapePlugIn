@@ -667,7 +667,7 @@ public class ScNetworkManager {
             logger.error(e.getMessage(), e);
         }
     }
-    
+
     public void viewPathwayActivities(ScPathwayMethod method,
                                       String pathway,
                                       ScPathwayDataType dataType) {
@@ -719,6 +719,35 @@ public class ScNetworkManager {
     			serverCaller,
     			getSpecies(),
     			approach);
+    }
+    
+    
+    public void plotClusterPathwayActivityComparison() {
+    	try {
+    		// To do this, we need all pathways displayed
+        	// TODO: Add a thread See method viewClusterPathwayActivities()
+            PathwayHierarchyLoadTask pathwayLoader = new PathwayHierarchyLoadTask();
+            pathwayLoader.setSpecies(species);
+            pathwayLoader.displayReactomePathways(null);
+            
+    		List<Integer> clusters = serverCaller.getCluster();
+            List<Integer> distClusters = clusters.stream().distinct().sorted().collect(Collectors.toList());
+            DifferentialExpressionAnalyzer helper = new DifferentialExpressionAnalyzer();
+            Pair<String, String> selected = helper.getSelectedClusters(distClusters,
+            		"Choose the first cluster:",
+            		"Choose the second cluster:",
+            		false);
+            if (selected == null)
+                return;
+            PathwayActivityAnalyzer.getAnalyzer().plotClusterPathwayActivityComparison(selected, serverCaller);
+        }
+        catch(IOException e) {
+            JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                                          e.getMessage(),
+                                          "Error in Plot Pathway Activity Comparison",
+                                          JOptionPane.ERROR_MESSAGE);
+            logger.error(e.getMessage(), e);
+        }
     }
     
     

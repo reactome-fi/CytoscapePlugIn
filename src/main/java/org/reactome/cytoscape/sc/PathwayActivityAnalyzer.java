@@ -20,7 +20,9 @@ import javax.swing.JTextField;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import org.apache.commons.math3.util.Pair;
 import org.cytoscape.application.swing.CytoPanelName;
+import org.cytoscape.session.events.SessionLoadedListener;
 import org.gk.util.DialogControlPane;
 import org.gk.util.ProgressPane;
 import org.reactome.annotate.GeneSetAnnotation;
@@ -49,6 +51,11 @@ public class PathwayActivityAnalyzer {
     
     protected PathwayActivityAnalyzer() {
         method2key = new HashMap<>();
+        // Clean up method2key to avoid use this for checking pathway activity
+        SessionLoadedListener sessionListener = e -> method2key.clear();
+        PlugInObjectManager.getManager().getBundleContext().registerService(SessionLoadedListener.class.getName(),
+                                sessionListener,
+                                null);
     }
     
     public static final PathwayActivityAnalyzer getAnalyzer() {
@@ -98,12 +105,7 @@ public class PathwayActivityAnalyzer {
     	try {
     		if(!ensureAnalysis(caller)) 
     			return; // Analysis has not done yet
-    		ScPathwayMethod method = null;
-    		if (method2key.size() == 1)
-    			method = method2key.keySet().stream().findAny().get();
-    		else {
-    			method = chooseMethod();
-    		}
+    		ScPathwayMethod method = inferPathwayMethod();
     		if (method == null)
     			return; // Nothing to do.
     		// Generate a URL for opening the browser
@@ -120,6 +122,40 @@ public class PathwayActivityAnalyzer {
     		JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
     								      e.getMessage(),
     								      "Error in Viewing Cluster Pathway Activities",
+    								      JOptionPane.ERROR_MESSAGE);
+    		logger.error(e.getMessage(), e);
+    	}
+    }
+
+	private ScPathwayMethod inferPathwayMethod() {
+		ScPathwayMethod method = null;
+		if (method2key.size() == 1)
+			method = method2key.keySet().stream().findAny().get();
+		else {
+			method = chooseMethod();
+		}
+		return method;
+	}
+    
+    public void plotClusterPathwayActivityComparison(Pair<String, String> clusters,
+                                                     JSONServerCaller caller) {
+    	try {
+    		if(!ensureAnalysis(caller)) 
+    			return; // Analysis has not done yet
+    		ScPathwayMethod method = inferPathwayMethod();
+    		if (method == null)
+    			return; // Nothing to do.
+    		// Generate a URL for opening the browser
+    		String token = "reactomefiviz_sc_cluster_" +
+    						clusters.getFirst() + "_vs_" + 
+    						clusters.getSecond() + "_" +
+    						method;
+    		PlugInUtilities.openPathwayPlot(token);
+    	}
+    	catch(Exception e) {
+    		JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+    								      e.getMessage(),
+    								      "Error in Plotting Pathway Activity Comparison",
     								      JOptionPane.ERROR_MESSAGE);
     		logger.error(e.getMessage(), e);
     	}

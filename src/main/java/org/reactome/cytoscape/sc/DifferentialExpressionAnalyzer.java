@@ -45,6 +45,31 @@ public class DifferentialExpressionAnalyzer {
     public Pair<String, String> getSelectedClusters(List<Integer> clusters) {
         List<String> groups = clusters.stream().map(c -> c.toString()).collect(Collectors.toList());
         GroupSelectionDialog selectionDialog = new GroupSelectionDialog(groups);
+        selectionDialog.setVisible(true);
+        if (!selectionDialog.isOkCliked)
+            return null;
+        Pair<String, String> selected = selectionDialog.getSelected();
+        return selected;
+    }
+    
+    /**
+     * A customized way to choose two groups for doing whatever analysis.
+     * @param clusters
+     * @param label1
+     * @param label2
+     * @param needRest
+     * @return
+     */
+    public Pair<String, String> getSelectedClusters(List<Integer> clusters,
+                                                    String label1,
+                                                    String label2,
+                                                    boolean needRest) {
+        List<String> groups = clusters.stream().map(c -> c.toString()).collect(Collectors.toList());
+        GroupSelectionDialog selectionDialog = new GroupSelectionDialog(groups);
+        selectionDialog.label1.setText(label1);
+        selectionDialog.label2.setText(label2);
+        if (!needRest) selectionDialog.referenceBox.removeItem("rest");
+        selectionDialog.setVisible(true);
         if (!selectionDialog.isOkCliked)
             return null;
         Pair<String, String> selected = selectionDialog.getSelected();
@@ -104,6 +129,8 @@ public class DifferentialExpressionAnalyzer {
         private JComboBox<String> groupBox;
         private JComboBox<String> referenceBox;
         private boolean isOkCliked = false;
+        private JLabel label1;
+        private JLabel label2;
         
         public GroupSelectionDialog(List<String> groups) {
             super(PlugInObjectManager.getManager().getCytoscapeDesktop());
@@ -117,22 +144,22 @@ public class DifferentialExpressionAnalyzer {
             constraints.insets = new Insets(4, 4, 4, 4);
             contentPane.setBorder(BorderFactory.createEtchedBorder());
             // For the group
-            JLabel label = new JLabel("Choose a group for analysis: ");
+            label1 = new JLabel("Choose a group for analysis: ");
             groupBox = new JComboBox<>();
             groups.forEach(groupBox::addItem);
             groupBox.setSelectedIndex(0); // Default
             JPanel panel = new JPanel();
-            panel.add(label);
+            panel.add(label1);
             panel.add(groupBox);
             contentPane.add(panel, constraints);
             // For reference
-            label = new JLabel("Choose a reference (use rest for all other cells): ");
+            label2 = new JLabel("Choose a reference (use rest for all other cells): ");
             referenceBox = new JComboBox<>();
             referenceBox.addItem("rest");
             groups.forEach(referenceBox::addItem);
             referenceBox.setSelectedIndex(0); // Default
             panel = new JPanel();
-            panel.add(label);
+            panel.add(label2);
             panel.add(referenceBox);
             constraints.gridy = 1;
             contentPane.add(panel, constraints);
@@ -154,7 +181,6 @@ public class DifferentialExpressionAnalyzer {
             setLocationRelativeTo(getOwner());
             setSize(425, 235);
             setModal(true);
-            setVisible(true);
         }
         
         public Pair<String, String> getSelected() {

@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.jmol.script.T;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
@@ -40,6 +41,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -173,7 +175,7 @@ public class ReacfoamServer {
             else if (url.startsWith("/pathwayplot")) {
             	int index = url.indexOf("analysis=");
             	if (index > 0) {
-            		String analysis = url.substring(index + "analysis=".length() + 1);
+            		String analysis = url.substring(index + "analysis=".length());
             		plotScClusterPathwayActivities(out, analysis);
             	}
             	else {
@@ -217,9 +219,11 @@ public class ReacfoamServer {
     	template = template.replace("$data", traceText);
     	if (treePane.getAnnotationPane() instanceof GSEAResultPane) {
     		template = template.replace("$y_title", "NormalizedEnrichedScore");
+    		template = template.replace("$title", "Reactome GSEA Analysis");
     	}
     	else {
     		template = template.replace("$y_title", "-Log10(pValue)");
+    		template = template.replace("$title", "Reactome Pathway Enrichment Analysis");
     	}
     	os.write(template.getBytes());
     	os.flush();
@@ -243,11 +247,40 @@ public class ReacfoamServer {
     	// Get the template from the backend server
     	String template = loadPlotTemplate();
     	template = setPathwayList(eventObjects, template);
-    	Map<String, Double> pathway2score = fetchScClusterPathwayActivities(analysisToken);
-    	String traceText = createPathwayTraces(eventObjects, null, pathway2score);
+    	List<PathwayTrace> traces = null;
+    	String title = null;
+    	final String[] tokens = analysisToken.split("_");
+    	// There are two cases:
+    	if (analysisToken.contains("_vs_")) {
+    		// For comparison: e.g. reactomefiviz_sc_cluster_1_vs_2_aucell
+    		Map<String, Double> pathway2score1 = fetchScClusterPathwayActivities(tokens[3], tokens[tokens.length - 1]);
+    		List<PathwayTrace> traces1 = createPathwayTraces(eventObjects, null, pathway2score1);
+    		// Try to enhance it
+    		traces1.forEach(t -> {
+    			t.name = t.name + "(" + tokens[3] + ")";
+    			t.text = t.text.stream().map(e -> e + "<br>Cluster: " + tokens[3]).collect(Collectors.toList());
+    		});
+    		Map<String, Double> pathway2score2 = fetchScClusterPathwayActivities(tokens[5], tokens[tokens.length - 1]);
+    		List<PathwayTrace> traces2 = createPathwayTraces(eventObjects, null, pathway2score2);
+    		traces2.forEach(t -> {
+    			t.name = t.name + "(" + tokens[5] + ")";
+    			t.text = t.text.stream().map(e -> e + "<br>Cluster: " + tokens[5]).collect(Collectors.toList());
+    		});
+    		traces2.addAll(traces1);
+    		traces = traces2;
+    		title = "Cluster " + tokens[3] + " vs Cluster " + tokens[5] + " " + tokens[tokens.length - 1].toUpperCase();
+    	}
+    	else {
+    		// For single cluster: e.g. reactomefiviz_sc_cluster_1_aucell
+    		Map<String, Double> pathway2score = fetchScClusterPathwayActivities(tokens[3], tokens[tokens.length - 1]);
+    		traces = createPathwayTraces(eventObjects, null, pathway2score);
+    		title = "Cluster " + tokens[3] + " " + tokens[tokens.length - 1].toUpperCase();
+    	}
+    	String traceText = createPathwayTraces(traces);
     	template = template.replace("$data", traceText);
     	// Format: reactomefiviz_sc_cluster_(\\d)+_(\\w)+"
-    	template = template.replace("$y_title", analysisToken.split("_")[4].toUpperCase());
+    	template = template.replace("$y_title", tokens[tokens.length - 1].toUpperCase());
+    	template = template.replace("$title", title);
     	os.write(template.getBytes());
     	os.flush();
     }
@@ -271,10 +304,11 @@ public class ReacfoamServer {
     			pathway2score.put(p, -Math.log10(a.getPValue()));
     		});
     	}
-    	return createPathwayTraces(eventObjects, pathway2annotation, pathway2score);
+    	List<PathwayTrace> traces = createPathwayTraces(eventObjects, pathway2annotation, pathway2score);
+    	return createPathwayTraces(traces);
     }
     
-    private String createPathwayTraces(List<EventObject> eventObjects,
+    private List<PathwayTrace> createPathwayTraces(List<EventObject> eventObjects,
                                        Map<String, GeneSetAnnotation> pathway2annotation,
                                        Map<String, Double> pathway2score) throws Exception {
     	// Check how many top level pathways we have
@@ -299,14 +333,18 @@ public class ReacfoamServer {
     			GeneSetAnnotation a = pathway2annotation.get(p);
     			toolTip.append("<br>");
     			toolTip.append("pValue: ").append(PlugInUtilities.formatProbability(a.getPValue())).append("<br>");
-    			toolTip.append("FDR: ").append(PlugInUtilities.formatProbability(new Double(a.getFdr())));
+    			toolTip.append("FDR: ").append(PlugInUtilities.formatProbability(Double.valueOf(a.getFdr())));
     		}
     		trace.addText(toolTip.toString());
     	});
-    	ObjectWriter writer = getObjectWriter();
-    	List<PathwayTrace> sortedTraces = top2traces.values().stream()
+    	return new ArrayList<>(top2traces.values());
+    }
+    
+    private String createPathwayTraces(List<PathwayTrace> traces) throws JsonProcessingException  {
+    	List<PathwayTrace> sortedTraces = traces.stream()
     			.sorted((t1, t2) -> t1.name.compareTo(t2.name))
     			.collect(Collectors.toList());
+    	ObjectWriter writer = getObjectWriter();
         String traceText = writer.writeValueAsString(sortedTraces);
         return traceText;
     }
@@ -329,7 +367,8 @@ public class ReacfoamServer {
                                                   String analysisToken) throws Exception {
     	EventTreePane treePane = PathwayControlPanel.getInstance().getEventTreePane();
         Map<String, EventObject> nameToObject = treePane.grepEventNameToObject();
-    	Map<String, Double> pathway2score = fetchScClusterPathwayActivities(analysisToken);
+        String[] tokens = analysisToken.split("_");
+    	Map<String, Double> pathway2score = fetchScClusterPathwayActivities(tokens[3], tokens[4]);
     	PathwayEnrichmentResults results = new PathwayEnrichmentResults();
     	if (pathway2score != null && pathway2score.size() > 0) {
     		pathway2score.forEach((p, score) -> {
@@ -348,10 +387,10 @@ public class ReacfoamServer {
     	outputEnrichment(os, results);
     }
 
-	private Map<String, Double> fetchScClusterPathwayActivities(String analysisToken) throws Exception {
-		String[] tokens = analysisToken.split("_");
-    	int cluster = Integer.parseInt(tokens[3]);
-    	ScPathwayMethod method = ScPathwayMethod.valueOf(tokens[4]);
+	private Map<String, Double> fetchScClusterPathwayActivities(String clusterText,
+	                                                            String methodText) throws Exception {
+		int cluster = Integer.parseInt(clusterText);
+    	ScPathwayMethod method = ScPathwayMethod.valueOf(methodText);
     	Map<String, Double> pathway2score = ScNetworkManager.getManager().fetchClusterPathwayActivities(method, cluster);
 		return pathway2score;
 	}
@@ -439,6 +478,8 @@ public class ReacfoamServer {
     	List<String> x;
     	List<Double> y;
     	String mode = "markers";
+    	String type = "scattergl";
+    	Map<String, Object> marker;
     	String name;
     	List<String> text;
     	
@@ -447,6 +488,8 @@ public class ReacfoamServer {
 			y = new ArrayList<>();
 			text = new ArrayList<>();
 			this.name = name;
+			marker = new HashMap<>();
+			marker.put("size", 5);
 		}
     	
     	public void addDataPoint(String pathway,
