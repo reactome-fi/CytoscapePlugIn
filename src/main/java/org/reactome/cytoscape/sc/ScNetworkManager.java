@@ -757,13 +757,20 @@ public class ScNetworkManager {
      * @param cluster
      */
     public Map<String, Double> fetchClusterPathwayActivities(ScPathwayMethod method,
-                                              int cluster) throws Exception {
+                                                             int cluster) throws Exception {
     	String pathwayKey = PathwayActivityAnalyzer.getAnalyzer().method2key.get(method);
     	if (pathwayKey == null)
     		return null;
     	Map<String, Double> pathway2score = serverCaller.fetchClusterPathwayActivities(pathwayKey,
     																				   cluster);
 		return pathway2score;
+    }
+    
+    public Map<String, Double> fetchClusterPathwayActivities(String methodText,
+                                                             String clusterText) throws Exception {
+    	int cluster = Integer.parseInt(clusterText);
+    	ScPathwayMethod method = ScPathwayMethod.valueOf(methodText);
+    	return fetchClusterPathwayActivities(method, cluster);
     }
     
     public void buildFINetwork(DiffExpResult result) {
