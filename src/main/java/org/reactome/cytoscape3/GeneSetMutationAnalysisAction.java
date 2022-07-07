@@ -1,6 +1,5 @@
 package org.reactome.cytoscape3;
 
-import java.awt.event.ActionEvent;
 import java.io.File;
 
 import javax.swing.JOptionPane;

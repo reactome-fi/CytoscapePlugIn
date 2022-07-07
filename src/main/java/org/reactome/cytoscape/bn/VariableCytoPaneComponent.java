@@ -182,6 +182,9 @@ public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
                 Object[] row = tableData.get(i);
                 BooleanVariable var = (BooleanVariable) row[0];
                 String id = var.getProperty("reactomeId");
+                if (id == null) 
+                	// Try the name
+                	id = var.getName();
                 if (id == null)
                     continue;
                 Number value = (Number) row[column];

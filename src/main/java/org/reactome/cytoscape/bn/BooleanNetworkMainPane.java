@@ -222,7 +222,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         index = tabbedPane.indexOfTab(simuationNames[1]);
         BooleanNetworkSamplePane pane2 = (BooleanNetworkSamplePane) tabbedPane.getComponentAt(index);
         // Check to make sure two selected simulations generated from the same pathway diagram
-        if (!pane1.getPathwayDiagramID().equals(pane2.getPathwayDiagramID())) {
+        if (!ensureSimulationInSameObject(pane1, pane2)) {
             JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
                                           "Selected simulations for comparison were generated from\n"
                                                   + "two different pathways. Choose two simulations from the\n"
@@ -239,7 +239,12 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
                           pane1.getHiliteControlPane());
     }
     
-    private void displayComparison(SimulationTableModel sim1,
+    protected boolean ensureSimulationInSameObject(BooleanNetworkSamplePane pane1,
+                                                   BooleanNetworkSamplePane pane2) {
+    	return pane1.getPathwayDiagramID().equals(pane2.getPathwayDiagramID());
+    }
+    
+    protected void displayComparison(SimulationTableModel sim1,
                                    SimulationTableModel sim2,
                                    PathwayHighlightControlPanel hilitePane) {
         SimulationComparisonPane comparisonPane = new SimulationComparisonPane(sim1.getSimulationName() + " vs. " + sim2.getSimulationName());
@@ -272,7 +277,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         dialog.setVisible(true);
         if (!dialog.isOkClicked)
             return;
-        BooleanNetworkSamplePane samplePane = new BooleanNetworkSamplePane();
+        BooleanNetworkSamplePane samplePane = createSamplePane();
         // The following order is important to display selected set of variables
         samplePane.setPathwayEditor(pathwayEditor);
         samplePane.setHiliteControlPane(hiliteControlPane);
@@ -301,8 +306,13 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         tabbedPane.setSelectedComponent(samplePane); // Select the newly created one
         validateButtons();
     }
+
+	protected BooleanNetworkSamplePane createSamplePane() {
+		BooleanNetworkSamplePane samplePane = new BooleanNetworkSamplePane();
+		return samplePane;
+	}
     
-    private BooleanNetwork getBooleanNetwork(List<String> targets) {
+    protected BooleanNetwork getBooleanNetwork(List<String> targets) {
         Long pathwayId = pathwayEditor.getRenderable().getReactomeId();
         // Check if it has been loaded previously
         String key = generateBNKey(pathwayId, targets);
@@ -429,8 +439,8 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
         return null;
     }
     
-    private class CompareSimulationDialog extends JDialog {
-        private boolean isOKClicked;
+    protected class CompareSimulationDialog extends JDialog {
+        protected boolean isOKClicked;
         private JComboBox<String> simulationIBox;
         private JComboBox<String> simulationIIBox;
         

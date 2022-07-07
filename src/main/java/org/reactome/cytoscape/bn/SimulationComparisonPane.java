@@ -23,6 +23,7 @@ import org.reactome.pathway.booleannetwork.ModificationType;
 public class SimulationComparisonPane extends VariableCytoPaneComponent {
     // Provide a summary
     protected JLabel summaryLabel;
+    protected String variablePropKey = "reactomeId";
     
     public SimulationComparisonPane(String title) {
         super(title);
@@ -113,7 +114,7 @@ public class SimulationComparisonPane extends VariableCytoPaneComponent {
             // should be safe
             tableData.clear();
             SimulationComparator comparator = new SimulationComparator();
-            String propKey = "reactomeId";
+            String propKey = variablePropKey;
             comparator.setVarPropertyKey(propKey);
             // varToDiff is keyed based on reference variables
             Map<BooleanVariable, Double> varToDiff = comparator.calculateDiff(perturbed.getSimulationResults(), 

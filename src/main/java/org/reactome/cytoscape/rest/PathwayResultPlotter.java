@@ -180,6 +180,8 @@ public class PathwayResultPlotter {
     																							  t -> new PathwayTrace(t)));
     	Map<String, String> pathway2top = eventObjects.stream()
     			.collect(Collectors.toMap(p -> p.getName(), p -> p.getTopLevelPathway()));
+    	// Some hacky way for sharing ANOVA results when 1/F is used
+    	final String dataType = PathwayControlPanel.getInstance().getEventTreePane().getDataType();
     	pathway2score.forEach((p, score) -> {
     		String top = pathway2top.get(p);
     		// Just in case if the version is not right
@@ -196,7 +198,7 @@ public class PathwayResultPlotter {
     			GeneSetAnnotation a = pathway2annotation.get(p);
     			toolTip.append("<br>");
     			toolTip.append("pValue: ").append(PlugInUtilities.formatProbability(a.getPValue())).append("<br>");
-    			toolTip.append("FDR: ").append(PlugInUtilities.formatProbability(Double.valueOf(a.getFdr())));
+    			toolTip.append(dataType + ": ").append(PlugInUtilities.formatProbability(Double.valueOf(a.getFdr())));
     		}
     		trace.addText(toolTip.toString());
     	});

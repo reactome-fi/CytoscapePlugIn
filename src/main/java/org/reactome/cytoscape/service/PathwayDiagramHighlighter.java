@@ -7,9 +7,14 @@ package org.reactome.cytoscape.service;
 import java.awt.Color;
 import java.util.Map;
 
+import org.cytoscape.model.CyNode;
+import org.cytoscape.view.model.CyNetworkView;
+import org.cytoscape.view.model.View;
+import org.cytoscape.view.presentation.property.BasicVisualLexicon;
 import org.gk.render.Node;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
+import org.reactome.cytoscape.util.PlugInUtilities;
 
 /**
  * This class is used to highlight pathway diagrams based on IPAs or p-values. The color generation
@@ -166,21 +171,39 @@ public class PathwayDiagramHighlighter {
      */
     public void highlightELV(RenderablePathway diagram,
                              Map<String, Double> idToValue) {
-        double min = Double.POSITIVE_INFINITY;
-        double max = Double.NEGATIVE_INFINITY;
-        for (Double value : idToValue.values()) {
-            if (value > max)
-                max = value;
-            if (value < min)
-                min = value;
-        }
-        highlightELV(diagram, idToValue, min, max);
+    	double[] minMax = PlugInUtilities.getMinMax(idToValue.values());
+        highlightELV(diagram, idToValue, minMax[0], minMax[1]);
     }
     
     public int[] getColorSpetrum() {
         if (colors == null)
             initColors();
         return colors;
+    }
+    
+    /**
+     * Color a displayed network.
+     * @param view
+     * @param idToValue
+     */
+    public void highlighNetwork(CyNetworkView view,
+                                Map<String, Double> nameToValue,
+                                Double min,
+                                Double max) {
+    	TableHelper tableHelper = new TableHelper();
+    	for (View<CyNode> nodeView : view.getNodeViews()) {
+    		CyNode node = nodeView.getModel();
+    		String name = tableHelper.getStoredNodeAttribute(view.getModel(), node, "name", String.class);
+    		Double value = nameToValue.get(name);
+    		if (value == null) {
+    			nodeView.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, Color.decode("#D9D9D9")); // Probably should use other color
+    		}
+    		else {
+    			Color color = getColor(value, min, max);
+    			nodeView.setVisualProperty(BasicVisualLexicon.NODE_FILL_COLOR, color);
+    		}
+    	}
+    	view.updateView();
     }
     
 }

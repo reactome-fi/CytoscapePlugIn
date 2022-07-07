@@ -77,7 +77,7 @@ public class TimeCoursePane extends VariableCytoPaneComponent {
     public TimeCoursePane(String title) {
         super(title);
         hideOtherNodesBox.setVisible(false);
-        modifyContentPane();
+//        modifyContentPane();
     }
     
     @Override
@@ -109,7 +109,7 @@ public class TimeCoursePane extends VariableCytoPaneComponent {
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
         // Show a list of samples
-        JLabel timeLabel = new JLabel("Choose time to highlight pathway:");
+        JLabel timeLabel = createTimeLabel();
         timeBox = new JComboBox<>();
         timeBox.setEditable(false);
         DefaultComboBoxModel<String> sampleModel = new DefaultComboBoxModel<>();
@@ -134,6 +134,11 @@ public class TimeCoursePane extends VariableCytoPaneComponent {
         });
         controlToolBar.add(panel);
     }
+
+	protected JLabel createTimeLabel() {
+		JLabel timeLabel = new JLabel("Choose time to highlight pathway:");
+		return timeLabel;
+	}
     
     private void handleTimeBoxSelection() {
         if (duringTimeBoxUpdate)

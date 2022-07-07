@@ -39,6 +39,7 @@ import org.reactome.cytoscape3.PGMFINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.PathwayFINetworkPopupMenuHandler;
 import org.reactome.cytoscape3.ReactionNetworkPopupMenuHandler;
 import org.reactome.cytoscape3.ScNetworkPopupMenuHandler;
+import org.reactome.cytoscape3.TFPathwayNetworkPopupMenuHandler;
 import org.reactome.cytoscape3.UserGuideAction;
 
 public class ReactomeFIBundleActivator extends AbstractCyActivator {
@@ -147,7 +148,8 @@ public class ReactomeFIBundleActivator extends AbstractCyActivator {
         popupManager.registerMenuHandler(ReactomeNetworkType.DorotheaTFTargetNetwork,
                                          new FINetworkPopupMenuHandler()); // Don't have fetch annotations. 
                                                                            // This should be handled when the network is constructed.
-        
+        popupManager.registerMenuHandler(ReactomeNetworkType.TFPathwayNetwork,
+        		new TFPathwayNetworkPopupMenuHandler());
         // Used as the default PopupMenuHandler. Most likely, this is not needed.
         // But keep it here for the time being.
         popupManager.installPopupMenu(ReactomeNetworkType.FINetwork);

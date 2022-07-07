@@ -68,7 +68,7 @@ public class VariableSelectionHandler implements Selectable {
                     BooleanVariable var = (BooleanVariable) value;
                     String reactomeId = var.getProperty("reactomeId");
                     if (reactomeId != null)
-                        selectedIds.add(new Long(reactomeId));
+                    	selectedIds.add(new Long(reactomeId));
                 }
             }
         }

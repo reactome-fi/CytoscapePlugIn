@@ -119,6 +119,10 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
             dataTypeLabel.setText(dataType + ": ");
     }
     
+    public String getDataType() {
+    	return this.dataType;
+    }
+    
     private void init() {
         setLayout(new BorderLayout());
         // Have to override getVisibleRect() because of getBounds() in class BiModalJSplitPane.

@@ -82,7 +82,7 @@ public class BooleanNetworkSamplePane extends JPanel {
     // For simulation
     private Double defaultValue = 1.0d; // Default is on
     // Simulation name
-    private String sampleName;
+    protected String sampleName;
     // For simulation
     private ANDGateMode andGateMode = ANDGateMode.PROD;
     // A checkbox for selecting if a larger value should be used for stimulation nodes
@@ -286,7 +286,7 @@ public class BooleanNetworkSamplePane extends JPanel {
         }
     }
     
-    private void enableSelectionSync() {
+    protected void enableSelectionSync() {
         sampleTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             
             @Override
@@ -359,6 +359,10 @@ public class BooleanNetworkSamplePane extends JPanel {
                                 proteinInhibtion,
                                 proteinActivation);
         showNotes(network, drugs);
+    }
+    
+    public BooleanNetwork getBooleanNetwork() {
+    	return this.network;
     }
     
     private void showNotes(BooleanNetwork network, String drugs) {
@@ -454,7 +458,7 @@ public class BooleanNetworkSamplePane extends JPanel {
                 configuration.getActivation());
     }
 
-    private void displayTimeCourse(List<BooleanVariable> variables) {
+    protected void displayTimeCourse(List<BooleanVariable> variables) {
         TimeCoursePane timeCoursePane = new TimeCoursePane("BN: " + sampleName);
         CytoPanel cytoPanel = PlugInObjectManager.getManager().getCySwingApplication().getCytoPanel(timeCoursePane.getCytoPanelName());
         int index = cytoPanel.indexOfComponent(timeCoursePane);

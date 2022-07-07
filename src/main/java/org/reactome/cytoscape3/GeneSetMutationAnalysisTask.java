@@ -20,8 +20,7 @@ import org.cytoscape.view.model.CyNetworkViewManager;
 import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.reactome.cancer.CancerAnalysisUtilitites;
-import org.reactome.cancer.MATFileLoader;
+import org.reactome.cancer.base.MATFileLoader;
 import org.reactome.cytoscape.service.FIAnalysisTask;
 import org.reactome.cytoscape.service.FINetworkGenerator;
 import org.reactome.cytoscape.service.FINetworkService;
@@ -110,7 +109,7 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
             
             if (format.equals("MAF")) {
                 sampleToGenes = new MATFileLoader().loadSampleToGenes(file.getAbsolutePath(), chooseHomoGenes);
-                selectedGenes = CancerAnalysisUtilitites.selectGenesInSamples(sampleCutoffValue, sampleToGenes);
+                selectedGenes = selectGenesInSamples(sampleCutoffValue, sampleToGenes);
             }
             else if (format.equals("GeneSample")) {
                 geneToSampleNumber = new HashMap<String, Integer>();
@@ -306,5 +305,22 @@ public class GeneSetMutationAnalysisTask extends FIAnalysisTask {
         // TableHelper manager = new TableHelper();
         // manager.storeDataSetType(network, "Data Set");
         return network;
+    }
+    
+    /**
+     * This method is used to select genes in samples based on a sample cutoff value.
+     * @param sampleNumber
+     * @param sampleToGenes
+     * @return
+     */
+    private Set<String> selectGenesInSamples(int sampleNumber, Map<String, Set<String>> sampleToGenes) {
+        Map<String, Set<String>> geneToSamples = InteractionUtilities.switchKeyValues(sampleToGenes);
+        Set<String> rtn = new HashSet<String>();
+        for (String gene : geneToSamples.keySet()) {
+            Set<String> samples = geneToSamples.get(gene);
+            if (samples.size() >= sampleNumber)
+                rtn.add(gene);
+        }
+        return rtn;
     }
 }

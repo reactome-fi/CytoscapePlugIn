@@ -14,7 +14,6 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cytoscape.service.GeneSetAnnotationPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
-import org.reactome.cytoscape3.HotNetAnalysisTask.HotNetModule;
 
 public class ResultDisplayHelper {
     private static ResultDisplayHelper helper;
@@ -70,42 +69,6 @@ public class ResultDisplayHelper {
         moduleBrowser.setNetworkView(view);
         moduleBrowser.showModules(nodeToCluster, nodeToSampleSet);
         moduleBrowser.showModularity(modularity);
-    }
-    
-    protected void showHotnetModulesInTab(List<HotNetModule> modules,
-                                          Map<String, Set<String>> sampleToGenes,
-                                          CyNetworkView view) {
-        String title = "HotNet Module Browser";
-        CySwingApplication desktopApp = PlugInObjectManager.getManager().getCySwingApplication();
-        CytoPanel tableBrowserPane = desktopApp.getCytoPanel(CytoPanelName.SOUTH);
-        boolean found = false;
-        int numComps = tableBrowserPane.getCytoPanelComponentCount();
-        int componentIndex = -1;
-        for (int i = 0; i < numComps; i++) {
-            CytoPanelComponent aComp = (CytoPanelComponent) tableBrowserPane.getComponentAt(i);
-            if (aComp.getTitle().equalsIgnoreCase(title)) {
-                found = true;
-                componentIndex = i;
-                break;
-            }
-        }
-        if (found == false) {
-            HotNetModuleBrowser hotnetBrowser = new HotNetModuleBrowser();
-            hotnetBrowser.setTitle(title);
-            if (tableBrowserPane.getState() == CytoPanelState.HIDE) {
-                tableBrowserPane.setState(CytoPanelState.DOCK);
-            }
-            int index = tableBrowserPane.indexOfComponent(hotnetBrowser);
-            if (index == -1)
-                return;
-            componentIndex = index;
-            tableBrowserPane.setSelectedIndex(index);
-        }
-        HotNetModuleBrowser moduleBrowser = (HotNetModuleBrowser) tableBrowserPane.getComponentAt(componentIndex);
-        tableBrowserPane.setSelectedIndex(componentIndex);
-        moduleBrowser.setNetworkView(view);
-        moduleBrowser.showHotNetModules(modules, sampleToGenes);
-        
     }
     
     protected void showMCLModuleInTab(List<Set<String>> clusters,

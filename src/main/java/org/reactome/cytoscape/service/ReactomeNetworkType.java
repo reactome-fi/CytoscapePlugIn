@@ -19,6 +19,7 @@ public enum ReactomeNetworkType {
     MechismoNetwork, // Used to perform mechismo network visualization
     SingleCellNetwork, // for single cell data analysis
     SingleCellClusterNetwork,
-    DorotheaTFTargetNetwork
+    DorotheaTFTargetNetwork,
+    TFPathwayNetwork // Generate based on scRNA-seq data using Python script, https://github.com/reactome-fi/single-cell-analysis/blob/master/aml/AMLTet2Analysis.py.
     
 }

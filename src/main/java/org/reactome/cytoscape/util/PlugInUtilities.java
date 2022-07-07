@@ -339,6 +339,19 @@ public class PlugInUtilities {
         return combinedPValue;
     }
     
+    public static double[] getMinMax(Collection<Double> values) {
+    	double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
+        for (Double value : values) {
+            if (value > max)
+                max = value;
+            if (value < min)
+                min = value;
+        }
+        double[] rtn = {min, max};
+        return rtn;
+    }
+    
     /**
      * Get the sorted keys used in the table. If nothing is selected, the passed column will be
      * used for sorting in ASCENDING.
