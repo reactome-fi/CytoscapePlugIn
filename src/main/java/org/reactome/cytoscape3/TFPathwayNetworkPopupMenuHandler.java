@@ -2,34 +2,20 @@ package org.reactome.cytoscape3;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Map;
 import java.util.Properties;
 
-import javax.swing.JFrame;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 
 import org.cytoscape.application.swing.CyMenuItem;
 import org.cytoscape.application.swing.CyNetworkViewContextMenuFactory;
-import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.application.swing.CytoPanelName;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.work.ServiceProperties;
-import org.gk.util.ProgressPane;
 import org.osgi.framework.BundleContext;
-import org.reactome.booleannetwork.BooleanNetwork;
-import org.reactome.booleannetwork.BooleanVariable;
-import org.reactome.booleannetwork.FuzzyLogicSimulator;
-import org.reactome.booleannetwork.IdentityFunction;
-import org.reactome.booleannetwork.SimulationConfiguration;
-import org.reactome.booleannetwork.SimulationResults;
 import org.reactome.cytoscape.bn.BooleanNetworkMainPane;
-import org.reactome.cytoscape.bn.NetworkTimeCoursePane;
 import org.reactome.cytoscape.bn.NetworkBNMainPane;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
-import org.reactome.pathway.booleannetwork.BNPerturbationAnalyzer;
 
 public class TFPathwayNetworkPopupMenuHandler extends FINetworkPopupMenuHandler {
 

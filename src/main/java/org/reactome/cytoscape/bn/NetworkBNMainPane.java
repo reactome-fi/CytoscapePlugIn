@@ -5,19 +5,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JOptionPane;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import org.cytoscape.application.swing.CytoPanel;
 import org.cytoscape.model.CyEdge;
+import org.cytoscape.model.CyNetwork;
 import org.cytoscape.model.CyNode;
+import org.cytoscape.model.events.RowsSetEvent;
+import org.cytoscape.model.events.RowsSetListener;
 import org.cytoscape.view.model.CyNetworkView;
+import org.gk.graphEditor.Selectable;
+import org.gk.graphEditor.SelectionMediator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 import org.reactome.booleannetwork.BooleanNetwork;
 import org.reactome.booleannetwork.BooleanRelation;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.booleannetwork.HillFunction;
 import org.reactome.booleannetwork.IdentityFunction;
 import org.reactome.booleannetwork.TransferFunction;
-import org.reactome.cytoscape.bn.BooleanNetworkMainPane.CompareSimulationDialog;
+import org.reactome.cytoscape.genescore.GeneSelectionHandler;
+import org.reactome.cytoscape.service.GeneLevelSelectionHandler;
+import org.reactome.cytoscape.service.NetworkViewSelectionHandler;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
@@ -26,6 +36,8 @@ public class NetworkBNMainPane extends BooleanNetworkMainPane {
 	
 	private CyNetworkView networkView;
 	private BooleanNetwork booleanNetwork;
+	private ServiceRegistration networkSelectionRegistration;
+	private NetworkViewSelectionHandler networkSelectionHandler;
 	
 	public NetworkBNMainPane() {
 		super();
@@ -137,6 +149,47 @@ public class NetworkBNMainPane extends BooleanNetworkMainPane {
 	
 	public void setNetworkView(CyNetworkView view) {
 		this.networkView = view;
+		// Just in case
+		if (networkSelectionRegistration != null)
+			networkSelectionRegistration.unregister();
+		// Do a reset
+		SelectionMediator selectionMediator = PlugInObjectManager.getManager().getObservationVarSelectionMediator();
+		if (selectionMediator.getSelectables() != null)
+			selectionMediator.getSelectables().clear();
+		if (networkSelectionHandler == null) {
+			networkSelectionHandler = new NetworkViewSelectionHandler();
+			selectionMediator.addSelectable(networkSelectionHandler);
+		}
+		networkSelectionHandler.setNetworkView(view);
+		
+        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
+        RowsSetListener listener = new RowsSetListener() {
+            
+            @Override
+            public void handleEvent(RowsSetEvent e) {
+            	if(!e.containsColumn(CyNetwork.SELECTED))
+                    return;
+                if (networkView == null || networkView.getModel() == null)
+                    return;
+                selectionMediator.fireSelectionEvent(networkSelectionHandler);
+            }
+        };
+        networkSelectionRegistration = context.registerService(RowsSetListener.class.getName(),
+                                listener,
+                                null);
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	public void close() {
+		super.close();
+		if (networkSelectionHandler != null) {
+			List<Selectable> list = PlugInObjectManager.getManager().getObservationVarSelectionMediator().getSelectables();
+			if (list != null)
+				list.remove(networkSelectionHandler);
+		}
+		if (networkSelectionRegistration != null)
+			networkSelectionRegistration.unregister();
 	}
 	
 	private class TFPathwaySamplePane extends BooleanNetworkSamplePane {
@@ -159,9 +212,25 @@ public class NetworkBNMainPane extends BooleanNetworkMainPane {
 
 		@Override
 		protected void enableSelectionSync() {
-			return; // Disable for the time being
+	        sampleTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+	            
+	            @Override
+	            public void valueChanged(ListSelectionEvent e) {
+	                handleTableSelection();
+	            }
+	        });
+	        
+	        selectionHandler = new GeneLevelSelectionHandler();
+	        ((GeneLevelSelectionHandler)selectionHandler).setGeneLevelTable(sampleTable);
+	        SelectionMediator mediator = PlugInObjectManager.getManager().getObservationVarSelectionMediator();
+	        mediator.addSelectable(selectionHandler);
 		}
 		
+		@Override
+	    protected void handleTableSelection() {
+	        SelectionMediator mediator = PlugInObjectManager.getManager().getObservationVarSelectionMediator();
+	        mediator.fireSelectionEvent(selectionHandler);
+	    }
 		
 		
 	}

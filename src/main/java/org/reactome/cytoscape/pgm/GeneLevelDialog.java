@@ -13,6 +13,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import org.gk.graphEditor.SelectionMediator;
+import org.reactome.cytoscape.service.GeneLevelSelectionHandler;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 
 /**

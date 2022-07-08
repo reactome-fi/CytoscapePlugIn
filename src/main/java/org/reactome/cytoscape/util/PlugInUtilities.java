@@ -4,6 +4,8 @@
  */
 package org.reactome.cytoscape.util;
 
+import static org.cytoscape.view.presentation.property.BasicVisualLexicon.NETWORK_SCALE_FACTOR;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
@@ -60,16 +62,12 @@ import org.cytoscape.model.CyTable;
 import org.cytoscape.model.CyTableUtil;
 import org.cytoscape.property.CyProperty;
 import org.cytoscape.service.util.CyServiceRegistrar;
-import org.cytoscape.task.NetworkTaskFactory;
 import org.cytoscape.util.swing.FileChooserFilter;
 import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.util.swing.OpenBrowser;
 import org.cytoscape.view.model.CyNetworkView;
 import org.cytoscape.view.model.View;
 import org.cytoscape.view.presentation.property.BasicVisualLexicon;
-import org.cytoscape.work.ServiceProperties;
-import org.cytoscape.work.TaskIterator;
-import org.cytoscape.work.TaskManager;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.Renderable;
@@ -81,11 +79,9 @@ import org.jdom.input.SAXBuilder;
 import org.jfree.chart.plot.CategoryMarker;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
-import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.SynchronousBundleListener;
-import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.factorgraph.FactorGraph;
 import org.reactome.factorgraph.Variable;
 import org.reactome.pathway.factorgraph.IPACalculator;
@@ -743,36 +739,16 @@ public class PlugInUtilities {
         if (networkView == null || networkView.getModel() == null)
             return;
         if (totalSelected > 0) {
+        	double oldFactor = networkView.getVisualProperty(NETWORK_SCALE_FACTOR).doubleValue();
             networkView.fitSelected();
-            if (totalSelected == 1)
-                PlugInUtilities.zoomOut(networkView.getModel(),
-                                        20); // 20 is rather arbitrary
-        }
-    }
-    
-    /**
-     * Zoom out a CyNetwork view by using a registered service.
-     */
-    public static void zoomOut(CyNetwork network, int times) {
-        BundleContext context = PlugInObjectManager.getManager().getBundleContext();
-        try {
-            ServiceReference[] references = context.getServiceReferences(NetworkTaskFactory.class.getName(),
-                                                                        "(" + ServiceProperties.TITLE + "=Zoom Out)");
-            if (references == null || references.length == 0)
-                return;
-            ServiceReference reference = references[0];
-            NetworkTaskFactory taskFactory = (NetworkTaskFactory) context.getService(reference);
-            if (taskFactory == null)
-                return;
-            TaskIterator iterator = taskFactory.createTaskIterator(network);
-            for (int i = 1; i < times; i++)
-                iterator.append(taskFactory.createTaskIterator(network));
-            @SuppressWarnings("rawtypes")
-            TaskManager taskManager = PlugInObjectManager.getManager().getTaskManager();
-            taskManager.execute(iterator);
-        }
-        catch(InvalidSyntaxException e) {
-            e.printStackTrace();
+            if (totalSelected == 1) {
+            	// Zoom back when only one node is selected
+            	double fitFactor = networkView.getVisualProperty(NETWORK_SCALE_FACTOR).doubleValue();
+            	double newFactor = fitFactor * 0.1d; // In case zoom to fit is too much
+            	if (newFactor < oldFactor) // Only re-zoom 
+            		newFactor = oldFactor;
+            	networkView.setVisualProperty(NETWORK_SCALE_FACTOR, newFactor);
+            }
         }
     }
     

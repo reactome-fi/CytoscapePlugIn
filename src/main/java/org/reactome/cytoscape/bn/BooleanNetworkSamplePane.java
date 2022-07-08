@@ -45,6 +45,7 @@ import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.application.swing.CytoPanel;
 import org.gk.graphEditor.PathwayEditor;
+import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.Node;
 import org.gk.render.RenderablePathway;
@@ -75,10 +76,10 @@ public class BooleanNetworkSamplePane extends JPanel {
     private BooleanNetwork network;
     private PathwayEditor pathwayEditor;
     private PathwayHighlightControlPanel hiliteControlPane;
-    private JTable sampleTable;
+    protected JTable sampleTable;
     private JTextArea noteTF;
     // To synchronize selection
-    private VariableSelectionHandler selectionHandler;
+    protected Selectable selectionHandler;
     // For simulation
     private Double defaultValue = 1.0d; // Default is on
     // Simulation name
@@ -296,7 +297,7 @@ public class BooleanNetworkSamplePane extends JPanel {
         });
         
         selectionHandler = new VariableSelectionHandler();
-        selectionHandler.setVariableTable(sampleTable);
+        ((VariableSelectionHandler)selectionHandler).setVariableTable(sampleTable);
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         mediator.addSelectable(selectionHandler);
     }
@@ -317,11 +318,14 @@ public class BooleanNetworkSamplePane extends JPanel {
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         if (mediator.getSelectables() != null)
             mediator.getSelectables().remove(selectionHandler);
-        
+        // Just in case
+        mediator = PlugInObjectManager.getManager().getObservationVarSelectionMediator();
+        if (mediator.getSelectables() != null)
+            mediator.getSelectables().remove(selectionHandler);
         getParent().remove(this);
     }
     
-    private void handleTableSelection() {
+    protected void handleTableSelection() {
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         mediator.fireSelectionEvent(selectionHandler);
     }

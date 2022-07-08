@@ -39,6 +39,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.reactome.cytoscape.service.AnimationPlayer;
 import org.reactome.cytoscape.service.AnimationPlayerControl;
+import org.reactome.cytoscape.service.GeneLevelSelectionHandler;
 import org.reactome.cytoscape.service.PathwayHighlightControlPanel;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;

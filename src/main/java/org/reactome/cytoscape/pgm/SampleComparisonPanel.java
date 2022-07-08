@@ -29,6 +29,7 @@ import org.gk.graphEditor.PathwayEditor;
 import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
 import org.gk.model.ReactomeJavaConstants;
+import org.reactome.cytoscape.service.GeneLevelSelectionHandler;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Observation;

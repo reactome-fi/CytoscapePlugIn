@@ -28,6 +28,7 @@ import org.gk.graphEditor.SelectionMediator;
 import org.osgi.framework.BundleContext;
 import org.reactome.cytoscape.pgm.SampleListComponent;
 import org.reactome.cytoscape.service.FIVisualStyle;
+import org.reactome.cytoscape.service.NetworkViewSelectionHandler;
 import org.reactome.cytoscape.service.TableHelper;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
@@ -81,7 +82,7 @@ public class FIPGMSampleListComponent extends SampleListComponent {
         selectable = new ObservationTableSelectionHandler();
         selectionMediator.addSelectable(selectable);
         obsTableHandler = selectable;
-        selectable = new NetworkViewSelectionHandler();
+        selectable = new NetworkViewSelectionHandler(networkView);
         selectionMediator.addSelectable(selectable);
         networkHandler = selectable;
         // Modify the text a little bit
@@ -362,23 +363,6 @@ public class FIPGMSampleListComponent extends SampleListComponent {
             return new ArrayList<String>(selectedGenes);
         }
         
-    }
-    
-    private class NetworkViewSelectionHandler implements Selectable {
-        
-        @Override
-        public void setSelection(List selection) {
-            TableHelper tableHelper = new TableHelper();
-            tableHelper.selectNodes(networkView, 
-                                    "name",
-                                    new HashSet<String>(selection));
-        }
-
-        @Override
-        public List getSelection() {
-            Set<String> selectedGenes = PlugInUtilities.getSelectedGenesInNetwork(networkView.getModel());
-            return new ArrayList<>(selectedGenes);
-        }
     }
     
 }

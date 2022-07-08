@@ -25,6 +25,7 @@ import org.apache.commons.math.MathException;
 import org.gk.graphEditor.PathwayEditor;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
+import org.reactome.cytoscape.service.GeneLevelSelectionHandler;
 import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.factorgraph.Variable;
 import org.reactome.factorgraph.common.DataType;

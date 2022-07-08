@@ -17,6 +17,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableRowSorter;
 
+import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
 import org.reactome.booleannetwork.BooleanVariable;
 import org.reactome.cytoscape.bn.SimulationTableModel.EntityType;
@@ -31,7 +32,7 @@ import org.reactome.cytoscape.util.PlugInObjectManager;
 public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
     protected static final String BUTTON_GROUP_NAME = "HighlightPathway";
     // For selection diagram entities
-    private VariableSelectionHandler selectionHandler;
+    protected Selectable selectionHandler;
     // For highlight pathway diagrams
     protected PathwayHighlightControlPanel hiliteControlPane;
     // To control highlight manually
@@ -79,9 +80,9 @@ public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
     
     protected abstract void reHilitePathway();
     
-    private void synchronizeSelection() {
+    protected void synchronizeSelection() {
         selectionHandler = createSelectionHandler();
-        selectionHandler.setVariableTable(contentTable);
+        ((VariableSelectionHandler)selectionHandler).setVariableTable(contentTable);
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
         mediator.addSelectable(selectionHandler);
     }
@@ -94,6 +95,10 @@ public abstract class VariableCytoPaneComponent extends NetworkModulePanel {
     public void close() {
         super.close();
         SelectionMediator mediator = PlugInObjectManager.getManager().getDBIdSelectionMediator();
+        if (mediator.getSelectables() != null)
+            mediator.getSelectables().remove(selectionHandler);
+        // This doesn't hurt.
+        mediator = PlugInObjectManager.getManager().getObservationVarSelectionMediator();
         if (mediator.getSelectables() != null)
             mediator.getSelectables().remove(selectionHandler);
         PlugInObjectManager.getManager().unregisterRadioButton(BUTTON_GROUP_NAME, hiliteDiagramBtn);

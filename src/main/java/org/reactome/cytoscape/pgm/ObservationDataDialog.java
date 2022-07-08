@@ -21,6 +21,7 @@ import javax.swing.JOptionPane;
 import org.apache.commons.math.MathException;
 import org.gk.render.RenderablePathway;
 import org.gk.util.DialogControlPane;
+import org.reactome.cytoscape.service.GeneLevelSelectionHandler;
 import org.reactome.cytoscape.service.TTestTableModel;
 import org.reactome.cytoscape.util.PlugInUtilities;
 import org.reactome.factorgraph.Observation;
