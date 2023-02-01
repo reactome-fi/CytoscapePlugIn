@@ -415,6 +415,7 @@ public class BooleanNetworkSamplePane extends JPanel {
         mergeWithOtherConfig(configuration);
         
         FuzzyLogicSimulator simulator = new FuzzyLogicSimulator();
+//        simulator.enableDebug(true);
         simulator.setTransferFunction(getTransferFunction());
         simulator.setAndGateMode(this.andGateMode);
         simulator.simulate(network, configuration);

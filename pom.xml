@@ -18,7 +18,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome</groupId>
 	<artifactId>reactomeFI-app</artifactId>
-	<version>8.0.4</version>
+	<version>8.0.5</version>
 	<name>${bundle.symbolicName}</name>
 	<packaging>bundle</packaging>
 
@@ -155,6 +155,7 @@
 						<Embed-Dependency>
 							*;scope=!provided;groupId=!org.osgi|org.cytoscape;
 						</Embed-Dependency>
+<!-- 						<Embed-Transitive>true</Embed-Transitive> -->
 					</instructions>
 				</configuration>
 			</plugin>
@@ -408,12 +409,18 @@
 			<artifactId>jiggle</artifactId>
 			<version>1.0.0</version>
 		</dependency>
-
+		
 		<dependency>
-			<groupId>org.reactome</groupId>
-			<artifactId>caBIGR3-minimal</artifactId>
-			<version>3.0</version>
-		</dependency>
+            <groupId>org.reactome.fi</groupId>
+            <artifactId>foundation</artifactId>
+            <version>1.0.3</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.reactome.fi</groupId>
+            <artifactId>modeling</artifactId>
+            <version>1.0.3</version>
+        </dependency>
 
 		<dependency>
 			<groupId>org.reactome</groupId>
@@ -477,6 +484,13 @@
 			<artifactId>commons-math3</artifactId>
 			<version>3.5</version>
 		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.15</version>
+        </dependency>
 
 		<dependency>
 			<groupId>org.jgrapht</groupId>
@@ -577,13 +591,12 @@
 			<artifactId>swagger-annotations</artifactId>
 			<version>1.5.7</version>
 			<scope>provided</scope>
-		</dependency>
+		</dependency> 
 		<dependency>
 			<groupId>org.cytoscape</groupId>
 			<artifactId>ci-api</artifactId>
 			<version>${cytoscape.api.version}</version>
 			<scope>provided</scope>
 		</dependency>
-
 	</dependencies>
 </project>

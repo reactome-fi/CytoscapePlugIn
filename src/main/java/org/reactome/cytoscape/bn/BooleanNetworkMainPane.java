@@ -675,10 +675,9 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             return filterMembersToTargetsBox.isSelected();
         }
         
-        private List<String> getTargets() {
-            Map<String, Double> inhibition = getInhibition();
+        private List<String> getTargets(Map<String, Double> inhibition,
+                                        Map<String, Double> activation) {
             Set<String> targets1 = inhibition.keySet().stream().collect(Collectors.toSet());
-            Map<String, Double> activation = getActivation();
             Set<String> targets2 = activation.keySet().stream().collect(Collectors.toSet());
             Set<String> targets = new HashSet<String>(targets1);
             targets.addAll(targets2);
@@ -1081,7 +1080,7 @@ public class BooleanNetworkMainPane extends JPanel implements CytoPanelComponent
             drugBox.setText(StringUtils.join(", ", drugs));
             inhibition = drugList.getInhibition();
             activation = drugList.getActivation();
-            List<String> targets = getTargets();
+            List<String> targets = getTargets(inhibition, activation);
             targetBox.setText(String.join(", ", targets));
         }
         

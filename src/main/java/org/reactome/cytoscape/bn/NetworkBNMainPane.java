@@ -117,25 +117,33 @@ public class NetworkBNMainPane extends BooleanNetworkMainPane {
 		BooleanVariable targetVar = node2var.get(target);
 		BooleanRelation relation = new BooleanRelation();
 		// Set up transfer function based on color and value
-		String color = tableHelper.getStoredEdgeAttribute(view.getModel(),
+		String annotation = tableHelper.getStoredEdgeAttribute(view.getModel(),
 				edge, 
-				"color", 
+				"annotation", 
 				String.class);
 		Double value = tableHelper.getStoredEdgeAttribute(view.getModel(),
 				edge,
 				"value", 
 				Double.class);
 		boolean isNegated = false;
-		if (("#A52A2A").equals(color) || ("#FF0000").equals(color)) // Inhibition for TF/TF and TF/pathway 
+		// The following annotations are used:
+//		pathway_pathway_hierarchy
+//		tf_pathway_activation
+//		tf_pathway_inhibition
+//		tf_tf_activation
+//		tf_tf_inhibition
+//		tf_tf_interaction: assume as an activation
+//		pathway_tf_annotation
+		if (annotation != null && annotation.endsWith("inhibition")) // Inhibition for TF/TF and TF/pathway 
 			isNegated = true;
 		relation.addInputVariable(sourceVar, isNegated);
 		relation.setOutputVariable(targetVar);
-		TransferFunction func = createTransferFunction(color, value);
+		TransferFunction func = createTransferFunction(value);
 		relation.setTransferFunction(func);
 		return relation;
 	}
 
-	private TransferFunction createTransferFunction(String color, Double value) {
+	private TransferFunction createTransferFunction(Double value) {
 		if (value == null) // Parent-child pathway relationship or TF annotated in a pathway
 			return new IdentityFunction(); // Use this for the time being
 		HillFunction func = new HillFunction();
