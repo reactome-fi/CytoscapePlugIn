@@ -20,6 +20,7 @@ import java.util.Set;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableRowSorter;
 
 import org.cytoscape.view.model.CyNetworkView;
 import org.gk.util.ProgressPane;
@@ -174,6 +175,8 @@ public class FISourceQueryHelper {
             }
             JTable evidenceTable = new JTable();
             EvidenceTableModel evidenceModel = new EvidenceTableModel();
+            TableRowSorter<EvidenceTableModel> sorter = new TableRowSorter<>(evidenceModel);
+            evidenceTable.setRowSorter(sorter);
             evidenceModel.setEvidence(highest.getEvidence());
             evidenceTable.setModel(evidenceModel);
             supportTabbedPane.addTab("Support Evidence",

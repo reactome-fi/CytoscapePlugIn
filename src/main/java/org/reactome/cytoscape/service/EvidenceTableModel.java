@@ -29,8 +29,15 @@ public class EvidenceTableModel extends AbstractTableModel {
         // Need to create evidence property to name mapping
         props = new ArrayList<String>();
         propNames = new ArrayList<String>();
-        String prop = PlugInObjectManager.getManager().getProperties().getProperty("evidenceProperties");
-        String names = PlugInObjectManager.getManager().getProperties().getProperty("evidenceNames");
+        String prop, names;
+        if (PlugInObjectManager.getManager().getFiNetworkVersion().equals("2022")) {
+            prop = PlugInObjectManager.getManager().getProperties().getProperty("rf_evidenceProperties");
+            names = PlugInObjectManager.getManager().getProperties().getProperty("rf_evidenceNames");
+        }
+        else {
+            prop = PlugInObjectManager.getManager().getProperties().getProperty("evidenceProperties");
+            names = PlugInObjectManager.getManager().getProperties().getProperty("evidenceNames");
+        }
         String[] propTokens = prop.split(",");
         String[] nameTokens = names.split(",");
         for (int i = 0; i < propTokens.length; i++) {
@@ -60,7 +67,11 @@ public class EvidenceTableModel extends AbstractTableModel {
     private Object getPropertyValue(Evidence evidence,
                                     String prop) {
         try {
-            String methodName = "get" + prop.substring(0, 1).toUpperCase() + prop.substring(1);
+            String methodName = null;
+            if (prop.equals("gOBPSharing"))
+                methodName = "get" + prop; // Interesting exception
+            else
+                methodName = "get" + prop.substring(0, 1).toUpperCase() + prop.substring(1);
             Method method = Evidence.class.getMethod(methodName);
             Object value = method.invoke(evidence);
             return value;

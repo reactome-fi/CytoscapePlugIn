@@ -267,7 +267,7 @@ public class EventTreePane extends JPanel implements EventSelectionListener {
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
         panel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEtchedBorder(),
                                                            BorderFactory.createEmptyBorder(2, 1, 2, 0)));
-        JLabel label = new JLabel("Pahtways for: ");
+        JLabel label = new JLabel("Pathways for: ");
         panel.add(label);
         speciesBox = new JComboBox<PathwaySpecies>();
         speciesBox.addItem(Homo_sapiens);
