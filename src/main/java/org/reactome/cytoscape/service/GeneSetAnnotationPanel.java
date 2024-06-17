@@ -140,8 +140,15 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
             String nodes = (String) contentTable.getValueAt(contentTable.getSelectedRow(),
                                                             contentTable.getColumnCount() - 1);
             if (pathway.endsWith("(K)")) {
-                showPathwayDiagramForKEGG(pathway,
-                                          nodes);
+//                showPathwayDiagramForKEGG(pathway,
+//                                          nodes);
+                // The mapping file is not updated any more after the license expired.
+                // Therefore an information message is shown here.
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                        "Please go to the KEGG pathway website for pathway diagram:\n" + 
+                "https://www.genome.jp/kegg/pathway.html",
+                        "KEGG Pathway Infomation",
+                        JOptionPane.INFORMATION_MESSAGE);
             }
             else {
                 CyPathwayDiagramHelper helper = CyPathwayDiagramHelper.getHelper();
@@ -172,10 +179,17 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
         RESTFulFIService service = new RESTFulFIService();
         try {
             if (pathway.endsWith("(K)")) {
-                String name = pathway.substring(0, pathway.length() - 3); // Remove the tag (K).
-                String id = service.queryKEGGPathwayId(name);
-                String url = "http://www.genome.jp/kegg/pathway/hsa/hsa" + id + ".html";
-                PlugInUtilities.openURL(url);
+                // The mapping file is not updated any more after the license expired.
+                // Therefore an information message is shown here.
+                JOptionPane.showMessageDialog(PlugInObjectManager.getManager().getCytoscapeDesktop(),
+                        "Please go to the KEGG pathway website for details:\n" + 
+                "https://www.genome.jp/kegg/pathway.html",
+                        "KEGG Pathway Infomation",
+                        JOptionPane.INFORMATION_MESSAGE);
+//                String name = pathway.substring(0, pathway.length() - 3); // Remove the tag (K).
+//                String id = service.queryKEGGPathwayId(name);
+//                String url = "http://www.genome.jp/kegg/pathway/hsa/hsa" + id + ".html";
+//                PlugInUtilities.openURL(url);
             }
             else {
                 Long dbId = service.queryPathwayId(pathway);
