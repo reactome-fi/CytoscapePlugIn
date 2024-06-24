@@ -43,7 +43,7 @@ import org.cytoscape.util.swing.FileUtil;
 import org.cytoscape.view.model.CyNetworkView;
 import org.gk.util.DialogControlPane;
 import org.gk.util.ProgressPane;
-import org.jdom.Element;
+import org.jdom2.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.cytoscape.service.RESTFulFIService;

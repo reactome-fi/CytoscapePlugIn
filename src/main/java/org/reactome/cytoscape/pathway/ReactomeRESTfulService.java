@@ -7,7 +7,7 @@ package org.reactome.cytoscape.pathway;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdom.Element;
+import org.jdom2.Element;
 import org.reactome.cytoscape.service.PathwaySpecies;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;

@@ -18,7 +18,7 @@ import javax.swing.JOptionPane;
 import org.cytoscape.work.TaskIterator;
 import org.cytoscape.work.TaskManager;
 import org.gk.util.ProgressPane;
-import org.jdom.Element;
+import org.jdom2.Element;
 import org.reactome.cytoscape.service.AbstractPathwayEnrichmentAnalysisTask;
 import org.reactome.cytoscape.service.RESTFulFIService;
 import org.reactome.cytoscape.util.PlugInObjectManager;

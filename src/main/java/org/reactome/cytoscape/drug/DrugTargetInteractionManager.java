@@ -22,7 +22,7 @@ import org.gk.render.Node;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
 import org.gk.util.ProgressPane;
-import org.jdom.Element;
+import org.jdom2.Element;
 import org.reactome.cytoscape.service.CyPathwayEditor;
 import org.reactome.cytoscape.service.FIRenderableInteraction;
 import org.reactome.cytoscape.service.RESTFulFIService;

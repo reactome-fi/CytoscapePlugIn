@@ -35,8 +35,11 @@ import org.cytoscape.view.model.CyNetworkView;
 import org.gk.persistence.DiagramGKBReader;
 import org.gk.render.RenderablePathway;
 import org.gk.util.StringUtils;
-import org.jdom.Element;
-import org.jdom.output.DOMOutputter;
+import org.jdom2.Attribute;
+import org.jdom2.Content;
+import org.jdom2.Element;
+import org.jdom2.Text;
+import org.jdom2.output.DOMOutputter;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.booleannetwork.BooleanNetwork;
@@ -482,8 +485,33 @@ public class RESTFulFIService implements FINetworkService {
     {
         String url = restfulURL + "network/queryPathwayDiagram";
         Element root = callInXML(url, pathwayDiagram);
+        org.jdom.Element root1 = convertToJDOM(root);
         DiagramGKBReader reader = new DiagramGKBReader();
-        return reader.openProcess(root);
+        return reader.openProcess(root1);
+    }
+    
+    // Convert JDOM2 Element to JDOM Element
+    private org.jdom.Element convertToJDOM(Element jdom2Element) {
+        // Create new JDOM Element with the same name
+        org.jdom.Element jdomElement = new org.jdom.Element(jdom2Element.getName());
+
+        // Copy attributes
+        for (org.jdom2.Attribute attr : jdom2Element.getAttributes()) {
+            jdomElement.setAttribute(new org.jdom.Attribute(attr.getName(), attr.getValue()));
+        }
+
+        // Copy children and text content
+        for (Content content : jdom2Element.getContent()) {
+            if (content instanceof org.jdom2.Element) {
+                // Recursively convert child elements
+                jdomElement.addContent(convertToJDOM((org.jdom2.Element) content));
+            } else if (content instanceof Text) {
+                // Copy text content
+                jdomElement.addContent(((Text) content).getText());
+            }
+        }
+
+        return jdomElement;
     }
 
     public List<Interaction> queryEdge(String name1, String name2)

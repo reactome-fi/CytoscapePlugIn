@@ -63,7 +63,7 @@ import org.gk.graphEditor.Selectable;
 import org.gk.graphEditor.SelectionMediator;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
-import org.jdom.Element;
+import org.jdom2.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceRegistration;

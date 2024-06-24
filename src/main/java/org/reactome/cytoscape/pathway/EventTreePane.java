@@ -58,7 +58,7 @@ import org.cytoscape.work.TaskManager;
 import org.gk.model.ReactomeJavaConstants;
 import org.gk.util.TreeUtilities;
 import org.jdesktop.swingx.treetable.DefaultMutableTreeTableNode;
-import org.jdom.Element;
+import org.jdom2.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.reactome.annotate.GeneSetAnnotation;

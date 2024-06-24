@@ -36,7 +36,7 @@ import org.gk.render.RenderableProtein;
 import org.gk.util.GKApplicationUtilities;
 import org.gk.util.ProgressPane;
 import org.gk.util.StringUtils;
-import org.jdom.Element;
+import org.jdom2.Element;
 import org.reactome.cytoscape.service.CyPathwayEditor;
 import org.reactome.cytoscape.service.FIRenderableInteraction;
 import org.reactome.cytoscape.service.FISourceQueryHelper;

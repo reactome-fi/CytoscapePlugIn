@@ -35,7 +35,7 @@ import org.gk.persistence.DiagramGKBReader;
 import org.gk.persistence.DiagramGKBWriter;
 import org.gk.render.Renderable;
 import org.gk.render.RenderablePathway;
-import org.jdom.Element;
+import org.jdom2.Element;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.ServiceReference;

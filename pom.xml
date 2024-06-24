@@ -12,13 +12,14 @@
 		<cytoscape.api.version>3.8.2</cytoscape.api.version>
 		<maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
 		<maven-surefire-plugin.version>3.0.0-M3</maven-surefire-plugin.version>
-		<maven-bundle-plugin.version>4.1.0</maven-bundle-plugin.version>
+		<!-- Updated to the latest version -->
+		<maven-bundle-plugin.version>5.1.7</maven-bundle-plugin.version>
 	</properties>
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.reactome</groupId>
 	<artifactId>reactomeFI-app</artifactId>
-	<version>8.0.7</version>
+	<version>8.0.8</version>
 	<name>${bundle.symbolicName}</name>
 	<packaging>bundle</packaging>
 
@@ -100,8 +101,8 @@
 					</execution>
 				</executions>
 				<configuration>
-					<source>11</source>
-					<target>11</target>
+					<source>17</source>
+					<target>17</target>
 					<optimize>true</optimize>
 					<showWarnings>true</showWarnings>
 					<showDeprecation>true</showDeprecation>
@@ -414,12 +415,24 @@
             <groupId>org.reactome.fi</groupId>
             <artifactId>foundation</artifactId>
             <version>1.0.3</version>
-        </dependency>
+<!--            <exclusions>-->
+<!--            	<exclusion>-->
+<!--            		<groupId>org.jdom</groupId>-->
+<!--            		<artifactId>jdom</artifactId>-->
+<!--            	</exclusion>-->
+<!--            </exclusions>-->
+		</dependency>
         
         <dependency>
             <groupId>org.reactome.fi</groupId>
             <artifactId>modeling</artifactId>
             <version>1.0.3</version>
+            <exclusions>
+            	<exclusion>
+            		<groupId>org.jdom</groupId>
+            		<artifactId>jdom</artifactId>
+            	</exclusion>
+            </exclusions>
         </dependency>
 
 		<dependency>
@@ -513,11 +526,18 @@
 			<version>1.1-b01</version>
 		</dependency>
 
+        <!-- Still need it for other jars -->
 		<dependency>
 			<groupId>org.jdom</groupId>
 			<artifactId>jdom</artifactId>
 			<version>1.1.3</version>
 		</dependency>
+		
+		<dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom2</artifactId>
+            <version>2.0.6</version>
+        </dependency>
 
 		<!-- To support protein 3d structure visualization -->
 		<dependency>

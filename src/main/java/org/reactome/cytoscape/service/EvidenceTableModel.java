@@ -30,7 +30,9 @@ public class EvidenceTableModel extends AbstractTableModel {
         props = new ArrayList<String>();
         propNames = new ArrayList<String>();
         String prop, names;
-        if (PlugInObjectManager.getManager().getFiNetworkVersion().equals("2022")) {
+        String fiNetworkVersion = PlugInObjectManager.getManager().getFiNetworkVersion();
+        Integer version = Integer.parseInt(fiNetworkVersion);
+        if (version >= 2022) { // Use random forest model after 2022.
             prop = PlugInObjectManager.getManager().getProperties().getProperty("rf_evidenceProperties");
             names = PlugInObjectManager.getManager().getProperties().getProperty("rf_evidenceNames");
         }

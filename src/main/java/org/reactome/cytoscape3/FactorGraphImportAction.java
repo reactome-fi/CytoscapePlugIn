@@ -11,9 +11,9 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
 import org.cytoscape.util.swing.FileUtil;
-import org.jdom.Document;
-import org.jdom.input.SAXBuilder;
-import org.jdom.output.DOMOutputter;
+import org.jdom2.Document;
+import org.jdom2.input.SAXBuilder;
+import org.jdom2.output.DOMOutputter;
 import org.reactome.cytoscape.pathway.DiagramAndFactorGraphSwitcher;
 import org.reactome.cytoscape.service.FICytoscapeAction;
 import org.reactome.cytoscape.util.PlugInObjectManager;
