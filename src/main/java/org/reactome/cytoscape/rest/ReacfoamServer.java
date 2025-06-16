@@ -266,7 +266,7 @@ public class ReacfoamServer {
 	}
     
     /**
-     * We will call the serice directly to avoid any huddle related to the REST API.
+     * We will call the service directly to avoid any huddle related to the REST API.
      * @param eventId
      */
     private void selectEvent(String eventId) {

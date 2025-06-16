@@ -7,20 +7,20 @@ moduleColors=0,0,153;51,153,0;153,0,153;102,102,0;0,102,102;204,153,0;204,0,102;
 # As of July, 2018, changed to the main Reactome web site.
 userGuideURL=https://www.reactome.org/tools/reactome-fiviz
 # A list of FI network versions available for selection
-FINetworkVersions=2024,2022,2021,2020
+FINetworkVersions=2025,2024,2022,2021
 # For local test
+#2025_restfulURL=http://localhost:8080/corews/FIService/
 #2024_restfulURL=http://localhost:8080/corews/FIService/
 #2022_restfulURL=http://localhost:8080/corews/FIService/
 #2021_restfulURL=http://localhost:8080/corews/FIService/
-#2020_restfulURL=http://localhost:8080/corews/FIService/
 # For new cpws at Amazon AWS
-2024_restfulURL=http://cpws.reactome.org/caBigR3WebApp2022/FIService/
+2025_restfulURL=http://cpws.reactome.org/caBigR3WebApp2025/FIService/
+2024_restfulURL=http://cpws.reactome.org/caBigR3WebApp2024/FIService/
 2022_restfulURL=http://cpws.reactome.org/caBigR3WebApp2022/FIService/
 2021_restfulURL=http://cpws.reactome.org/caBigR3WebApp2021/FIService/
-2020_restfulURL=http://cpws.reactome.org/caBigR3WebApp2020/FIService/
 # Reactome stuff
 #ReactomeRESTfulAPI=http://localhost:8080/corews/FIService/ReactomeRestful/
-ReactomeRESTfulAPI=http://cpws.reactome.org/caBigR3WebApp2022/FIService/ReactomeRestful/
+ReactomeRESTfulAPI=http://cpws.reactome.org/caBigR3WebApp2025/FIService/ReactomeRestful/
 # A list of evidences and their labels
 evidenceProperties=humanInteraction,scePPI,dmePPI,celPPI,mousePPI,pavlidisGeneExp,carlosGeneExp,pfamDomainInt,goBPSharing,probability
 evidenceNames=Human Interaction,Yeast Interaction,Fly Interaction,Worm Interaction,Mouse Interaction,Pavlidis Gene Exp,Carlos Gene Exp,PfamDomain Interaction,GO BP Sharing,Score
