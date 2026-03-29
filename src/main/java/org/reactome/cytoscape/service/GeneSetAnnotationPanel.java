@@ -21,10 +21,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.table.TableRowSorter;
 
-import org.gk.util.GKApplicationUtilities;
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
 import org.gk.util.StringUtils;
 import org.reactome.annotate.GeneSetAnnotation;
 import org.reactome.annotate.ModuleGeneSetAnnotation;
+import org.reactome.cytoscape.pathway.OpenAIEnrichmentSummaryTask;
 import org.reactome.cytoscape.util.PlugInObjectManager;
 import org.reactome.cytoscape.util.PlugInUtilities;
 
@@ -88,6 +90,9 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
         JPopupMenu popupMenu = createExportAnnotationPopup();
         // This will work for pathway only
         String title = getTitle();
+        // Apply to Reactome pathway enrichment results only for now. We can add it to other annotation tables later if needed. 
+        if (title.startsWith("Pathway"))
+            createSummarizeMenuItem(popupMenu);
         if (!title.startsWith("Pathway")) {
             popupMenu.show(contentTable,
                            e.getX(),
@@ -207,6 +212,26 @@ public class GeneSetAnnotationPanel extends NetworkModulePanel {
             System.err.println("GeneSetAnnotationPanel.showPathwayDetail(): " + e);
             e.printStackTrace();
         }
+    }
+    
+    protected void createSummarizeMenuItem(JPopupMenu popupMenu) {
+        JMenuItem item = new JMenuItem("Summarize with LLM");
+        item.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                summarizeWithLLM();
+            }
+        });
+        popupMenu.add(item);
+    }
+
+    private void summarizeWithLLM() {
+        OpenAIEnrichmentSummaryTask summaryTask = new OpenAIEnrichmentSummaryTask(getContentTable().getModel(), getTitle());
+        if (!summaryTask.setUpEnv()) 
+            return;
+        
+        TaskManager manager = PlugInObjectManager.getManager().getTaskManager();
+        manager.execute(new TaskIterator(summaryTask));
     }
     
     public void setAnnotations(List<ModuleGeneSetAnnotation> annotations) {

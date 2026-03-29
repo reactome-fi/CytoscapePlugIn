@@ -106,6 +106,10 @@ public class PlugInObjectManager {
     private final String PATHWAY_DIAGRAM_CARD_LABEL = "PathwayDiagramDesktop";
     // For connecting some remote links
     private PropertyChangeSupport propertyChangeSupport;
+    // For LLM-based enrichment summary
+    private String openAIKey;
+    private String reserachContext;
+    private String openAIModel;
     
     /**
      * Default constructor. This is a private constructor so that the single instance should be used.
@@ -119,6 +123,30 @@ public class PlugInObjectManager {
         if (manager == null)
             manager = new PlugInObjectManager();
         return manager;
+    }
+    
+    public String getOpenAIModel() {
+        return openAIModel;
+    }
+
+    public void setOpenAIModel(String openAIModel) {
+        this.openAIModel = openAIModel;
+    }
+
+    public String getReserachContext() {
+        return reserachContext;
+    }
+
+    public void setReserachContext(String reserachContext) {
+        this.reserachContext = reserachContext;
+    }
+    
+    public String getOpenAIKey() {
+        return openAIKey;
+    }
+    
+    public void setOpenAIKey(String openAIKey) {
+        this.openAIKey = openAIKey;
     }
     
     public void addPropetyChangeListener(PropertyChangeListener l) {

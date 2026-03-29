@@ -20,8 +20,15 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
+import org.cytoscape.work.TaskIterator;
+import org.cytoscape.work.TaskManager;
+import org.reactome.annotate.GeneSetAnnotation;
+import org.reactome.annotate.ModuleGeneSetAnnotation;
 import org.reactome.cytoscape.pathway.EventTreePane.EventObject;
 import org.reactome.cytoscape.service.GeneSetAnnotationPanel;
+import org.reactome.cytoscape.util.PlugInObjectManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Used to display pathway enrichment analysis results using all Reactome pathways.
@@ -29,6 +36,7 @@ import org.reactome.cytoscape.service.GeneSetAnnotationPanel;
  *
  */
 public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
+    private static final Logger logger = LoggerFactory.getLogger(PathwayEnrichmentResultPane.class);
     
     protected EventTreePane eventTreePane;
     private boolean isFromTable = false;
@@ -116,6 +124,9 @@ public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
     protected void doContentTablePopup(MouseEvent e) {
         JPopupMenu popupMenu = createExportAnnotationPopup();
         createDiagramMenuItem(popupMenu);
+        // Apply to Reactome pathway enrichment results only for now. We can add it to other annotation tables later if needed.
+        if (getTitle().equals("Reactome Pathway Enrichment") || getTitle().equals("Reactome GSEA Analysis"))
+            createSummarizeMenuItem(popupMenu);
         popupMenu.show(contentTable, e.getX(), e.getY());
     }
 
@@ -146,4 +157,5 @@ public class PathwayEnrichmentResultPane extends GeneSetAnnotationPanel {
             columnHeaders = geneSetHeaders;
         }
     }
+    
 }
